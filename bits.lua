@@ -43,8 +43,8 @@ end
 function animate(stage)
   screen.clear()
   for i=1,6,1 do
-    rings[i]:render()
     rings2[i]:render()
+    rings[i]:render()
   end
   render_zigzag()
 end
@@ -75,7 +75,7 @@ function randomize_all()
   local rate_values_mid = {0.5, 1, 2, -0.5, -1, -2}
   local rate_values_low = {0.25, 0.5, 1, -1, -.5, -.25}
   local rate_values_sub = {0.125, 0.25, 0.5, -0.5, -.25, -.125}
-  local rate_values = rate_values_sub
+  local rate_values = rate_values_low
   for i=1,6 do
     rates[i] = rate_values[math.random(#rate_values)]
     levels[i] = math.random()*0.5+0.2 
@@ -106,7 +106,7 @@ function enable_all()
 end
 
 function update_positions(i, pos)
-  print("voice" .. i..":"..pos .. "loop: "..loop_starts[i].." - " .. loop_ends[i])
+  -- print("voice" .. i..":"..pos .. "loop: "..loop_starts[i].." - " .. loop_ends[i])
 end
 
 
@@ -145,21 +145,21 @@ function init()
       radius=6,
       rate=rates[i],
       bg=0,
-      thickness=2,
-      level=4,
+      thickness=3,
+      level=15,
     })
   end
   for i=1,6,1 do
     rings2[i] = Ring:new({
       x=i*16 + 8,
       y=32 + y_offset + (-2 * y_offset * (i%2)),
-      a1=radians.A90,
-      a2=radians.A180,
+      a1=loop_starts[i]/sample_length * math.pi * 2,
+      a2=loop_ends[i]/sample_length * math.pi * 2,
       radius=6,
-      rate=rates[i]/2,
-      bg=0,
-      level=15,
-      thickness=2
+      rate=0,
+      bg=1,
+      level=4,
+      thickness=3
     })
   end
 
