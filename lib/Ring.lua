@@ -26,7 +26,7 @@ function Ring:render()
   
   -- draw circle
   if self.bg ~= 0 then
-    screen.move(self.x+self.radius, self.y,self.radius)
+    screen.move(self.x+self.radius, self.y)
     screen.circle(self.x,self.y,self.radius)
     screen.level(self.bg)
     screen.stroke()
