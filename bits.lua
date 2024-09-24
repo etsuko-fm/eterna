@@ -4,6 +4,12 @@ local rings = {}
 local rings2 = {}
 local sample_length
 
+function render_mixer()
+end
+
+}
+
+local current_scene = scenes["start"]
 
 radians = {
   A0 = 0,
@@ -49,6 +55,15 @@ function animate(stage)
   render_zigzag()
 end
 
+local scenes = {
+  {
+    name="start", 
+    render=animate, --todo: rename animate, implement scene in refresh method
+  },
+  {
+    name="mixer",
+    render=render_mixer,
+  }
 
 function count()
 	ready = true
