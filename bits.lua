@@ -1,11 +1,18 @@
 local Ring = include("bits/lib/Ring")
+local Meter = include("bits/lib/Meter")
 local debug = include("bits/lib/debug")
 local bits_sampler = include("bits/lib/sampler")
+local shapes = include("bits/lib/graphics/shapes")
 local rings = {}
 local rings2 = {}
 local sample_length
 
 function render_mixer()
+  screen.clear()
+  screen.font_size(8)
+  screen.move(20, 20)
+  screen.text('scene 2')
+  screen.update()
 end
 
 radians = {
@@ -30,25 +37,69 @@ function render_home(stage)
     rings2[i]:render()
     rings[i]:render()
   end
-  render_zigzag()
+  zigzag_line(0, 32, 128, 4)
+end
+
+Scene = {
+  name = nil,
+  render = nil,
+  e1 = nil,
+  e2 = nil,
+  e3 = nil,
+  k1_hold_on = nil,
+  k1_hold_off = nil,
+  k2_on = nil,
+  k2_off = nil,
+  k3_on = nil,
+  k3_off = nil,
+}
+
+function Scene:create(o)
+  -- create state if not provided
+  o = o or {}
+
+  -- define prototype
+  setmetatable(o, self)
+  self.__index = self
+
+  -- return instance
+  return o
 end
 
 local scenes = {
-  start = {
+  {
+    name = "start",
     render = render_home,
     e1 = nil,
     e2 = nil,
     e3 = nil,
-    k1 = nil,
-    k2 = nil,
-    k3 = nil,
+    k1_hold_on = nil,
+    k1_hold_off = nil,
+    k2_on = nil,
+    k2_off = nil,
+    k3_on = nil,
+    k3_off = nil,
   },
-  mixer = {
+  {
+    name = "mixer",
     render = render_mixer,
   },
 }
 
-local current_scene = scenes["start"]
+current_scene_index = 1
+local current_scene = scenes[current_scene_index]
+
+function cycle_scene_forward()
+  -- Increment the current scene index, reset to 1 if we exceed the table length
+  current_scene_index = (current_scene_index % #scenes) + 1
+  current_scene = scenes[current_scene_index]
+end
+
+function cycle_scene_backward()
+  -- Decrement the current scene index, wrap around to the last scene if it goes below 1
+  current_scene_index = (current_scene_index - 2) % #scenes + 1
+  current_scene = scenes[current_scene_index]
+end
 
 function count()
   ready = true
@@ -65,6 +116,9 @@ function generate_random_pair(max_length)
   -- Generate a random number a
   local a = math.random(0, max_length)
   -- Generate b such that b > a and b - a <= max_length
+  if max_length - a == 0 then
+    max_length = max_length + 1 -- todo check if logic correct in all cases
+  end
   local b = a + math.random(1, max_length - a)
 
   return a, b
@@ -132,7 +186,7 @@ function init()
   softcut.event_phase(update_positions)
   softcut.poll_start_phase()
 
-  -- init rings
+  -- init rings, todo: should be in a separate file that defines this scene
   local y_offset = 18
   for i = 1, 6, 1 do
     rings[i] = Ring:new({
@@ -166,9 +220,31 @@ function init()
   c:start()
 end
 
+-- KEY DEFINITIONS
+local k2_latch = false
+local k3_latch = false
+
 function key(n, z)
+  print("key press: " .. n .. ", " .. z)
   if n == 3 and z == 1 then
+    k3_latch = true
+    if k2_latch then
+      cycle_scene_forward()
+    end
     randomize_all()
+  end
+  if n == 3 and z == 0 then
+    k3_latch = false
+  end
+
+  if n == 2 and z == 1 then
+    k2_latch = true
+    if k3_latch then
+      cycle_scene_backward()
+    end
+  end
+  if n == 2 and z == 0 then
+    k2_latch = false
   end
 end
 
