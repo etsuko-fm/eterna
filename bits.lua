@@ -221,30 +221,33 @@ function init()
 end
 
 -- KEY DEFINITIONS
-local k2_latch = false
-local k3_latch = false
-
+local key_latch = {
+  [2] = false,
+  [3] = false,
+}
 function key(n, z)
   print("key press: " .. n .. ", " .. z)
   if n == 3 and z == 1 then
-    k3_latch = true
-    if k2_latch then
+    key_latch[n] = true
+    if key_latch[2] then
+        -- key combination: k2 held, press k3
       cycle_scene_forward()
     end
     randomize_all()
   end
   if n == 3 and z == 0 then
-    k3_latch = false
+    key_latch[n] = false
   end
 
   if n == 2 and z == 1 then
-    k2_latch = true
-    if k3_latch then
+    key_latch[n] = true
+    if key_latch[3] then
+      -- key combination: k3 held, press k2
       cycle_scene_backward()
     end
   end
   if n == 2 and z == 0 then
-    k2_latch = false
+    key_latch[n] = false
   end
 end
 
