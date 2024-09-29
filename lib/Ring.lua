@@ -1,4 +1,5 @@
 Ring = {
+  -- todo: naming should be more clear, it's not obvious that self.level equals slice level
   x=0, -- center x
   y=0, -- centr y
   a1=0, -- start point in radians
@@ -6,9 +7,10 @@ Ring = {
   radius=8, -- pixels
   thickness=3, -- pixels
   rate=1, -- movement speed of ring; corresponds 1:1 to softcut playback rate 
-  level=10, -- brightness of arc
-  bg=1, -- brightness of circle
+  level=10, -- brightness of arc (a slice of the circle)
+  bg=1, -- brightness of entire circle
 }
+
 function Ring:new(o)
       -- create state if not provided
       o = o or {}   
@@ -47,5 +49,6 @@ function Ring:render()
   self.a1 = self.a1 + rate_to_radians(self.rate)
   self.a2 = self.a2 + rate_to_radians(self.rate)
 end
+
 
 return Ring

@@ -6,6 +6,8 @@ local shapes = include("bits/lib/graphics/shapes")
 local rings = {}
 local rings2 = {}
 local sample_length
+local current_ring = 1
+
 
 function render_mixer()
   screen.clear()
@@ -189,29 +191,31 @@ function init()
   -- init rings, todo: should be in a separate file that defines this scene
   local y_offset = 18
   for i = 1, 6, 1 do
+    -- these rings rotate according to playback rate
     rings[i] = Ring:new({
-      x = i * 16 + 8,
-      y = 32 + y_offset + (-2 * y_offset * (i % 2)),
+      x = i * 16 + 8, -- space evenly from x=24 to x=104
+      y = 32 + y_offset + (-2 * y_offset * (i % 2)), -- 3 above, 3 below
       a1 = radians.A0,
       a2 = radians.A90,
       radius = 6,
       rate = rates[i],
       bg = 0,
       thickness = 3,
-      level = 15,
+      level = 15, -- 15 = max level
     })
   end
-  for i = 1, 6, 1 do
+  for i = 1, 6 do
+    -- these rings display the looped section of the buffer
     rings2[i] = Ring:new({
-      x = i * 16 + 8,
-      y = 32 + y_offset + (-2 * y_offset * (i % 2)),
+      x = rings[i].x,
+      y = rings[i].y,
       a1 = loop_starts[i] / sample_length * math.pi * 2,
       a2 = loop_ends[i] / sample_length * math.pi * 2,
-      radius = 6,
+      radius = rings[i].radius,
       rate = 0,
-      bg = 1,
-      level = 4,
-      thickness = 3
+      bg = 5,
+      level = 10,
+      thickness = rings[i].thickness
     })
   end
 
@@ -225,10 +229,33 @@ local key_latch = {
   [2] = false,
   [3] = false,
 }
+function select_ring(n)
+  current_ring = n
+  for i = 1, 6 do
+    if i == current_ring then
+      rings[i].level = 15
+      rings2[i].bg = 5
+      rings2[i].level = 10
+    else
+      rings[i].level = 5
+      rings2[i].bg = 1
+      rings2[i].level = 3
+    end
+  end
+end
+function one_indexed_modulo(n,m)
+  -- utility to help cycling through 1-indexed arrays
+  return ((n - 1) % m) + 1
+end
+
 function key(n, z)
+  -- todo: add a dot to the selected ring
   print("key press: " .. n .. ", " .. z)
   if n == 3 and z == 1 then
     key_latch[n] = true
+    next_ring = current_ring + 1
+    select_ring(one_indexed_modulo(next_ring, 6))
+    print("new selected ring = " .. current_ring)
     if key_latch[2] then
         -- key combination: k2 held, press k3
       cycle_scene_forward()
