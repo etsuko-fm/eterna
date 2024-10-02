@@ -4,9 +4,22 @@ local debug = include("bits/lib/debug")
 local bits_sampler = include("bits/lib/sampler")
 local shapes = include("bits/lib/graphics/shapes")
 local rings = {}
-local rings2 = {}
 local sample_length
 local current_ring = 1
+local ring_luma = {
+  circle = {
+    normal = 3,
+    deselected = 1,
+  },
+  rate_arc = {
+    normal = 15,
+    deselected = 5,
+  },
+  section_arc = {
+    normal = 7,
+    deselected = 2,
+  },
+}
 
 
 function render_mixer()
@@ -26,17 +39,9 @@ radians = {
 
 -- todo: before randomizing, allow emphasis on low, mid or high
 
-
-function rate_to_radians(rate)
-  -- this is an arbitrary conversion
-  -- nominal rate looks acceptable at 1/10 radians
-  return rate / 10
-end
-
 function render_home(stage)
   screen.clear()
   for i = 1, 6, 1 do
-    rings2[i]:render()
     rings[i]:render()
   end
   zigzag_line(0, 32, 128, 4)
@@ -91,6 +96,8 @@ local scenes = {
 current_scene_index = 1
 local current_scene = scenes[current_scene_index]
 
+
+-- todo: this is great re-usable functionality, move to lib; also confusing otherwise
 function cycle_scene_forward()
   -- Increment the current scene index, reset to 1 if we exceed the table length
   current_scene_index = (current_scene_index % #scenes) + 1
@@ -104,6 +111,7 @@ function cycle_scene_backward()
 end
 
 function count()
+  -- relates to fps and flickerless rerndering
   ready = true
 end
 
@@ -164,6 +172,8 @@ function update_positions(i, pos)
   -- print("voice" .. i..":"..pos .. "loop: "..loop_starts[i].." - " .. loop_ends[i])
 end
 
+
+
 function init()
   -- init softcut
   -- file = _path.dust.."code/softcut-studies/lib/whirl1.aif"
@@ -189,36 +199,38 @@ function init()
   softcut.poll_start_phase()
 
   -- init rings, todo: should be in a separate file that defines this scene
+
   local y_offset = 18
   for i = 1, 6, 1 do
     -- these rings rotate according to playback rate
     rings[i] = Ring:new({
-      x = i * 16 + 8, -- space evenly from x=24 to x=104
+      x = i * 16 + 8,                                -- space evenly from x=24 to x=104
       y = 32 + y_offset + (-2 * y_offset * (i % 2)), -- 3 above, 3 below
-      a1 = radians.A0,
-      a2 = radians.A90,
       radius = 6,
-      rate = rates[i],
-      bg = 0,
       thickness = 3,
-      level = 15, -- 15 = max level
+      luma = ring_luma.circle.normal, -- 15 = max level
+      arcs = {
+        -- {
+        --   -- loop section arc
+        --   a1 = loop_starts[i] / sample_length * math.pi * 2,
+        --   a2 = loop_ends[i] / sample_length * math.pi * 2,
+        --   luma = ring_luma.section_arc.normal,
+        --   thickness = 3, -- pixels
+        --   radius = 6,    -- pixels
+        --   rate = 0,
+        -- },
+        {
+          -- playback rate arc
+          a1 = radians.A0,
+          a2 = radians.A90,
+          luma = ring_luma.rate_arc.normal, -- brightness, 0-15
+          thickness = 3,  -- pixels
+          radius = 6,     -- pixels
+          rate = rates[i]/10,
+        },
+      }
     })
   end
-  for i = 1, 6 do
-    -- these rings display the looped section of the buffer
-    rings2[i] = Ring:new({
-      x = rings[i].x,
-      y = rings[i].y,
-      a1 = loop_starts[i] / sample_length * math.pi * 2,
-      a2 = loop_ends[i] / sample_length * math.pi * 2,
-      radius = rings[i].radius,
-      rate = 0,
-      bg = 5,
-      level = 10,
-      thickness = rings[i].thickness
-    })
-  end
-
   -- init clock
   c = metro.init(count, 1 / 60)
   c:start()
@@ -229,27 +241,36 @@ local key_latch = {
   [2] = false,
   [3] = false,
 }
+
+
 function select_ring(n)
   current_ring = n
   for i = 1, 6 do
     if i == current_ring then
-      rings[i].level = 15
-      rings2[i].bg = 5
-      rings2[i].level = 10
+      rings[i].luma = ring_luma.circle.normal
+      rings[i].arcs[1].luma = ring_luma.rate_arc.normal
+      -- rings[i].arcs[2].luma = ring_luma.section_arc.normal
     else
-      rings[i].level = 5
-      rings2[i].bg = 1
-      rings2[i].level = 3
+      rings[i].luma = ring_luma.circle.deselected
+      rings[i].arcs[1].luma = ring_luma.rate_arc.deselected
+      -- rings[i].arcs[2].luma = ring_luma.section_arc.deselected
     end
   end
 end
-function one_indexed_modulo(n,m)
+
+function deselect_rings()
+
+end
+
+function one_indexed_modulo(n, m)
   -- utility to help cycling through 1-indexed arrays
+  -- todo: move to util
   return ((n - 1) % m) + 1
 end
 
 function key(n, z)
   -- todo: add a dot to the selected ring
+  -- todo: 7th time, select all again
   print("key press: " .. n .. ", " .. z)
   if n == 3 and z == 1 then
     key_latch[n] = true
@@ -257,7 +278,7 @@ function key(n, z)
     select_ring(one_indexed_modulo(next_ring, 6))
     print("new selected ring = " .. current_ring)
     if key_latch[2] then
-        -- key combination: k2 held, press k3
+      -- key combination: k2 held, press k3
       cycle_scene_forward()
     end
     randomize_all()
@@ -290,4 +311,5 @@ function rerun()
 end
 
 function stop()
+  norns.script.clear()
 end
