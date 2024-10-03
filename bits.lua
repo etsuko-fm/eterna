@@ -7,7 +7,8 @@ local shapes = include("bits/lib/graphics/shapes")
 local rings = {}
 local sample_length
 local current_ring = nil
-
+local current_param = nil
+local current_param_value = nil
 
 local ring_luma = {
   -- todo: could these be properties of the ring?
@@ -50,10 +51,14 @@ function render_home(stage)
     rings[i]:render()
   end
   zigzag_line(0, 32, 128, 4)
+
+  if current_param then
+    render_param_text(current_param, current_param_value)
+  end
 end
 
 local scenes = {
-  Scene({
+  Scene:create({
     name = "home",
     render = render_home,
     e1 = nil,
@@ -66,7 +71,7 @@ local scenes = {
     k3_on = nil,
     k3_off = nil,
   }),
-  Scene({
+  Scene:create({
     name = "mixer",
     render = render_mixer,
   }),
@@ -152,6 +157,12 @@ function update_positions(i, pos)
 end
 
 function init()
+  -- hardware sensitivity
+  for i = 1,3 do
+    norns.enc.sens(i, 6)
+    norns.enc.accel(i, true)
+  end
+  
   -- init softcut
   -- file = _path.dust.."code/softcut-studies/lib/whirl1.aif"
   file = _path.dust .. "audio/etsuko/sea-minor/sea-minor-chords.wav"
@@ -251,9 +262,6 @@ function one_indexed_modulo(n, m)
 end
 
 function key(n, z)
-  -- todo: add a dot to the selected ring
-  -- todo: 7th time, select all again
-  print("key press: " .. n .. ", " .. z)
   if n == 3 and z == 1 then
     key_latch[n] = true
     if current_ring == nil then current_ring = 0 end
@@ -265,7 +273,6 @@ function key(n, z)
       select_ring(one_indexed_modulo(next_ring, 6))
     end
 
-    print("new selected ring = " .. current_ring)
     if key_latch[2] then
       -- key combination: k2 held, press k3
       cycle_scene_forward()
@@ -287,6 +294,27 @@ function key(n, z)
     key_latch[n] = false
   end
 end
+
+
+function enc(n,d)
+  if n == 2 then
+    print(d)
+    current_param = "rate"
+    if current_param_value == nil then
+      current_param_value = 0
+    end
+    current_param_value = current_param_value + d
+  end
+end
+
+function render_param_text(param, value)
+  screen.level(15)
+  screen.move(64,32)
+  screen.text_center(param ..": "..value)
+  screen.update()
+end
+
+
 
 function refresh()
   if ready then
