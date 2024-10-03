@@ -1,12 +1,17 @@
 local Ring = include("bits/lib/Ring")
 local Meter = include("bits/lib/Meter")
+local Scene = include("bits/lib/Scene")
 local debug = include("bits/lib/debug")
 local bits_sampler = include("bits/lib/sampler")
 local shapes = include("bits/lib/graphics/shapes")
 local rings = {}
 local sample_length
 local current_ring = nil
+
+
 local ring_luma = {
+  -- todo: could these be properties of the ring?
+  -- so add when initializing
   circle = {
     normal = 3,
     deselected = 1,
@@ -47,35 +52,9 @@ function render_home(stage)
   zigzag_line(0, 32, 128, 4)
 end
 
-Scene = {
-  name = nil,
-  render = nil,
-  e1 = nil,
-  e2 = nil,
-  e3 = nil,
-  k1_hold_on = nil,
-  k1_hold_off = nil,
-  k2_on = nil,
-  k2_off = nil,
-  k3_on = nil,
-  k3_off = nil,
-}
-
-function Scene:create(o)
-  -- create state if not provided
-  o = o or {}
-
-  -- define prototype
-  setmetatable(o, self)
-  self.__index = self
-
-  -- return instance
-  return o
-end
-
 local scenes = {
-  {
-    name = "start",
+  Scene({
+    name = "home",
     render = render_home,
     e1 = nil,
     e2 = nil,
@@ -86,11 +65,11 @@ local scenes = {
     k2_off = nil,
     k3_on = nil,
     k3_off = nil,
-  },
-  {
+  }),
+  Scene({
     name = "mixer",
     render = render_mixer,
-  },
+  }),
 }
 
 current_scene_index = 1
@@ -258,9 +237,9 @@ end
 
 function deselect_rings()
   for i = 1, 6 do
-      rings[i].luma = ring_luma.circle.normal
-      rings[i].arcs[1].luma = ring_luma.rate_arc.normal
-      rings[i].selected = false
+    rings[i].luma = ring_luma.circle.normal
+    rings[i].arcs[1].luma = ring_luma.rate_arc.normal
+    rings[i].selected = false
   end
   current_ring = nil
 end
@@ -285,7 +264,7 @@ function key(n, z)
     else
       select_ring(one_indexed_modulo(next_ring, 6))
     end
-    
+
     print("new selected ring = " .. current_ring)
     if key_latch[2] then
       -- key combination: k2 held, press k3
