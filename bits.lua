@@ -5,7 +5,7 @@ local bits_sampler = include("bits/lib/sampler")
 local shapes = include("bits/lib/graphics/shapes")
 local rings = {}
 local sample_length
-local current_ring = 1
+local current_ring = nil
 local ring_luma = {
   circle = {
     normal = 3,
@@ -31,10 +31,10 @@ function render_mixer()
 end
 
 radians = {
-  A0 = 0,
-  A90 = math.pi / 2,
-  A180 = math.pi,
-  A270 = 3 * math.pi / 2
+  A0 = 0,                -- 3 o'clock
+  A90 = math.pi / 2,     -- 6 o'clock
+  A180 = math.pi,        -- 9 o'clock
+  A270 = 3 * math.pi / 2 -- 12 o'clock
 }
 
 -- todo: before randomizing, allow emphasis on low, mid or high
@@ -172,8 +172,6 @@ function update_positions(i, pos)
   -- print("voice" .. i..":"..pos .. "loop: "..loop_starts[i].." - " .. loop_ends[i])
 end
 
-
-
 function init()
   -- init softcut
   -- file = _path.dust.."code/softcut-studies/lib/whirl1.aif"
@@ -224,9 +222,9 @@ function init()
           a1 = radians.A0,
           a2 = radians.A90,
           luma = ring_luma.rate_arc.normal, -- brightness, 0-15
-          thickness = 3,  -- pixels
-          radius = 6,     -- pixels
-          rate = rates[i]/10,
+          thickness = 3,                    -- pixels
+          radius = 6,                       -- pixels
+          rate = rates[i] / 10,
         },
       }
     })
@@ -249,17 +247,22 @@ function select_ring(n)
     if i == current_ring then
       rings[i].luma = ring_luma.circle.normal
       rings[i].arcs[1].luma = ring_luma.rate_arc.normal
-      -- rings[i].arcs[2].luma = ring_luma.section_arc.normal
+      rings[i].selected = true
     else
       rings[i].luma = ring_luma.circle.deselected
       rings[i].arcs[1].luma = ring_luma.rate_arc.deselected
-      -- rings[i].arcs[2].luma = ring_luma.section_arc.deselected
+      rings[i].selected = false
     end
   end
 end
 
 function deselect_rings()
-
+  for i = 1, 6 do
+      rings[i].luma = ring_luma.circle.normal
+      rings[i].arcs[1].luma = ring_luma.rate_arc.normal
+      rings[i].selected = false
+  end
+  current_ring = nil
 end
 
 function one_indexed_modulo(n, m)
@@ -274,8 +277,15 @@ function key(n, z)
   print("key press: " .. n .. ", " .. z)
   if n == 3 and z == 1 then
     key_latch[n] = true
+    if current_ring == nil then current_ring = 0 end
     next_ring = current_ring + 1
-    select_ring(one_indexed_modulo(next_ring, 6))
+    if current_ring == 6 then
+      current_ring = nil
+      deselect_rings()
+    else
+      select_ring(one_indexed_modulo(next_ring, 6))
+    end
+    
     print("new selected ring = " .. current_ring)
     if key_latch[2] then
       -- key combination: k2 held, press k3

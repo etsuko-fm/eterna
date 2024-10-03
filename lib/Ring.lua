@@ -1,18 +1,19 @@
 Ring = {
   -- todo: naming should be more clear, it's not obvious that self.level equals slice level
-  x = 64,          -- center x
-  y = 32,          -- center y
-  radius = 8,     -- pixels
-  thickness = 3,  -- pixels
-  luma = 10, -- brightness of background circle, 0-15
+  x = 64,           -- center x
+  y = 32,           -- center y
+  radius = 8,       -- pixels
+  thickness = 3,    -- pixels
+  luma = 10,        -- brightness of background circle, 0-15
+  selected = false, -- if true, shows a dot next to the ring
   arcs = {
     {
-      a1 = 0,         -- start point in radians
-      a2 = 0,         -- end point in radians
-      luma = 5, -- luma, 0-15
-      thickness = 3,  -- pixels
-      radius = 8,     -- pixels
-      rate = 1,       -- rotation speed of arc
+      a1 = 0,        -- start point in radians
+      a2 = 0,        -- end point in radians
+      luma = 5,      -- luma, 0-15
+      thickness = 3, -- pixels
+      radius = 8,    -- pixels
+      rate = 1,      -- rotation speed of arc
     }
   },
 }
@@ -56,6 +57,19 @@ function Ring:render()
     arc.a1 = arc.a1 + arc.rate
     arc.a2 = arc.a2 + arc.rate
   end
+
+  if self.selected then
+    screen.line_width(1)
+    -- screen.move(self.x - self.radius, self.y - self.radius)
+    local A270 = 9 * math.pi/12
+    screen.pixel(
+      self.x + math.cos(A270) * (self.radius + 4),
+      self.y + math.sin(A270) * (self.radius + 4)
+    )
+    screen.level(15)
+    screen.fill()
+  end
+
 end
 
 return Ring
