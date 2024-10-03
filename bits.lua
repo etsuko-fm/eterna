@@ -9,6 +9,9 @@ local sample_length
 local current_ring = nil
 local current_param = nil
 local current_param_value = nil
+local zigzag_line = nil
+local edit_mode = false
+-- todo: everything with "current" could be saved in in a state table
 
 local ring_luma = {
   -- todo: could these be properties of the ring?
@@ -50,7 +53,8 @@ function render_home(stage)
   for i = 1, 6, 1 do
     rings[i]:render()
   end
-  zigzag_line(0, 32, 128, 4)
+  
+  zigzag_line:render()
 
   if current_param then
     render_param_text(current_param, current_param_value)
@@ -189,6 +193,7 @@ function init()
   -- init rings, todo: should be in a separate file that defines this scene
 
   local y_offset = 18
+  zigzag_line = shapes.ZigZagLine:new({0, 32, 128, 4, 4})
   for i = 1, 6, 1 do
     -- these rings rotate according to playback rate
     rings[i] = Ring:new({
@@ -261,18 +266,51 @@ function one_indexed_modulo(n, m)
   return ((n - 1) % m) + 1
 end
 
+function select_next_ring()
+  if current_ring == nil then current_ring = 0 end
+  next_ring = current_ring + 1
+  if current_ring == 6 then
+    current_ring = nil
+    deselect_rings()
+  else
+    select_ring(one_indexed_modulo(next_ring, 6))
+  end
+end
+
+
 function key(n, z)
-  if n == 3 and z == 1 then
-    key_latch[n] = true
-    if current_ring == nil then current_ring = 0 end
-    next_ring = current_ring + 1
-    if current_ring == 6 then
-      current_ring = nil
-      deselect_rings()
-    else
-      select_ring(one_indexed_modulo(next_ring, 6))
+    -- K2
+    if n == 2 and z == 1 then
+      select_next_ring()
+      key_latch[n] = true
+      if key_latch[3] then
+        -- key combination: k3 held, press k2
+        cycle_scene_backward()
+      end
+    end
+    if n == 2 and z == 0 then
+      key_latch[n] = false
     end
 
+  -- K3
+  if n == 3 and z == 1 then
+    key_latch[n] = true
+    if current_ring ~= nil then
+      edit_mode = not edit_mode
+      if edit_mode then
+        -- hide other rings
+        -- hide zigzag 
+        -- show rate param
+        -- show solo/mute param
+        zigzag_line.hide = true
+        for i = 1,6 do
+          if i ~= current_ring then
+            rings[i].hide = true
+          end
+        end
+      end
+      
+    end
     if key_latch[2] then
       -- key combination: k2 held, press k3
       cycle_scene_forward()
@@ -280,17 +318,6 @@ function key(n, z)
     randomize_all()
   end
   if n == 3 and z == 0 then
-    key_latch[n] = false
-  end
-
-  if n == 2 and z == 1 then
-    key_latch[n] = true
-    if key_latch[3] then
-      -- key combination: k3 held, press k2
-      cycle_scene_backward()
-    end
-  end
-  if n == 2 and z == 0 then
     key_latch[n] = false
   end
 end

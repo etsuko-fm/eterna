@@ -6,6 +6,7 @@ Ring = {
   thickness = 3,    -- pixels
   luma = 10,        -- brightness of background circle, 0-15
   selected = false, -- if true, shows a dot next to the ring
+  hide = false,
   arcs = {
     {
       a1 = 0,        -- start point in radians
@@ -30,6 +31,7 @@ function Ring:new(o)
 end
 
 function Ring:render()
+  if self.hide then return end
   screen.line_width(self.thickness)
 
   -- draw circle
