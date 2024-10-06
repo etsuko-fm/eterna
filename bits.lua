@@ -123,6 +123,7 @@ function generate_random_pair(max_length)
 end
 
 function randomize_all()
+  -- randomizes softcut voices
   local rate_values_mid = { 0.5, 1, 2, -0.5, -1, -2 }
   local rate_values_low = { 0.25, 0.5, 1, -1, -.5, -.25 }
   local rate_values_sub = { 0.125, 0.25, 0.5, -0.5, -.25, -.125 }
@@ -277,19 +278,24 @@ function select_next_ring()
   end
 end
 
-
+local keycombo = false
 function key(n, z)
     -- K2
     if n == 2 and z == 1 then
-      select_next_ring()
       key_latch[n] = true
       if key_latch[3] then
         -- key combination: k3 held, press k2
         cycle_scene_backward()
+        print("previous scene")
       end
     end
     if n == 2 and z == 0 then
       key_latch[n] = false
+      if not edit_mode then
+        print("next ring")
+        select_next_ring()
+      end
+      
     end
 
   -- K3
@@ -297,6 +303,7 @@ function key(n, z)
     key_latch[n] = true
     if current_ring ~= nil then
       edit_mode = not edit_mode
+      print("edit mode " .. tostring(edit_mode))
       if edit_mode then
         -- hide other rings
         -- hide zigzag 
@@ -308,17 +315,25 @@ function key(n, z)
             rings[i].hide = true
           end
         end
+      else
+        zigzag_line.hide = false
+        for i = 1,6 do
+            rings[i].hide = false
+        end
       end
-      
+
     end
     if key_latch[2] then
       -- key combination: k2 held, press k3
+      keycombo = true
       cycle_scene_forward()
+      print("next scene")
     end
     randomize_all()
   end
   if n == 3 and z == 0 then
     key_latch[n] = false
+    keycombo = false
   end
 end
 
