@@ -144,9 +144,8 @@ function randomize_all()
   print(rates[1])
 end
 
-function enable_all()
+function enable_all_voices()
   local pan_locations = { -1, -.5, -.25, .25, .5, 1 }
-
   for i = 1, 6 do
     softcut.enable(i, 1)
     softcut.buffer(i, 1)
@@ -161,38 +160,20 @@ function update_positions(i, pos)
   -- print("voice" .. i..":"..pos .. "loop: "..loop_starts[i].." - " .. loop_ends[i])
 end
 
-function init()
-  -- hardware sensitivity
-  for i = 1,3 do
-    norns.enc.sens(i, 6)
-    norns.enc.accel(i, true)
-  end
-  
-  -- init softcut
-  -- file = _path.dust.."code/softcut-studies/lib/whirl1.aif"
-  file = _path.dust .. "audio/etsuko/sea-minor/sea-minor-chords.wav"
+function load_sample(file)
   debug.print_info(file)
-  sample_length = bits_sampler.get_duration(file)
-
   softcut.buffer_clear()
-
-  --- buffer_read_mono (file, start_src, start_dst, dur, ch_src, ch_dst)
+  sample_length = bits_sampler.get_duration(file)
   start_src = 5
   start_dst = 0
   dur = 40
   ch_src = 1
   ch_dst = 1
   softcut.buffer_read_mono(file, start_src, start_dst, dur, ch_src, ch_dst)
+end
 
-  enable_all()
-  randomize_all()
-
-  softcut.phase_quant(1, 0.5)
-  softcut.event_phase(update_positions)
-  softcut.poll_start_phase()
-
-  -- init rings, todo: should be in a separate file that defines this scene
-
+function create_rings()
+  -- init rings. todo: should be in a separate file that defines this scene
   local y_offset = 18
   zigzag_line = shapes.ZigZagLine:new({0, 32, 128, 4, 4})
   for i = 1, 6, 1 do
@@ -225,16 +206,37 @@ function init()
       }
     })
   end
+  
+end
+
+
+function init()
+  -- hardware sensitivity
+  for i = 1,3 do
+    norns.enc.sens(i, 6)
+    norns.enc.accel(i, true)
+  end
+
+  -- file selection
+  params:add_separator("bits","bits")
+  params:add_file('audio_file_1', 'file')
+  params:set_action("audio_file_1", function(file) load_sample(file) end)
+
+  -- init softcut
+  load_sample(_path.dust  .. "audio/etsuko/sea-minor/sea-minor-chords.wav")
+  softcut.phase_quant(1, 0.5)
+  softcut.event_phase(update_positions)
+  softcut.poll_start_phase()
+
+  randomize_all()
+  create_rings()
+  enable_all_voices()
+
+
   -- init clock
   c = metro.init(count, 1 / 60)
   c:start()
 end
-
--- KEY DEFINITIONS
-local key_latch = {
-  [2] = false,
-  [3] = false,
-}
 
 
 function select_ring(n)
@@ -281,26 +283,16 @@ end
 local keycombo = false
 function key(n, z)
     -- K2
-    if n == 2 and z == 1 then
-      key_latch[n] = true
-      if key_latch[3] then
-        -- key combination: k3 held, press k2
-        cycle_scene_backward()
-        print("previous scene")
-      end
-    end
     if n == 2 and z == 0 then
-      key_latch[n] = false
       if not edit_mode then
         print("next ring")
         select_next_ring()
       end
-      
+
     end
 
   -- K3
   if n == 3 and z == 1 then
-    key_latch[n] = true
     if current_ring ~= nil then
       edit_mode = not edit_mode
       print("edit mode " .. tostring(edit_mode))
@@ -323,17 +315,7 @@ function key(n, z)
       end
 
     end
-    if key_latch[2] then
-      -- key combination: k2 held, press k3
-      keycombo = true
-      cycle_scene_forward()
-      print("next scene")
-    end
     randomize_all()
-  end
-  if n == 3 and z == 0 then
-    key_latch[n] = false
-    keycombo = false
   end
 end
 
