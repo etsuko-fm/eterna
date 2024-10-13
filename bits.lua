@@ -115,10 +115,12 @@ function generate_random_pair(max_length)
   print("max length" .. max_length)
 
   max_length = .1
-  local a = math.random() * max_length
-  -- Generate b such that b > a and b - a <= max_length
+  -- start position can be anywhere in the buffer
+  local a = math.random() * sample_length
+  
+  -- End position is such that end > start and end - start <= max_length
   if max_length - a == 0 then
-    max_length = max_length + 1 -- todo check if logic correct in all cases
+    max_length = max_length + 1 -- should restart instead, now you could go over max length
   end
 
   -- Generate b such that b > a and b - a <= max_length
@@ -131,7 +133,7 @@ function randomize_all()
   local rate_values_mid = { 0.5, 1, 2, -0.5, -1, -2 }
   local rate_values_low = { 0.25, 0.5, 1, -1, -.5, -.25 }
   local rate_values_sub = { 0.125, 0.25, 0.5, -0.5, -.25, -.125 }
-  local rate_values = rate_values_low
+  local rate_values = rate_values_mid
   for i = 1, 6 do
     rates[i] = rate_values[math.random(#rate_values)]
     levels[i] = math.random() * 0.5 + 0.2
@@ -148,6 +150,15 @@ function randomize_all()
   print("rates:")
   print(rates[1])
 end
+
+function modulate_loop_points()
+  my_lfo = lfo.new()
+  my_lfo:start()	
+
+  print('modulating loop points')
+end
+
+
 
 function enable_all_voices()
   local pan_locations = { -1, -.5, -.25, .25, .5, 1 }
@@ -176,6 +187,7 @@ function load_sample(file)
   ch_src = 1
   ch_dst = 1
   softcut.buffer_read_mono(file, start_src, start_dst, dur, ch_src, ch_dst)
+  randomize_all()
 end
 
 function create_rings()
@@ -234,7 +246,6 @@ function init()
   softcut.event_phase(update_positions)
   softcut.poll_start_phase()
 
-  randomize_all()
   create_rings()
   enable_all_voices()
 
@@ -327,6 +338,9 @@ end
 
 
 function enc(n,d)
+  if n == 1 then
+    audio.adjust_output_level(d/100)
+  end
   if n == 2 then
     print(d)
     current_param = "rate"
