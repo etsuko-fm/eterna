@@ -112,13 +112,17 @@ loop_ends = {}
 
 function generate_random_pair(max_length)
   -- Generate a random number a
-  local a = math.random(0, max_length)
+  print("max length" .. max_length)
+
+  max_length = .1
+  local a = math.random() * max_length
   -- Generate b such that b > a and b - a <= max_length
   if max_length - a == 0 then
     max_length = max_length + 1 -- todo check if logic correct in all cases
   end
-  local b = a + math.random(1, max_length - a)
 
+  -- Generate b such that b > a and b - a <= max_length
+  local b = a + math.random() * (max_length - a)
   return a, b
 end
 
@@ -133,12 +137,13 @@ function randomize_all()
     levels[i] = math.random() * 0.5 + 0.2
     pans[i] = 0.5 - math.random()
     loop_starts[i], loop_ends[i] = generate_random_pair(sample_length)
-    positions[i] = 1 + math.random(8) * 0.25
+    print(i .. ": a=" .. loop_starts[i] .. "  b=" .. loop_ends[i] )
+
     softcut.level(i, levels[i])
     softcut.rate(i, rates[i])
-    softcut.position(i, positions[i])
-    softcut.loop_start(i, math.random(10))
-    softcut.loop_end(i, 10 + math.random(10))
+    softcut.position(i, loop_starts[i])
+    softcut.loop_start(i, loop_starts[i])
+    softcut.loop_end(i, loop_ends[i])
   end
   print("rates:")
   print(rates[1])
@@ -164,6 +169,7 @@ function load_sample(file)
   debug.print_info(file)
   softcut.buffer_clear()
   sample_length = bits_sampler.get_duration(file)
+  print("sample length: ".. sample_length)
   start_src = 5
   start_dst = 0
   dur = 40
