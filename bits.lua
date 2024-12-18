@@ -1,4 +1,4 @@
-local audio_util = include("bits/lib/audio_util")
+local audio_util = include("bits/lib/util/audio_util")
 local main_scene = include("bits/lib/scenes/main")
 local sample_length
 local debug_mode = true
@@ -13,7 +13,7 @@ current_scene_index = 1
 local current_scene = scenes[current_scene_index]
 
 -- todo: this is great re-usable functionality, move to lib; also confusing otherwise
--- should then be in a SceneManager class. However cyling scenes is not always the most straightforward thing to do. 
+-- should then be in a SceneManager class. However cyling scenes is not always the most straightforward thing to do.
 function cycle_scene_forward()
   -- Increment the current scene index, reset to 1 if we exceed the table length
   current_scene_index = (current_scene_index % #scenes) + 1
@@ -38,28 +38,28 @@ positions = {}
 loop_starts = {}
 loop_ends = {}
 
-function generate_loop_segment(sample_dur, max_length)
+function generate_loop_segment(max_length)
   -- Generate a pair of numbers (a, b) reflecting a loop segment.
   -- a = loop start, b = loop end
   -- a < b < sample duration
   -- (b - a) < max_length
 
-  print("sample_dur" .. sample_dur)
+  -- bit icky, but sample_length is a global var
 
   -- limit the maximium loop length
-  max_length = max_length or sample_dur / 50
+  max_length = max_length or sample_length / 50
 
   -- introduce some padding so that a isn't closer than 1% to the sample end
-  padding = sample_dur / 100
+  padding = sample_length / 100
 
   -- pick start position
   local a = math.random() * (sample_length - padding)
 
   -- End position should be a larger number than start position; and confine to the defined max length
   local b_span
-  if (sample_dur - a) < max_length then
-    -- randomize within the remaining segment, i.e. [a : sample_dur]
-    b_span = sample_dur - a
+  if (sample_length - a) < max_length then
+    -- randomize within the remaining segment, i.e. [a : sample_length]
+    b_span = sample_length - a
   else
     -- randomize within [a : (a + max_length)]
     b_span = max_length
@@ -119,7 +119,6 @@ function update_positions(i, pos)
   -- print("voice" .. i..":"..pos .. "loop: "..loop_starts[i].." - " .. loop_ends[i])
 end
 
-
 function enable_all_voices()
   local pan_locations = { -1, -.5, -.25, .25, .5, 1 }
   for i = 1, 6 do
@@ -132,18 +131,12 @@ function enable_all_voices()
   end
 end
 
-
 function switch_sample(file)
   -- switch script to using specified `file` as a sample
   audio_util.load_sample(file)
+  sample_length = audio_util.get_duration(file)
   randomize_softcut()
 end
-
-
-local interface = {
-  -- functions that scenes can call 
-  randomize_softcut = randomize_softcut,
-}
 
 function init()
   -- hardware sensitivity
@@ -175,11 +168,11 @@ function init()
 end
 
 function key(n, z)
-  if n == 1 and z == 0 and current_scene.k1_off  then current_scene.k1_off() end
-  if n == 1 and z == 1 and current_scene.k1_on  then current_scene.k1_on() end
+  if n == 1 and z == 0 and current_scene.k1_off then current_scene.k1_off() end
+  if n == 1 and z == 1 and current_scene.k1_on then current_scene.k1_on() end
 
-  if n == 2 and z == 0 and current_scene.k2_off  then current_scene.k2_off() end
-  if n == 2 and z == 1 and current_scene.k2_on  then current_scene.k2_on() end
+  if n == 2 and z == 0 and current_scene.k2_off then current_scene.k2_off() end
+  if n == 2 and z == 1 and current_scene.k2_on then current_scene.k2_on() end
 
   if n == 3 and z == 0 and current_scene.k3_off then current_scene.k3_off() end
   if n == 3 and z == 1 and current_scene.k3_on then current_scene.k3_on() end

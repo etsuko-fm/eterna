@@ -1,6 +1,6 @@
-local Scene = include("bits/lib/Scene")
-local Ring = include("bits/lib/Ring")
-local shapes = include("bits/lib/graphics/shapes")
+local Scene = include("bits/lib/scenes/Scene")
+local Ring = include("bits/lib/graphics/Ring")
+local Zigzag = include("bits/lib/graphics/Zigzag")
 
 local rings = {}
 local current_ring = nil
@@ -33,7 +33,7 @@ local ring_luma = {
 
 local function create_rings(playback_rates)
     local y_offset = 18
-    zigzag_line = shapes.ZigZagLine:new({ 0, 32, 128, 4, 4 })
+    zigzag_line = Zigzag:new({ 0, 32, 128, 4, 4 })
     for i = 1, 6, 1 do
         -- these rings rotate according to playback rate
         rings[i] = Ring:new({

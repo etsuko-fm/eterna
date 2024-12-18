@@ -1,4 +1,4 @@
-local debug = include("bits/lib/debug")
+local debug = include("bits/lib/util/debug")
 
 function get_duration(file)
     local ch, samples, samplerate = audio.file_info(file)

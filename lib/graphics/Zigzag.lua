@@ -1,4 +1,4 @@
-ZigZagLine = {
+Zigzag = {
   x = 0,
   y = 32,
   w = 128,
@@ -6,7 +6,7 @@ ZigZagLine = {
   zigzag_width = 4,
   hide = false,
 }
-function ZigZagLine:new(o)
+function Zigzag:new(o)
   -- create state if not provided
   o = o or {}
 
@@ -18,7 +18,7 @@ function ZigZagLine:new(o)
   return o
 end
 
-function ZigZagLine:render()
+function Zigzag:render()
   if self.hide then return end
   screen.line_width(1)
   screen.level(1)
@@ -35,7 +35,4 @@ function ZigZagLine:render()
   screen.update()
 end
 
-shapes = {
-  ZigZagLine = ZigZagLine,
-}
-return shapes
+return Zigzag
