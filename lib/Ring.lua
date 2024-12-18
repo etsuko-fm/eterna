@@ -2,11 +2,10 @@ Ring = {
   -- todo: naming should be more clear, it's not obvious that self.level equals slice level
   x = 64,           -- center x
   y = 32,           -- center y
-  radius = 8,       -- pixels
-  thickness = 3,    -- pixels
-  luma = 10,        -- brightness of background circle, 0-15
   selected = false, -- if true, shows a dot next to the ring
   hide = false,
+
+  -- one ring can have multiple independent arcs (circle segments)
   arcs = {
     {
       a1 = 0,        -- start point in radians
