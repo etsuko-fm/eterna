@@ -54,7 +54,9 @@ function render_home(stage)
     rings[i]:render()
   end
   
-  zigzag_line:render()
+  if zigzag_line then
+    zigzag_line:render()
+  end
 
   if current_param then
     render_param_text(current_param, current_param_value)
@@ -110,54 +112,72 @@ positions = {}
 loop_starts = {}
 loop_ends = {}
 
-function generate_random_pair(max_length)
-  -- Generate a random number a
-  print("max length" .. max_length)
+function generate_loop_segment(sample_dur)
+  -- Generate a pair of numbers (a, b) reflecting a loop segment.
+  -- a = loop start, b = loop end
+  -- a < b < sample duration
 
-  max_length = .1
-  -- start position can be anywhere in the buffer
-  local a = math.random() * sample_length
-  
-  -- End position is such that end > start and end - start <= max_length
-  if max_length - a == 0 then
-    max_length = max_length + 1 -- should restart instead, now you could go over max length
-  end
+  print("sample_dur" .. sample_dur)
 
-  -- Generate b such that b > a and b - a <= max_length
-  local b = a + math.random() * (max_length - a)
+  -- limit the maximium loop length
+  max_length = 1
+
+  -- introduce some padding so that a isn't closer than 1% to the sample end
+  padding = sample_dur / 100
+
+  -- pick start position
+  local a = math.random() * (sample_length - padding)
+
+  -- End position is such that a < b < sample duration
+  local b = a + (math.random() * (max_length - a))
   return a, b
 end
 
 function randomize_all()
-  -- randomizes softcut voices
+  -- randomize playback rate, loop segment and level of all 6 softcut voices
+
+  -- a few presets to choose from
   local rate_values_mid = { 0.5, 1, 2, -0.5, -1, -2 }
   local rate_values_low = { 0.25, 0.5, 1, -1, -.5, -.25 }
   local rate_values_sub = { 0.125, 0.25, 0.5, -0.5, -.25, -.125 }
   local rate_values = rate_values_mid
+
+  -- range: 0.0-1.0
+  local min_level = 0.2
+  local max_level = 0.7
+
+  -- available pan range is 2 (-1.0 to 1.0); limit range to avoid extremes
+  local pan_range = 1
+
   for i = 1, 6 do
+    -- pick playback rate from rate_values table
     rates[i] = rate_values[math.random(#rate_values)]
-    levels[i] = math.random() * 0.5 + 0.2
-    pans[i] = 0.5 - math.random()
-    loop_starts[i], loop_ends[i] = generate_random_pair(sample_length)
+
+    -- define controlled random audio level (result should be 0 - 1)
+    levels[i] = min_level + (math.random() * (max_level - min_level))
+
+    -- define pan
+    pans[i] = (pan_range / 2) - (math.random() * pan_range)
+
+    -- generate loop segment based on sample length
+    loop_starts[i], loop_ends[i] = generate_loop_segment(sample_length)
     print(i .. ": a=" .. loop_starts[i] .. "  b=" .. loop_ends[i] )
 
+    -- configure softcut voice
     softcut.level(i, levels[i])
     softcut.rate(i, rates[i])
     softcut.position(i, loop_starts[i])
     softcut.loop_start(i, loop_starts[i])
     softcut.loop_end(i, loop_ends[i])
   end
-  print("rates:")
-  print(rates[1])
 end
 
 function modulate_loop_points()
+  -- not yet implemented
   my_lfo = lfo.new()
-  my_lfo:start()	
-
+  my_lfo:start()
   print('modulating loop points')
 end
-
 
 
 function enable_all_voices()
@@ -177,11 +197,13 @@ function update_positions(i, pos)
 end
 
 function load_sample(file)
+  -- this could be moved to some audio util module, you'll need it every project
+  -- it should support both mono and stereo
   debug.print_info(file)
   softcut.buffer_clear()
   sample_length = bits_sampler.get_duration(file)
   print("sample length: ".. sample_length)
-  start_src = 5
+  start_src = 0
   start_dst = 0
   dur = 40
   ch_src = 1
@@ -239,6 +261,8 @@ function init()
   params:add_separator("bits","bits")
   params:add_file('audio_file_1', 'file')
   params:set_action("audio_file_1", function(file) load_sample(file) end)
+
+  -- params:add_number('max_granularity')
 
   -- init softcut
   load_sample(_path.dust  .. "audio/etsuko/sea-minor/sea-minor-chords.wav")
@@ -352,10 +376,10 @@ function enc(n,d)
 end
 
 function render_param_text(param, value)
-  screen.level(15)
-  screen.move(64,32)
-  screen.text_center(param ..": "..value)
-  screen.update()
+  -- screen.level(15)
+  -- screen.move(64,32)
+  -- screen.text_center(param ..": "..value)
+  -- screen.update()
 end
 
 
