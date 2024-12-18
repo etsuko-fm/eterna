@@ -1,7 +1,7 @@
-local debug = include("bits/lib/debug")
 local audio_util = include("bits/lib/audio_util")
 local main_scene = include("bits/lib/scenes/main")
 local sample_length
+local debug_mode = true
 
 -- todo: everything with "current" could be saved in in a state table
 
@@ -133,25 +133,12 @@ function enable_all_voices()
 end
 
 
-function load_sample(file, mono)
-  -- this could be moved to some audio util module, you'll need it every project
-  -- it should support both mono and stereo
-  debug.print_info(file)
-  softcut.buffer_clear()
-  sample_length = audio_util.get_duration(file)
-  print("sample length: " .. sample_length)
-  start_src = 0 -- file read position
-  start_dst = 0 -- buffer write position
-
-  if mono or (audio_util.num_channels(file) == 1) then
-    softcut.buffer_read_mono(file, start_src, start_dst, sample_length, 1, 1)
-  else
-    softcut.buffer_read_stereo(file, start_src, start_dst, sample_length)
-  end
-
-  -- might take this out of the function, so that the rest is reusbale
+function switch_sample(file)
+  -- switch script to using specified `file` as a sample
+  audio_util.load_sample(file)
   randomize_softcut()
 end
+
 
 local interface = {
   -- functions that scenes can call 
@@ -168,12 +155,12 @@ function init()
   -- file selection
   params:add_separator("bits", "bits")
   params:add_file('audio_file_1', 'file')
-  params:set_action("audio_file_1", function(file) load_sample(file) end)
+  params:set_action("audio_file_1", function(file) switch_sample(file) end)
 
   -- params:add_number('max_granularity')
 
   -- init softcut
-  load_sample(_path.dust .. "audio/etsuko/sea-minor/sea-minor-chords.wav")
+  if debug_mode then switch_sample(_path.dust .. "audio/etsuko/sea-minor/sea-minor-chords.wav") end
   softcut.phase_quant(1, 0.5)
   softcut.event_phase(update_positions)
   softcut.poll_start_phase()
@@ -188,23 +175,20 @@ function init()
 end
 
 function key(n, z)
+  if n == 1 and z == 0 and current_scene.k1_off  then current_scene.k1_off() end
+  if n == 1 and z == 1 and current_scene.k1_on  then current_scene.k1_on() end
 
-  if n == 1 and z == 0 then current_scene.k1_off() end
-  if n == 1 and z == 1 then current_scene.k1_on() end
+  if n == 2 and z == 0 and current_scene.k2_off  then current_scene.k2_off() end
+  if n == 2 and z == 1 and current_scene.k2_on  then current_scene.k2_on() end
 
-  if n == 2 and z == 0 then current_scene.k2_off() end
-  if n == 2 and z == 1 then current_scene.k2_on() end
-
-  if n == 3 and z == 1 then
-    current_scene.k3_on()
-    randomize_softcut()
-  end
+  if n == 3 and z == 0 and current_scene.k3_off then current_scene.k3_off() end
+  if n == 3 and z == 1 and current_scene.k3_on then current_scene.k3_on() end
 end
 
 function enc(n, d)
-  if n == 1 then current_scene.e1(n, d) end
-  if n == 2 then current_scene.e2(n, d) end
-  if n == 3 then current_scene.e3(n, d) end
+  if n == 1 and current_scene.e1 then current_scene.e1(n, d) end
+  if n == 2 and current_scene.e2 then current_scene.e2(n, d) end
+  if n == 3 and current_scene.e3 then current_scene.e3(n, d) end
 end
 
 function refresh()
