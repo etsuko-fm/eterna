@@ -1,24 +1,9 @@
-local Meter = include("bits/lib/Meter")
 local debug = include("bits/lib/debug")
 local audio_util = include("bits/lib/audio_util")
 local main_scene = include("bits/lib/scenes/main")
--- local rings = {}
 local sample_length
 
--- local current_param = nil
-local current_param_value = nil
-
--- local edit_mode = false
 -- todo: everything with "current" could be saved in in a state table
-
-
-function render_mixer()
-  screen.clear()
-  screen.font_size(8)
-  screen.move(20, 20)
-  screen.text('scene 2')
-  screen.update()
-end
 
 local scenes = {
   main_scene,
@@ -27,8 +12,8 @@ local scenes = {
 current_scene_index = 1
 local current_scene = scenes[current_scene_index]
 
-
 -- todo: this is great re-usable functionality, move to lib; also confusing otherwise
+-- should then be in a SceneManager class. However cyling scenes is not always the most straightforward thing to do. 
 function cycle_scene_forward()
   -- Increment the current scene index, reset to 1 if we exceed the table length
   current_scene_index = (current_scene_index % #scenes) + 1
@@ -83,7 +68,7 @@ function generate_loop_segment(sample_dur, max_length)
   return a, b
 end
 
-function randomize_all()
+function randomize_softcut()
   -- randomize playback rate, loop segment and level of all 6 softcut voices
 
   -- a few presets to choose from
@@ -129,6 +114,12 @@ function modulate_loop_points()
   print('modulating loop points')
 end
 
+function update_positions(i, pos)
+  -- works together with modulate_loop_points
+  -- print("voice" .. i..":"..pos .. "loop: "..loop_starts[i].." - " .. loop_ends[i])
+end
+
+
 function enable_all_voices()
   local pan_locations = { -1, -.5, -.25, .25, .5, 1 }
   for i = 1, 6 do
@@ -136,14 +127,11 @@ function enable_all_voices()
     softcut.buffer(i, 1)
     softcut.loop(i, 1)
     softcut.play(i, 1)
-    softcut.pan(i, pan_locations[i])
+    softcut.pan(i, pan_locations[i]) -- seems to clash with pan randomization
     softcut.fade_time(i, .2)
   end
 end
 
-function update_positions(i, pos)
-  -- print("voice" .. i..":"..pos .. "loop: "..loop_starts[i].." - " .. loop_ends[i])
-end
 
 function load_sample(file, mono)
   -- this could be moved to some audio util module, you'll need it every project
@@ -162,8 +150,13 @@ function load_sample(file, mono)
   end
 
   -- might take this out of the function, so that the rest is reusbale
-  randomize_all()
+  randomize_softcut()
 end
+
+local interface = {
+  -- functions that scenes can call 
+  randomize_softcut = randomize_softcut,
+}
 
 function init()
   -- hardware sensitivity
@@ -185,8 +178,8 @@ function init()
   softcut.event_phase(update_positions)
   softcut.poll_start_phase()
 
-  main_scene.render(rates)
-  -- create_rings(rates)
+  main_scene.k2_off = randomize_softcut
+  main_scene.initialize(rates)
   enable_all_voices()
 
   -- init clock
@@ -194,33 +187,24 @@ function init()
   c:start()
 end
 
-local keycombo = false
 function key(n, z)
-  -- K2
-  if n == 2 and z == 0 then
-    current_scene.k2_off()
-  end
 
-  -- K3
+  if n == 1 and z == 0 then current_scene.k1_off() end
+  if n == 1 and z == 1 then current_scene.k1_on() end
+
+  if n == 2 and z == 0 then current_scene.k2_off() end
+  if n == 2 and z == 1 then current_scene.k2_on() end
+
   if n == 3 and z == 1 then
     current_scene.k3_on()
-    randomize_all()
+    randomize_softcut()
   end
 end
 
 function enc(n, d)
-  if n == 1 then
-    -- this doesn't currently work
-    audio.adjust_output_level(d / 100)
-  end
-  if n == 2 then
-    print(d)
-    current_param = "rate"
-    if current_param_value == nil then
-      current_param_value = 0
-    end
-    current_param_value = current_param_value + d
-  end
+  if n == 1 then current_scene.e1(n, d) end
+  if n == 2 then current_scene.e2(n, d) end
+  if n == 3 then current_scene.e3(n, d) end
 end
 
 function refresh()

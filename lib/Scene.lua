@@ -8,6 +8,8 @@ local Scene = {
 
   name = nil,
   render = nil,
+  interface = nil, -- table with functions the scene may invoke
+  initialize = nil, -- function to initialize the scene
   e1 = nil,
   e2 = nil,
   e3 = nil,

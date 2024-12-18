@@ -1,4 +1,6 @@
 local Scene = include("bits/lib/Scene")
+local Ring = include("bits/lib/Ring")
+local shapes = include("bits/lib/graphics/shapes")
 
 local rings = {}
 local current_ring = nil
@@ -11,7 +13,6 @@ local radians = {
     A180 = math.pi,        -- 9 o'clock
     A270 = 3 * math.pi / 2 -- 12 o'clock
 }
-
 
 local ring_luma = {
     -- todo: could these be properties of the ring?
@@ -30,10 +31,7 @@ local ring_luma = {
     },
 }
 
-
 local function create_rings(playback_rates)
-    -- init rings. todo: should be in a separate file that defines this scene
-    print("yes it really works")
     local y_offset = 18
     zigzag_line = shapes.ZigZagLine:new({ 0, 32, 128, 4, 4 })
     for i = 1, 6, 1 do
@@ -68,10 +66,16 @@ local function create_rings(playback_rates)
     end
 end
 
+local function initialize(playback_rates)
+    create_rings(playback_rates)
+end
+
 local function select_ring(n)
+    -- select a ring for inspection
     current_ring = n
     for i = 1, 6 do
         if i == current_ring then
+            -- use the brightness presets defined in ring_luma
             rings[i].luma = ring_luma.circle.normal
             rings[i].arcs[1].luma = ring_luma.rate_arc.normal
             rings[i].selected = true
@@ -92,8 +96,17 @@ local function deselect_rings()
     current_ring = nil
 end
 
-local function one_indexed_modulo(n, m)
-    -- utility to help cycling through 1-indexed arrays
+local function one_idx_modulo(n, m)
+    -- utility to help cycling through 1-indexed arrays;
+
+    -- 1 % 3 = 1    one_idx_modulo(1, 3) = 1
+    -- 2 % 3 = 2    one_idx_modulo(2, 3) = 2
+    -- 3 % 3 = 0    one_idx_modulo(3, 3) = 3
+
+    -- 4 % 3 = 1    one_idx_modulo(4, 3) = 1
+    -- 5 % 3 = 2    one_idx_modulo(5, 3) = 2
+    -- 6 % 3 = 0    one_idx_modulo(6, 3) = 3
+
     -- todo: move to util
     return ((n - 1) % m) + 1
 end
@@ -106,13 +119,12 @@ local function select_next_ring()
         current_ring = nil
         deselect_rings()
     else
-        select_ring(one_indexed_modulo(next_ring, 6))
+        select_ring(one_idx_modulo(next_ring, 6))
     end
 end
 
-local function render(playback_rates)
+local function render()
     screen.clear()
-    if not next(rings) then create_rings(playback_rates) end
 
     for i = 1, 6, 1 do
         rings[i]:render()
@@ -151,13 +163,14 @@ end
 local scene_main = Scene:create({
     name = "Main",
     render = render,
+    initialize = initialize,
     e1 = nil,
     e2 = nil,
     e3 = nil,
     k1_hold_on = nil,
     k1_hold_off = nil,
     k2_on = nil,
-    k2_off = select_next_ring,
+    k2_off = nil,
     k3_on = switch_to_edit_mode,
     k3_off = nil,
 })
