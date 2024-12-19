@@ -163,7 +163,7 @@ end
 
 function scene:render(state)
     screen.clear()
-    if math.random() > .99 then print("rendering main ") end
+    -- if math.random() > .99 then print("rendering main ") end
     for i = 1, 6 do
         if state.playback_positions[i] ~= nil then
             local pos_radians = state.playback_positions[i] * math.pi * 2 -- convert phase to radians

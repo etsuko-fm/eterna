@@ -1,26 +1,29 @@
 local Scene = include("bits/lib/scenes/Scene")
 local scene_name = "TimeControls"
+local max_length_dirty = false
 
-local statex = {
-    size = 8.0,
-    fade = 0.5
-}
 
-function adjust_size(d)
-    adjust_param(statex.size, d, 0.1)
-end
-
-function adjust_fade(d)
-    adjust_param(statex.fade, d, 0.1)
-end
-
-function adjust_param(param, d, mult)
-    fraction = d * mult
-    if param + fraction < 0 then
-        param = 0
+local function adjust_param(state, param, d, mult, min, max)
+    local k = (10 ^ math.log(state[param], 10)) / 100
+    local fraction = d * k
+    if min == nil then min = 0 end
+    if max == nil then max = 128 end
+    if state[param] + fraction < min then
+        state[param] = min
+    elseif state[param] + fraction > max then
+        state[param] = max
     else
-        param = param + fraction
+        state[param] = state[param] + fraction
     end
+end
+
+local function adjust_size(state, d)
+    adjust_param(state, 'max_sample_length', d, 0.001, 0.01, 10)
+    max_length_dirty = true
+end
+
+local function adjust_fade(state, d)
+    adjust_param(state, 'fade_time', d, 0.1)
 end
 
 
@@ -37,26 +40,48 @@ local scene = Scene:create({
     k3_off = nil,
 })
 
-function scene:render(state)
-    screen.clear()
-    screen.font_size(8)
-    screen.move(128/8 * 2, 64/8 * 3)
-    screen.text("slice")
-    screen.move(128/8 * 2, 64/8 * 5)
-    screen.font_size(16)
-    screen.text(string.format("%.1f", statex.size))
-
-    screen.font_size(8)
-    screen.move(128/8 * 6, 64/8 * 3)
-    screen.text_right("fade")
-    screen.move(128/8 * 6, 64/8 * 5)
-    screen.font_size(16)
-    screen.text_right(string.format("%.1f", statex.fade))
-
-    screen.update()
-    if math.random() > .95 then print('rendering time controls') end
+local function update_segment_lengths(state)
+    if max_length_dirty == false then return end
+    print('updating segments')
+    for i = 1, 6 do
+        if state.loop_ends[i] - state.loop_starts[i] > state.max_sample_length then
+            -- no need to protect for empty buffer, as it's shortening it only
+            state.loop_ends[i] = state.loop_starts[i] + state.max_sample_length
+            softcut.loop_end(i, state.loop_ends[i])
+        end
+    end
+    print('new length of [1]:' .. state.loop_ends[1] - state.loop_starts[1])
+    max_length_dirty = false
 end
 
+function scene:render(state)
+    screen.clear()
+    screen.level(15)
+    screen.font_size(8)
+    screen.move(128 / 8 * 2, 64 / 8 * 3)
+    screen.text("max slice")
+    screen.move(128 / 8 * 2, 64 / 8 * 5)
+    screen.font_size(8)
+    screen.text(string.format("%.0f", state.max_sample_length * 1000))
+
+    screen.font_size(8)
+    screen.move(128 / 8 * 6, 64 / 8 * 3)
+    screen.text_right("fade")
+    screen.move(128 / 8 * 6, 64 / 8 * 5)
+    screen.font_size(8)
+    screen.text_right(string.format("%.1f", state.fade_time))
+
+    screen.update()
+    -- if math.random() > .95 then print('rendering time controls') end
+
+    -- update softcut; no need to do it more often than FPS
+    for i = 1, 6 do
+        softcut.fade_time(i, state.fade_time)
+    end
+
+    -- update segments in case max slice length was shortened
+    update_segment_lengths(state)
+end
 
 function scene:initialize()
     -- empty

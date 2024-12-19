@@ -5,9 +5,13 @@ local sample_length
 local debug_mode = true
 local fps = 60
 local state = {
-  playback_positions = {}
+  playback_positions = {},
+  max_sample_length = 10.0, -- fraction
+  fade_time = .2,
+  request_randomize_softcut = false,
+  loop_starts = {},
+  loop_ends = {},
 }
--- todo: everything with "current" could be saved in in a state table
 
 local scenes = {
   scene_main,
@@ -40,8 +44,6 @@ rates = {}
 pans = {}
 levels = {}
 positions = {}
-loop_starts = {}
-loop_ends = {}
 
 function generate_loop_segment(max_length)
   -- Generate a pair of numbers (a, b) reflecting a loop segment.
@@ -52,7 +54,7 @@ function generate_loop_segment(max_length)
   -- bit icky, but sample_length is a global var
 
   -- limit the maximium loop length
-  max_length = max_length or sample_length / 4
+  max_length = max_length or sample_length / 4 -- might need to get rid of that /4
 
   -- introduce some padding so that `a` isn't closer than 1% to the sample end
   padding = sample_length / 100
@@ -100,15 +102,15 @@ function randomize_softcut()
     pans[i] = (pan_range / 2) - (math.random() * pan_range)
 
     -- generate loop segment based on sample length
-    loop_starts[i], loop_ends[i] = generate_loop_segment()
-    print(i .. ": a=" .. loop_starts[i] .. "  b=" .. loop_ends[i])
+    state.loop_starts[i], state.loop_ends[i] = generate_loop_segment(state.max_sample_length)
+    print(i .. ": a=" .. state.loop_starts[i] .. "  b=" .. state.loop_ends[i])
 
     -- configure softcut voice
     softcut.level(i, levels[i])
     softcut.rate(i, rates[i])
-    softcut.position(i, loop_starts[i])
-    softcut.loop_start(i, loop_starts[i])
-    softcut.loop_end(i, loop_ends[i])
+    softcut.position(i, state.loop_starts[i])
+    softcut.loop_start(i, state.loop_starts[i])
+    softcut.loop_end(i, state.loop_ends[i])
   end
 end
 
@@ -123,7 +125,7 @@ end
 function update_positions(i, pos)
   state.playback_positions[i] = pos / sample_length
   -- works together with modulate_loop_points
-  -- print("voice" .. i..":"..pos .. "loop: "..loop_starts[i].." - " .. loop_ends[i])
+  -- print("voice" .. i..":"..pos .. "loop: "..state.loop_starts[i].." - " .. state.loop_ends[i])
 end
 
 function enable_all_voices()
@@ -134,7 +136,7 @@ function enable_all_voices()
     softcut.loop(i, 1)
     softcut.play(i, 1)
     softcut.pan(i, pan_locations[i]) -- seems to clash with pan randomization
-    softcut.fade_time(i, .2)
+    softcut.fade_time(i, state.fade_time)
   end
 end
 
@@ -148,7 +150,7 @@ end
 function init()
   -- hardware sensitivity
   for i = 1, 3 do
-    norns.enc.sens(i, 6)
+    norns.enc.sens(i, 1)
     norns.enc.accel(i, true)
   end
 
@@ -225,9 +227,9 @@ function key(n, z)
 end
 
 function enc(n, d)
-  if n == 1 and current_scene.e1 then current_scene.e1(d) end
-  if n == 2 and current_scene.e2 then current_scene.e2(d) end
-  if n == 3 and current_scene.e3 then current_scene.e3(d) end
+  if n == 1 and current_scene.e1 then current_scene.e1(state, d) end
+  if n == 2 and current_scene.e2 then current_scene.e2(state, d) end
+  if n == 3 and current_scene.e3 then current_scene.e3(state, d) end
 end
 
 function query_positions()
@@ -240,6 +242,13 @@ function refresh()
   if ready then
     query_positions()
     current_scene:render(state)
+    
+    -- sort of an event based system, allows scenes to request main functionality
+    if state.request_randomize_softcut then
+      randomize_softcut()
+      state.request_randomize_softcut = false
+    end
+
     ready = false
   end
 end
