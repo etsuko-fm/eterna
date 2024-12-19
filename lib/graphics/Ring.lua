@@ -1,5 +1,4 @@
 Ring = {
-  -- todo: naming should be more clear, it's not obvious that self.level equals slice level
   x = 64,           -- center x
   y = 32,           -- center y
   selected = false, -- if true, shows a dot next to the ring
@@ -33,13 +32,13 @@ function Ring:render()
   if self.hide then return end
   screen.line_width(self.thickness)
 
-  -- draw circle
-  if self.luma ~= 0 then
-    screen.move(self.x + self.radius, self.y)
-    screen.circle(self.x, self.y, self.radius)
-    screen.level(self.luma)
-    screen.stroke()
-  end
+  -- -- draw circle
+  -- if self.luma ~= 0 then
+  --   screen.move(self.x + self.radius, self.y)
+  --   screen.circle(self.x, self.y, self.radius)
+  --   screen.level(self.luma)
+  --   screen.stroke()
+  -- end
 
 
   -- draw arc(s)
@@ -55,8 +54,11 @@ function Ring:render()
     screen.update()
 
     -- update arc segment for next iteration
-    arc.a1 = arc.a1 + arc.rate
-    arc.a2 = arc.a2 + arc.rate
+    -- todo: should an arc rotate itself? or should the caller do it?
+    -- problem a t hand: I want to want to show the current playback position in the arc, not just
+    -- roll forward constantly
+    -- arc.a1 = arc.a1 + arc.rate
+    -- arc.a2 = arc.a2 + arc.rate
   end
 
   if self.selected then

@@ -2,7 +2,10 @@ local audio_util = include("bits/lib/util/audio_util")
 local main_scene = include("bits/lib/scenes/main")
 local sample_length
 local debug_mode = true
-
+local fps = 60
+local state = {
+  playback_positions = {}
+}
 -- todo: everything with "current" could be saved in in a state table
 
 local scenes = {
@@ -47,9 +50,9 @@ function generate_loop_segment(max_length)
   -- bit icky, but sample_length is a global var
 
   -- limit the maximium loop length
-  max_length = max_length or sample_length / 50
+  max_length = max_length or sample_length / 4
 
-  -- introduce some padding so that a isn't closer than 1% to the sample end
+  -- introduce some padding so that `a` isn't closer than 1% to the sample end
   padding = sample_length / 100
 
   -- pick start position
@@ -95,7 +98,7 @@ function randomize_softcut()
     pans[i] = (pan_range / 2) - (math.random() * pan_range)
 
     -- generate loop segment based on sample length
-    loop_starts[i], loop_ends[i] = generate_loop_segment(sample_length)
+    loop_starts[i], loop_ends[i] = generate_loop_segment()
     print(i .. ": a=" .. loop_starts[i] .. "  b=" .. loop_ends[i])
 
     -- configure softcut voice
@@ -109,12 +112,14 @@ end
 
 function modulate_loop_points()
   -- not yet implemented
-  my_lfo = lfo.new()
-  my_lfo:start()
-  print('modulating loop points')
+  -- https://monome.org/docs/norns/api/modules/lib.lfo.html#new
+  -- my_lfo = lfo.new(shape, min, max, depth, mode, period, action, phase, baseline)
+  -- my_lfo:start()
+  -- print('modulating loop points')
 end
 
 function update_positions(i, pos)
+  state.playback_positions[i] = pos / sample_length
   -- works together with modulate_loop_points
   -- print("voice" .. i..":"..pos .. "loop: "..loop_starts[i].." - " .. loop_ends[i])
 end
@@ -132,9 +137,9 @@ function enable_all_voices()
 end
 
 function switch_sample(file)
-  -- switch script to using specified `file` as a sample
-  audio_util.load_sample(file)
-  sample_length = audio_util.get_duration(file)
+  -- use specified `file` as a sample
+  sample_length = audio_util.load_sample(file, true, 10)
+  print("sample_length: "..sample_length)
   randomize_softcut()
 end
 
@@ -154,16 +159,20 @@ function init()
 
   -- init softcut
   if debug_mode then switch_sample(_path.dust .. "audio/etsuko/sea-minor/sea-minor-chords.wav") end
-  softcut.phase_quant(1, 0.5)
-  softcut.event_phase(update_positions)
-  softcut.poll_start_phase()
+  -- softcut.phase_quant(1, 1/fps)
+  -- softcut.event_phase(update_positions)
+  -- softcut.poll_start_phase()
+  softcut.event_position(update_positions)
+
+  -- get initial position values for softcut voices
+  query_positions()
 
   main_scene.k2_off = randomize_softcut
   main_scene.initialize(rates)
   enable_all_voices()
 
   -- init clock
-  c = metro.init(count, 1 / 60)
+  c = metro.init(count, 1 / fps)
   c:start()
 end
 
@@ -184,9 +193,17 @@ function enc(n, d)
   if n == 3 and current_scene.e3 then current_scene.e3(n, d) end
 end
 
+function query_positions()
+  for i = 1,6 do
+    softcut.query_position(i)
+  end
+end
+
+
 function refresh()
   if ready then
-    current_scene.render()
+    query_positions()
+    current_scene.render(state)
     ready = false
   end
 end

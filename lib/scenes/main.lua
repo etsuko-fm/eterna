@@ -35,7 +35,6 @@ local function create_rings(playback_rates)
     local y_offset = 18
     zigzag_line = Zigzag:new({ 0, 32, 128, 4, 4 })
     for i = 1, 6, 1 do
-        -- these rings rotate according to playback rate
         rings[i] = Ring:new({
             x = i * 16 + 8,                                -- space evenly from x=24 to x=104
             y = 32 + y_offset + (-2 * y_offset * (i % 2)), -- 3 above, 3 below
@@ -43,23 +42,23 @@ local function create_rings(playback_rates)
             thickness = 3,
             luma = ring_luma.circle.normal, -- 15 = max level
             arcs = {
-                -- {
-                --   -- loop section arc
-                --   a1 = loop_starts[i] / sample_length * math.pi * 2,
-                --   a2 = loop_ends[i] / sample_length * math.pi * 2,
-                --   luma = ring_luma.section_arc.normal,
-                --   thickness = 3, -- pixels
-                --   radius = 6,    -- pixels
-                --   rate = 0,
-                -- },
+                {
+                    -- background circle
+                    a1 = 0,
+                    a2 = math.pi * 2,
+                    luma = ring_luma.circle.normal,
+                    thickness = 3,
+                    radius = 6,
+                    rate = 0,
+                },
                 {
                     -- playback rate arc
-                    a1 = radians.A0,
-                    a2 = radians.A90,
+                    a1 = 0,
+                    a2 = math.pi * 2,
                     luma = ring_luma.rate_arc.normal, -- brightness, 0-15
                     thickness = 3,                    -- pixels
                     radius = 6,                       -- pixels
-                    rate = playback_rates[i] / 10,
+                    rate = 0                          -- playback_rates[i] / 10,
                 },
             }
         })
@@ -123,10 +122,14 @@ local function select_next_ring()
     end
 end
 
-local function render()
+local function render(state)
     screen.clear()
 
-    for i = 1, 6, 1 do
+    for i = 1, 6 do
+        local radians = state.playback_positions[i] * math.pi * 2 -- convert phase to radians
+        rings[i].arcs[2].a1 = radians
+        -- 1/32 of a circle as a nice slice length (full circle in radians = 2*PI)
+        rings[i].arcs[2].a2 = radians + (math.pi / 16)
         rings[i]:render()
     end
 

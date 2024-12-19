@@ -2,7 +2,7 @@ local debug = include("bits/lib/util/debug")
 
 function get_duration(file)
     local ch, samples, samplerate = audio.file_info(file)
-    local duration = samples / samplerate
+    local duration = samples / samplerate -- seconds, e.g 44100 / 44100 = 1 sec
     return duration
 end
 
@@ -14,20 +14,34 @@ function num_channels(file)
     return ch
 end
 
-function load_sample(file, mono)
+function load_sample(file, mono, max_length)
     -- simplified method for loading a sample, for when a single audio file in the softcut buffer is sufficient
     -- stereo mode yet untested
     debug.print_info(file)
     softcut.buffer_clear()
     sample_length = audio_util.get_duration(file)
+
+    -- Limit sample duration
+    if max_length ~= nil then
+        if sample_length > max_length then
+            dur = max_length
+        else
+            dur = sample_length
+        end
+    end
+
+    
+
     start_src = 0 -- file read position
     start_dst = 0 -- buffer write position
 
     if mono or (audio_util.num_channels(file) == 1) then
-        softcut.buffer_read_mono(file, start_src, start_dst, sample_length, 1, 1)
+        softcut.buffer_read_mono(file, start_src, start_dst, dur, 1, 1)
     else
-        softcut.buffer_read_stereo(file, start_src, start_dst, sample_length)
+        softcut.buffer_read_stereo(file, start_src, start_dst, dur)
     end
+    
+    return dur
 end
 
 audio_util = {
