@@ -65,10 +65,6 @@ local function create_rings(playback_rates)
     end
 end
 
-local function initialize(playback_rates)
-    create_rings(playback_rates)
-end
-
 local function select_ring(n)
     -- select a ring for inspection
     current_ring = n
@@ -122,21 +118,6 @@ local function select_next_ring()
     end
 end
 
-local function render(state)
-    screen.clear()
-
-    for i = 1, 6 do
-        local radians = state.playback_positions[i] * math.pi * 2 -- convert phase to radians
-        rings[i].arcs[2].a1 = radians
-        -- 1/32 of a circle as a nice slice length (full circle in radians = 2*PI)
-        rings[i].arcs[2].a2 = radians + (math.pi / 16)
-        rings[i]:render()
-    end
-
-    if zigzag_line then
-        zigzag_line:render()
-    end
-end
 
 local function switch_to_edit_mode()
     if current_ring ~= nil then
@@ -163,10 +144,8 @@ local function switch_to_edit_mode()
 end
 
 
-local scene_main = Scene:create({
+local scene = Scene:create({
     name = "Main",
-    render = render,
-    initialize = initialize,
     e1 = nil,
     e2 = nil,
     e3 = nil,
@@ -178,4 +157,26 @@ local scene_main = Scene:create({
     k3_off = nil,
 })
 
-return scene_main
+function scene:initialize(playback_rates)
+    create_rings(playback_rates)
+end
+
+function scene:render(state)
+    screen.clear()
+    if math.random() > .99 then print("rendering main ") end
+    for i = 1, 6 do
+        if state.playback_positions[i] ~= nil then
+            local pos_radians = state.playback_positions[i] * math.pi * 2 -- convert phase to radians
+            rings[i].arcs[2].a1 = pos_radians
+            -- 1/32 of a circle as a nice slice length (full circle in radians = 2*PI)
+            rings[i].arcs[2].a2 = pos_radians + (math.pi / 16)
+            rings[i]:render()
+        end
+    end
+
+    if zigzag_line then
+        zigzag_line:render()
+    end
+end
+
+return scene

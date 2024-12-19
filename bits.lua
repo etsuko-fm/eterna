@@ -1,5 +1,6 @@
 local audio_util = include("bits/lib/util/audio_util")
-local main_scene = include("bits/lib/scenes/main")
+local scene_main = include("bits/lib/scenes/main")
+local scene_time_controls = include("bits/lib/scenes/time_controls")
 local sample_length
 local debug_mode = true
 local fps = 60
@@ -9,7 +10,8 @@ local state = {
 -- todo: everything with "current" could be saved in in a state table
 
 local scenes = {
-  main_scene,
+  scene_main,
+  scene_time_controls,
 }
 
 current_scene_index = 1
@@ -139,7 +141,7 @@ end
 function switch_sample(file)
   -- use specified `file` as a sample
   sample_length = audio_util.load_sample(file, true, 10)
-  print("sample_length: "..sample_length)
+  print("sample_length: " .. sample_length)
   randomize_softcut()
 end
 
@@ -167,8 +169,8 @@ function init()
   -- get initial position values for softcut voices
   query_positions()
 
-  main_scene.k2_off = randomize_softcut
-  main_scene.initialize(rates)
+  scene_main.k2_off = randomize_softcut -- bind function to scene
+  scene_main:initialize(rates)
   enable_all_voices()
 
   -- init clock
@@ -176,34 +178,68 @@ function init()
   c:start()
 end
 
+local key_latch = {
+  [2] = false,
+  [3] = false,
+}
+
+
 function key(n, z)
   if n == 1 and z == 0 and current_scene.k1_off then current_scene.k1_off() end
   if n == 1 and z == 1 and current_scene.k1_on then current_scene.k1_on() end
 
-  if n == 2 and z == 0 and current_scene.k2_off then current_scene.k2_off() end
-  if n == 2 and z == 1 and current_scene.k2_on then current_scene.k2_on() end
+  if n == 2 and z == 0 then
+    key_latch[n] = false
+    -- skip functionality while key combinations are being performed
+    if not key_latch[3] and current_scene.k2_off then current_scene.k2_off() end
+  end
 
-  if n == 3 and z == 0 and current_scene.k3_off then current_scene.k3_off() end
-  if n == 3 and z == 1 and current_scene.k3_on then current_scene.k3_on() end
+  if n == 2 and z == 1 then
+    key_latch[n] = true
+    if key_latch[3] then
+      -- prioritize scene switching over scene functionality
+      -- key combination: k3 held, press k2
+      cycle_scene_backward()
+      print("switching to prev scene")
+    elseif current_scene.k2_on then
+      current_scene.k2_on()
+    end
+  end
+
+  if n == 3 and z == 0 then
+    key_latch[n] = false
+    if current_scene.k3_off then current_scene.k3_off() end
+  end
+
+  if n == 3 and z == 1 then
+    key_latch[n] = true
+    if key_latch[2] then
+      -- prioritize scene switching
+      -- key combination: k2 held, press k3
+      cycle_scene_forward()
+      print("switching to next scene")
+    elseif current_scene.k3_on then
+      current_scene.k3_on()
+    end
+  end
 end
 
 function enc(n, d)
-  if n == 1 and current_scene.e1 then current_scene.e1(n, d) end
-  if n == 2 and current_scene.e2 then current_scene.e2(n, d) end
-  if n == 3 and current_scene.e3 then current_scene.e3(n, d) end
+  if n == 1 and current_scene.e1 then current_scene.e1(d) end
+  if n == 2 and current_scene.e2 then current_scene.e2(d) end
+  if n == 3 and current_scene.e3 then current_scene.e3(d) end
 end
 
 function query_positions()
-  for i = 1,6 do
+  for i = 1, 6 do
     softcut.query_position(i)
   end
 end
 
-
 function refresh()
   if ready then
     query_positions()
-    current_scene.render(state)
+    current_scene:render(state)
     ready = false
   end
 end
