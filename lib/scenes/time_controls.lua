@@ -1,26 +1,28 @@
 local Scene = include("bits/lib/scenes/Scene")
 local scene_name = "TimeControls"
 
-local size = 8.0
-local fade = 0.5
+local statex = {
+    size = 8.0,
+    fade = 0.5
+}
 
 function adjust_size(d)
-    fraction = d/10
-    if size + fraction < 0 then
-        size = 0
-    else
-        size = size + fraction
-    end
+    adjust_param(statex.size, d, 0.1)
 end
 
 function adjust_fade(d)
-    fraction = d/10
-    if fade + fraction < 0 then
-        fade = 0
+    adjust_param(statex.fade, d, 0.1)
+end
+
+function adjust_param(param, d, mult)
+    fraction = d * mult
+    if param + fraction < 0 then
+        param = 0
     else
-        fade = fade + fraction
+        param = param + fraction
     end
 end
+
 
 local scene = Scene:create({
     name = scene_name,
@@ -39,17 +41,17 @@ function scene:render(state)
     screen.clear()
     screen.font_size(8)
     screen.move(128/8 * 2, 64/8 * 3)
-    screen.text("size")
+    screen.text("slice")
     screen.move(128/8 * 2, 64/8 * 5)
     screen.font_size(16)
-    screen.text(string.format("%.1f", size))
+    screen.text(string.format("%.1f", statex.size))
 
     screen.font_size(8)
     screen.move(128/8 * 6, 64/8 * 3)
     screen.text_right("fade")
     screen.move(128/8 * 6, 64/8 * 5)
     screen.font_size(16)
-    screen.text_right(string.format("%.1f", fade))
+    screen.text_right(string.format("%.1f", statex.fade))
 
     screen.update()
     if math.random() > .95 then print('rendering time controls') end
