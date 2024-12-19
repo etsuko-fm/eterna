@@ -1,6 +1,7 @@
 local audio_util = include("bits/lib/util/audio_util")
 local scene_main = include("bits/lib/scenes/main")
 local scene_time_controls = include("bits/lib/scenes/time_controls")
+local scene_scan = include("bits/lib/scenes/scan")
 local sample_length
 local debug_mode = true
 local fps = 60
@@ -16,6 +17,7 @@ local state = {
 local scenes = {
   scene_main,
   scene_time_controls,
+  scene_scan,
 }
 
 current_scene_index = 1
