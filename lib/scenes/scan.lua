@@ -2,6 +2,7 @@ local Scene = include("bits/lib/scenes/Scene")
 local scene_name = "Scan"
 
 local function adjust_param(state, param, d, mult, min, max)
+    -- todo: unify with adjust_param in timecontrols
     local fraction = d * mult
     if min == nil then min = 0 end
     if max == nil then max = 128 end
@@ -15,35 +16,32 @@ local function adjust_param(state, param, d, mult, min, max)
     return state[param] -- for inspection
 end
 
-local function gaussian_scan(state, d)
-    -- for v = 0, 1 = 1 and 6 = 0
-    -- for v = 1, 1 = 0 and 6 = 1
-    adjust_param(state, 'scan_val', d, 1 / 60, 0, 1)
-
-
-    -- distance to bar: multiply pos by 6; distance = math.abs(pos - i)
-
-    -- pos should be 6 steps [0,1,2,3,4,5] or [1,2,3,4,5,6]
-    -- voice number decides how close; if voice = 1, then distance = 1-1 = 0
-
-    -- height of a bar is a function of the x distance to the dash.
-    -- the further the bar from the dash, the lower the height.
-    mu = 0  -- Center of the curve, you can adjust this to shift the peak of the curve
-
+local function calculate_gaussian_levels(state)
+    -- convert state.scan_val to levels for each softcut voice
     num_voices = 6
     for i = 1, num_voices do
-        pos = state.scan_val * (num_voices-1) -- convert scan value to a (0 <= pos <= 5)
+        pos = state.scan_val * (num_voices-1) -- convert scan value to position (0 <= pos <= 5). 
+        -- The first and last level don't have full range, because the level shouldn't fade out as scan_val approaches 1.
+        -- therefore the range is 0-5 instead of 0-6.
         distance = math.abs(pos - (i-1) ) -- 0 <= distance <= 5
-        bar_gaussian_height = math.exp(-((distance - mu)^2) / (2 * state.sigma^2))
-        state.levels[i] = bar_gaussian_height
-        -- print('distance['..i..'] = ' .. distance .. ', bar_height['..i..'] = ' .. bar_gaussian_height)
+        level = math.exp(-(distance^2) / (2 * state.sigma^2)) -- 0 <= level <= 1
+        state.levels[i] = level
+        -- print('distance['..i..'] = ' .. distance .. ', level['..i..'] = ' .. level)
     end
+
 end
+
+local function gaussian_scan(state, d)
+    -- you need to invoke this logic in the main script to create a good starting condition.. or scene.initialize()
+    adjust_param(state, 'scan_val', d, 1 / 60, 0, 1)
+    calculate_gaussian_levels(state)
+end
+
 
 
 local function adjust_sigma(state, d)
     s = adjust_param(state, 'sigma', d, .1,0.3,10)
-    gaussian_scan(state, 0) --update scan
+    gaussian_scan(state, 0) --update scan to reflect new curve in state
 end
 
 local scene = Scene:create({
@@ -101,8 +99,9 @@ function scene:render(state)
     screen.update()
 end
 
-function scene:initialize()
-    -- empty
+function scene:initialize(state)
+    -- I'm not sure to what extent a scene should have business logic like this
+    calculate_gaussian_levels(state)
 end
 
 return scene

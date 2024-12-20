@@ -31,13 +31,13 @@ local ring_luma = {
     },
 }
 
-local function create_rings(playback_rates)
+local function create_rings()
     local y_offset = 18
     zigzag_line = Zigzag:new({ 0, 32, 128, 4, 4 })
     for i = 1, 6, 1 do
         rings[i] = Ring:new({
             x = i * 16 + 8,                                -- space evenly from x=24 to x=104
-            y = 32 + y_offset + (-2 * y_offset * (i % 2)), -- 3 above, 3 below
+            y = 32 + y_offset + (-2 * y_offset * (i % 2)), -- 3 rings above line, 3 below line
             radius = 6,
             thickness = 3,
             luma = ring_luma.circle.normal, -- 15 = max level
@@ -157,8 +157,8 @@ local scene = Scene:create({
     k3_off = nil,
 })
 
-function scene:initialize(playback_rates)
-    create_rings(playback_rates)
+function scene:initialize(state)
+    create_rings()
 end
 
 function scene:render(state)

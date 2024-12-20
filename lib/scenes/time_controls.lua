@@ -83,7 +83,7 @@ function scene:render(state)
     update_segment_lengths(state)
 end
 
-function scene:initialize()
+function scene:initialize(state)
     -- empty
 end
 

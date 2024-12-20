@@ -17,8 +17,8 @@ local state = {
   loop_ends = {},
 
   -- scanning
-  scan_val = 0,                  -- 0 to 1
-  levels = { 1, 1, 1, 1, 1, 1 }, -- softcut levels
+  scan_val = 0.5,                  -- 0 to 1
+  levels = { 0, 0, 0, 0, 0, 0, }, -- softcut levels; initialized later by the scan scene
   sigma = 1,                     -- Width of the gaussian curve, adjustable for sharper or broader curves
 }
 
@@ -149,7 +149,7 @@ function init()
   -- hardware sensitivity
   for i = 1, 3 do
     norns.enc.sens(i, 1)
-    norns.enc.accel(i, true)
+    norns.enc.accel(i, false)
   end
 
   -- file selection
@@ -170,7 +170,8 @@ function init()
   query_positions()
 
   scene_main.k2_off = randomize_softcut -- bind function to scene
-  scene_main:initialize(rates)
+  scene_main:initialize(state)
+  scene_scan:initialize(state)
   enable_all_voices()
 
   -- init clock
