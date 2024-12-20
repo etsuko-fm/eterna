@@ -6,12 +6,20 @@ local sample_length
 local debug_mode = true
 local fps = 60
 local state = {
+  -- main scene
   playback_positions = {},
   max_sample_length = 10.0, -- fraction
+
+  -- time controls
   fade_time = .2,
   request_randomize_softcut = false,
   loop_starts = {},
   loop_ends = {},
+
+  -- scanning
+  scan_val = 0,                  -- 0 to 1
+  levels = { 1, 1, 1, 1, 1, 1 }, -- softcut levels
+  sigma = 1,                     -- Width of the gaussian curve, adjustable for sharper or broader curves
 }
 
 local scenes = {
@@ -86,29 +94,15 @@ function randomize_softcut()
   local rate_values_sub = { 0.125, 0.25, 0.5, -0.5, -.25, -.125 }
   local rate_values = rate_values_mid
 
-  -- range: 0.0-1.0
-  local min_level = 0.2
-  local max_level = 0.7
-
-  -- available pan range is 2 (-1.0 to 1.0); limit range to avoid extremes
-  local pan_range = 1
-
   for i = 1, 6 do
     -- pick playback rate from rate_values table
     rates[i] = rate_values[math.random(#rate_values)]
-
-    -- define controlled random audio level (result should be 0 - 1)
-    levels[i] = min_level + (math.random() * (max_level - min_level))
-
-    -- define pan
-    pans[i] = (pan_range / 2) - (math.random() * pan_range)
 
     -- generate loop segment based on sample length
     state.loop_starts[i], state.loop_ends[i] = generate_loop_segment(state.max_sample_length)
     print(i .. ": a=" .. state.loop_starts[i] .. "  b=" .. state.loop_ends[i])
 
     -- configure softcut voice
-    softcut.level(i, levels[i])
     softcut.rate(i, rates[i])
     softcut.position(i, state.loop_starts[i])
     softcut.loop_start(i, state.loop_starts[i])
@@ -132,6 +126,7 @@ end
 
 function enable_all_voices()
   local pan_locations = { -1, -.5, -.25, .25, .5, 1 }
+
   for i = 1, 6 do
     softcut.enable(i, 1)
     softcut.buffer(i, 1)
@@ -139,6 +134,7 @@ function enable_all_voices()
     softcut.play(i, 1)
     softcut.pan(i, pan_locations[i]) -- seems to clash with pan randomization
     softcut.fade_time(i, state.fade_time)
+    softcut.level(i, state.levels[i])
   end
 end
 
@@ -244,7 +240,7 @@ function refresh()
   if ready then
     query_positions()
     current_scene:render(state)
-    
+
     -- sort of an event based system, allows scenes to request main functionality
     if state.request_randomize_softcut then
       randomize_softcut()
