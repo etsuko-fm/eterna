@@ -3,8 +3,6 @@ local Ring = include("bits/lib/graphics/Ring")
 local Zigzag = include("bits/lib/graphics/Zigzag")
 
 local rings = {}
-local current_ring = nil
-local edit_mode = false
 local zigzag_line = nil
 
 local radians = {
@@ -65,84 +63,6 @@ local function create_rings()
     end
 end
 
-local function select_ring(n)
-    -- select a ring for inspection
-    current_ring = n
-    for i = 1, 6 do
-        if i == current_ring then
-            -- use the brightness presets defined in ring_luma
-            rings[i].luma = ring_luma.circle.normal
-            rings[i].arcs[1].luma = ring_luma.rate_arc.normal
-            rings[i].selected = true
-        else
-            rings[i].luma = ring_luma.circle.deselected
-            rings[i].arcs[1].luma = ring_luma.rate_arc.deselected
-            rings[i].selected = false
-        end
-    end
-end
-
-local function deselect_rings()
-    for i = 1, 6 do
-        rings[i].luma = ring_luma.circle.normal
-        rings[i].arcs[1].luma = ring_luma.rate_arc.normal
-        rings[i].selected = false
-    end
-    current_ring = nil
-end
-
-local function one_idx_modulo(n, m)
-    -- utility to help cycling through 1-indexed arrays;
-
-    -- 1 % 3 = 1    one_idx_modulo(1, 3) = 1
-    -- 2 % 3 = 2    one_idx_modulo(2, 3) = 2
-    -- 3 % 3 = 0    one_idx_modulo(3, 3) = 3
-
-    -- 4 % 3 = 1    one_idx_modulo(4, 3) = 1
-    -- 5 % 3 = 2    one_idx_modulo(5, 3) = 2
-    -- 6 % 3 = 0    one_idx_modulo(6, 3) = 3
-
-    -- todo: move to util
-    return ((n - 1) % m) + 1
-end
-
-local function select_next_ring()
-    if edit_mode then return end -- in edit mode, can't select another ring
-    if current_ring == nil then current_ring = 0 end
-    next_ring = current_ring + 1
-    if current_ring == 6 then
-        current_ring = nil
-        deselect_rings()
-    else
-        select_ring(one_idx_modulo(next_ring, 6))
-    end
-end
-
-
-local function switch_to_edit_mode()
-    if current_ring ~= nil then
-        edit_mode = not edit_mode
-        print("edit mode " .. tostring(edit_mode))
-        if edit_mode then
-            -- hide other rings
-            -- hide zigzag
-            -- show rate param
-            -- show solo/mute param
-            zigzag_line.hide = true
-            for i = 1, 6 do
-                if i ~= current_ring then
-                    rings[i].hide = true
-                end
-            end
-        else
-            zigzag_line.hide = false
-            for i = 1, 6 do
-                rings[i].hide = false
-            end
-        end
-    end
-end
-
 
 local scene = Scene:create({
     name = "Main",
@@ -153,7 +73,7 @@ local scene = Scene:create({
     k1_hold_off = nil,
     k2_on = nil,
     k2_off = nil,
-    k3_on = switch_to_edit_mode,
+    k3_on = nil,
     k3_off = nil,
 })
 

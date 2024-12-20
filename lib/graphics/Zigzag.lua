@@ -6,6 +6,7 @@ Zigzag = {
   zigzag_width = 4,
   hide = false,
 }
+
 function Zigzag:new(o)
   -- create state if not provided
   o = o or {}
