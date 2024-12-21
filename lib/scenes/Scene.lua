@@ -1,11 +1,7 @@
 local Scene = {
   -- A scene defines which functionality is bound to the currently rendered screen.
   -- It is therefore created with callback functions for the three hardware knobs and encoders,
-  -- and for rendering the screen.
-
-  -- What if a scene inherits 90% of another scene, but just defines a different functionality for a certain button? 
-  -- Try to do it all in one scene, and see what happens
-
+  -- and one for rendering the screen.
   name = nil,
   interface = nil, -- table with functions the scene may invoke
   e1 = nil,
