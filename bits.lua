@@ -7,9 +7,10 @@ local sample_length
 local debug_mode = true
 local fps = 60
 local state = {
-  -- main scene
+  -- sample
   playback_positions = {},
   max_sample_length = 10.0, -- fraction
+  selected_sample = _path.audio .. "etsuko/sea-minor/sea-minor-chords.wav",
 
   -- time controls
   fade_time = .2,
@@ -18,9 +19,12 @@ local state = {
   loop_ends = {},
 
   -- scanning
-  scan_val = 0.5,                  -- 0 to 1
+  scan_val = 0.5,                 -- 0 to 1
   levels = { 0, 0, 0, 0, 0, 0, }, -- softcut levels; initialized later by the scan scene
-  sigma = 1,                     -- Width of the gaussian curve, adjustable for sharper or broader curves
+  sigma = 1,                      -- Width of the gaussian curve, adjustable for sharper or broader curves
+
+  -- event system
+  events = {}
 }
 
 local scenes = {
@@ -87,7 +91,7 @@ function generate_loop_segment(max_length)
   return a, b
 end
 
-function randomize_softcut()
+function randomize_softcut(state)
   -- randomize playback rate, loop segment and level of all 6 softcut voices
 
   -- a few presets to choose from
@@ -144,7 +148,7 @@ function switch_sample(file)
   -- use specified `file` as a sample
   sample_length = audio_util.load_sample(file, true, 10)
   print("sample_length: " .. sample_length)
-  randomize_softcut()
+  randomize_softcut(state)
 end
 
 function init()
@@ -171,7 +175,7 @@ function init()
   -- get initial position values for softcut voices
   query_positions()
 
-  scene_main.k2_off = randomize_softcut -- bind function to scene
+  scene_main.k2_off = randomize_softcut -- bind function to scene, todo: use events
   scene_main:initialize(state)
   scene_scan:initialize(state)
   enable_all_voices()
@@ -188,13 +192,13 @@ local key_latch = {
 
 
 function key(n, z)
-  if n == 1 and z == 0 and current_scene.k1_off then current_scene.k1_off() end
-  if n == 1 and z == 1 and current_scene.k1_on then current_scene.k1_on() end
+  if n == 1 and z == 0 and current_scene.k1_off then current_scene.k1_off(state) end
+  if n == 1 and z == 1 and current_scene.k1_on then current_scene.k1_on(state) end
 
   if n == 2 and z == 0 then
     key_latch[n] = false
     -- skip functionality while key combinations are being performed
-    if not key_latch[3] and current_scene.k2_off then current_scene.k2_off() end
+    if not key_latch[3] and current_scene.k2_off then current_scene.k2_off(state) end
   end
 
   if n == 2 and z == 1 then
@@ -206,13 +210,13 @@ function key(n, z)
       print("switching to prev scene")
     elseif current_scene.k2_on then
       print('k2 on')
-      current_scene.k2_on()
+      current_scene.k2_on(state)
     end
   end
 
   if n == 3 and z == 0 then
     key_latch[n] = false
-    if current_scene.k3_off then current_scene.k3_off() end
+    if current_scene.k3_off then current_scene.k3_off(state) end
   end
 
   if n == 3 and z == 1 then
@@ -240,17 +244,43 @@ function query_positions()
   end
 end
 
+local event_handlers = {
+  event_randomize_softcut = function()
+    execute_event(randomize_softcut, "event_randomize_softcut")
+  end,
+  event_switch_sample = function()
+    execute_event(switch_sample, "event_switch_sample", state.selected_sample)
+  end,
+}
+
+function execute_event(handler, request, ...)
+  handler(...)                  -- Execute the handler with additional arguments
+  state.events[request] = false -- Reset the event state
+end
+
 function refresh()
   if ready then
     query_positions()
     current_scene:render(state)
 
     -- sort of an event based system, allows scenes to request main functionality
+
+    for event, handler in pairs(event_handlers) do
+      if state.events[event] then
+        handler()
+      end
+    end
+
     if state.request_randomize_softcut then
+      execute_event(randomize_softcut, "request_randomize_softcut")
       randomize_softcut()
       state.request_randomize_softcut = false
     end
+    if state.request_switch_sample then
+      execute_event(switch_sample, state.selected_sample)
 
+      state.request_switch_sample = false
+    end
     ready = false
   end
 end
