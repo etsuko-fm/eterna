@@ -3,7 +3,7 @@ local scene_main = include("bits/lib/scenes/main")
 local scene_time_controls = include("bits/lib/scenes/timecontrols")
 local scene_scan = include("bits/lib/scenes/scan")
 local scene_sample_select = include("bits/lib/scenes/sampleselect")
-local sample_length
+
 local debug_mode = true
 local fps = 60
 local state = {
@@ -11,6 +11,12 @@ local state = {
   playback_positions = {},
   max_sample_length = 10.0, -- fraction
   selected_sample = _path.audio .. "etsuko/sea-minor/sea-minor-chords.wav",
+  sample_length, --seconds
+
+  -- waveform
+  waveform_samples = {},
+  interval = 0, -- of what? unused?
+  scale_waveform = 15,
 
   -- time controls
   fade_time = .2,
@@ -70,17 +76,17 @@ function generate_loop_segment(max_length)
   -- bit icky, but sample_length is a global var
 
   -- limit the maximium loop length
-  max_length = max_length or sample_length / 4 -- might need to get rid of that /4
+  max_length = max_length or state.sample_length / 4 -- might need to get rid of that /4
 
   -- introduce some padding so that `a` isn't closer than 1% to the sample end
-  padding = sample_length / 100
+  padding = state.sample_length / 100
 
   -- pick start position
-  local a = math.random() * (sample_length - padding)
+  local a = math.random() * (state.sample_length - padding)
 
   -- End position should be a larger number than start position; and confine to the defined max length
   local b_span
-  if (sample_length - a) < max_length then
+  if (state.sample_length - a) < max_length then
     -- randomize within the remaining segment, i.e. [a : sample_length]
     b_span = sample_length - a
   else
@@ -90,6 +96,7 @@ function generate_loop_segment(max_length)
   local b = a + (math.random() * b_span)
   return a, b
 end
+
 
 function randomize_softcut(state)
   -- randomize playback rate, loop segment and level of all 6 softcut voices
@@ -146,10 +153,12 @@ end
 
 function switch_sample(file)
   -- use specified `file` as a sample
-  sample_length = audio_util.load_sample(file, true, 10)
-  print("sample_length: " .. sample_length)
+  state.sample_length = audio_util.load_sample(file, true, 10)
+  print("sample_length: " .. state.sample_length)
+  audio_util.load_sample(file, true, 10)  
   randomize_softcut(state)
 end
+
 
 function init()
   -- hardware sensitivity
@@ -176,8 +185,11 @@ function init()
   query_positions()
 
   scene_main.k2_off = randomize_softcut -- bind function to scene, todo: use events
-  scene_main:initialize(state)
-  scene_scan:initialize(state)
+
+  for _, scene in ipairs(scenes) do
+    scene:initialize(state)
+  end
+
   enable_all_voices()
 
   -- init clock
