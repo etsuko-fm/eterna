@@ -15,22 +15,18 @@ function num_channels(file)
 end
 
 function load_sample(file, mono, max_length)
-    -- simplified method for loading a sample, for when a single audio file in the softcut buffer is sufficient
+    -- convenience method for loading a sample, for when a single audio file in the softcut buffer is sufficient
     -- stereo mode yet untested
     debug.print_info(file)
     softcut.buffer_clear()
-    sample_length = audio_util.get_duration(file)
+    dur = audio_util.get_duration(file)
 
     -- Limit sample duration
     if max_length ~= nil then
-        if sample_length > max_length then
+        if dur > max_length then
             dur = max_length
-        else
-            dur = sample_length
         end
     end
-
-    
 
     start_src = 0 -- file read position
     start_dst = 0 -- buffer write position
@@ -40,7 +36,7 @@ function load_sample(file, mono, max_length)
     else
         softcut.buffer_read_stereo(file, start_src, start_dst, dur)
     end
-    
+
     return dur
 end
 

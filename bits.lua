@@ -9,9 +9,13 @@ local fps = 60
 local state = {
   -- sample
   playback_positions = {},
-  max_sample_length = 10.0, -- fraction
+  max_sample_length = 10.0,
   selected_sample = _path.audio .. "etsuko/sea-minor/sea-minor-chords.wav",
-  sample_length,            --seconds
+  sample_length = nil, -- full length of the currently loaded sample
+
+   -- section of the sample that is currently enabled; 
+   --  playback position randomizations will be done within this section.
+  enabled_section = {nil, nil},
 
   -- waveform
   waveform_samples = {},
@@ -19,13 +23,13 @@ local state = {
   scale_waveform = 15,
 
   -- time controls
-  fade_time = .2,
-  request_randomize_softcut = false,
-  loop_starts = {},
+  fade_time = .2, -- crossfade when looping playback
+  request_randomize_softcut = false, -- todo: is this still used or replaced it with events?
+  loop_starts = {}, -- one item per softcut voice
   loop_ends = {},
 
   -- scanning
-  scan_val = 0.5,                 -- 0 to 1
+  scan_val = 0.5,                 -- 0 to 1; allows scanning through softcut voices (think smooth soloing/muting)
   levels = { 0, 0, 0, 0, 0, 0, }, -- softcut levels; initialized later by the scan scene
   sigma = 1,                      -- Width of the gaussian curve, adjustable for sharper or broader curves
 
@@ -88,7 +92,7 @@ function generate_loop_segment(max_length)
   local b_span
   if (state.sample_length - a) < max_length then
     -- randomize within the remaining segment, i.e. [a : sample_length]
-    b_span = sample_length - a
+    b_span = state.sample_length - a
   else
     -- randomize within [a : (a + max_length)]
     b_span = max_length
@@ -131,7 +135,7 @@ function modulate_loop_points()
 end
 
 function update_positions(i, pos)
-  state.playback_positions[i] = pos / sample_length
+  state.playback_positions[i] = pos / state.sample_length
   -- works together with modulate_loop_points
   -- print("voice" .. i..":"..pos .. "loop: "..state.loop_starts[i].." - " .. state.loop_ends[i])
 end
@@ -152,9 +156,10 @@ end
 
 function switch_sample(file)
   -- use specified `file` as a sample
-  state.sample_length = audio_util.load_sample(file, true, 10)
+  state.sample_length = audio_util.load_sample(file, true)
+  state.enabled_section = {0, state.max_sample_length}
   print("sample_length: " .. state.sample_length)
-  audio_util.load_sample(file, true, 10)
+  softcut.render_buffer(1, 0, state.sample_length, 128)
   randomize_softcut(state)
 end
 
@@ -195,11 +200,6 @@ function init()
   c:start()
 end
 
-local key_latch = {
-  [2] = false,
-  [3] = false,
-}
-
 
 function key(n, z)
   if n == 1 and z == 0 and current_scene.k1_off then current_scene.k1_off(state) end
@@ -216,20 +216,18 @@ function enc(n, d)
     -- the ticks mechanism verifies that scene switch is intentional
     if d > 0 then
       ticks = ticks + 1
-      print(ticks)
       if ticks >= 5 then
         cycle_scene_forward()
         ticks = 0
       end
     else
       ticks = ticks - 1
-      print(ticks)
       if ticks <= -5 then
         cycle_scene_backward()
         ticks = 0
       end
     end
-  end -- todo: deregister, gonna use this for scene selection
+  end
   if n == 2 and current_scene.e2 then current_scene.e2(state, d) end
   if n == 3 and current_scene.e3 then current_scene.e3(state, d) end
 end
@@ -241,6 +239,7 @@ function query_positions()
 end
 
 local event_handlers = {
+  -- maps event names to functions
   event_randomize_softcut = function()
     execute_event(randomize_softcut, "event_randomize_softcut")
   end,
