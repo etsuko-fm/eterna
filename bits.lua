@@ -11,7 +11,7 @@ local state = {
   playback_positions = {},
   max_sample_length = 10.0, -- fraction
   selected_sample = _path.audio .. "etsuko/sea-minor/sea-minor-chords.wav",
-  sample_length, --seconds
+  sample_length,            --seconds
 
   -- waveform
   waveform_samples = {},
@@ -97,7 +97,6 @@ function generate_loop_segment(max_length)
   return a, b
 end
 
-
 function randomize_softcut(state)
   -- randomize playback rate, loop segment and level of all 6 softcut voices
 
@@ -155,10 +154,9 @@ function switch_sample(file)
   -- use specified `file` as a sample
   state.sample_length = audio_util.load_sample(file, true, 10)
   print("sample_length: " .. state.sample_length)
-  audio_util.load_sample(file, true, 10)  
+  audio_util.load_sample(file, true, 10)
   randomize_softcut(state)
 end
-
 
 function init()
   -- hardware sensitivity
@@ -206,46 +204,32 @@ local key_latch = {
 function key(n, z)
   if n == 1 and z == 0 and current_scene.k1_off then current_scene.k1_off(state) end
   if n == 1 and z == 1 and current_scene.k1_on then current_scene.k1_on(state) end
-
-  if n == 2 and z == 0 then
-    key_latch[n] = false
-    -- skip functionality while key combinations are being performed
-    if not key_latch[3] and current_scene.k2_off then current_scene.k2_off(state) end
-  end
-
-  if n == 2 and z == 1 then
-    key_latch[n] = true
-    if key_latch[3] then
-      -- prioritize scene switching over scene functionality
-      -- key combination: k3 held, press k2
-      cycle_scene_backward()
-      print("switching to prev scene")
-    elseif current_scene.k2_on then
-      print('k2 on')
-      current_scene.k2_on(state)
-    end
-  end
-
-  if n == 3 and z == 0 then
-    key_latch[n] = false
-    if current_scene.k3_off then current_scene.k3_off(state) end
-  end
-
-  if n == 3 and z == 1 then
-    key_latch[n] = true
-    if key_latch[2] then
-      -- prioritize scene switching
-      -- key combination: k2 held, press k3
-      cycle_scene_forward()
-      print("switching to next scene")
-    elseif current_scene.k3_on then
-      current_scene.k3_on()
-    end
-  end
+  if n == 2 and z == 0 and current_scene.k2_off then current_scene.k2_off(state) end
+  if n == 2 and z == 1 and current_scene.k2_on then current_scene.k2_on(state) end
+  if n == 3 and z == 0 and current_scene.k3_off then current_scene.k3_off(state) end
+  if n == 3 and z == 1 and current_scene.k3_on then current_scene.k3_on(state) end
 end
 
+local ticks = 0
 function enc(n, d)
-  if n == 1 and current_scene.e1 then current_scene.e1(state, d) end
+  if n == 1 then
+    -- the ticks mechanism verifies that scene switch is intentional
+    if d > 0 then
+      ticks = ticks + 1
+      print(ticks)
+      if ticks >= 5 then
+        cycle_scene_forward()
+        ticks = 0
+      end
+    else
+      ticks = ticks - 1
+      print(ticks)
+      if ticks <= -5 then
+        cycle_scene_backward()
+        ticks = 0
+      end
+    end
+  end -- todo: deregister, gonna use this for scene selection
   if n == 2 and current_scene.e2 then current_scene.e2(state, d) end
   if n == 3 and current_scene.e3 then current_scene.e3(state, d) end
 end
