@@ -16,12 +16,6 @@ Interactions:
  E3: select global loop length
 ]]
 
--- get waveform:
-
--- softcut.render_buffer(ch, start, dur, samples)
--- softcut.event_render(func)
--- https://monome.org/docs/norns/softcut/#8-copy--waveform-data
--- https://github.com/monome/softcut-studies/blob/main/8-copy.lua
 
 local function path_to_file_name(file_path)
     -- strips '/foo/bar/audio.wav' to 'audio.wav'
@@ -69,7 +63,7 @@ function scene:render(state)
     screen.move(0, 45)
     screen.text(state.filename)
     screen.move(0, 60)
-    screen.text('K2: select file')
+    screen.text('FILE  ZOOM  LOOP  SIZE')
 
     -- waveform
     local x_pos = 0

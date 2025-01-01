@@ -1,6 +1,21 @@
 local Scene = include("bits/lib/scenes/Scene")
 local scene_name = "Scan"
 
+--[[
+Scan scene
+Graphics:
+- 6 vertical bars that show the level of each softcut voice
+- 1 horizontal bar that shows the current scan value
+- Temporary: digit w level of each voice
+
+Interactions:
+ E2: adjust sigma (standard deviation) of gaussian curve
+ E3: adjust scan value
+ todo:
+ K2: cycle through sigma values
+ K3: cycle through scan values
+]]
+
 local function adjust_param(state, param, d, mult, min, max)
     -- todo: unify with adjust_param in timecontrols
     local fraction = d * mult
