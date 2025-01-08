@@ -73,7 +73,6 @@ local function create_rings(state)
     end
 end
 
-
 local scene = Scene:create({
     name = "Main",
     e1 = nil,

@@ -33,13 +33,13 @@ end
 
 local function calculate_gaussian_levels(state)
     -- convert state.scan_val to levels for each softcut voice
-    num_voices = 6
+    local num_voices = 6
     for i = 1, num_voices do
-        pos = state.scan_val * (num_voices-1) -- convert scan value to position (0 <= pos <= 5). 
+        local pos = state.scan_val * (num_voices-1) -- convert scan value to position (0 <= pos <= 5). 
         -- The first and last level don't have full range, because the level shouldn't fade out as scan_val approaches 1.
         -- therefore the range is 0-5 instead of 0-6.
-        distance = math.abs(pos - (i-1) ) -- 0 <= distance <= 5
-        level = math.exp(-(distance^2) / (2 * state.sigma^2)) -- 0 <= level <= 1
+        local distance = math.abs(pos - (i-1) ) -- 0 <= distance <= 5
+        local level = math.exp(-(distance^2) / (2 * state.sigma^2)) -- 0 <= level <= 1
         state.levels[i] = level
         -- print('distance['..i..'] = ' .. distance .. ', level['..i..'] = ' .. level)
     end

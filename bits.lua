@@ -111,6 +111,9 @@ local function randomize_softcut(state)
     softcut.loop_start(i, state.loop_sections[i][1])
     softcut.loop_end(i, state.loop_sections[i][2])
   end
+  
+  -- update rings in the main scene
+  scene_main:initialize(state)
 end
 
 local function modulate_loop_points()
@@ -233,7 +236,7 @@ end
 local event_handlers = {
   -- maps event names to functions
   event_randomize_softcut = function()
-    execute_event(randomize_softcut, "event_randomize_softcut")
+    execute_event(randomize_softcut, "event_randomize_softcut", state)
   end,
   event_switch_sample = function()
     execute_event(switch_sample, "event_switch_sample", state.selected_sample)
@@ -242,7 +245,7 @@ local event_handlers = {
 
 function execute_event(handler, request, ...)
   handler(...)                  -- Execute the handler with additional arguments
-  state.events[request] = false -- Reset the event state
+  state.events[request] = false -- Reset the event request
 end
 
 function refresh()
@@ -251,22 +254,10 @@ function refresh()
     current_scene:render(state)
 
     -- sort of an event based system, allows scenes to request main functionality
-
     for event, handler in pairs(event_handlers) do
-      if state.events[event] then
+      if state.events[event] == true then
         handler()
       end
-    end
-
-    if state.request_randomize_softcut then
-      execute_event(randomize_softcut, "request_randomize_softcut")
-      randomize_softcut()
-      state.request_randomize_softcut = false
-    end
-    if state.request_switch_sample then
-      execute_event(switch_sample, state.selected_sample)
-
-      state.request_switch_sample = false
     end
     ready = false
   end
