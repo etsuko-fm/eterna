@@ -2,7 +2,7 @@ local Scene = include("bits/lib/scenes/Scene")
 local scene_name = "SampleSelect"
 local fileselect = require('fileselect')
 local scene_disabled = false
-
+local debug = include("bits/lib/util/debug")
 --[[
 Sample select scene
 Graphics:
@@ -16,6 +16,35 @@ Interactions:
  E3: select global loop length
 ]]
 
+function smooth_with_mean(tbl, n)
+    local smoothed_table = {}
+    for i = 1, #tbl do
+        local sum = 0
+        local count = 0
+
+        -- Iterate over the surrounding elements
+        for j = i - n, i + n do
+            if j >= 1 and j <= #tbl then
+                sum = sum + math.abs(tbl[j])
+                count = count + 1
+            end
+        end
+
+        -- Compute the mean and store it in the new table
+        smoothed_table[i] = sum / count
+    end
+    return smoothed_table
+end
+
+function replace_with_mean(tbl)
+    for i = 1, #tbl do 
+        print(tbl[i])
+    end
+    for i = 2, #tbl - 1, 2 do
+        tbl[i] = (math.abs(tbl[i - 1]) + math.abs(tbl[i + 1])) / 2
+    end
+    return tbl
+end
 
 local function path_to_file_name(file_path)
     -- strips '/foo/bar/audio.wav' to 'audio.wav'
@@ -73,6 +102,7 @@ function scene:render(state)
         local height = util.round(math.abs(s) * state.scale_waveform)
         screen.move(util.linlin(0, 128, 10, 120, x_pos), 20 - height)
         if i >= state.enabled_section[1] and i < state.enabled_section[2] then
+            -- brighten the selected part of the waveform
             screen.level(15)
         else
             screen.level(4)

@@ -16,7 +16,7 @@ local ring_luma = {
     -- todo: could these be properties of the ring?
     -- so add when initializing
     circle = {
-        normal = 3,
+        normal = 2,
         deselected = 1,
     },
     rate_arc = {
@@ -24,14 +24,15 @@ local ring_luma = {
         deselected = 5,
     },
     section_arc = {
-        normal = 7,
+        normal = 5,
         deselected = 2,
     },
 }
 
-local function create_rings()
+local function create_rings(state)
     local y_offset = 18
     zigzag_line = Zigzag:new({ 0, 32, 128, 4, 4 })
+    local enabled_section_length = state.enabled_section[2] - state.enabled_section[1]
     for i = 1, 6, 1 do
         rings[i] = Ring:new({
             x = i * 16 + 8,                                -- space evenly from x=24 to x=104
@@ -45,6 +46,15 @@ local function create_rings()
                     a1 = 0,
                     a2 = math.pi * 2,
                     luma = ring_luma.circle.normal,
+                    thickness = 3,
+                    radius = 6,
+                    rate = 0,
+                },
+                {
+                    -- enabled section
+                    a1 = ((state.loop_sections[i][1] - state.enabled_section[1]) / enabled_section_length) * math.pi * 2,
+                    a2 = ((state.loop_sections[i][2] - state.enabled_section[2]) / enabled_section_length) * math.pi * 2,
+                    luma = ring_luma.section_arc.normal,
                     thickness = 3,
                     radius = 6,
                     rate = 0,
@@ -78,7 +88,7 @@ local scene = Scene:create({
 })
 
 function scene:initialize(state)
-    create_rings()
+    create_rings(state)
 end
 
 function scene:render(state)
@@ -87,9 +97,9 @@ function scene:render(state)
     for i = 1, 6 do
         if state.playback_positions[i] ~= nil then
             local pos_radians = state.playback_positions[i] * math.pi * 2 -- convert phase to radians
-            rings[i].arcs[2].a1 = pos_radians
+            rings[i].arcs[3].a1 = pos_radians
             -- 1/32 of a circle as a nice slice length (full circle in radians = 2*PI)
-            rings[i].arcs[2].a2 = pos_radians + (math.pi / 16)
+            rings[i].arcs[3].a2 = pos_radians + (math.pi / 16)
             rings[i]:render()
         end
     end

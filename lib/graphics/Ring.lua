@@ -31,15 +31,6 @@ function Ring:render()
   if self.hide then return end
   screen.line_width(self.thickness)
 
-  -- -- draw circle
-  -- if self.luma ~= 0 then
-  --   screen.move(self.x + self.radius, self.y)
-  --   screen.circle(self.x, self.y, self.radius)
-  --   screen.level(self.luma)
-  --   screen.stroke()
-  -- end
-
-
   -- draw arc(s)
   for _, arc in ipairs(self.arcs) do
     screen.level(arc.luma)
@@ -51,13 +42,6 @@ function Ring:render()
     screen.arc(self.x, self.y, arc.radius, arc.a1, arc.a2)
     screen.stroke()
     screen.update()
-
-    -- update arc segment for next iteration
-    -- todo: should an arc rotate itself? or should the caller do it?
-    -- problem a t hand: I want to want to show the current playback position in the arc, not just
-    -- roll forward constantly
-    -- arc.a1 = arc.a1 + arc.rate
-    -- arc.a2 = arc.a2 + arc.rate
   end
 end
 
