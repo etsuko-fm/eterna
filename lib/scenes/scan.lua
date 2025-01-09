@@ -35,15 +35,28 @@ local function calculate_gaussian_levels(state)
     -- convert state.scan_val to levels for each softcut voice
     local num_voices = 6
     for i = 1, num_voices do
-        local pos = state.scan_val * (num_voices-1) -- convert scan value to position (0 <= pos <= 5). 
-        -- The first and last level don't have full range, because the level shouldn't fade out as scan_val approaches 1.
-        -- therefore the range is 0-5 instead of 0-6.
-        local distance = math.abs(pos - (i-1) ) -- 0 <= distance <= 5
+        -- translate scan value to a virtual 'position' so that it matches the voice range (1 <= pos <= num_voices)
+        local pos = 1 + (state.scan_val * (num_voices-1))
+
+        -- the 'distance' from the current voice to the scan position
+        -- ex: scan pos 1, voice 5: abs(1 - 5) = abs(-4) = 4
+        -- ex: scan pos 5, voice 1: abs(5 - 1)) = abs(4) = 4
+        -- local distance = math.abs(pos - i) -- 0 <= distance <= 5
+        local distance = math.min(
+            math.abs(pos - i),
+            num_voices - math.abs(pos - i)
+        )
+
+        -- Calculate the level for the current voice using a Gaussian formula:
+        -- level = e^(-(distance^2) / (2 * sigma^2))
+        -- where distance^2 makes farther voices quieter.
+        -- where sigma controls how "wide" the Gaussian curve is (how quickly levels fade).
         local level = math.exp(-(distance^2) / (2 * state.sigma^2)) -- 0 <= level <= 1
+
+        -- update levels in global state
         state.levels[i] = level
         -- print('distance['..i..'] = ' .. distance .. ', level['..i..'] = ' .. level)
     end
-
 end
 
 local function gaussian_scan(state, d)
@@ -111,6 +124,8 @@ function scene:render(state)
         screen.fill()
         softcut.level(i, state.levels[i + 1])
     end
+    screen.move(56, 64)
+    screen.text(state.scan_val)
     screen.update()
 end
 
