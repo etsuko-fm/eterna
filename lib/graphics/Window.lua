@@ -6,6 +6,7 @@ Window = {
     title="WINDOW",
     font_face=1,
     brightness=15,
+    deselected_brightness=4,
     border=true,
     selected=true,
     horizontal_separations=0,
@@ -31,26 +32,43 @@ function Window:render()
 
     -- top bar
     screen.line_width(1)
-    screen.level(self.brightness)
+    if self.selected then 
+        screen.level(self.brightness)
+    else 
+        screen.level(self.deselected_brightness) 
+    end
     screen.rect(self.x, self.y, self.w, self.bar_height)
     screen.fill()
 
     -- title
     screen.move(self.x + (self.w/2), self.y + (self.bar_height - 1))
-    screen.level(0)
+    if self.selected then
+        screen.level(0)
+    else
+         screen.level(self.brightness)
+    end
     screen.font_face(self.font_face)
     screen.text_center(self.title)
 
     -- border
-    screen.level(self.brightness)
-    screen.line_width(1)
-    screen.rect(self.x+1,self.y+1,self.w-1,self.h-1)
-    screen.stroke()
+    if self.border then
+        screen.line_width(1)
+        if self.selected then
+            screen.level(self.brightness)
+        else 
+            screen.level(self.deselected_brightness)
+        end
+        screen.move(self.x + 1, self.y + self.bar_height)
+        screen.line(self.x + 1, self.y + self.h -1)
+        screen.line(self.x + self.w, self.y + self.h - 1)
+        screen.line(self.x + self.w, self.y + self.bar_height)
+        screen.stroke()
+    end
 
     if self.vertical_separations then
         local v_spacing = ((self.h - self.bar_height) / (self.vertical_separations + 1))
         for n = 1, self.vertical_separations do
-            local pos = self.bar_height + (v_spacing * n)
+            local pos = math.floor(self.bar_height + (v_spacing * n))
             screen.move(self.x, pos)
             screen.line(self.x + self.w, pos)
             screen.stroke()
