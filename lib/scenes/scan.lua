@@ -1,6 +1,6 @@
 local Scene = include("bits/lib/scenes/Scene")
 local scene_name = "Scan"
-
+local Window = include("bits/lib/graphics/Window")
 --[[
 Scan scene
 Graphics:
@@ -16,19 +16,57 @@ Interactions:
  K3: cycle through scan values
 ]]
 
-local function adjust_param(state, param, d, mult, min, max)
+local window_scan = Window:new({
+    x = 0,
+    y = 0,
+    w = 96,
+    h = 64,
+    title="SCAN",
+    font_face=68,
+    brightness=15,
+    border=true,
+    selected=true,
+    horizontal_separations=0,
+    vertical_separations=0,
+})
+
+local window_lfo = Window:new({
+    x = 98,
+    y = 0,
+    w = 30,
+    h = 64,
+    title="LFO",
+    font_face=68,
+    brightness=15,
+    border=true,
+    selected=false,
+    horizontal_separations=0,
+    vertical_separations=1,
+})
+
+-- Function to calculate x and y positions based on time parameter
+local function figure_eight(t, width, height)
+    local x = width * math.sin(t)          -- X follows a sine wave
+    local y = height * math.sin(2 * t) / 2 -- Y follows a sine wave with twice the frequency
+    return x, y
+end
+
+
+local function adjust_param(tbl, param, d, mult, min, max, loop)
     -- todo: unify with adjust_param in timecontrols
     local fraction = d * mult
     if min == nil then min = 0 end
     if max == nil then max = 128 end
-    if state[param] + fraction < min then
-        state[param] = min
-    elseif state[param] + fraction > max then
-        state[param] = max
+    if loop then
+        tbl[param] = (tbl[param] + fraction) % max
+    elseif tbl[param] + fraction < min then
+        tbl[param] = min
+    elseif tbl[param] + fraction > max then
+        tbl[param] = max
     else
-        state[param] = state[param] + fraction
+        tbl[param] = tbl[param] + fraction
     end
-    return state[param] -- for inspection
+    return tbl[param] -- for inspection
 end
 
 local function calculate_gaussian_levels(state)
@@ -36,7 +74,7 @@ local function calculate_gaussian_levels(state)
     local num_voices = 6
     for i = 1, num_voices do
         -- translate scan value to a virtual 'position' so that it matches the voice range (1 <= pos <= num_voices)
-        local pos = 1 + (state.scan_val * (num_voices-1))
+        local pos = 1 + (state.scan_val * (num_voices))
 
         -- the 'distance' from the current voice to the scan position
         -- ex: scan pos 1, voice 5: abs(1 - 5) = abs(-4) = 4
@@ -51,7 +89,7 @@ local function calculate_gaussian_levels(state)
         -- level = e^(-(distance^2) / (2 * sigma^2))
         -- where distance^2 makes farther voices quieter.
         -- where sigma controls how "wide" the Gaussian curve is (how quickly levels fade).
-        local level = math.exp(-(distance^2) / (2 * state.sigma^2)) -- 0 <= level <= 1
+        local level = math.exp(-(distance ^ 2) / (2 * state.sigma ^ 2)) -- 0 <= level <= 1
 
         -- update levels in global state
         state.levels[i] = level
@@ -61,22 +99,22 @@ end
 
 local function gaussian_scan(state, d)
     -- you need to invoke this logic in the main script to create a good starting condition.. or scene.initialize()
-    adjust_param(state, 'scan_val', d, 1 / 60, 0, 1)
+    adjust_param(state, 'scan_val', d, 1 / 60, 0, 1, true)
     calculate_gaussian_levels(state)
 end
 
 
 
 local function adjust_sigma(state, d)
-    s = adjust_param(state, 'sigma', d, .1,0.3,10)
+    adjust_param(state, 'sigma', d, .1, 0.3, 10)
     gaussian_scan(state, 0) --update scan to reflect new curve in state
 end
 
 local scene = Scene:create({
     name = scene_name,
     e1 = nil,
-    e2 = adjust_sigma,
-    e3 = gaussian_scan,
+    e2 = gaussian_scan,
+    e3 = adjust_sigma,
     k1_hold_on = nil,
     k1_hold_off = nil,
     k2_on = nil,
@@ -90,8 +128,8 @@ function scene:render(state)
     -- todo: this should be a graphic component, the entire thing belongs together
     screen.clear()
     local scan_bar_width = 72 -- dividable by 6 and 8
-    local offsetx = (128 - scan_bar_width) / 2
-    local offsety = 48
+    local offsetx = (96 - scan_bar_width) / 2
+    local offsety = 44
     local margin = 4
     local bar_width = 6
     local num_bars = 6
@@ -99,22 +137,26 @@ function scene:render(state)
     local scan_bar_height = 4
     local level_height = 24
 
-    -- rect
+    -- window
+    window_scan:render()
+    window_lfo:render()
+
+    -- rect for scanning
     screen.level(15)
     screen.line_width(1)
-    screen.rect(offsetx, offsety, scan_bar_width, scan_bar_height)
+    screen.rect(offsetx+1, offsety, scan_bar_width-1, scan_bar_height)
     screen.stroke() -- stroke might give it a pixel extra compared to fill
 
-    -- dash
+    -- dash (scan pos)
     screen.level(10)
-    screen.rect(offsetx + (state.scan_val * (scan_bar_width - dash_width - 1)), offsety, dash_width, scan_bar_height)
-    screen.move(10,10)
+    screen.rect(offsetx + (state.scan_val * (scan_bar_width - dash_width)), offsety, dash_width, scan_bar_height)
+    screen.move(10, 10)
 
-    -- bars
+    -- 6 bars
     for i = 0, 5 do
         -- total width of bars should be equal to scan_bar_width.
-        screen.move(i*20, 10)
-        screen.text(string.format("%.2f", state.levels[i + 1]))
+        screen.move(i * 20, 10)
+        --screen.text(string.format("%.2f", state.levels[i + 1]))
         screen.rect(
             offsetx + (i * (scan_bar_width - bar_width) / (num_bars - 1)),
             offsety - margin,
@@ -124,8 +166,32 @@ function scene:render(state)
         screen.fill()
         softcut.level(i, state.levels[i + 1])
     end
-    screen.move(56, 64)
-    screen.text(state.scan_val)
+
+    -- lfo toggle
+    screen.rect(103, 17, 4, 4)
+    screen.move(110, 21)
+    screen.text('ON')
+    screen.stroke(0)
+    
+
+    -- lfo halfline
+    -- screen.move(99, 34)
+    -- screen.line(127,34)
+    -- screen.stroke()
+    
+    -- lfo HZ
+    screen.move(103, 50)
+    screen.text("30 Hz")
+
+    -- fig8
+    screen.move(64, 64)
+
+    local size = 10
+    local x, y = figure_eight(state.scan_val * math.pi * 2, 10, 10)
+    screen.level(15)
+
+    -- screen.move(56, 64)
+    -- screen.text(state.scan_val)
     screen.update()
 end
 

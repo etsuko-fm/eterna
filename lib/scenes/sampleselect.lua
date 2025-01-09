@@ -136,9 +136,19 @@ local scene = Scene:create({
 
 function scene:render(state)
     if scene_disabled then return end -- for rendering the fileselect interface
+    screen.clear()
+
+    -- window
+    screen.move(0,0)
+    screen.rect(0, 0, 128, 9)
+    screen.level(8)
+    screen.fill()
+    screen.move(64, 6)
+    screen.level(0)
+    screen.font_face(68)
+    screen.text_center("sample")
 
     -- todo: reusable button graphic (rect + text, selected/deselected)
-    screen.clear()
     screen.level(15)
     screen.move(0, 45)
     screen.text(state.filename)
