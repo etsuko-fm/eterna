@@ -1,5 +1,5 @@
-local Scene = include("bits/lib/scenes/Scene")
-local scene_name = "TimeControls"
+local Page = include("bits/lib/pages/Page")
+local page_name = "TimeControls"
 local max_length_dirty = false
 
 
@@ -27,8 +27,8 @@ local function adjust_fade(state, d)
 end
 
 
-local scene = Scene:create({
-    name = scene_name,
+local page = Page:create({
+    name = page_name,
     e1 = nil,
     e2 = adjust_size,
     e3 = adjust_fade,
@@ -54,7 +54,7 @@ local function update_segment_lengths(state)
     max_length_dirty = false
 end
 
-function scene:render(state)
+function page:render(state)
     screen.clear()
     screen.level(15)
     screen.font_size(8)
@@ -83,8 +83,8 @@ function scene:render(state)
     update_segment_lengths(state)
 end
 
-function scene:initialize(state)
+function page:initialize(state)
     -- empty
 end
 
-return scene
+return page

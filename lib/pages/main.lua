@@ -1,4 +1,4 @@
-local Scene = include("bits/lib/scenes/Scene")
+local Page = include("bits/lib/pages/Page")
 local Ring = include("bits/lib/graphics/Ring")
 local Zigzag = include("bits/lib/graphics/Zigzag")
 
@@ -73,7 +73,7 @@ local function create_rings(state)
     end
 end
 
-local scene = Scene:create({
+local page = Page:create({
     name = "Main",
     e1 = nil,
     e2 = nil,
@@ -86,11 +86,11 @@ local scene = Scene:create({
     k3_off = nil,
 })
 
-function scene:initialize(state)
+function page:initialize(state)
     create_rings(state)
 end
 
-function scene:render(state)
+function page:render(state)
     screen.clear()
     -- if math.random() > .99 then print("rendering main ") end
     for i = 1, 6 do
@@ -108,4 +108,4 @@ function scene:render(state)
     end
 end
 
-return scene
+return page

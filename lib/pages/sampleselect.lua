@@ -1,12 +1,12 @@
-local Scene = include("bits/lib/scenes/Scene")
-local scene_name = "SampleSelect"
+local Page = include("bits/lib/pages/Page")
+local page_name = "SampleSelect"
 local fileselect = require('fileselect')
-local scene_disabled = false
+local page_disabled = false
 local debug = include("bits/lib/util/debug")
 local max_length_dirty = false
 
 --[[
-Sample select scene
+Sample select page
 Graphics:
 - Waveform with global loop points
 - Instructions for sample loading
@@ -110,19 +110,19 @@ local function select_sample(state)
             state.selected_sample = file_path
             state.events.event_switch_sample = true
         end
-        scene_disabled = false -- proceed with rendering scene instead of file menu
+        page_disabled = false -- proceed with rendering page instead of file menu
         print('selected ' .. file_path)
     end
     fileselect.enter(_path.dust, callback, "audio")
-    scene_disabled = true
+    page_disabled = true
 end
 
 function scale_waveform(state, d)
     state.scale_waveform = state.scale_waveform + d
 end
 
-local scene = Scene:create({
-    name = scene_name,
+local page = Page:create({
+    name = page_name,
     e1 = nil,
     e2 = adjust_loop_pos,
     e3 = adjust_loop_len,
@@ -134,8 +134,8 @@ local scene = Scene:create({
     k3_off = nil,
 })
 
-function scene:render(state)
-    if scene_disabled then return end -- for rendering the fileselect interface
+function page:render(state)
+    if page_disabled then return end -- for rendering the fileselect interface
     screen.clear()
 
     -- window
@@ -184,7 +184,7 @@ function scene:render(state)
     screen.update()
 end
 
-function scene:initialize(state)
+function page:initialize(state)
     function on_render(ch, start, i, s)
         -- this is a callback, for every softcut.render_buffer() invocation
         print('buffer contents rendered')
@@ -200,4 +200,5 @@ function scene:initialize(state)
     softcut.render_buffer(1, 0, state.sample_length, 128)
 end
 
-return scene
+
+return page

@@ -1,8 +1,8 @@
-local Scene = include("bits/lib/scenes/Scene")
-local scene_name = "Scan"
+local Page = include("bits/lib/pages/Page")
+local page_name = "Scan"
 local Window = include("bits/lib/graphics/Window")
 --[[
-Scan scene
+Scan page
 Graphics:
 - 6 vertical bars that show the level of each softcut voice
 - 1 horizontal bar that shows the current scan value
@@ -98,7 +98,7 @@ local function calculate_gaussian_levels(state)
 end
 
 local function gaussian_scan(state, d)
-    -- you need to invoke this logic in the main script to create a good starting condition.. or scene.initialize()
+    -- you need to invoke this logic in the main script to create a good starting condition.. or page.initialize()
     adjust_param(state, 'scan_val', d, 1 / 60, 0, 1, true)
     calculate_gaussian_levels(state)
 end
@@ -110,21 +110,33 @@ local function adjust_sigma(state, d)
     gaussian_scan(state, 0) --update scan to reflect new curve in state
 end
 
-local scene = Scene:create({
-    name = scene_name,
+local function switch_window(state)
+    local n = nil
+    for _, window in ipairs(state.scan.windows) do
+        if window.selected == true then
+            window.selected = false
+            n = _
+        end
+    end
+end
+
+
+
+local page = Page:create({
+    name = page_name,
     e1 = nil,
     e2 = gaussian_scan,
     e3 = adjust_sigma,
     k1_hold_on = nil,
     k1_hold_off = nil,
-    k2_on = nil,
+    k2_on = switch_window,
     k2_off = nil,
     k3_on = nil,
     k3_off = nil,
 })
 
 
-function scene:render(state)
+function page:render(state)
     -- todo: this should be a graphic component, the entire thing belongs together
     screen.clear()
     local scan_bar_width = 72 -- dividable by 6 and 8
@@ -195,9 +207,11 @@ function scene:render(state)
     screen.update()
 end
 
-function scene:initialize(state)
-    -- I'm not sure to what extent a scene should have business logic like this
+function page:initialize(state)
+    -- I'm not sure to what extent a page should have business logic like this
     calculate_gaussian_levels(state)
+    table.insert(state.scan.windows, window_scan)
+    table.insert(state.scan.windows, window_lfo)
 end
 
-return scene
+return page

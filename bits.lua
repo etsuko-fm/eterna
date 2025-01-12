@@ -1,8 +1,8 @@
 local audio_util = include("bits/lib/util/audio_util")
-local scene_main = include("bits/lib/scenes/main")
-local scene_time_controls = include("bits/lib/scenes/timecontrols")
-local scene_scan = include("bits/lib/scenes/scan")
-local scene_sample_select = include("bits/lib/scenes/sampleselect")
+local page_main = include("bits/lib/pages/main")
+local page_time_controls = include("bits/lib/pages/timecontrols")
+local page_scan = include("bits/lib/pages/scan")
+local page_sample_select = include("bits/lib/pages/sampleselect")
 
 local debug_mode = true
 local fps = 60
@@ -30,36 +30,39 @@ local state = {
   loop_sections = {}, -- one item per softcut voice
 
   -- scanning
+  scan = {
+    windows = {}
+  },
   scan_val = 0.5,                 -- 0 to 1; allows scanning through softcut voices (think smooth soloing/muting)
-  levels = { 0, 0, 0, 0, 0, 0, }, -- softcut levels; initialized later by the scan scene
+  levels = { 0, 0, 0, 0, 0, 0, }, -- softcut levels; initialized later by the scan page
   sigma = 1,                      -- Width of the gaussian curve, adjustable for sharper or broader curves
 
   -- event system
   events = {}
 }
 
-local scenes = {
-  scene_main,
-  scene_time_controls,
-  scene_scan,
-  scene_sample_select,
+local pages = {
+  page_main,
+  page_time_controls,
+  page_scan,
+  page_sample_select,
 }
 
-local current_scene_index = 1
-local current_scene = scenes[current_scene_index]
+local current_page_index = 1
+local current_page = pages[current_page_index]
 
 -- todo: this is great re-usable functionality, move to lib; also confusing otherwise
--- should then be in a SceneManager class. However cyling scenes is not always the most straightforward thing to do.
-local function cycle_scene_forward()
-  -- Increment the current scene index, reset to 1 if we exceed the table length
-  current_scene_index = (current_scene_index % #scenes) + 1
-  current_scene = scenes[current_scene_index]
+-- should then be in a PageManager class. However cyling pages is not always the most straightforward thing to do.
+local function cycle_page_forward()
+  -- Increment the current page index, reset to 1 if we exceed the table length
+  current_page_index = (current_page_index % #pages) + 1
+  current_page = pages[current_page_index]
 end
 
-local function cycle_scene_backward()
-  -- Decrement the current scene index, wrap around to the last scene if it goes below 1
-  current_scene_index = (current_scene_index - 2) % #scenes + 1
-  current_scene = scenes[current_scene_index]
+local function cycle_page_backward()
+  -- Decrement the current page index, wrap around to the last page if it goes below 1
+  current_page_index = (current_page_index - 2) % #pages + 1
+  current_page = pages[current_page_index]
 end
 
 local function count()
@@ -112,8 +115,8 @@ local function randomize_softcut(state)
     softcut.loop_end(i, state.loop_sections[i][2])
   end
   
-  -- update rings in the main scene
-  scene_main:initialize(state)
+  -- update rings in the main page
+  page_main:initialize(state)
 end
 
 local function modulate_loop_points()
@@ -182,10 +185,10 @@ function init()
   -- get initial position values for softcut voices
   query_positions()
 
-  scene_main.k2_off = randomize_softcut -- bind function to scene, todo: use events
+  page_main.k2_off = randomize_softcut -- bind function to page, todo: use events
 
-  for _, scene in ipairs(scenes) do
-    scene:initialize(state)
+  for _, page in ipairs(pages) do
+    page:initialize(state)
   end
 
   enable_all_voices()
@@ -197,34 +200,34 @@ end
 
 
 function key(n, z)
-  if n == 1 and z == 0 and current_scene.k1_off then current_scene.k1_off(state) end
-  if n == 1 and z == 1 and current_scene.k1_on then current_scene.k1_on(state) end
-  if n == 2 and z == 0 and current_scene.k2_off then current_scene.k2_off(state) end
-  if n == 2 and z == 1 and current_scene.k2_on then current_scene.k2_on(state) end
-  if n == 3 and z == 0 and current_scene.k3_off then current_scene.k3_off(state) end
-  if n == 3 and z == 1 and current_scene.k3_on then current_scene.k3_on(state) end
+  if n == 1 and z == 0 and current_page.k1_off then current_page.k1_off(state) end
+  if n == 1 and z == 1 and current_page.k1_on then current_page.k1_on(state) end
+  if n == 2 and z == 0 and current_page.k2_off then current_page.k2_off(state) end
+  if n == 2 and z == 1 and current_page.k2_on then current_page.k2_on(state) end
+  if n == 3 and z == 0 and current_page.k3_off then current_page.k3_off(state) end
+  if n == 3 and z == 1 and current_page.k3_on then current_page.k3_on(state) end
 end
 
 local ticks = 0
 function enc(n, d)
   if n == 1 then
-    -- the ticks mechanism verifies that scene switch is intentional
+    -- the ticks mechanism verifies that page switch is intentional
     if d > 0 then
       ticks = ticks + 1
       if ticks >= 5 then
-        cycle_scene_forward()
+        cycle_page_forward()
         ticks = 0
       end
     else
       ticks = ticks - 1
       if ticks <= -5 then
-        cycle_scene_backward()
+        cycle_page_backward()
         ticks = 0
       end
     end
   end
-  if n == 2 and current_scene.e2 then current_scene.e2(state, d) end
-  if n == 3 and current_scene.e3 then current_scene.e3(state, d) end
+  if n == 2 and current_page.e2 then current_page.e2(state, d) end
+  if n == 3 and current_page.e3 then current_page.e3(state, d) end
 end
 
 function query_positions()
@@ -251,9 +254,9 @@ end
 function refresh()
   if ready then
     query_positions()
-    current_scene:render(state)
+    current_page:render(state)
 
-    -- sort of an event based system, allows scenes to request main functionality
+    -- sort of an event based system, allows pages to request main functionality
     for event, handler in pairs(event_handlers) do
       if state.events[event] == true then
         handler()

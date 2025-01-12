@@ -1,9 +1,9 @@
-local Scene = {
-  -- A scene defines which functionality is bound to the currently rendered screen.
+local Page = {
+  -- A page defines which functionality is bound to the currently rendered screen.
   -- It is therefore created with callback functions for the three hardware knobs and encoders,
   -- and one for rendering the screen.
   name = nil,
-  interface = nil, -- table with functions the scene may invoke
+  interface = nil, -- table with functions the page may invoke
   e1 = nil,
   e2 = nil,
   e3 = nil,
@@ -15,7 +15,7 @@ local Scene = {
   k3_off = nil,
 }
 
-function Scene:create(o)
+function Page:create(o)
   -- create state if not provided
   o = o or {}
 
@@ -27,4 +27,4 @@ function Scene:create(o)
   return o
 end
 
-return Scene
+return Page
