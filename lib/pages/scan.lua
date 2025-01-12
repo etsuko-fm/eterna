@@ -125,19 +125,33 @@ local function adjust_sigma(state, d)
     gaussian_scan(state, 0) --update scan to reflect new curve in state
 end
 
+local function toggle_lfo(state)
+    toggle.on = not toggle.on
+end
+
+local function e2(state, d) 
+    if state.scan.windows[1].selected == true then
+        gaussian_scan(state, d)
+    else
+        toggle_lfo(state)
+    end
+end
+
+local function e3(state) 
+end
 
 
 local page = Page:create({
     name = page_name,
     e1 = nil,
-    e2 = gaussian_scan,
+    e2 = e2,
     e3 = adjust_sigma,
     k1_hold_on = nil,
     k1_hold_off = nil,
-    k2_on = cycle_window_forward,
+    k2_on = nil,
     k2_off = nil,
     k3_on = nil,
-    k3_off = nil,
+    k3_off = cycle_window_forward,
 })
 
 

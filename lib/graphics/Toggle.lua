@@ -23,13 +23,15 @@ Toggle = {
     screen.line_width(1)
     screen.level(1)
     screen.move(self.x, self.y)
-    screen.level(3)
-    screen.rect(self.x, self.y, self.size, self.size)
+    screen.level(15)
     local txt
-    if self.selected then
+    if self.on then
+        screen.rect(self.x - 1, self.y - 1, self.size + 1, self.size + 1)
         screen.fill()
+        
         txt = 'ON'
     else
+        screen.rect(self.x, self.y, self.size, self.size)
         screen.stroke()
         txt = "OFF"
     end
