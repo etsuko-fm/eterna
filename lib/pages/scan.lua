@@ -1,6 +1,7 @@
 local Page = include("bits/lib/pages/Page")
 local page_name = "Scan"
 local Window = include("bits/lib/graphics/Window")
+local Toggle = include("bits/lib/graphics/Toggle")
 --[[
 Scan page
 Graphics:
@@ -15,6 +16,15 @@ Interactions:
  K2: cycle through sigma values
  K3: cycle through scan values
 ]]
+local window_index = 1
+
+local function cycle_window_forward(state)
+    -- Increment the current index, reset to 1 if it exceeds table length
+    window_index = (window_index % #state.scan.windows) + 1
+    for n, window in ipairs(state.scan.windows) do
+        state.scan.windows[n].selected = n == window_index
+    end
+  end
 
 local window_scan = Window:new({
     x = 0,
@@ -44,6 +54,11 @@ local window_lfo = Window:new({
     vertical_separations=1,
 })
 
+local toggle = Toggle:new({
+    x = 103,
+    y = 17,
+    size = 4
+})
 -- Function to calculate x and y positions based on time parameter
 local function figure_eight(t, width, height)
     local x = width * math.sin(t)          -- X follows a sine wave
@@ -110,16 +125,6 @@ local function adjust_sigma(state, d)
     gaussian_scan(state, 0) --update scan to reflect new curve in state
 end
 
-local function switch_window(state)
-    local n = nil
-    for _, window in ipairs(state.scan.windows) do
-        if window.selected == true then
-            window.selected = false
-            n = _
-        end
-    end
-end
-
 
 
 local page = Page:create({
@@ -129,7 +134,7 @@ local page = Page:create({
     e3 = adjust_sigma,
     k1_hold_on = nil,
     k1_hold_off = nil,
-    k2_on = switch_window,
+    k2_on = cycle_window_forward,
     k2_off = nil,
     k3_on = nil,
     k3_off = nil,
@@ -179,12 +184,8 @@ function page:render(state)
         softcut.level(i, state.levels[i + 1])
     end
 
-    -- lfo toggle
-    screen.rect(103, 17, 4, 4)
-    screen.move(110, 21)
-    screen.text('ON')
-    screen.stroke(0)
-    
+    -- lfo toggle    
+    toggle:render()
 
     -- lfo halfline
     -- screen.move(99, 34)
