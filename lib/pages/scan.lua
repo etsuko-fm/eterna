@@ -2,6 +2,7 @@ local Page = include("bits/lib/pages/Page")
 local page_name = "Scan"
 local Window = include("bits/lib/graphics/Window")
 local Toggle = include("bits/lib/graphics/Toggle")
+local TextParam = include("bits/lib/graphics/TextParam")
 --[[
 Scan page
 Graphics:
@@ -58,6 +59,13 @@ local toggle = Toggle:new({
     x = 103,
     y = 17,
     size = 4
+})
+
+local lfo_rate = TextParam:new({
+    x = 103,
+    y = 50,
+    val = 30,
+    unit = ' Hz',
 })
 -- Function to calculate x and y positions based on time parameter
 local function figure_eight(t, width, height)
@@ -129,6 +137,10 @@ local function toggle_lfo(state)
     toggle.on = not toggle.on
 end
 
+local function adjust_lfo_rate(state, d)
+    lfo_rate.val = lfo_rate.val + d
+end
+
 local function e2(state, d)
     if state.scan.windows[1].selected == true then
         gaussian_scan(state, d)
@@ -137,7 +149,14 @@ local function e2(state, d)
     end
 end
 
-local function e3(state)
+
+local function e3(state, d)
+    if state.scan.windows[1].selected == true then
+        adjust_sigma(state, d)
+    else
+        adjust_lfo_rate(state, d)
+    end
+
 end
 
 
@@ -145,11 +164,11 @@ local page = Page:create({
     name = page_name,
     e1 = nil,
     e2 = e2,
-    e3 = adjust_sigma,
+    e3 = e3,
     k1_hold_on = nil,
     k1_hold_off = nil,
     k2_on = nil,
-    k2_off = nil,
+    k2_off = cycle_window_forward,
     k3_on = nil,
     k3_off = cycle_window_forward,
 })
@@ -207,9 +226,8 @@ function page:render(state)
     -- screen.stroke()
 
     -- lfo HZ
-    screen.move(103, 50)
-    screen.text("30 Hz")
-
+    lfo_rate:render()
+    
     -- fig8
     screen.move(64, 64)
 
