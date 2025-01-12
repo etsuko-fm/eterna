@@ -9,15 +9,15 @@ local fps = 60
 local state = {
   -- sample
   playback_positions = {},
-  rates = {}, -- playback rates
+  rates = {},               -- playback rates
   pans = {},
   max_sample_length = 10.0, -- limits the allowed enabled section of the sample
   selected_sample = _path.audio .. "etsuko/sea-minor/sea-minor-chords.wav",
-  sample_length = nil, -- full length of the currently loaded sample
+  sample_length = nil,      -- full length of the currently loaded sample
 
-   -- section of the sample that is currently enabled; 
-   --  playback position randomizations will be done within this section.
-  enabled_section = {nil, nil},
+  -- section of the sample that is currently enabled;
+  --  playback position randomizations will be done within this section.
+  enabled_section = { nil, nil },
 
   -- waveform
   waveform_samples = {},
@@ -25,9 +25,9 @@ local state = {
   scale_waveform = 15,
 
   -- time controls
-  fade_time = .2, -- crossfade when looping playback
+  fade_time = .2,                    -- crossfade when looping playback
   request_randomize_softcut = false, -- todo: is this still used or replaced it with events?
-  loop_sections = {}, -- one item per softcut voice
+  loop_sections = {},                -- one item per softcut voice
 
   -- scanning
   scan = {
@@ -85,7 +85,7 @@ local function generate_loop_segment(state)
   local a = state.enabled_section[1] + (math.random() * (max_allowed_length - padding))
 
   -- End position should be a larger number than start position; and confine to the defined max length
-  local b = a + (math.random() * (state.enabled_section[2]-a))
+  local b = a + (math.random() * (state.enabled_section[2] - a))
   return a, b
 end
 
@@ -114,7 +114,7 @@ local function randomize_softcut(state)
     softcut.loop_start(i, state.loop_sections[i][1])
     softcut.loop_end(i, state.loop_sections[i][2])
   end
-  
+
   -- update rings in the main page
   page_main:initialize(state)
 end
@@ -152,9 +152,9 @@ local function switch_sample(file)
   state.sample_length = audio_util.load_sample(file, true)
   print("sample_length: " .. state.sample_length)
 
-  state.enabled_section = {0, state.max_sample_length}
+  state.enabled_section = { 0, state.max_sample_length }
   if state.sample_length < state.max_sample_length then
-    state.enabled_section = {0, state.sample_length}
+    state.enabled_section = { 0, state.sample_length }
   end
 
   softcut.render_buffer(1, 0, state.sample_length, 128)
@@ -197,7 +197,6 @@ function init()
   c = metro.init(count, 1 / fps)
   c:start()
 end
-
 
 function key(n, z)
   if n == 1 and z == 0 and current_page.k1_off then current_page.k1_off(state) end

@@ -24,20 +24,20 @@ local function cycle_window_forward(state)
     for n, window in ipairs(state.scan.windows) do
         state.scan.windows[n].selected = n == window_index
     end
-  end
+end
 
 local window_scan = Window:new({
     x = 0,
     y = 0,
     w = 96,
     h = 64,
-    title="SCAN",
-    font_face=68,
-    brightness=15,
-    border=true,
-    selected=true,
-    horizontal_separations=0,
-    vertical_separations=0,
+    title = "SCAN",
+    font_face = 68,
+    brightness = 15,
+    border = true,
+    selected = true,
+    horizontal_separations = 0,
+    vertical_separations = 0,
 })
 
 local window_lfo = Window:new({
@@ -45,13 +45,13 @@ local window_lfo = Window:new({
     y = 0,
     w = 30,
     h = 64,
-    title="LFO",
-    font_face=68,
-    brightness=15,
-    border=true,
-    selected=false,
-    horizontal_separations=0,
-    vertical_separations=1,
+    title = "LFO",
+    font_face = 68,
+    brightness = 15,
+    border = true,
+    selected = false,
+    horizontal_separations = 0,
+    vertical_separations = 1,
 })
 
 local toggle = Toggle:new({
@@ -129,7 +129,7 @@ local function toggle_lfo(state)
     toggle.on = not toggle.on
 end
 
-local function e2(state, d) 
+local function e2(state, d)
     if state.scan.windows[1].selected == true then
         gaussian_scan(state, d)
     else
@@ -137,7 +137,7 @@ local function e2(state, d)
     end
 end
 
-local function e3(state) 
+local function e3(state)
 end
 
 
@@ -175,7 +175,7 @@ function page:render(state)
     -- rect for scanning
     screen.level(15)
     screen.line_width(1)
-    screen.rect(offsetx+1, offsety, scan_bar_width-1, scan_bar_height)
+    screen.rect(offsetx + 1, offsety, scan_bar_width - 1, scan_bar_height)
     screen.stroke() -- stroke might give it a pixel extra compared to fill
 
     -- dash (scan pos)
@@ -198,14 +198,14 @@ function page:render(state)
         softcut.level(i, state.levels[i + 1])
     end
 
-    -- lfo toggle    
+    -- lfo toggle
     toggle:render()
 
     -- lfo halfline
     -- screen.move(99, 34)
     -- screen.line(127,34)
     -- screen.stroke()
-    
+
     -- lfo HZ
     screen.move(103, 50)
     screen.text("30 Hz")
