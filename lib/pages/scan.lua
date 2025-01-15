@@ -16,7 +16,14 @@ local margin = 4
 local bar_width = 6
 local num_bars = 6
 local level_height = 24
+local sigma_min = 0.3
+local sigma_max = 15
+ -- these graphics are initialized in page:initialize
+ local h_slider
+ local v_slider
+ local bars
 
+ 
 --[[
 Scan page
 Graphics:
@@ -82,25 +89,6 @@ local lfo_rate = TextParam:new({
     unit = ' Hz',
 })
 
-local slider = Slider:new({
-    direction = 'HORIZONTAL',
-    x = offsetx + 1, -- account for stroke width
-    y = offsety,
-    w = scan_bar_width - 1,
-    h = scan_bar_height,
-    dash_size = 2,
-})
-
-local vertical_slider = Slider:new({
-    direction = 'VERTICAL',
-    x = window_left_width - 8,
-    y = 16,
-    w = 4,
-    h = level_height,
-    dash_size = 2,
-})
-
-local bars -- initialized in :init
 
 -- Function to calculate x and y positions based on time parameter
 local function figure_eight(t, width, height)
@@ -130,20 +118,24 @@ end
 local function gaussian_scan(state, d)
     -- you need to invoke this logic in the main script to create a good starting condition.. or page.initialize()
     adjust_param(state, 'scan_val', d, 1 / 60, 0, 1, true)
-    slider.val = state.scan_val
+    h_slider.val = state.scan_val
     bars.scan_val = state.scan_val
     bars:calculate_gaussian_levels()
 end
 
-
+local function map_sigma(v)
+    return util.linlin(sigma_min, sigma_max, 0, 1, v)
+end
 
 local function adjust_sigma(state, d)
     local k = (10 ^ math.log(state.sigma, 10)) / 25
-    adjust_param(state, 'sigma', d, k, .3, 15, false)
-    vertical_slider.val = util.linlin(.3, 10, 0, 1, state.sigma)
-    bars.sigma = state.sigma
+    adjust_param(state, 'sigma', d, k, sigma_min, sigma_max, false)
+    v_slider.val = map_sigma(state.sigma)
+    bars.sigma = state.sigma -- update bars graphic, as it renders the bars based on sigma
     gaussian_scan(state, 0) --update scan to reflect new curve in state
 end
+
+
 
 local function toggle_lfo(state)
     toggle.on = not toggle.on
@@ -161,7 +153,6 @@ local function e2(state, d)
     end
 end
 
-
 local function e3(state, d)
     if state.scan.windows[1].selected == true then
         adjust_sigma(state, d)
@@ -169,7 +160,6 @@ local function e3(state, d)
         adjust_lfo_rate(state, d)
     end
 end
-
 
 local page = Page:create({
     name = page_name,
@@ -184,7 +174,6 @@ local page = Page:create({
     k3_off = cycle_window_forward,
 })
 
-
 function page:render(state)
     -- todo: this should be a graphic component, the entire thing belongs together
     screen.clear()
@@ -194,8 +183,8 @@ function page:render(state)
     window_lfo:render()
 
     -- slider
-    slider:render()
-    vertical_slider:render()
+    h_slider:render()
+    v_slider:render()
 
     -- 6 bars
     bars.levels = state.levels
@@ -228,7 +217,6 @@ function page:render(state)
 end
 
 function page:initialize(state)
-    -- I'm not sure to what extent a page should have business logic like this
     bars = GaussianBars:new({
         x = offsetx,
         y = offsety - margin,
@@ -236,6 +224,25 @@ function page:initialize(state)
         max_bar_height = level_height,
         num_bars = num_bars,
         sigma = state.sigma,
+        scan_val = state.scan_val,
+    })
+    h_slider = Slider:new({
+        direction = 'HORIZONTAL',
+        x = offsetx + 1, -- account for stroke width
+        y = offsety,
+        w = scan_bar_width - 1,
+        h = scan_bar_height,
+        dash_size = 2,
+        val = state.scan_val,
+    })
+    v_slider = Slider:new({
+        direction = 'VERTICAL',
+        x = window_left_width - 8,
+        y = 16,
+        w = 4,
+        h = level_height,
+        dash_size = 2,
+        val = map_sigma(state.sigma),
     })
     table.insert(state.scan.windows, window_scan)
     table.insert(state.scan.windows, window_lfo)

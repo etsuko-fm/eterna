@@ -36,8 +36,7 @@ function Slider:render()
     elseif self.direction == "VERTICAL" then
         screen.rect(self.x, self.y + (self.val * (self.h - self.dash_size)), self.w, self.dash_size)
     end
-
-
+    screen.fill()
     screen.update()
 end
 
