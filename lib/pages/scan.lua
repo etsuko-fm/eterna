@@ -1,30 +1,13 @@
 local Page = include("bits/lib/pages/Page")
 local page_name = "Scan"
 local Window = include("bits/lib/graphics/Window")
-local Toggle = include("bits/lib/graphics/Toggle")
-local TextParam = include("bits/lib/graphics/TextParam")
 local Slider = include("bits/lib/graphics/Slider")
 local GaussianBars = include("bits/lib/graphics/GaussianBars")
 
--- graphics settings
-local scan_bar_width = 72 -- dividable by 6 and 8
-local scan_bar_height = 4
-local window_left_width = 96
-local offsetx = (window_left_width - scan_bar_width) / 2
-local offsety = 44
-local margin = 4
-local bar_width = 6
-local num_bars = 6
-local level_height = 24
-local sigma_min = 0.3
-local sigma_max = 15
 -- these graphics are initialized in page:initialize
 local h_slider
 local v_slider
 local bars
-local lfo_rate_graphic
-
-
 
 --[[
 Scan page
@@ -40,56 +23,20 @@ Interactions:
  K2: cycle through sigma values
  K3: cycle through scan values
 ]]
-local window_index = 1
-
-local function cycle_window_forward(state)
-    -- Increment the current index, reset to 1 if it exceeds table length
-    window_index = (window_index % #state.scan.windows) + 1
-    for n, window in ipairs(state.scan.windows) do
-        state.scan.windows[n].selected = n == window_index
-    end
-end
 
 local window_scan = Window:new({
     x = 0,
     y = 0,
-    w = 96,
+    w = 128,
     h = 64,
     title = "SCAN",
     font_face = 68,
     brightness = 15,
-    border = true,
+    border = false,
     selected = true,
     horizontal_separations = 0,
     vertical_separations = 0,
 })
-
-local window_lfo = Window:new({
-    x = 98,
-    y = 0,
-    w = 30,
-    h = 64,
-    title = "LFO",
-    font_face = 68,
-    brightness = 15,
-    border = true,
-    selected = false,
-    horizontal_separations = 0,
-    vertical_separations = 1,
-})
-
-local toggle = Toggle:new({
-    x = 103,
-    y = 17,
-    size = 4
-})
-
--- Function to calculate x and y positions based on time parameter
-local function figure_eight(t, width, height)
-    local x = width * math.sin(t)          -- X follows a sine wave
-    local y = height * math.sin(2 * t) / 2 -- Y follows a sine wave with twice the frequency
-    return x, y
-end
 
 
 local function adjust_param(tbl, param, d, mult, min, max, loop)
@@ -115,53 +62,25 @@ local function gaussian_scan(state, d)
     bars.scan_val = state.scan_val
 end
 
-local function map_sigma(v)
-    return util.linlin(sigma_min, sigma_max, 0, 1, v)
+local function map_sigma(state, v)
+    return util.linlin(state.sigma_min, state.sigma_max, 0, 1, v)
 end
 
 local function adjust_sigma(state, d)
     -- call this function with d=0 to update the state of the gaussian bars graphic and both sliders
     local k = (10 ^ math.log(state.sigma, 10)) / 25
-    adjust_param(state, 'sigma', d, k, sigma_min, sigma_max, false)
-    v_slider.val = map_sigma(state.sigma)
+    adjust_param(state, 'sigma', d, k, state.sigma_min, state.sigma_max, false)
+    v_slider.val = map_sigma(state, state.sigma)
     bars.sigma = state.sigma -- update bars graphic, as it renders the bars based on sigma
 end
 
-local function toggle_lfo(state)
-    if toggle.on then
-        state.scan_lfo:stop()
-    else
-        state.scan_lfo:start()
-        state.scan_lfo:set('phase', state.scan_val)
-    end
-    toggle.on = not toggle.on
-end
-
-local function adjust_lfo_rate(state, d)
-    new_val = state.scan_lfo:get('period') + (d / 4)
-    if new_val < 1/4 then
-        new_val = 1/4
-    end
-    state.scan_lfo:set('period', new_val)
-    state.scan_lfo_period = new_val
-    lfo_rate_graphic.val = new_val
-end
 
 local function e2(state, d)
-    if state.scan.windows[1].selected == true then
-        -- disable while LFO is modulating param
-        if not toggle.on then gaussian_scan(state, d) end
-    else
-        toggle_lfo(state)
-    end
+    gaussian_scan(state, d)
 end
 
 local function e3(state, d)
-    if state.scan.windows[1].selected == true then
-        adjust_sigma(state, d)
-    else
-        adjust_lfo_rate(state, d)
-    end
+    adjust_sigma(state, d)
 end
 
 local page = Page:create({
@@ -172,9 +91,9 @@ local page = Page:create({
     k1_hold_on = nil,
     k1_hold_off = nil,
     k2_on = nil,
-    k2_off = cycle_window_forward,
+    k2_off = nil,
     k3_on = nil,
-    k3_off = cycle_window_forward,
+    k3_off = nil,
 })
 
 function page:render(state)
@@ -183,7 +102,6 @@ function page:render(state)
 
     -- window
     window_scan:render()
-    window_lfo:render()
 
     -- slider
     h_slider:render()
@@ -195,87 +113,43 @@ function page:render(state)
     for i = 1, 6 do
         softcut.level(i, state.levels[i])
     end
-
-    -- lfo toggle
-    toggle:render()
-
-    -- lfo halfline
-    -- screen.move(99, 34)
-    -- screen.line(127,34)
-    -- screen.stroke()
-
-    -- lfo HZ
-    lfo_rate_graphic:render()
-
-    -- fig8
-    screen.move(64, 64)
-
-    local size = 10
-    local x, y = figure_eight(state.scan_val * math.pi * 2, 10, 10)
-    screen.level(15)
-
-    -- screen.move(56, 60)
-    -- screen.text(lfo_val)
-    -- screen.update()
 end
 
 function page:initialize(state)
     -- windows
     table.insert(state.scan.windows, window_scan)
-    table.insert(state.scan.windows, window_lfo)
 
     -- graphics
     bars = GaussianBars:new({
-        x = offsetx,
-        y = offsety - margin,
-        bar_width = bar_width,
-        max_bar_height = level_height,
-        num_bars = num_bars,
+        x = state.graph_x,
+        y = state.graph_y,
+        bar_width = state.bar_width,
+        max_bar_height = state.bar_height,
+        num_bars = state.num_bars,
         sigma = state.sigma,
         scan_val = state.scan_val,
+        brightness=15,
     })
     h_slider = Slider:new({
         direction = 'HORIZONTAL',
-        x = offsetx + 1, -- account for stroke width
-        y = offsety,
-        w = scan_bar_width - 1,
-        h = scan_bar_height,
-        dash_size = 2,
+        x = state.graph_x + 1, -- account for stroke width
+        y = state.graph_y,
+        w = state.graph_width - state.bar_width - 3,
+        h = 3,
+        dash_size = 1,
         val = state.scan_val,
+        hide=true,
     })
     v_slider = Slider:new({
         direction = 'VERTICAL',
-        x = window_left_width - 8,
+        x = state.window_width - 8,
         y = 16,
-        w = 4,
-        h = level_height,
-        dash_size = 2,
-        val = map_sigma(state.sigma),
+        w = 2,
+        h = state.bar_height,
+        dash_size = 1,
+        val = map_sigma(state, state.sigma),
+        hide=true,
     })
-    lfo_rate_graphic = TextParam:new({
-        x = 103,
-        y = 50,
-        val = state.scan_lfo_period,
-        unit = 'sec',
-    })
-
-    -- lfo
-    state.scan_lfo = _lfos:add {
-        shape = 'up',
-        min = 0,
-        max = 1,
-        depth = 1,
-        mode = 'free',
-        period = state.scan_lfo_period,
-        phase = 0,
-        -- pass our 'scaled' value (bounded by min/max and depth) to the engine:
-        action = function(scaled, raw)
-            state.scan_val = scaled
-            h_slider.val = scaled
-            bars.scan_val = scaled
-        end
-    }
-    state.scan_lfo:set('reset_target', 'mid: rising')
 
 end
 

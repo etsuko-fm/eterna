@@ -8,6 +8,8 @@ GaussianBars = {
     levels={},
     scan_val=0,
     sigma=0.3,
+    brightness=15,
+    bg_bar_brightness=1,
     hide = false,
     render_text=false,
 }
@@ -27,11 +29,22 @@ end
 function GaussianBars:render()
     if self.hide then return end
     self:calculate_gaussian_levels()
+    
     for i = 0, 5 do
         if self.render_text then
+            screen.level(self.brightness)
             screen.move(i * 20, 10)
             screen.text(string.format("%.2f", self.levels[i + 1]))
         end
+        screen.level(self.bg_bar_brightness)
+        screen.rect(
+            self.x + (i * (self.w - self.bar_width) / (self.num_bars - 1)),
+            self.y,
+            self.bar_width,
+            -self.h
+        )
+        screen.fill()
+        screen.level(self.brightness)
         screen.rect(
             self.x + (i * (self.w - self.bar_width) / (self.num_bars - 1)),
             self.y,

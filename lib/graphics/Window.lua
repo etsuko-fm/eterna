@@ -51,8 +51,8 @@ function Window:render()
     screen.text_center(self.title)
 
     -- border
+    screen.line_width(1)
     if self.border then
-        screen.line_width(1)
         if self.selected then
             screen.level(self.brightness)
         else 
@@ -67,6 +67,8 @@ function Window:render()
 
     if self.vertical_separations then
         local v_spacing = ((self.h - self.bar_height) / (self.vertical_separations + 1))
+        if self.selected then screen.level(self.brightness) else screen.level(self.deselected_brightness)
+        end
         for n = 1, self.vertical_separations do
             local pos = math.floor(self.bar_height + (v_spacing * n))
             screen.move(self.x, pos)

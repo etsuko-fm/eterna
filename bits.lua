@@ -2,7 +2,9 @@ local audio_util = include("bits/lib/util/audio_util")
 local page_main = include("bits/lib/pages/main")
 local page_time_controls = include("bits/lib/pages/timecontrols")
 local page_scan = include("bits/lib/pages/scan")
+local page_scan_lfo= include("bits/lib/pages/scanlfo")
 local page_sample_select = include("bits/lib/pages/sampleselect")
+local GaussianBars = include("bits/lib/graphics/GaussianBars")
 
 -- global lfos
 _lfos = require 'lfo'
@@ -32,15 +34,24 @@ local state = {
   request_randomize_softcut = false, -- todo: is this still used or replaced it with events?
   loop_sections = {},                -- one item per softcut voice
 
-  -- scanning
+  -- scanning / gaussian graph settings
   scan = {
     windows = {}
   },
   scan_val = 0.5,                 -- 0 to 1; allows scanning through softcut voices (think smooth soloing/muting)
   levels = { 0, 0, 0, 0, 0, 0, }, -- softcut levels; initialized later by the scan page
   sigma = 1,                      -- Width of the gaussian curve, adjustable for sharper or broader curves
+  sigma_min = 0.3,
+  sigma_max = 15,
   scan_lfo = nil,
   scan_lfo_period = 6,
+  num_bars = 6,
+  bar_height = 24,
+  graph_width = 64,
+  window_width = 128,
+  bar_width = 6,
+  graph_x = 32, -- (window_width - graph_width) / 2
+  graph_y = 50,
 
   -- event system
   events = {}
@@ -48,8 +59,8 @@ local state = {
 
 local pages = {
   page_main,
-  page_time_controls,
   page_scan,
+  page_scan_lfo,
   page_sample_select,
 }
 
