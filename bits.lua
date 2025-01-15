@@ -40,7 +40,8 @@ local state = {
   levels = { 0, 0, 0, 0, 0, 0, }, -- softcut levels; initialized later by the scan page
   sigma = 1,                      -- Width of the gaussian curve, adjustable for sharper or broader curves
   scan_lfo = nil,
-  
+  scan_lfo_period = 6,
+
   -- event system
   events = {}
 }

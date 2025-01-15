@@ -22,7 +22,7 @@ local sigma_max = 15
 local h_slider
 local v_slider
 local bars
-
+local lfo_rate_graphic
 
 
 
@@ -84,14 +84,6 @@ local toggle = Toggle:new({
     size = 4
 })
 
-local lfo_rate = TextParam:new({
-    x = 103,
-    y = 50,
-    val = 30,
-    unit = ' Hz',
-})
-
-
 -- Function to calculate x and y positions based on time parameter
 local function figure_eight(t, width, height)
     local x = width * math.sin(t)          -- X follows a sine wave
@@ -138,21 +130,27 @@ end
 local function toggle_lfo(state)
     if toggle.on then
         state.scan_lfo:stop()
-        print('stop phase: '..state.scan_lfo:get('phase'))
     else
-        print('start phase: '..state.scan_lfo:get('phase'))
         state.scan_lfo:start()
+        state.scan_lfo:set('phase', state.scan_val)
     end
     toggle.on = not toggle.on
 end
 
 local function adjust_lfo_rate(state, d)
-    lfo_rate.val = lfo_rate.val + d
+    new_val = state.scan_lfo:get('period') + (d / 4)
+    if new_val < 1/4 then
+        new_val = 1/4
+    end
+    state.scan_lfo:set('period', new_val)
+    state.scan_lfo_period = new_val
+    lfo_rate_graphic.val = new_val
 end
 
 local function e2(state, d)
     if state.scan.windows[1].selected == true then
-        gaussian_scan(state, d)
+        -- disable while LFO is modulating param
+        if not toggle.on then gaussian_scan(state, d) end
     else
         toggle_lfo(state)
     end
@@ -192,7 +190,7 @@ function page:render(state)
     v_slider:render()
 
     -- 6 bars
-    bars.levels = state.levels
+    state.levels = bars.levels
     bars:render()
     for i = 1, 6 do
         softcut.level(i, state.levels[i])
@@ -207,7 +205,7 @@ function page:render(state)
     -- screen.stroke()
 
     -- lfo HZ
-    lfo_rate:render()
+    lfo_rate_graphic:render()
 
     -- fig8
     screen.move(64, 64)
@@ -216,9 +214,9 @@ function page:render(state)
     local x, y = figure_eight(state.scan_val * math.pi * 2, 10, 10)
     screen.level(15)
 
-    -- screen.move(56, 64)
-    -- screen.text(state.scan_val)
-    screen.update()
+    -- screen.move(56, 60)
+    -- screen.text(lfo_val)
+    -- screen.update()
 end
 
 function page:initialize(state)
@@ -254,23 +252,31 @@ function page:initialize(state)
         dash_size = 2,
         val = map_sigma(state.sigma),
     })
+    lfo_rate_graphic = TextParam:new({
+        x = 103,
+        y = 50,
+        val = state.scan_lfo_period,
+        unit = 'sec',
+    })
 
     -- lfo
     state.scan_lfo = _lfos:add {
-        shape = 'saw',   -- shape
-        min = 0,          -- min
-        max = 1,          -- max
-        depth = 1,        -- depth (0 to 1)
-        mode = 'free', -- mode
-        period = 6,       -- period (in 'clocked' mode, represents beats)
+        shape = 'up',
+        min = 0,
+        max = 1,
+        depth = 1,
+        mode = 'free',
+        period = state.scan_lfo_period,
+        phase = 0,
         -- pass our 'scaled' value (bounded by min/max and depth) to the engine:
         action = function(scaled, raw)
-            print('raw: '..raw)
             state.scan_val = scaled
             h_slider.val = scaled
-            bars.scan_val = scaled        
-        end      -- action, always passes scaled and raw values
+            bars.scan_val = scaled
+        end
     }
+    state.scan_lfo:set('reset_target', 'mid: rising')
+
 end
 
 return page
