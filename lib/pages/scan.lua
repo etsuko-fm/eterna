@@ -3,6 +3,18 @@ local page_name = "Scan"
 local Window = include("bits/lib/graphics/Window")
 local Toggle = include("bits/lib/graphics/Toggle")
 local TextParam = include("bits/lib/graphics/TextParam")
+local Slider = include("bits/lib/graphics/Slider")
+
+-- graphics settings
+local scan_bar_width = 72 -- dividable by 6 and 8
+local scan_bar_height = 4
+local offsetx = (96 - scan_bar_width) / 2
+local offsety = 44
+local margin = 4
+local bar_width = 6
+local num_bars = 6
+local level_height = 24
+
 --[[
 Scan page
 Graphics:
@@ -67,6 +79,14 @@ local lfo_rate = TextParam:new({
     val = 30,
     unit = ' Hz',
 })
+
+local slider = Slider:new({
+    x=offsetx + 1, -- account for stroke width
+    y=offsety,
+    w=scan_bar_width - 1,
+    h=scan_bar_height,
+    dash_width=2,
+})
 -- Function to calculate x and y positions based on time parameter
 local function figure_eight(t, width, height)
     local x = width * math.sin(t)          -- X follows a sine wave
@@ -123,6 +143,7 @@ end
 local function gaussian_scan(state, d)
     -- you need to invoke this logic in the main script to create a good starting condition.. or page.initialize()
     adjust_param(state, 'scan_val', d, 1 / 60, 0, 1, true)
+    slider.scan_val = state.scan_val
     calculate_gaussian_levels(state)
 end
 
@@ -177,30 +198,13 @@ local page = Page:create({
 function page:render(state)
     -- todo: this should be a graphic component, the entire thing belongs together
     screen.clear()
-    local scan_bar_width = 72 -- dividable by 6 and 8
-    local offsetx = (96 - scan_bar_width) / 2
-    local offsety = 44
-    local margin = 4
-    local bar_width = 6
-    local num_bars = 6
-    local dash_width = 2
-    local scan_bar_height = 4
-    local level_height = 24
 
     -- window
     window_scan:render()
     window_lfo:render()
 
-    -- rect for scanning
-    screen.level(15)
-    screen.line_width(1)
-    screen.rect(offsetx + 1, offsety, scan_bar_width - 1, scan_bar_height)
-    screen.stroke() -- stroke might give it a pixel extra compared to fill
-
-    -- dash (scan pos)
-    screen.level(10)
-    screen.rect(offsetx + (state.scan_val * (scan_bar_width - dash_width)), offsety, dash_width, scan_bar_height)
-    screen.move(10, 10)
+    -- slider
+    slider:render()
 
     -- 6 bars
     for i = 0, 5 do
