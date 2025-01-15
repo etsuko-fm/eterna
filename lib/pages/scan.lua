@@ -4,6 +4,7 @@ local Window = include("bits/lib/graphics/Window")
 local Toggle = include("bits/lib/graphics/Toggle")
 local TextParam = include("bits/lib/graphics/TextParam")
 local Slider = include("bits/lib/graphics/Slider")
+local GaussianBars = include("bits/lib/graphics/GaussianBars")
 
 -- graphics settings
 local scan_bar_width = 72 -- dividable by 6 and 8
@@ -87,6 +88,14 @@ local slider = Slider:new({
     h=scan_bar_height,
     dash_width=2,
 })
+
+local bars = GaussianBars:new({
+    x = offsetx,
+    y = offsety - margin,
+    bar_width=bar_width,
+    max_bar_height=level_height,
+})
+
 -- Function to calculate x and y positions based on time parameter
 local function figure_eight(t, width, height)
     local x = width * math.sin(t)          -- X follows a sine wave
@@ -207,18 +216,10 @@ function page:render(state)
     slider:render()
 
     -- 6 bars
-    for i = 0, 5 do
-        -- total width of bars should be equal to scan_bar_width.
-        screen.move(i * 20, 10)
-        --screen.text(string.format("%.2f", state.levels[i + 1]))
-        screen.rect(
-            offsetx + (i * (scan_bar_width - bar_width) / (num_bars - 1)),
-            offsety - margin,
-            bar_width,
-            -level_height * state.levels[i + 1]
-        )
-        screen.fill()
-        softcut.level(i, state.levels[i + 1])
+    bars.levels = state.levels
+    bars:render()
+    for i = 1, 6 do
+        softcut.level(i, state.levels[i])
     end
 
     -- lfo toggle
