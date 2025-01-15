@@ -5,7 +5,7 @@ Slider = {
     h = 4,
     dash_size = 2,
     hide = false,
-    scan_val = 0, -- 0 < scan_val < 1
+    val = 0, -- 0 < val < 1
     direction = "HORIZONTAL"
 }
 
@@ -32,9 +32,9 @@ function Slider:render()
     -- dash (scan pos)
     screen.level(10)
     if self.direction == "HORIZONTAL" then
-        screen.rect(self.x + (self.scan_val * (self.w - self.dash_size)), self.y, self.dash_size, self.h)
+        screen.rect(self.x + (self.val * (self.w - self.dash_size)), self.y, self.dash_size, self.h)
     elseif self.direction == "VERTICAL" then
-        screen.rect(self.x, self.y + (self.scan_val * (self.h - self.dash_size)), self.w, self.dash_size)
+        screen.rect(self.x, self.y + (self.val * (self.h - self.dash_size)), self.w, self.dash_size)
     end
 
 

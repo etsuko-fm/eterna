@@ -83,30 +83,24 @@ local lfo_rate = TextParam:new({
 })
 
 local slider = Slider:new({
-    direction='HORIZONTAL',
-    x=offsetx + 1, -- account for stroke width
-    y=offsety,
-    w=scan_bar_width - 1,
-    h=scan_bar_height,
-    dash_size=2,
+    direction = 'HORIZONTAL',
+    x = offsetx + 1, -- account for stroke width
+    y = offsety,
+    w = scan_bar_width - 1,
+    h = scan_bar_height,
+    dash_size = 2,
 })
 
 local vertical_slider = Slider:new({
-    direction='VERTICAL',
+    direction = 'VERTICAL',
     x = window_left_width - 8,
     y = 16,
     w = 4,
     h = level_height,
-    dash_size=2,
+    dash_size = 2,
 })
 
-local bars = GaussianBars:new({
-    x = offsetx,
-    y = offsety - margin,
-    bar_width=bar_width,
-    max_bar_height=level_height,
-    num_bars=num_bars,
-})
+local bars -- initialized in :init
 
 -- Function to calculate x and y positions based on time parameter
 local function figure_eight(t, width, height)
@@ -133,39 +127,12 @@ local function adjust_param(tbl, param, d, mult, min, max, loop)
     return tbl[param] -- for inspection
 end
 
-local function calculate_gaussian_levels(state)
-    -- convert state.scan_val to levels for each softcut voice
-    local num_voices = 6
-    for i = 1, num_voices do
-        -- translate scan value to a virtual 'position' so that it matches the voice range (1 <= pos <= num_voices)
-        local pos = 1 + (state.scan_val * (num_voices))
-
-        -- the 'distance' from the current voice to the scan position
-        -- ex: scan pos 1, voice 5: abs(1 - 5) = abs(-4) = 4
-        -- ex: scan pos 5, voice 1: abs(5 - 1)) = abs(4) = 4
-        -- local distance = math.abs(pos - i) -- 0 <= distance <= 5
-        local distance = math.min(
-            math.abs(pos - i),
-            num_voices - math.abs(pos - i)
-        )
-
-        -- Calculate the level for the current voice using a Gaussian formula:
-        -- level = e^(-(distance^2) / (2 * sigma^2))
-        -- where distance^2 makes farther voices quieter.
-        -- where sigma controls how "wide" the Gaussian curve is (how quickly levels fade).
-        local level = math.exp(-(distance ^ 2) / (2 * state.sigma ^ 2)) -- 0 <= level <= 1
-
-        -- update levels in global state
-        state.levels[i] = level
-        -- print('distance['..i..'] = ' .. distance .. ', level['..i..'] = ' .. level)
-    end
-end
-
 local function gaussian_scan(state, d)
     -- you need to invoke this logic in the main script to create a good starting condition.. or page.initialize()
     adjust_param(state, 'scan_val', d, 1 / 60, 0, 1, true)
-    slider.scan_val = state.scan_val
-    calculate_gaussian_levels(state)
+    slider.val = state.scan_val
+    bars.scan_val = state.scan_val
+    bars:calculate_gaussian_levels()
 end
 
 
@@ -173,8 +140,8 @@ end
 local function adjust_sigma(state, d)
     local k = (10 ^ math.log(state.sigma, 10)) / 25
     adjust_param(state, 'sigma', d, k, .3, 15, false)
-    vertical_slider.scan_val = util.linlin(.3, 10, 0, 1, state.sigma)
-    print(state.sigma)
+    vertical_slider.val = util.linlin(.3, 10, 0, 1, state.sigma)
+    bars.sigma = state.sigma
     gaussian_scan(state, 0) --update scan to reflect new curve in state
 end
 
@@ -201,7 +168,6 @@ local function e3(state, d)
     else
         adjust_lfo_rate(state, d)
     end
-
 end
 
 
@@ -248,7 +214,7 @@ function page:render(state)
 
     -- lfo HZ
     lfo_rate:render()
-    
+
     -- fig8
     screen.move(64, 64)
 
@@ -263,7 +229,14 @@ end
 
 function page:initialize(state)
     -- I'm not sure to what extent a page should have business logic like this
-    calculate_gaussian_levels(state)
+    bars = GaussianBars:new({
+        x = offsetx,
+        y = offsety - margin,
+        bar_width = bar_width,
+        max_bar_height = level_height,
+        num_bars = num_bars,
+        sigma = state.sigma,
+    })
     table.insert(state.scan.windows, window_scan)
     table.insert(state.scan.windows, window_lfo)
 end
