@@ -9,7 +9,8 @@ local GaussianBars = include("bits/lib/graphics/GaussianBars")
 -- graphics settings
 local scan_bar_width = 72 -- dividable by 6 and 8
 local scan_bar_height = 4
-local offsetx = (96 - scan_bar_width) / 2
+local window_left_width = 96
+local offsetx = (window_left_width - scan_bar_width) / 2
 local offsety = 44
 local margin = 4
 local bar_width = 6
@@ -82,11 +83,21 @@ local lfo_rate = TextParam:new({
 })
 
 local slider = Slider:new({
+    direction='HORIZONTAL',
     x=offsetx + 1, -- account for stroke width
     y=offsety,
     w=scan_bar_width - 1,
     h=scan_bar_height,
-    dash_width=2,
+    dash_size=2,
+})
+
+local vertical_slider = Slider:new({
+    direction='VERTICAL',
+    x = window_left_width - 8,
+    y = 16,
+    w = 4,
+    h = level_height,
+    dash_size=2,
 })
 
 local bars = GaussianBars:new({
@@ -94,6 +105,7 @@ local bars = GaussianBars:new({
     y = offsety - margin,
     bar_width=bar_width,
     max_bar_height=level_height,
+    num_bars=num_bars,
 })
 
 -- Function to calculate x and y positions based on time parameter
@@ -159,7 +171,10 @@ end
 
 
 local function adjust_sigma(state, d)
-    adjust_param(state, 'sigma', d, .1, 0.3, 10)
+    local k = (10 ^ math.log(state.sigma, 10)) / 25
+    adjust_param(state, 'sigma', d, k, .3, 15, false)
+    vertical_slider.scan_val = util.linlin(.3, 10, 0, 1, state.sigma)
+    print(state.sigma)
     gaussian_scan(state, 0) --update scan to reflect new curve in state
 end
 
@@ -214,6 +229,7 @@ function page:render(state)
 
     -- slider
     slider:render()
+    vertical_slider:render()
 
     -- 6 bars
     bars.levels = state.levels

@@ -3,9 +3,10 @@ Slider = {
     y = 0,
     w = 64,
     h = 4,
-    dash_width = 2,
+    dash_size = 2,
     hide = false,
     scan_val = 0, -- 0 < scan_val < 1
+    direction = "HORIZONTAL"
 }
 
 function Slider:new(o)
@@ -26,11 +27,16 @@ function Slider:render()
     screen.level(15)
     screen.line_width(1)
     screen.rect(self.x, self.y, self.w, self.h)
-    screen.stroke()     -- stroke might give it a pixel extra compared to fill
+    screen.stroke() -- stroke might give it a pixel extra compared to fill
 
     -- dash (scan pos)
     screen.level(10)
-    screen.rect(self.x + (self.scan_val * (self.w - self.dash_width)), self.y, self.dash_width, self.h)
+    if self.direction == "HORIZONTAL" then
+        screen.rect(self.x + (self.scan_val * (self.w - self.dash_size)), self.y, self.dash_size, self.h)
+    elseif self.direction == "VERTICAL" then
+        screen.rect(self.x, self.y + (self.scan_val * (self.h - self.dash_size)), self.w, self.dash_size)
+    end
+
 
     screen.update()
 end
