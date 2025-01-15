@@ -18,12 +18,14 @@ local num_bars = 6
 local level_height = 24
 local sigma_min = 0.3
 local sigma_max = 15
- -- these graphics are initialized in page:initialize
- local h_slider
- local v_slider
- local bars
+-- these graphics are initialized in page:initialize
+local h_slider
+local v_slider
+local bars
 
- 
+
+
+
 --[[
 Scan page
 Graphics:
@@ -116,11 +118,9 @@ local function adjust_param(tbl, param, d, mult, min, max, loop)
 end
 
 local function gaussian_scan(state, d)
-    -- you need to invoke this logic in the main script to create a good starting condition.. or page.initialize()
     adjust_param(state, 'scan_val', d, 1 / 60, 0, 1, true)
     h_slider.val = state.scan_val
     bars.scan_val = state.scan_val
-    bars:calculate_gaussian_levels()
 end
 
 local function map_sigma(v)
@@ -128,16 +128,21 @@ local function map_sigma(v)
 end
 
 local function adjust_sigma(state, d)
+    -- call this function with d=0 to update the state of the gaussian bars graphic and both sliders
     local k = (10 ^ math.log(state.sigma, 10)) / 25
     adjust_param(state, 'sigma', d, k, sigma_min, sigma_max, false)
     v_slider.val = map_sigma(state.sigma)
     bars.sigma = state.sigma -- update bars graphic, as it renders the bars based on sigma
-    gaussian_scan(state, 0) --update scan to reflect new curve in state
 end
 
-
-
 local function toggle_lfo(state)
+    if toggle.on then
+        state.scan_lfo:stop()
+        print('stop phase: '..state.scan_lfo:get('phase'))
+    else
+        print('start phase: '..state.scan_lfo:get('phase'))
+        state.scan_lfo:start()
+    end
     toggle.on = not toggle.on
 end
 
@@ -217,6 +222,11 @@ function page:render(state)
 end
 
 function page:initialize(state)
+    -- windows
+    table.insert(state.scan.windows, window_scan)
+    table.insert(state.scan.windows, window_lfo)
+
+    -- graphics
     bars = GaussianBars:new({
         x = offsetx,
         y = offsety - margin,
@@ -244,8 +254,23 @@ function page:initialize(state)
         dash_size = 2,
         val = map_sigma(state.sigma),
     })
-    table.insert(state.scan.windows, window_scan)
-    table.insert(state.scan.windows, window_lfo)
+
+    -- lfo
+    state.scan_lfo = _lfos:add {
+        shape = 'saw',   -- shape
+        min = 0,          -- min
+        max = 1,          -- max
+        depth = 1,        -- depth (0 to 1)
+        mode = 'free', -- mode
+        period = 6,       -- period (in 'clocked' mode, represents beats)
+        -- pass our 'scaled' value (bounded by min/max and depth) to the engine:
+        action = function(scaled, raw)
+            print('raw: '..raw)
+            state.scan_val = scaled
+            h_slider.val = scaled
+            bars.scan_val = scaled        
+        end      -- action, always passes scaled and raw values
+    }
 end
 
 return page

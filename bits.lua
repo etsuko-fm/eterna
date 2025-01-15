@@ -4,6 +4,9 @@ local page_time_controls = include("bits/lib/pages/timecontrols")
 local page_scan = include("bits/lib/pages/scan")
 local page_sample_select = include("bits/lib/pages/sampleselect")
 
+-- global lfos
+_lfos = require 'lfo'
+
 local debug_mode = true
 local fps = 60
 local state = {
@@ -36,7 +39,8 @@ local state = {
   scan_val = 0.5,                 -- 0 to 1; allows scanning through softcut voices (think smooth soloing/muting)
   levels = { 0, 0, 0, 0, 0, 0, }, -- softcut levels; initialized later by the scan page
   sigma = 1,                      -- Width of the gaussian curve, adjustable for sharper or broader curves
-
+  scan_lfo = nil,
+  
   -- event system
   events = {}
 }
