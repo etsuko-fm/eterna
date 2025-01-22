@@ -4,6 +4,8 @@ Slider = {
     w = 64,
     h = 4,
     dash_size = 2,
+    dash_fill = 15,
+    fill = 1,
     hide = false,
     val = 0, -- 0 < val < 1
     direction = "HORIZONTAL"
@@ -24,17 +26,16 @@ end
 function Slider:render()
     if self.hide then return end
     -- rectangle container
-    screen.level(15)
-    screen.line_width(1)
+    screen.level(self.fill)
     screen.rect(self.x, self.y, self.w, self.h)
-    screen.stroke() -- stroke might give it a pixel extra compared to fill
+    screen.fill()
 
     -- dash (scan pos)
-    screen.level(10)
+    screen.level(self.dash_fill)
     if self.direction == "HORIZONTAL" then
-        screen.rect(self.x + (self.val * (self.w - self.dash_size)), self.y, self.dash_size, self.h)
+        screen.rect(self.x + (self.val * (self.w - self.dash_size + 1)), self.y, self.dash_size, self.h)
     elseif self.direction == "VERTICAL" then
-        screen.rect(self.x, self.y + (self.val * (self.h - self.dash_size)), self.w, self.dash_size)
+        screen.rect(self.x, (self.y + self.h - self.dash_size) - ((self.h - 1) * self.val), self.w, self.dash_size)
     end
     screen.fill()
     screen.update()

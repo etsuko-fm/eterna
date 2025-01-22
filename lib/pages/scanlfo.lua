@@ -5,8 +5,13 @@ local Slider = include("bits/lib/graphics/Slider")
 local GaussianBars = include("bits/lib/graphics/GaussianBars")
 local Toggle = include("bits/lib/graphics/Toggle")
 local TextParam = include("bits/lib/graphics/TextParam")
+local gaussian = include("bits/lib/util/gaussian")
 
-local toggle
+local toggle = Toggle:new({
+    x = 103,
+    y = 17,
+    size = 4
+})
 local lfo_rate_graphic
 local window_scan_lfo = Window:new({
     x = 0,
@@ -14,7 +19,7 @@ local window_scan_lfo = Window:new({
     w = 128,
     h = 64,
     title = "SCAN: LFO",
-    font_face = 68,
+    font_face = 1,
     brightness = 15,
     border = false,
     selected = true,
@@ -23,6 +28,10 @@ local window_scan_lfo = Window:new({
 })
 
 local bars
+local function map_sigma(state, v)
+    return util.linlin(state.sigma_min, state.sigma_max, 0, 1, v)
+end
+
 
 local function toggle_lfo(state)
     if toggle.on then
@@ -35,9 +44,16 @@ local function toggle_lfo(state)
 end
 
 local function adjust_lfo_rate(state, d)
-    new_val = state.scan_lfo:get('period') + (d / 4)
-    if new_val < 1 / 4 then
-        new_val = 1 / 4
+    local k = (10 ^ math.log(state.scan_lfo:get('period'), 10)) / 50
+    local min = 0.2
+    local max = 256
+
+    new_val = state.scan_lfo:get('period') + (d*k)
+    if new_val < min then
+        new_val = min
+    end
+    if new_val > max then
+        new_val = max
     end
     state.scan_lfo:set('period', new_val)
     state.scan_lfo_period = new_val
@@ -47,22 +63,26 @@ end
 local page = Page:create({
     name = page_name,
     e1 = nil,
-    e2 = nil,
+    e2 = adjust_lfo_rate,
     e3 = nil,
     k1_hold_on = nil,
     k1_hold_off = nil,
     k2_on = nil,
-    k2_off = nil,
+    k2_off = toggle_lfo,
     k3_on = nil,
     k3_off = nil,
 })
 
 function page:render(state)
     -- todo: this should be a graphic component, the entire thing belongs together
+    h_slider.val = state.scan_val
+    state.levels = gaussian.calculate_gaussian_levels(state.scan_val, state.sigma)
+    bars.levels = state.levels
     screen.clear()
     bars:render()
-
-    -- window
+    h_slider:render()
+    toggle:render()
+    lfo_rate_graphic:render()
     window_scan_lfo:render()
 end
 
@@ -74,11 +94,25 @@ function page:initialize(state)
         bar_width = state.bar_width,
         max_bar_height = state.bar_height,
         num_bars = state.num_bars,
-        sigma = state.sigma,
-        scan_val = state.scan_val,
         brightness=15,
     })
-
+    h_slider = Slider:new({
+        direction = 'HORIZONTAL',
+        x = state.graph_x,
+        y = state.graph_y + 3,
+        w = state.graph_width,
+        h = 3,
+        dash_size = 1,
+        dash_fill=5,
+        val = state.scan_val,
+    })
+    lfo_rate_graphic = TextParam:new({
+        x = 103,
+        y = 50,
+        val = state.scan_lfo_period,
+        unit = '',
+    })
+    bars.levels = state.levels
     -- lfo
     state.scan_lfo = _lfos:add {
         shape = 'up',

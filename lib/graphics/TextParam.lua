@@ -22,7 +22,8 @@ function TextParam:render()
     if self.hide then return end
     screen.move(self.x, self.y)
     screen.level(15)
-    screen.text(self.val .. self.unit)
+    rounded = tonumber(string.format("%.2f", self.val))
+    screen.text(rounded .. self.unit)
     screen.update()
 end
 

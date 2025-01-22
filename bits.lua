@@ -11,6 +11,8 @@ _lfos = require 'lfo'
 
 local debug_mode = true
 local fps = 60
+
+
 local state = {
   -- sample
   playback_positions = {},
@@ -51,7 +53,7 @@ local state = {
   window_width = 128,
   bar_width = 6,
   graph_x = 32, -- (window_width - graph_width) / 2
-  graph_y = 50,
+  graph_y = 40,
 
   -- event system
   events = {}
