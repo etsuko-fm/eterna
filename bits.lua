@@ -14,6 +14,7 @@ local fps = 60
 
 
 local state = {
+  default_font = 1,
   -- sample
   playback_positions = {},
   rates = {},               -- playback rates
@@ -29,7 +30,7 @@ local state = {
   -- waveform
   waveform_samples = {},
   interval = 0, -- of what? unused?
-  scale_waveform = 15,
+  scale_waveform = 10,
 
   -- time controls
   fade_time = .2,                    -- crossfade when looping playback
@@ -124,7 +125,7 @@ local function randomize_softcut(state)
     -- generate loop segment based on sample length
     state.loop_sections[i] = {}
     state.loop_sections[i][1], state.loop_sections[i][2] = generate_loop_segment(state)
-    print(i .. ": a=" .. state.loop_sections[i][1] .. "  b=" .. state.loop_sections[i][2])
+    -- print(i .. ": a=" .. state.loop_sections[i][1] .. "  b=" .. state.loop_sections[i][2])
 
     -- configure softcut voice
     softcut.rate(i, state.rates[i])

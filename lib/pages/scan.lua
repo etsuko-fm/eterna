@@ -5,6 +5,7 @@ local Slider = include("bits/lib/graphics/Slider")
 local Footer = include("bits/lib/graphics/Footer")
 local GaussianBars = include("bits/lib/graphics/GaussianBars")
 local gaussian = include("bits/lib/util/gaussian")
+local state_util = include("bits/lib/util/state")
 -- these graphics are initialized in page:initialize
 local h_slider
 local v_slider
@@ -58,7 +59,7 @@ local function adjust_param(tbl, param, d, mult, min, max, loop)
 end
 
 local function gaussian_scan(state, d)
-    adjust_param(state, 'scan_val', d, 1 / 60, 0, 1, true)
+    state_util.adjust_param(state, 'scan_val', d, 1 / 60, 0, 1, true)
     h_slider.val = state.scan_val
     state.levels = gaussian.calculate_gaussian_levels(state.scan_val, state.sigma)
 end
@@ -70,9 +71,14 @@ end
 local function adjust_sigma(state, d)
     -- call this function with d=0 to update the state of the gaussian bars graphic and both sliders
     local k = (10 ^ math.log(state.sigma, 10)) / 25
-    adjust_param(state, 'sigma', d, k, state.sigma_min, state.sigma_max, false)
+    state_util.adjust_param(state, 'sigma', d, k, state.sigma_min, state.sigma_max, false)
     v_slider.val = util.explin(state.sigma_min, state.sigma_max, 0, 1, state.sigma)
     state.levels = gaussian.calculate_gaussian_levels(state.scan_val, state.sigma)
+end
+
+function update_sliders(state)
+    h_slider.val = state.scan_val
+    v_slider.val = util.explin(state.sigma_min, state.sigma_max, 0, 1, state.sigma)
 end
 
 function calculate_gaussian_levels(state)
@@ -100,6 +106,7 @@ function calculate_gaussian_levels(state)
         -- print('distance['..i..'] = ' .. distance .. ', level['..i..'] = ' .. level)
     end
 end
+
 local footer = Footer:new({
     e2 = "X",
     e3 = "Y",
@@ -132,7 +139,7 @@ local page = Page:create({
 function page:render(state)
     -- todo: this should be a graphic component, the entire thing belongs together
     screen.clear()
-    h_slider.val = state.scan_val
+    update_sliders(state)
     state.levels = gaussian.calculate_gaussian_levels(state.scan_val, state.sigma)
 
     -- window

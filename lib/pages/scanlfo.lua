@@ -8,7 +8,7 @@ local state_util = include("bits/lib/util/state")
 local bars
 local footer
 
-local window_scan_lfo = Window:new({
+local window = Window:new({
     x = 0,
     y = 0,
     w = 128,
@@ -29,7 +29,7 @@ end
 local function adjust_sigma(state, d)
     local k = (10 ^ math.log(state.sigma, 10)) / 25
     state_util.adjust_param(state, 'sigma', d, k, state.sigma_min, state.sigma_max, false)
-    v_slider.val = util.explin(state.sigma_min, state.sigma_max, 0, 1, state.sigma)
+    update_vslider_val(state)
     state.levels = gaussian.calculate_gaussian_levels(state.scan_val, state.sigma)
     for i = 1, 6 do
         softcut.level(i, state.levels[i])
@@ -84,16 +84,23 @@ local page = Page:create({
     k3_off = nil,
 })
 
+function update_vslider_val(state)
+    v_slider.val = util.explin(state.sigma_min, state.sigma_max, 0, 1, state.sigma)
+end
+
+
 function page:render(state)
     -- todo: this should be a graphic component, the entire thing belongs together
     h_slider.val = state.scan_val
+    update_vslider_val(state)
     state.levels = gaussian.calculate_gaussian_levels(state.scan_val, state.sigma)
     bars.levels = state.levels
     screen.clear()
     bars:render()
     h_slider:render()
     v_slider:render()
-    window_scan_lfo:render()
+    
+    window:render()
     footer.e2 = string.format("%.2f", state.scan_lfo_period)
     if state.scan_lfo:get("enabled") == 1 then
         footer.k2 = "OFF"

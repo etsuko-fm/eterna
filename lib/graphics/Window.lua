@@ -3,14 +3,14 @@ Window = {
     y = 0,
     w = 128,
     h = 64,
-    title="WINDOW",
-    font_face=1,
-    brightness=15,
-    deselected_brightness=4,
-    border=true,
-    selected=true,
-    horizontal_separations=0,
-    vertical_separations=0,
+    title = "WINDOW",
+    font_face = 1,
+    brightness = 15,
+    deselected_brightness = 4,
+    border = true,
+    selected = true,
+    horizontal_separations = 0,
+    vertical_separations = 0,
     bar_height = 7
 }
 
@@ -32,20 +32,22 @@ function Window:render()
 
     -- top bar
     screen.line_width(1)
-    if self.selected then 
+    if self.selected then
         screen.level(self.brightness)
-    else 
-        screen.level(self.deselected_brightness) 
+    else
+        screen.level(self.deselected_brightness)
     end
+
+    screen.move(self.x, self.y)
     screen.rect(self.x, self.y, self.w, self.bar_height)
     screen.fill()
 
     -- title
-    screen.move(self.x + (self.w/2), self.y + (self.bar_height - 1))
+    screen.move(self.x + (self.w / 2), self.y + (self.bar_height - 1))
     if self.selected then
         screen.level(0)
     else
-         screen.level(self.brightness)
+        screen.level(self.brightness)
     end
     screen.font_face(self.font_face)
     screen.text_center(self.title)
@@ -55,11 +57,11 @@ function Window:render()
     if self.border then
         if self.selected then
             screen.level(self.brightness)
-        else 
+        else
             screen.level(self.deselected_brightness)
         end
         screen.move(self.x + 1, self.y + self.bar_height)
-        screen.line(self.x + 1, self.y + self.h -1)
+        screen.line(self.x + 1, self.y + self.h - 1)
         screen.line(self.x + self.w, self.y + self.h - 1)
         screen.line(self.x + self.w, self.y + self.bar_height)
         screen.stroke()
@@ -67,7 +69,10 @@ function Window:render()
 
     if self.vertical_separations then
         local v_spacing = ((self.h - self.bar_height) / (self.vertical_separations + 1))
-        if self.selected then screen.level(self.brightness) else screen.level(self.deselected_brightness)
+        if self.selected then
+            screen.level(self.brightness)
+        else
+            screen.level(self.deselected_brightness)
         end
         for n = 1, self.vertical_separations do
             local pos = math.floor(self.bar_height + (v_spacing * n))
