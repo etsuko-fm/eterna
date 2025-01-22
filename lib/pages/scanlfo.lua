@@ -36,6 +36,7 @@ local footer = Footer:new({
 
 
 local function toggle_lfo(state)
+    footer.active_knob = "k2"
     if toggle.on then
         state.scan_lfo:stop()
     else
@@ -59,7 +60,7 @@ local function adjust_lfo_rate(state, d)
     end
     state.scan_lfo:set('period', new_val)
     state.scan_lfo_period = new_val
-    lfo_rate_graphic.val = new_val
+    footer.active_knob = "e2"
 end
 
 local page = Page:create({
@@ -83,9 +84,15 @@ function page:render(state)
     screen.clear()
     bars:render()
     h_slider:render()
-    toggle:render()
-    lfo_rate_graphic:render()
+    -- toggle:render()
+    -- lfo_rate_graphic:render()
     window_scan_lfo:render()
+    footer.e1 = string.format("%.2f", state.scan_lfo_period)
+    if toggle.on then
+        footer.k2 = "OFF"
+    else
+        footer.k2 = "ON"
+    end
     footer:render()
 end
 

@@ -100,19 +100,21 @@ function calculate_gaussian_levels(state)
         -- print('distance['..i..'] = ' .. distance .. ', level['..i..'] = ' .. level)
     end
 end
+local footer = Footer:new({
+    e2 = "X",
+    e3 = "Y",
+})
 
 local function e2(state, d)
     gaussian_scan(state, d)
+    footer.active_knob = "e2"
 end
 
 local function e3(state, d)
     adjust_sigma(state, d)
+    footer.active_knob = "e3"
 end
 
-local footer = Footer:new({
-    e1 = "X",
-    e2 = "Y",
-})
 
 local page = Page:create({
     name = page_name,
