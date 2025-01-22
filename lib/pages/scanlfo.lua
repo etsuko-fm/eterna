@@ -7,11 +7,7 @@ local Toggle = include("bits/lib/graphics/Toggle")
 local TextParam = include("bits/lib/graphics/TextParam")
 local gaussian = include("bits/lib/util/gaussian")
 
-local toggle = Toggle:new({
-    x = 103,
-    y = 17,
-    size = 4
-})
+local toggle
 local lfo_rate_graphic
 local window_scan_lfo = Window:new({
     x = 0,
@@ -113,6 +109,13 @@ function page:initialize(state)
         unit = '',
     })
     bars.levels = state.levels
+
+    toggle = Toggle:new({
+        x = state.graph_x + 1,
+        y = state.graph_y + 18,
+        size = 4
+    })
+
     -- lfo
     state.scan_lfo = _lfos:add {
         shape = 'up',

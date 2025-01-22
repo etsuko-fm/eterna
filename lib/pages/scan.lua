@@ -124,6 +124,8 @@ local page = Page:create({
 function page:render(state)
     -- todo: this should be a graphic component, the entire thing belongs together
     screen.clear()
+    h_slider.val = state.scan_val
+    state.levels = gaussian.calculate_gaussian_levels(state.scan_val, state.sigma)
 
     -- window
     window_scan:render()
@@ -138,6 +140,49 @@ function page:render(state)
     for i = 1, 6 do
         softcut.level(i, state.levels[i])
     end
+
+
+    local footer_y = 60
+    local footer_x = state.graph_x + 19
+    local x1 = 0
+    local x2 = 128 / 4
+    local x3 = (128 / 4) * 2
+    local x4 = (128 / 4) * 3
+
+    screen.level(1)
+    screen.rect(x1, 56, 128/4 - 1, 8)
+    screen.rect(x2, 56, 128/4 - 1, 8)
+    screen.rect(x3, 56, 128/4 - 1, 8)
+    screen.rect(x4, 56, 128/4 - 1, 8)
+    screen.fill()
+    screen.level(3)
+    screen.circle(x1 + 5, footer_y, 2)
+    screen.fill()
+
+    screen.move(x1 + 9, footer_y + 2)
+    screen.font_face(1)
+    screen.text("x")
+
+    screen.move(x2 + 5, footer_y)
+    screen.circle(x2 +  5, footer_y, 2)
+    screen.fill()
+
+    screen.move(x2 + 9, footer_y + 3)
+    screen.text("Y")
+
+    screen.move(x3 + 4, footer_y)
+    screen.line(x3 + 6, footer_y)
+    screen.move(x3 + 3, footer_y+1)
+    screen.line(x3 + 7, footer_y+1)
+    screen.stroke()
+
+    screen.move(x4 + 4, footer_y)
+    screen.line(x4 + 6, footer_y)
+    screen.move(x4 + 3, footer_y+1)
+    screen.line(x4 + 7, footer_y+1)
+    screen.stroke()
+
+    screen.update()
 end
 
 function page:initialize(state)
@@ -153,7 +198,7 @@ function page:initialize(state)
         num_bars = state.num_bars,
         sigma = state.sigma,
         scan_val = state.scan_val,
-        brightness=15,
+        brightness = 15,
     })
     h_slider = Slider:new({
         direction = 'HORIZONTAL',
@@ -174,7 +219,6 @@ function page:initialize(state)
         val = map_sigma(state, state.sigma),
     })
     state.levels = gaussian.calculate_gaussian_levels(state.scan_val, state.sigma)
-
 end
 
 return page
