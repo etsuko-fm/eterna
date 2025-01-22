@@ -3,12 +3,11 @@ local page_name = "ScanLfo"
 local Window = include("bits/lib/graphics/Window")
 local Slider = include("bits/lib/graphics/Slider")
 local GaussianBars = include("bits/lib/graphics/GaussianBars")
-local Toggle = include("bits/lib/graphics/Toggle")
-local TextParam = include("bits/lib/graphics/TextParam")
 local gaussian = include("bits/lib/util/gaussian")
+local state_util = include("bits/lib/util/state")
+local bars
+local footer
 
-local toggle
-local lfo_rate_graphic
 local window_scan_lfo = Window:new({
     x = 0,
     y = 0,
@@ -23,27 +22,36 @@ local window_scan_lfo = Window:new({
     vertical_separations = 0,
 })
 
-local bars
 local function map_sigma(state, v)
     return util.linlin(state.sigma_min, state.sigma_max, 0, 1, v)
 end
 
-local footer = Footer:new({
-    e1 = "rate",
-    e2 = "",
-    k2 = "ON"
-})
+local function adjust_sigma(state, d)
+    local k = (10 ^ math.log(state.sigma, 10)) / 25
+    state_util.adjust_param(state, 'sigma', d, k, state.sigma_min, state.sigma_max, false)
+    v_slider.val = util.explin(state.sigma_min, state.sigma_max, 0, 1, state.sigma)
+    state.levels = gaussian.calculate_gaussian_levels(state.scan_val, state.sigma)
+    for i = 1, 6 do
+        softcut.level(i, state.levels[i])
+    end
+
+end
+
+local function e3(state, d)
+    adjust_sigma(state, d)
+    footer.active_knob = "e3"
+end
 
 
 local function toggle_lfo(state)
     footer.active_knob = "k2"
-    if toggle.on then
+    print(state.scan_lfo:get("enabled"))
+    if state.scan_lfo:get("enabled") == 1 then
         state.scan_lfo:stop()
     else
         state.scan_lfo:start()
         state.scan_lfo:set('phase', state.scan_val)
     end
-    toggle.on = not toggle.on
 end
 
 local function adjust_lfo_rate(state, d)
@@ -67,7 +75,7 @@ local page = Page:create({
     name = page_name,
     e1 = nil,
     e2 = adjust_lfo_rate,
-    e3 = nil,
+    e3 = e3,
     k1_hold_on = nil,
     k1_hold_off = nil,
     k2_on = nil,
@@ -84,11 +92,10 @@ function page:render(state)
     screen.clear()
     bars:render()
     h_slider:render()
-    -- toggle:render()
-    -- lfo_rate_graphic:render()
+    v_slider:render()
     window_scan_lfo:render()
-    footer.e1 = string.format("%.2f", state.scan_lfo_period)
-    if toggle.on then
+    footer.e2 = string.format("%.2f", state.scan_lfo_period)
+    if state.scan_lfo:get("enabled") == 1 then
         footer.k2 = "OFF"
     else
         footer.k2 = "ON"
@@ -116,20 +123,18 @@ function page:initialize(state)
         dash_fill=5,
         val = state.scan_val,
     })
-    lfo_rate_graphic = TextParam:new({
-        x = 103,
-        y = 50,
-        val = state.scan_lfo_period,
-        unit = '',
+    v_slider = Slider:new({
+        direction = 'VERTICAL',
+        x = state.graph_x + state.graph_width + 3,
+        y = state.graph_y - state.bar_height,
+        w = 3,
+        h = state.bar_height,
+        dash_size = 1,
+        val = map_sigma(state, state.sigma),
     })
     bars.levels = state.levels
 
-    toggle = Toggle:new({
-        x = state.graph_x + 1,
-        y = state.graph_y + 18,
-        size = 4
-    })
-
+    footer = Footer:new({e3="Y"})
     -- lfo
     state.scan_lfo = _lfos:add {
         shape = 'up',
@@ -142,6 +147,10 @@ function page:initialize(state)
         action = function(scaled, raw)
             state.scan_val = scaled
             bars.scan_val = scaled
+            state.levels = gaussian.calculate_gaussian_levels(state.scan_val, state.sigma)
+            for i = 1, 6 do
+                softcut.level(i, state.levels[i])
+            end
         end
     }
     state.scan_lfo:set('reset_target', 'mid: rising')

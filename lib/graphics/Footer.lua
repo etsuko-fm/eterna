@@ -4,8 +4,8 @@ Footer = {
     graphics_y = 59,
     height = 9,
     text_y = 3,
-    knob_y = 3,
-    enc_y = 3,
+    knob_y = 1,
+    enc_y = 1,
     hide = false,
     active_fill = 15,
     foreground_fill = 3,
@@ -31,7 +31,7 @@ end
 
 function Footer:render()
     if self.hide then return end
-
+    local text_trim_width = 21
     screen.line_width(1)
     local x1 = 0
     local x2 = 128 / 4
@@ -46,48 +46,50 @@ function Footer:render()
     screen.fill()
 
     local fill = self.foreground_fill
+
+    -- todo: make a nice for loop 
     if self.active_knob == "e2" then fill = self.active_fill else fill = self.foreground_fill end
 
     screen.level(fill)
-    screen.circle(x1 + 5, self.graphics_y, 2)
+    screen.circle(x1 + 5, self.graphics_y + self.enc_y, 2)
     screen.fill()
 
     screen.move(x1 + 9, self.graphics_y + self.text_y)
     screen.font_face(1)
-    screen.text(self.e2)
+    screen.text(util.trim_string_to_width(self.e2, 23))
 
     if self.active_knob == "e3" then fill = self.active_fill else fill = self.foreground_fill end
     screen.level(fill)
 
     screen.move(x2 + 5, self.graphics_y)
-    screen.circle(x2 + 5, self.graphics_y, 2)
+    screen.circle(x2 + 5, self.graphics_y + self.enc_y, 2)
     screen.fill()
 
     screen.move(x2 + 9, self.graphics_y + self.text_y)
-    screen.text(self.e3)
+    screen.text(util.trim_string_to_width(self.e3, text_trim_width))
 
     if self.active_knob == "k2" then fill = self.active_fill else fill = self.foreground_fill end
     screen.level(fill)
 
-    screen.move(x3 + 4, self.graphics_y)
-    screen.line(x3 + 6, self.graphics_y)
-    screen.move(x3 + 3, self.graphics_y + 1)
-    screen.line(x3 + 7, self.graphics_y + 1)
+    screen.move(x3 + 4, self.graphics_y + self.knob_y)
+    screen.line(x3 + 6, self.graphics_y + self.knob_y)
+    screen.move(x3 + 3, self.graphics_y  + self.knob_y + 1)
+    screen.line(x3 + 7, self.graphics_y  + self.knob_y + 1)
     screen.stroke()
 
     screen.move(x3 + 9, self.graphics_y + self.text_y)
-    screen.text(self.k2)
+    screen.text(util.trim_string_to_width(self.k2, text_trim_width))
 
     if self.active_knob == "k3" then fill = self.active_fill else fill = self.foreground_fill end
     screen.level(fill)
 
-    screen.move(x4 + 4, self.graphics_y)
-    screen.line(x4 + 6, self.graphics_y)
-    screen.move(x4 + 3, self.graphics_y + 1)
-    screen.line(x4 + 7, self.graphics_y + 1)
+    screen.move(x4 + 4, self.graphics_y + self.knob_y)
+    screen.line(x4 + 6, self.graphics_y + self.knob_y)
+    screen.move(x4 + 3, self.graphics_y + self.knob_y+ 1)
+    screen.line(x4 + 7, self.graphics_y + self.knob_y+ 1)
 
     screen.move(x4 + 9, self.graphics_y + self.text_y)
-    screen.text(self.k3)
+    screen.text(util.trim_string_to_width(self.k3, text_trim_width))
 
     screen.stroke()
     screen.update()

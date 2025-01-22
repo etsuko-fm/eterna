@@ -149,9 +149,7 @@ function page:render(state)
         softcut.level(i, state.levels[i])
     end
 
-
     footer:render()
-
     screen.update()
 end
 
