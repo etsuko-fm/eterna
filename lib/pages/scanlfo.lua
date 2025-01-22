@@ -28,6 +28,12 @@ local function map_sigma(state, v)
     return util.linlin(state.sigma_min, state.sigma_max, 0, 1, v)
 end
 
+local footer = Footer:new({
+    e1 = "rate",
+    e2 = "",
+    k2 = "ON"
+})
+
 
 local function toggle_lfo(state)
     if toggle.on then
@@ -80,6 +86,7 @@ function page:render(state)
     toggle:render()
     lfo_rate_graphic:render()
     window_scan_lfo:render()
+    footer:render()
 end
 
 function page:initialize(state)
@@ -125,7 +132,6 @@ function page:initialize(state)
         mode = 'free',
         period = state.scan_lfo_period,
         phase = 0,
-        -- pass our 'scaled' value (bounded by min/max and depth) to the engine:
         action = function(scaled, raw)
             state.scan_val = scaled
             bars.scan_val = scaled

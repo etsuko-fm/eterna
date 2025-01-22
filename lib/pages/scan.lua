@@ -2,6 +2,7 @@ local Page = include("bits/lib/pages/Page")
 local page_name = "Scan"
 local Window = include("bits/lib/graphics/Window")
 local Slider = include("bits/lib/graphics/Slider")
+local Footer = include("bits/lib/graphics/Footer")
 local GaussianBars = include("bits/lib/graphics/GaussianBars")
 local gaussian = include("bits/lib/util/gaussian")
 -- these graphics are initialized in page:initialize
@@ -108,6 +109,11 @@ local function e3(state, d)
     adjust_sigma(state, d)
 end
 
+local footer = Footer:new({
+    e1 = "X",
+    e2 = "Y",
+})
+
 local page = Page:create({
     name = page_name,
     e1 = nil,
@@ -142,45 +148,7 @@ function page:render(state)
     end
 
 
-    local footer_y = 60
-    local footer_x = state.graph_x + 19
-    local x1 = 0
-    local x2 = 128 / 4
-    local x3 = (128 / 4) * 2
-    local x4 = (128 / 4) * 3
-
-    screen.level(1)
-    screen.rect(x1, 56, 128/4 - 1, 8)
-    screen.rect(x2, 56, 128/4 - 1, 8)
-    screen.rect(x3, 56, 128/4 - 1, 8)
-    screen.rect(x4, 56, 128/4 - 1, 8)
-    screen.fill()
-    screen.level(3)
-    screen.circle(x1 + 5, footer_y, 2)
-    screen.fill()
-
-    screen.move(x1 + 9, footer_y + 2)
-    screen.font_face(1)
-    screen.text("x")
-
-    screen.move(x2 + 5, footer_y)
-    screen.circle(x2 +  5, footer_y, 2)
-    screen.fill()
-
-    screen.move(x2 + 9, footer_y + 3)
-    screen.text("Y")
-
-    screen.move(x3 + 4, footer_y)
-    screen.line(x3 + 6, footer_y)
-    screen.move(x3 + 3, footer_y+1)
-    screen.line(x3 + 7, footer_y+1)
-    screen.stroke()
-
-    screen.move(x4 + 4, footer_y)
-    screen.line(x4 + 6, footer_y)
-    screen.move(x4 + 3, footer_y+1)
-    screen.line(x4 + 7, footer_y+1)
-    screen.stroke()
+    footer:render()
 
     screen.update()
 end
