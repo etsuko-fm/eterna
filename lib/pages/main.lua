@@ -1,15 +1,13 @@
 local Page = include("bits/lib/pages/Page")
-local Ring = include("bits/lib/graphics/Ring")
-local Zigzag = include("bits/lib/graphics/Zigzag")
 local Window = include("bits/lib/graphics/Window")
 local Footer = include("bits/lib/graphics/Footer")
 local SixRings = include("bits/lib/graphics/SixRings")
 
-local rings = {}
 local zigzag_line
 local window
 local footer
 local six_rings
+
 
 local ring_luma = {
     -- todo: could these be properties of the ring?
@@ -25,6 +23,12 @@ local ring_luma = {
     },
 }
 
+local function mute(state)
+    if state.muted then audio.level_cut(1) else audio.level_cut(0) end
+    state.muted = not state.muted
+    print("mute: " .. tostring(state.muted))
+end
+
 local page = Page:create({
     name = "Main",
     e1 = nil,
@@ -35,7 +39,7 @@ local page = Page:create({
     k2_on = nil,
     k2_off = nil,
     k3_on = nil,
-    k3_off = nil,
+    k3_off = mute,
 })
 
 function page:initialize(state)
@@ -70,8 +74,8 @@ function page:initialize(state)
         loop_sections = state.loop_sections,
         hide = false,
     })
-    -- create_rings(state)
 end
+
 
 function page:render(state)
     screen.clear()

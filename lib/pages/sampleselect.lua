@@ -95,12 +95,6 @@ function scale_waveform(state, d)
     state.scale_waveform = state.scale_waveform + d
 end
 
-local function mute(state)
-    if state.muted then audio.level_cut(1) else audio.level_cut(0) end
-    state.muted = not state.muted
-    print("mute: " .. tostring(state.muted))
-end
-
 
 local page = Page:create({
     name = page_name,

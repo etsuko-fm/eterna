@@ -44,7 +44,7 @@ local state = {
   },
   scan_val = 0.5,                 -- 0 to 1; allows scanning through softcut voices (think smooth soloing/muting)
   levels = { 0, 0, 0, 0, 0, 0, }, -- softcut levels; initialized later by the scan page
-  sigma = 1,                      -- Width of the gaussian curve, adjustable for sharper or broader curves
+  sigma = 5,                      -- Width of the gaussian curve, adjustable for sharper or broader curves
   sigma_min = 0.3,
   sigma_max = 15,
   scan_lfo = nil,
@@ -273,6 +273,8 @@ function refresh()
     current_page:render(state)
 
     -- sort of an event based system, allows pages to request main functionality
+    -- usage: state.events['event_randomize_softcut'] = true
+
     for event, handler in pairs(event_handlers) do
       if state.events[event] == true then
         handler()

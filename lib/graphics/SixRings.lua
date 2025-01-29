@@ -12,8 +12,6 @@ SixRings = {
     y_offset = 12,
 }
 
-local rings
-
 function SixRings:new(o)
     -- create state if not provided
     o = o or {}
