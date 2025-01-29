@@ -10,6 +10,7 @@ local state_util = include("bits/lib/util/state")
 local h_slider
 local v_slider
 local bars
+local window_scan
 
 --[[
 Scan page
@@ -26,19 +27,6 @@ Interactions:
  K3: cycle through scan values
 ]]
 
-local window_scan = Window:new({
-    x = 0,
-    y = 0,
-    w = 128,
-    h = 64,
-    title = "SCAN",
-    font_face = 68,
-    brightness = 15,
-    border = false,
-    selected = true,
-    horizontal_separations = 0,
-    vertical_separations = 0,
-})
 
 
 local function adjust_param(tbl, param, d, mult, min, max, loop)
@@ -107,10 +95,7 @@ function calculate_gaussian_levels(state)
     end
 end
 
-local footer = Footer:new({
-    e2 = "X",
-    e3 = "Y",
-})
+local footer
 
 local function e2(state, d)
     gaussian_scan(state, d)
@@ -161,7 +146,27 @@ function page:render(state)
 end
 
 function page:initialize(state)
-    -- windows
+    -- window
+    window_scan = Window:new({
+        x = 0,
+        y = 0,
+        w = 128,
+        h = 64,
+        title = "SCAN",
+        font_face = state.title_font,
+        brightness = 15,
+        border = false,
+        selected = true,
+        horizontal_separations = 0,
+        vertical_separations = 0,
+    })
+    -- footer
+    footer = Footer:new({
+        e2 = "X",
+        e3 = "Y",
+        font_face=state.default_font
+    })
+
     table.insert(state.scan.windows, window_scan)
 
     -- graphics

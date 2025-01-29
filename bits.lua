@@ -14,7 +14,8 @@ local fps = 60
 
 
 local state = {
-  default_font = 1,
+  default_font = 68,
+  title_font = 68,
   -- sample
   playback_positions = {},
   rates = {},               -- playback rates
@@ -35,7 +36,7 @@ local state = {
   -- time controls
   fade_time = .2,                    -- crossfade when looping playback
   request_randomize_softcut = false, -- todo: is this still used or replaced it with events?
-  loop_sections = {},                -- one item per softcut voice
+  loop_sections = {},                -- one item per softcut voice [i][1] = start and [i][2] is end
 
   -- scanning / gaussian graph settings
   scan = {
@@ -120,7 +121,6 @@ local function randomize_softcut(state)
   for i = 1, 6 do
     -- pick playback rate from rate_values table
     state.rates[i] = rate_values[math.random(#rate_values)]
-    local max_len
 
     -- generate loop segment based on sample length
     state.loop_sections[i] = {}
@@ -138,17 +138,13 @@ local function randomize_softcut(state)
   page_main:initialize(state)
 end
 
-local function modulate_loop_points()
-  -- not yet implemented
-  -- https://monome.org/docs/norns/api/modules/lib.lfo.html#new
-  -- my_lfo = lfo.new(shape, min, max, depth, mode, period, action, phase, baseline)
-  -- my_lfo:start()
-  -- print('modulating loop points')
-end
-
 local function update_positions(i, pos)
-  state.playback_positions[i] = pos / (state.enabled_section[2] - state.enabled_section[1])
-  -- works together with modulate_loop_points
+  -- callback for softcut.event_position. 
+  --- i:   softcut voice
+  --- pos: playback position of voice i, in seconds
+  -- returns playback position relative to the length of the enabled section.
+  -- if the enabled section is 10s long, starts at 0:05, pos should be relative to 0:05 - 0:15. 0 <= pos <= 1
+  state.playback_positions[i] = (pos - state.enabled_section[1]) / (state.enabled_section[2] - state.enabled_section[1])
   -- print("voice" .. i..":"..pos .. "loop: "..state.loop_starts[i].." - " .. state.loop_ends[i])
 end
 
@@ -195,7 +191,9 @@ function init()
   -- params:add_number('max_granularity')
 
   -- init softcut
-  if debug_mode then switch_sample(_path.dust .. "audio/etsuko/sea-minor/sea-minor-chords.wav") end
+  local sample1 = "audio/etsuko/sea-minor/sea-minor-chords.wav"
+  local sample2 = "audio/etsuko/neon-light/neon intro.wav"
+  if debug_mode then switch_sample(_path.dust .. sample2) end
   -- softcut.phase_quant(1, 1/fps)
   -- softcut.event_phase(update_positions)
   -- softcut.poll_start_phase()
@@ -229,7 +227,7 @@ end
 local ticks = 0
 function enc(n, d)
   if n == 1 then
-    -- the ticks mechanism verifies that page switch is intentional
+    -- the ticks mechanism verifies that page switch is intentional todo: ticks not necessary except if displayed
     if d > 0 then
       ticks = ticks + 1
       if ticks >= 5 then

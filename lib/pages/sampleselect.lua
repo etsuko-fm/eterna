@@ -118,7 +118,7 @@ function page:render(state)
     screen.text(state.filename)
     screen.move(10, 49)
     screen.font_size(8)
-    screen.text(math.floor(state.sample_length / 60) .. "'" .. string.format("%02d", state.sample_length % 60) .. "\"")
+    screen.text(math.floor(state.sample_length / 60) .. "'" .. string.format("%02d", math.floor(state.sample_length) % 60) .. "\"")
     screen.text(" [" .. state.max_sample_length .. "]")
 
     update_waveform(state)
@@ -148,7 +148,7 @@ function page:initialize(state)
         w = 128,
         h = 64,
         title = "SAMPLE",
-        font_face = state.default_font,
+        font_face = state.title_font,
         brightness = 15,
         border = false,
         selected = true,
@@ -156,7 +156,7 @@ function page:initialize(state)
         vertical_separations = 0,
     })
 
-    footer = Footer:new({ k2 = "load", e2 = "sect", e3 = "len" })
+    footer = Footer:new({ k2 = "Load", e2 = "Sect", e3 = "Lengt", font_face=state.default_font})
     waveform = Waveform:new({
         x = (128 - waveform_width) / 2,
         y = 25,

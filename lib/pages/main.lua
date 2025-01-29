@@ -5,27 +5,17 @@ local Zigzag = include("bits/lib/graphics/Zigzag")
 local rings = {}
 local zigzag_line = nil
 
-local radians = {
-    A0 = 0,                -- 3 o'clock
-    A90 = math.pi / 2,     -- 6 o'clock
-    A180 = math.pi,        -- 9 o'clock
-    A270 = 3 * math.pi / 2 -- 12 o'clock
-}
-
 local ring_luma = {
     -- todo: could these be properties of the ring?
     -- so add when initializing
     circle = {
         normal = 2,
-        deselected = 1,
     },
     rate_arc = {
         normal = 15,
-        deselected = 5,
     },
     section_arc = {
         normal = 5,
-        deselected = 2,
     },
 }
 
@@ -40,7 +30,7 @@ local function create_rings(state)
             radius = 6,
             thickness = 3,
             luma = ring_luma.circle.normal, -- 15 = max level
-            arcs = {
+            layers = {
                 {
                     -- background circle
                     a1 = 0,
@@ -92,13 +82,17 @@ end
 
 function page:render(state)
     screen.clear()
-    -- if math.random() > .99 then print("rendering main ") end
+    local enabled_section_length = state.enabled_section[2] - state.enabled_section[1]
+
     for i = 1, 6 do
         if state.playback_positions[i] ~= nil then
             local pos_radians = state.playback_positions[i] * math.pi * 2 -- convert phase to radians
-            rings[i].arcs[3].a1 = pos_radians
+            rings[i].layers[3].a1 = pos_radians
             -- 1/32 of a circle as a nice slice length (full circle in radians = 2*PI)
-            rings[i].arcs[3].a2 = pos_radians + (math.pi / 16)
+            rings[i].layers[3].a2 = pos_radians + (math.pi / 16)
+            rings[i].layers[2].a1 = ((state.loop_sections[i][1] - state.enabled_section[1]) / enabled_section_length) * math.pi * 2
+            rings[i].layers[2].a2 = ((state.loop_sections[i][2] - state.enabled_section[2]) / enabled_section_length) * math.pi * 2
+
             rings[i]:render()
         end
     end

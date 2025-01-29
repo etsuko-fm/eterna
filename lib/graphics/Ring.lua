@@ -4,7 +4,7 @@ Ring = {
   hide = false,
 
   -- one ring can have multiple independent arcs (circle segments)
-  arcs = {
+  layers = {
     {
       a1 = 0,        -- start point in radians
       a2 = 0,        -- end point in radians
@@ -29,17 +29,15 @@ end
 
 function Ring:render()
   if self.hide then return end
-  screen.line_width(self.thickness)
-
   -- draw arc(s)
-  for _, arc in ipairs(self.arcs) do
-    screen.level(arc.luma)
-    screen.line_width(arc.thickness)
+  for _, layer in ipairs(self.layers) do
+    screen.level(layer.luma)
+    screen.line_width(layer.thickness)
     screen.move(
-      self.x + (math.cos(arc.a1) * arc.radius),
-      self.y + (math.sin(arc.a1) * arc.radius)
+      self.x + (math.cos(layer.a1) * layer.radius),
+      self.y + (math.sin(layer.a1) * layer.radius)
     )
-    screen.arc(self.x, self.y, arc.radius, arc.a1, arc.a2)
+    screen.arc(self.x, self.y, layer.radius, layer.a1, layer.a2)
     screen.stroke()
     screen.update()
   end

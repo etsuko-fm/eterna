@@ -8,19 +8,7 @@ local state_util = include("bits/lib/util/state")
 local bars
 local footer
 
-local window = Window:new({
-    x = 0,
-    y = 0,
-    w = 128,
-    h = 64,
-    title = "SCAN: LFO",
-    font_face = 1,
-    brightness = 15,
-    border = false,
-    selected = true,
-    horizontal_separations = 0,
-    vertical_separations = 0,
-})
+local window
 
 local function map_sigma(state, v)
     return util.linlin(state.sigma_min, state.sigma_max, 0, 1, v)
@@ -111,6 +99,19 @@ function page:render(state)
 end
 
 function page:initialize(state)
+    window = Window:new({
+        x = 0,
+        y = 0,
+        w = 128,
+        h = 64,
+        title = "SCAN: LFO",
+        font_face = state.title_font,
+        brightness = 15,
+        border = false,
+        selected = true,
+        horizontal_separations = 0,
+        vertical_separations = 0,
+    })
     -- graphics
     bars = GaussianBars:new({
         x = state.graph_x,
@@ -141,7 +142,7 @@ function page:initialize(state)
     })
     bars.levels = state.levels
 
-    footer = Footer:new({e3="Y"})
+    footer = Footer:new({e3="Y", font_face=state.default_font})
     -- lfo
     state.scan_lfo = _lfos:add {
         shape = 'up',
