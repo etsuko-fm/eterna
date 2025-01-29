@@ -22,7 +22,6 @@ local function adjust_sigma(state, d)
     for i = 1, 6 do
         softcut.level(i, state.levels[i])
     end
-
 end
 
 local function e3(state, d)
@@ -55,7 +54,7 @@ local function adjust_lfo_rate(state, d)
     local min = 0.2
     local max = 256
 
-    new_val = state.scan_lfo:get('period') + (d*k)
+    new_val = state.scan_lfo:get('period') + (d * k)
     if new_val < min then
         new_val = min
     end
@@ -84,7 +83,6 @@ function update_vslider_val(state)
     v_slider.val = util.explin(state.sigma_min, state.sigma_max, 0, 1, state.sigma)
 end
 
-
 function page:render(state)
     -- todo: this should be a graphic component, the entire thing belongs together
     h_slider.val = state.scan_val
@@ -95,7 +93,7 @@ function page:render(state)
     bars:render()
     h_slider:render()
     v_slider:render()
-    
+
     window:render()
     footer.e2 = string.format("%.2f", state.scan_lfo_period)
     if state.scan_lfo:get("enabled") == 1 then
@@ -127,7 +125,7 @@ function page:initialize(state)
         bar_width = state.bar_width,
         max_bar_height = state.bar_height,
         num_bars = state.num_bars,
-        brightness=15,
+        brightness = 15,
     })
     h_slider = Slider:new({
         direction = 'HORIZONTAL',
@@ -136,7 +134,7 @@ function page:initialize(state)
         w = state.graph_width,
         h = 3,
         dash_size = 1,
-        dash_fill=5,
+        dash_fill = 5,
         val = state.scan_val,
     })
     v_slider = Slider:new({
@@ -150,7 +148,7 @@ function page:initialize(state)
     })
     bars.levels = state.levels
 
-    footer = Footer:new({e3="Y", k3="SYNC", font_face=state.default_font})
+    footer = Footer:new({ e3 = "Y", k3 = "SYNC", font_face = state.default_font })
     -- lfo
     state.scan_lfo = _lfos:add {
         shape = 'up',

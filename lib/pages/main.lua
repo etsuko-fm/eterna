@@ -13,7 +13,7 @@ local ring_luma = {
     -- todo: could these be properties of the ring?
     -- so add when initializing
     circle = {
-        normal = 2,
+        normal = 0,
     },
     rate_arc = {
         normal = 15,
@@ -29,6 +29,10 @@ local function mute(state)
     print("mute: " .. tostring(state.muted))
 end
 
+local function randomize(state)
+    state.events['event_randomize_softcut'] = true
+end
+
 local page = Page:create({
     name = "Main",
     e1 = nil,
@@ -37,7 +41,7 @@ local page = Page:create({
     k1_hold_on = nil,
     k1_hold_off = nil,
     k2_on = nil,
-    k2_off = nil,
+    k2_off = randomize,
     k3_on = nil,
     k3_off = mute,
 })

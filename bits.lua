@@ -203,8 +203,6 @@ function init()
   -- get initial position values for softcut voices
   query_positions()
 
-  page_main.k2_off = randomize_softcut -- bind function to page, todo: use events
-
   for _, page in ipairs(pages) do
     page:initialize(state)
   end

@@ -66,6 +66,17 @@ function SixRings:new(o)
     return o
 end
 
+function SixRings:calc_a1(i)
+    local enabled_section_length = self.enabled_section[2] - self.enabled_section[1]
+    return  ((self.loop_sections[i][1] - self.enabled_section[1]) / enabled_section_length) * math.pi * 2
+end
+
+function SixRings:calc_a2(i)
+    local enabled_section_length = self.enabled_section[2] - self.enabled_section[1]
+    return  ((self.loop_sections[i][2] - self.enabled_section[1]) / enabled_section_length) * math.pi * 2
+end
+
+
 function SixRings:render()
     if self.hide then return end
     local y_offset = 12
@@ -77,10 +88,8 @@ function SixRings:render()
             self.rings[i].layers[3].a1 = pos_radians
             -- 1/32 of a circle as a nice slice length (full circle in radians = 2*PI)
             self.rings[i].layers[3].a2 = pos_radians + (math.pi / 16)
-            self.rings[i].layers[2].a1 = ((self.loop_sections[i][1] - self.enabled_section[1]) / enabled_section_length) *
-                math.pi * 2
-            self.rings[i].layers[2].a2 = ((self.loop_sections[i][2] - self.enabled_section[2]) / enabled_section_length) *
-                math.pi * 2
+            self.rings[i].layers[2].a1 = self:calc_a1(i)
+            self.rings[i].layers[2].a2 = self:calc_a2(i)
 
             self.rings[i]:render()
         end
