@@ -98,39 +98,6 @@ function Footer:render()
         screen.text(util.trim_string_to_width(self[btn.name], 23))
     end
 
-    -- if self.active_knob == "e3" then fill = self.active_fill else fill = self.foreground_fill end
-    -- screen.level(fill)
-
-    -- screen.move(x2 + 5, self.graphics_y)
-    -- screen.circle(x2 + 5, self.graphics_y + self.enc_y, 2)
-    -- screen.fill()
-
-    -- screen.move(x2 + 9, self.graphics_y + self.text_y)
-    -- screen.text(util.trim_string_to_width(self.e3, text_trim_width))
-
-    -- if self.active_knob == "k2" then fill = self.active_fill else fill = self.foreground_fill end
-    -- screen.level(fill)
-
-    -- screen.move(x3 + 4, self.graphics_y + self.knob_y)
-    -- screen.line(x3 + 6, self.graphics_y + self.knob_y)
-    -- screen.move(x3 + 3, self.graphics_y + self.knob_y + 1)
-    -- screen.line(x3 + 7, self.graphics_y + self.knob_y + 1)
-    -- screen.stroke()
-
-    -- screen.move(x3 + 9, self.graphics_y + self.text_y)
-    -- screen.text(util.trim_string_to_width(self.k2, text_trim_width))
-
-    -- if self.active_knob == "k3" then fill = self.active_fill else fill = self.foreground_fill end
-    -- screen.level(fill)
-
-    -- screen.move(x4 + 4, self.graphics_y + self.knob_y)
-    -- screen.line(x4 + 6, self.graphics_y + self.knob_y)
-    -- screen.move(x4 + 3, self.graphics_y + self.knob_y + 1)
-    -- screen.line(x4 + 7, self.graphics_y + self.knob_y + 1)
-
-    -- screen.move(x4 + 9, self.graphics_y + self.text_y)
-    -- screen.text(util.trim_string_to_width(self.k3, text_trim_width))
-
     screen.stroke()
     screen.update()
 end
