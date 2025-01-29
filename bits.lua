@@ -49,6 +49,7 @@ local state = {
   sigma_max = 15,
   scan_lfo = nil,
   scan_lfo_period = 6,
+  scan_lfo_sync = false,
   num_bars = 6,
   bar_height = 24,
   graph_width = 64,

@@ -5,9 +5,9 @@ local Slider = include("bits/lib/graphics/Slider")
 local GaussianBars = include("bits/lib/graphics/GaussianBars")
 local gaussian = include("bits/lib/util/gaussian")
 local state_util = include("bits/lib/util/state")
+
 local bars
 local footer
-
 local window
 
 local function map_sigma(state, v)
@@ -42,6 +42,14 @@ local function toggle_lfo(state)
     end
 end
 
+local function toggle_sync(state)
+    state.scan_lfo_sync = not state.scan_lfo_sync
+    local new_mode
+    if state.scan_lfo_sync then new_mode = "clocked" else new_mode = "free" end
+    state.scan_lfo:set('mode', new_mode)
+    print('Scan LFO set to ' .. new_mode)
+end
+
 local function adjust_lfo_rate(state, d)
     local k = (10 ^ math.log(state.scan_lfo:get('period'), 10)) / 50
     local min = 0.2
@@ -69,7 +77,7 @@ local page = Page:create({
     k2_on = nil,
     k2_off = toggle_lfo,
     k3_on = nil,
-    k3_off = nil,
+    k3_off = toggle_sync,
 })
 
 function update_vslider_val(state)
