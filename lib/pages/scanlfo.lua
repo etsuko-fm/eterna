@@ -142,7 +142,7 @@ function page:initialize(state)
     })
     bars.levels = state.levels
 
-    footer = Footer:new({e3="Y", font_face=state.default_font})
+    footer = Footer:new({e3="Y", k3="SYNC", font_face=state.default_font})
     -- lfo
     state.scan_lfo = _lfos:add {
         shape = 'up',

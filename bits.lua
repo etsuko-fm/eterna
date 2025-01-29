@@ -2,7 +2,7 @@ local audio_util = include("bits/lib/util/audio_util")
 local page_main = include("bits/lib/pages/main")
 local page_time_controls = include("bits/lib/pages/timecontrols")
 local page_scan = include("bits/lib/pages/scan")
-local page_scan_lfo= include("bits/lib/pages/scanlfo")
+local page_scan_lfo = include("bits/lib/pages/scanlfo")
 local page_sample_select = include("bits/lib/pages/sampleselect")
 local GaussianBars = include("bits/lib/graphics/GaussianBars")
 
@@ -23,7 +23,7 @@ local state = {
   max_sample_length = 10.0, -- limits the allowed enabled section of the sample
   selected_sample = _path.audio .. "etsuko/sea-minor/sea-minor-chords.wav",
   sample_length = nil,      -- full length of the currently loaded sample
-
+  muted = false,            -- softcut mute
   -- section of the sample that is currently enabled;
   --  playback position randomizations will be done within this section.
   enabled_section = { nil, nil },
@@ -139,7 +139,7 @@ local function randomize_softcut(state)
 end
 
 local function update_positions(i, pos)
-  -- callback for softcut.event_position. 
+  -- callback for softcut.event_position.
   --- i:   softcut voice
   --- pos: playback position of voice i, in seconds
   -- returns playback position relative to the length of the enabled section.

@@ -45,6 +45,7 @@ function Window:render()
     -- title
     screen.move(self.x + (self.w / 2), self.y + (self.bar_height - 1))
     if self.selected then
+        -- draw black on white background
         screen.level(0)
     else
         screen.level(self.brightness)

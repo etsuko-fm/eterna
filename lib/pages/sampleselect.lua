@@ -95,6 +95,13 @@ function scale_waveform(state, d)
     state.scale_waveform = state.scale_waveform + d
 end
 
+local function mute(state)
+    if state.muted then audio.level_cut(1) else audio.level_cut(0) end
+    state.muted = not state.muted
+    print("mute: " .. tostring(state.muted))
+end
+
+
 local page = Page:create({
     name = page_name,
     e2 = adjust_loop_pos,
@@ -104,7 +111,7 @@ local page = Page:create({
     k2_on = nil,
     k2_off = select_sample,
     k3_on = nil,
-    k3_off = nil,
+    k3_off = mute,
 })
 
 function page:render(state)
@@ -156,7 +163,7 @@ function page:initialize(state)
         vertical_separations = 0,
     })
 
-    footer = Footer:new({ k2 = "Load", e2 = "Sect", e3 = "Lengt", font_face=state.default_font})
+    footer = Footer:new({ k2 = "Load", k3="Mute", e2 = "Sect", e3 = "Lengt", font_face=state.default_font})
     waveform = Waveform:new({
         x = (128 - waveform_width) / 2,
         y = 25,

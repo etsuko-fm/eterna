@@ -1,9 +1,15 @@
 local Page = include("bits/lib/pages/Page")
 local Ring = include("bits/lib/graphics/Ring")
 local Zigzag = include("bits/lib/graphics/Zigzag")
+local Window = include("bits/lib/graphics/Window")
+local Footer = include("bits/lib/graphics/Footer")
+local SixRings = include("bits/lib/graphics/SixRings")
 
 local rings = {}
-local zigzag_line = nil
+local zigzag_line
+local window
+local footer
+local six_rings
 
 local ring_luma = {
     -- todo: could these be properties of the ring?
@@ -20,8 +26,9 @@ local ring_luma = {
 }
 
 local function create_rings(state)
-    local y_offset = 18
-    zigzag_line = Zigzag:new({ 0, 32, 128, 4, 4 })
+    -- todo: should be a graphic
+    zigzag_line = Zigzag:new({ x = 0, y = 32, w = 128, h = 4, zigzag_width = 4 })
+    local y_offset = 12
     local enabled_section_length = state.enabled_section[2] - state.enabled_section[1]
     for i = 1, 6, 1 do
         rings[i] = Ring:new({
@@ -77,25 +84,44 @@ local page = Page:create({
 })
 
 function page:initialize(state)
-    create_rings(state)
+    -- window
+    window = Window:new({
+        x = 0,
+        y = 0,
+        w = 128,
+        h = 64,
+        title = "VOICES",
+        font_face = state.title_font,
+        brightness = 15,
+        border = false,
+        selected = true,
+        horizontal_separations = 0,
+        vertical_separations = 0,
+    })
+    -- footer
+    footer = Footer:new({
+        k2 = "RANDM",
+        k3 = "MUTE",
+        e2 = "SEEK",
+        e3 = "LENGT",
+        font_face = state.default_font
+    })
+    -- rings
+    six_rings = SixRings:new({
+        x = 0,
+        y = 0,
+        enabled_section = state.enabled_section,
+        ring_luma = ring_luma,
+        loop_sections = state.loop_sections,
+        hide = false,
+    })
+    -- create_rings(state)
 end
 
 function page:render(state)
     screen.clear()
-    local enabled_section_length = state.enabled_section[2] - state.enabled_section[1]
-
-    for i = 1, 6 do
-        if state.playback_positions[i] ~= nil then
-            local pos_radians = state.playback_positions[i] * math.pi * 2 -- convert phase to radians
-            rings[i].layers[3].a1 = pos_radians
-            -- 1/32 of a circle as a nice slice length (full circle in radians = 2*PI)
-            rings[i].layers[3].a2 = pos_radians + (math.pi / 16)
-            rings[i].layers[2].a1 = ((state.loop_sections[i][1] - state.enabled_section[1]) / enabled_section_length) * math.pi * 2
-            rings[i].layers[2].a2 = ((state.loop_sections[i][2] - state.enabled_section[2]) / enabled_section_length) * math.pi * 2
-
-            rings[i]:render()
-        end
-    end
+    window:render()
+    footer:render()
 
     if zigzag_line then
         zigzag_line:render()
