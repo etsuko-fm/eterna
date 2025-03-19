@@ -4,6 +4,7 @@ Toggle = {
     size = 4,
     hide = false,
     on = false,
+    font_face = 1,
 }
 
 function Toggle:new(o)
@@ -35,7 +36,7 @@ function Toggle:render()
         txt = "OFF"
     end
     screen.move(self.x + self.size + 3, self.y + 4)
-
+    screen.font_face(self.font_face)
     screen.text(txt)
     screen.update()
 end

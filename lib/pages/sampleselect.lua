@@ -105,7 +105,7 @@ local page = Page:create({
     k2_on = nil,
     k2_off = select_sample,
     k3_on = nil,
-    k3_off = mute,
+    k3_off = nil,
 })
 
 function page:render(state)
@@ -157,7 +157,28 @@ function page:initialize(state)
         vertical_separations = 0,
     })
 
-    footer = Footer:new({ k2 = "Load", k3="Mute", e2 = "Sect", e3 = "Lengt", font_face=state.default_font})
+    footer = Footer:new({
+        button_text = {
+            k2 = {
+                name = "LOAD",
+                value = "",
+            },
+            k3 = {
+                name = "MUTE",
+                value = "",
+            },
+            e2 = {
+                name = "SECT",
+                value = "",
+            },
+            e3 = {
+                name = "LENGT",
+                value = "",
+            },
+        },
+        font_face=state.footer_font
+    })
+
     waveform = Waveform:new({
         x = (128 - waveform_width) / 2,
         y = 25,

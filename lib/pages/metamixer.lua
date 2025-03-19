@@ -5,13 +5,13 @@ local Slider = include("bits/lib/graphics/Slider")
 local GaussianBars = include("bits/lib/graphics/GaussianBars")
 local gaussian = include("bits/lib/util/gaussian")
 local state_util = include("bits/lib/util/state")
-
+local misc_util = include("bits/lib/util/misc")
 local bars
 local footer
 local window
 
 local function map_sigma(state, v)
-    return util.linlin(state.sigma_min, state.sigma_max, 0, 1, v)
+    return util.explin(state.sigma_min, state.sigma_max, 0, 1, v)
 end
 
 local function adjust_sigma(state, d)
@@ -42,6 +42,7 @@ local function toggle_lfo(state)
 end
 
 local function toggle_sync(state)
+    footer.active_knob = "k3" -- todo: should be part of bits.lua? default functionality
     state.scan_lfo_sync = not state.scan_lfo_sync
     local new_mode
     if state.scan_lfo_sync then new_mode = "clocked" else new_mode = "free" end
@@ -65,11 +66,26 @@ local function adjust_lfo_rate(state, d)
     state.scan_lfo_period = new_val
     footer.active_knob = "e2"
 end
+local function gaussian_scan(state, d)
+    state_util.adjust_param(state, 'scan_val', d, 1 / 60, 0, 1, true)
+    h_slider.val = state.scan_val
+    state.levels = gaussian.calculate_gaussian_levels(state.scan_val, state.sigma)
+end
+
+
+local function route_e2(state, d)
+    if state.scan_lfo:get("enabled") == 1 then
+        adjust_lfo_rate(state, d)
+    else 
+        gaussian_scan(state, d)
+    end
+end
+
 
 local page = Page:create({
     name = page_name,
     e1 = nil,
-    e2 = adjust_lfo_rate,
+    e2 = route_e2,
     e3 = e3,
     k1_hold_on = nil,
     k1_hold_off = nil,
@@ -97,10 +113,23 @@ function page:render(state)
     window:render()
     footer.e2 = string.format("%.2f", state.scan_lfo_period)
     if state.scan_lfo:get("enabled") == 1 then
-        footer.k2 = "OFF"
+        -- When LFO is disabled, E2 controls LFO rate
+        footer.button_text.k2.value = "ON"
+        footer.button_text.e2.name = "RATE"
+        footer.button_text.e2.value = misc_util.trim(tostring(state.scan_lfo_period), 5)
     else
-        footer.k2 = "ON"
+        -- When LFO is disabled, E2 controls scan position
+        footer.button_text.k2.value = "OFF"
+        footer.button_text.e2.name = "POS"
+        footer.button_text.e2.value = misc_util.trim(tostring(state.scan_val), 5)
     end
+    if state.scan_lfo_sync == true then
+        footer.button_text.k3.value = "ON"
+    else
+        footer.button_text.k3.value = "OFF"
+    end
+    footer.button_text.e3.value = misc_util.trim(tostring(map_sigma(state, state.sigma)), 5)
+
     footer:render()
 end
 
@@ -148,7 +177,28 @@ function page:initialize(state)
     })
     bars.levels = state.levels
 
-    footer = Footer:new({ e3 = "Y", k3 = "SYNC", font_face = state.default_font })
+    footer = Footer:new({
+        button_text = {
+            k2 = {
+                name = "LFO",
+                value = "",
+            },
+            k3 = {
+                name = "SYNC",
+                value = "",
+            },
+            e2 = {
+                name = "SCAN",
+                value = "",
+            },
+            e3 = {
+                name = "AMP",
+                value = "",
+            },
+        },
+        font_face = state.footer_font,
+    })
+
     -- lfo
     state.scan_lfo = _lfos:add {
         shape = 'up',

@@ -8,7 +8,7 @@
 
 local audio_util = include("bits/lib/util/audio_util")
 local page_main = include("bits/lib/pages/main")
-local page_meta_mixer = include("bits/lib/pages/scanlfo")
+local page_meta_mixer = include("bits/lib/pages/metamixer")
 local page_sample_select = include("bits/lib/pages/sampleselect")
 
 -- global lfos
@@ -19,8 +19,9 @@ local fps = 60
 
 
 local state = {
-  default_font = 68,
+  default_font = 1, -- alt: 68
   title_font = 68,
+  footer_font = 68,
   -- sample
   playback_positions = {},
   rates = {},               -- playback rates

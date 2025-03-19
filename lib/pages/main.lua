@@ -63,12 +63,27 @@ function page:initialize(state)
     })
     -- footer
     footer = Footer:new({
-        k2 = "RANDM",
-        k3 = "MUTE",
-        e2 = "SEEK",
-        e3 = "LENGT",
-        font_face = state.default_font
+        button_text = {
+            k2 = {
+                name = "RAND",
+                value = "",
+            },
+            k3 = {
+                name = "MUTE",
+                value = "",
+            },
+            e2 = {
+                name = "SEEK",
+                value = "",
+            },
+            e3 = {
+                name = "LENGT",
+                value = "",
+            },
+        },
+        font_face = state.footer_font
     })
+
     -- rings
     six_rings = SixRings:new({
         x = 0,
