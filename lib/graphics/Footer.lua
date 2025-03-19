@@ -117,7 +117,10 @@ function Footer:render()
             screen.stroke()
         else
             -- draw encoder icon
-            screen.circle(rect_x_positions[i] + btn.x_margin, graphics_y + btn.y_margin, 2)
+            local circle_x = rect_x_positions[i] + btn.x_margin
+            local circle_y = graphics_y + btn.y_margin
+            screen.move(circle_x, circle_y)
+            screen.circle(circle_x, circle_y, 2)
         end
 
         screen.fill()

@@ -29,7 +29,6 @@ local function e3(state, d)
     footer.active_knob = "e3"
 end
 
-
 local function toggle_lfo(state)
     footer.active_knob = "k2"
     print(state.scan_lfo:get("enabled"))
@@ -111,7 +110,6 @@ function page:render(state)
     v_slider:render()
 
     window:render()
-    footer.e2 = string.format("%.2f", state.scan_lfo_period)
     if state.scan_lfo:get("enabled") == 1 then
         -- When LFO is disabled, E2 controls LFO rate
         footer.button_text.k2.value = "ON"

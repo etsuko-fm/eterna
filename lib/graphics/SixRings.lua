@@ -2,14 +2,19 @@ local Ring = include("bits/lib/graphics/Ring")
 
 SixRings = {
     x = 0,
-    y = 0,
+    y = 28,
     enabled_section = {},
     ring_luma = {},
     loop_sections={},
     rings = {},
+    ring_radius = 6,
     playback_positions = {},
     hide = false,
-    y_offset = 12,
+    x_offset = 16,
+    y_offset = 8,
+    ring_thickness = 3,
+    ring_spacing = 5,
+
 }
 
 function SixRings:new(o)
@@ -24,10 +29,9 @@ function SixRings:new(o)
     local enabled_section_length = o.enabled_section[2] - o.enabled_section[1]
     for i = 1, 6, 1 do
         o.rings[i] = Ring:new({
-            x = i * 16 + 8,                                -- space evenly from x=24 to x=104
-            y = 32 + o.y_offset + (-2 * o.y_offset * (i % 2)), -- 3 rings above line, 3 below line
-            radius = 6,
-            thickness = 3,
+            x = self.x_offset + (i - 1) * (self.ring_radius * 2 + self.ring_spacing) + (self.ring_radius / 2) + (self.ring_thickness * 2), -- space evenly from x=24 to x=104
+            y = self.y + self.y_offset + (-2 * self.y_offset * (i % 2)), -- 3 rings above line, 3 below line
+            thickness = self.ring_thickness,
             luma = o.ring_luma.circle.normal, -- 15 = max level
             layers = {
                 {
@@ -35,7 +39,7 @@ function SixRings:new(o)
                     a1 = 0,
                     a2 = math.pi * 2,
                     luma = o.ring_luma.circle.normal,
-                    thickness = 3,
+                    thickness = self.ring_thickness,
                     radius = 6,
                     rate = 0,
                 },
@@ -44,7 +48,7 @@ function SixRings:new(o)
                     a1 = ((o.loop_sections[i][1] - o.enabled_section[1]) / enabled_section_length) * math.pi * 2,
                     a2 = ((o.loop_sections[i][2] - o.enabled_section[2]) / enabled_section_length) * math.pi * 2,
                     luma = o.ring_luma.section_arc.normal,
-                    thickness = 3,
+                    thickness = self.ring_thickness,
                     radius = 6,
                     rate = 0,
                 },
@@ -53,7 +57,7 @@ function SixRings:new(o)
                     a1 = 0,
                     a2 = math.pi * 2,
                     luma = o.ring_luma.rate_arc.normal, -- brightness, 0-15
-                    thickness = 3,                    -- pixels
+                    thickness = self.ring_thickness,                    -- pixels
                     radius = 6,                       -- pixels
                     rate = 0                          -- playback_rates[i] / 10,
                 },

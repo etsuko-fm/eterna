@@ -124,11 +124,12 @@ function page:render(state)
 
     update_waveform(state)
 
-    footer:render()
+
     waveform:render()
     window:render()
     update_segment_lengths(state)
-    screen.update()
+    -- screen.update()
+    footer:render()
 end
 
 function page:initialize(state)

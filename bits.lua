@@ -7,7 +7,7 @@
 
 
 local audio_util = include("bits/lib/util/audio_util")
-local page_main = include("bits/lib/pages/main")
+local page_playback = include("bits/lib/pages/playback")
 local page_meta_mixer = include("bits/lib/pages/metamixer")
 local page_sample_select = include("bits/lib/pages/sampleselect")
 
@@ -69,7 +69,7 @@ local state = {
 }
 
 local pages = {
-  page_main,
+  page_playback,
   page_meta_mixer,
   page_sample_select,
 }
@@ -140,8 +140,8 @@ local function randomize_softcut(state)
     softcut.loop_end(i, state.loop_sections[i][2])
   end
 
-  -- update rings in the main page
-  page_main:initialize(state)
+  -- update rings in the playback page
+  page_playback:initialize(state)
 end
 
 local function update_positions(i, pos)

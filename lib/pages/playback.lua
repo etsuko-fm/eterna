@@ -13,7 +13,7 @@ local ring_luma = {
     -- todo: could these be properties of the ring?
     -- so add when initializing
     circle = {
-        normal = 0,
+        normal = 1,
     },
     rate_arc = {
         normal = 15,
@@ -65,7 +65,7 @@ function page:initialize(state)
     footer = Footer:new({
         button_text = {
             k2 = {
-                name = "RAND",
+                name = "RESET",
                 value = "",
             },
             k3 = {
@@ -73,11 +73,11 @@ function page:initialize(state)
                 value = "",
             },
             e2 = {
-                name = "SEEK",
+                name = "PITCH",
                 value = "",
             },
             e3 = {
-                name = "LENGT",
+                name = "RANGE",
                 value = "",
             },
         },
@@ -99,12 +99,12 @@ end
 function page:render(state)
     screen.clear()
     window:render()
-    footer:render()
     six_rings.playback_positions = state.playback_positions
     six_rings:render()
     if zigzag_line then
         zigzag_line:render()
     end
+    footer:render()
 end
 
 return page
