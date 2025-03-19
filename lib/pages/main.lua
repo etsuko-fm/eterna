@@ -53,7 +53,7 @@ function page:initialize(state)
         y = 0,
         w = 128,
         h = 64,
-        title = "VOICES",
+        title = "PLAYBACK",
         font_face = state.title_font,
         brightness = 15,
         border = false,
@@ -85,8 +85,8 @@ function page:render(state)
     screen.clear()
     window:render()
     footer:render()
-    six_rings:render()
     six_rings.playback_positions = state.playback_positions
+    six_rings:render()
     if zigzag_line then
         zigzag_line:render()
     end

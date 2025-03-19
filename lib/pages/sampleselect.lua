@@ -148,7 +148,7 @@ function page:initialize(state)
         y = 0,
         w = 128,
         h = 64,
-        title = "SAMPLE",
+        title = "SAMPLE BROWSER",
         font_face = state.title_font,
         brightness = 15,
         border = false,

@@ -1,0 +1,11 @@
+{
+    "Lua.diagnostics.globals": [
+        "include",
+        "softcut",
+        "metro",
+        "norns",
+        "params",
+        "_path",
+        "screen"
+    ]
+}

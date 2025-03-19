@@ -79,19 +79,22 @@ end
 
 function SixRings:render()
     if self.hide then return end
-    local y_offset = 12
-
-    local enabled_section_length = self.enabled_section[2] - self.enabled_section[1]
     for i = 1, 6 do
         if self.playback_positions[i] ~= nil then
-            local pos_radians = self.playback_positions[i] * math.pi * 2 -- convert phase to radians
-            self.rings[i].layers[3].a1 = pos_radians
-            -- 1/32 of a circle as a nice slice length (full circle in radians = 2*PI)
-            self.rings[i].layers[3].a2 = pos_radians + (math.pi / 16)
+            -- convert phase to radians
+            local pos_radians = self.playback_positions[i] * math.pi * 2
+            
+            -- draw enabled section
             self.rings[i].layers[2].a1 = self:calc_a1(i)
             self.rings[i].layers[2].a2 = self:calc_a2(i)
 
+            -- draw playback cursor
+            self.rings[i].layers[3].a1 = pos_radians - (math.pi / 16)
+            self.rings[i].layers[3].a2 = pos_radians
+
             self.rings[i]:render()
+            -- screen.move(0, 12*i)
+            -- screen.text(self.playback_positions[i])
         end
     end
 

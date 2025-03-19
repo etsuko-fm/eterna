@@ -1,10 +1,15 @@
+-- bits: 6-voice sample player
+-- 1.0.0 @etsuko.fm
+-- E1: scroll pages
+-- 
+-- Other controls:
+-- see footer
+
+
 local audio_util = include("bits/lib/util/audio_util")
 local page_main = include("bits/lib/pages/main")
-local page_time_controls = include("bits/lib/pages/timecontrols")
-local page_scan = include("bits/lib/pages/scan")
-local page_scan_lfo = include("bits/lib/pages/scanlfo")
+local page_meta_mixer = include("bits/lib/pages/scanlfo")
 local page_sample_select = include("bits/lib/pages/sampleselect")
-local GaussianBars = include("bits/lib/graphics/GaussianBars")
 
 -- global lfos
 _lfos = require 'lfo'
@@ -64,8 +69,7 @@ local state = {
 
 local pages = {
   page_main,
-  page_scan,
-  page_scan_lfo,
+  page_meta_mixer,
   page_sample_select,
 }
 
@@ -140,12 +144,17 @@ local function randomize_softcut(state)
 end
 
 local function update_positions(i, pos)
-  -- callback for softcut.event_position.
+  --- callback for softcut.event_position.
   --- i:   softcut voice
   --- pos: playback position of voice i, in seconds
-  -- returns playback position relative to the length of the enabled section.
-  -- if the enabled section is 10s long, starts at 0:05, pos should be relative to 0:05 - 0:15. 0 <= pos <= 1
-  state.playback_positions[i] = (pos - state.enabled_section[1]) / (state.enabled_section[2] - state.enabled_section[1])
+  ---
+  --- updates state.playback_positions[i] with a val between 0 and 1, relative to the length of the enabled section.
+  --- if the enabled section is 10s long, starts at 0:05:
+  ---   pos = 0 means absolute position 0:05
+  ---   pos = 1 means absolute position is 0:15
+  --- This is used to display the playback positions in the rings. 
+  enabled_section_length = state.enabled_section[2] - state.enabled_section[1]
+  state.playback_positions[i] = (pos - state.enabled_section[1]) / enabled_section_length
   -- print("voice" .. i..":"..pos .. "loop: "..state.loop_starts[i].." - " .. state.loop_ends[i])
 end
 
