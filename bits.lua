@@ -6,10 +6,13 @@
 -- see footer
 
 
-local audio_util = include("bits/lib/util/audio_util")
-local page_playback = include("bits/lib/pages/playback")
-local page_meta_mixer = include("bits/lib/pages/metamixer")
-local page_sample_select = include("bits/lib/pages/sampleselect")
+local audio_util =          include("bits/lib/util/audio_util")
+
+local page_playback =       include("bits/lib/pages/playback")
+local page_meta_mixer =     include("bits/lib/pages/metamixer")
+local page_sample_select =  include("bits/lib/pages/sampleselect")
+local page_panning =        include("bits/lib/pages/panning")
+local page_slice =          include("bits/lib/pages/slice")
 
 -- global lfos
 _lfos = require 'lfo'
@@ -19,10 +22,11 @@ local fps = 60
 
 
 local state = {
-  default_font = 1, -- alt: 68
+  default_font = 68, -- alt: 68
   title_font = 68,
   footer_font = 68,
   -- sample
+  filename="",
   playback_positions = {},
   rates = {},               -- playback rates
   pans = {},
@@ -36,7 +40,7 @@ local state = {
 
   -- waveform
   waveform_samples = {},
-  interval = 0, -- of what? unused?
+  waveform_width = 64,
   scale_waveform = 10,
 
   -- time controls
@@ -49,11 +53,11 @@ local state = {
     windows = {}
   },
   scan_val = 0.5,                 -- 0 to 1; allows scanning through softcut voices (think smooth soloing/muting)
-  levels = { 0, 0, 0, 0, 0, 0, }, -- softcut levels; initialized later by the scan page
+  levels = { 0, 0, 0, 0, 0, 0, }, -- softcut levels; initialized later by the metamixer page
   sigma = 5,                      -- Width of the gaussian curve, adjustable for sharper or broader curves
   sigma_min = 0.3,
   sigma_max = 15,
-  scan_lfo = nil,
+  scan_lfo = nil, --todo: rename to metamixer lfo
   scan_lfo_period = 6,
   scan_lfo_sync = false,
   num_bars = 6,
@@ -64,20 +68,27 @@ local state = {
   graph_x = 32, -- (window_width - graph_width) / 2
   graph_y = 40,
 
+  -- panning.
+  panning_spread = 8,
+  panning_twist = 0,
+  pan_positions = {0, 0, 0, 0, 0, 0, }, 
+
   -- event system
   events = {}
 }
 
 local pages = {
+  page_sample_select,
+  page_panning,
   page_playback,
   page_meta_mixer,
-  page_sample_select,
+  page_slice,
 }
 
 local current_page_index = 1
 local current_page = pages[current_page_index]
 
--- todo: this is great re-usable functionality, move to lib; also confusing otherwise
+-- todo: this is re-usable functionality, move to lib; also confusing otherwise
 -- should then be in a PageManager class. However cyling pages is not always the most straightforward thing to do.
 local function cycle_page_forward()
   -- Increment the current page index, reset to 1 if we exceed the table length
@@ -176,14 +187,12 @@ end
 local function switch_sample(file)
   -- use specified `file` as a sample
   state.sample_length = audio_util.load_sample(file, true)
-  print("sample_length: " .. state.sample_length)
-
   state.enabled_section = { 0, state.max_sample_length }
   if state.sample_length < state.max_sample_length then
     state.enabled_section = { 0, state.sample_length }
   end
 
-  softcut.render_buffer(1, 0, state.sample_length, 128)
+  softcut.render_buffer(1, 0, state.sample_length, state.waveform_width)
   randomize_softcut(state)
 end
 

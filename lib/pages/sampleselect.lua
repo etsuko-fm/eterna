@@ -10,7 +10,6 @@ local state_util = include("bits/lib/util/state")
 local max_length_dirty = false
 local footer
 local waveform
-local waveform_width = 100
 local window
 
 --[[
@@ -34,27 +33,18 @@ local function as_abs_values(tbl)
     return tbl
 end
 
-local function adjust_loop_pos(state, d)
-    -- print(state.enabled_section[1] .. ',' .. state.enabled_section[2])
-    state_util.adjust_param(state.enabled_section, 1, d, 1, 0, state.sample_length - state.max_sample_length)
-    state_util.adjust_param(state.enabled_section, 2, d, 1, state.max_sample_length, state.sample_length)
-    max_length_dirty = true
-    state.events['event_randomize_softcut'] = true
-end
-
-local function adjust_loop_len(state, d)
-    -- print(state.enabled_section[1] .. ',' .. state.enabled_section[2])
-    state_util.adjust_param(state, 'max_sample_length', d, 0.1, 0.01, 10)
-    state.enabled_section[2] = state.enabled_section[1] + state.max_sample_length
-    max_length_dirty = true
-    state.events['event_randomize_softcut'] = true
-end
 
 local function update_waveform(state)
     waveform.sample_length = state.sample_length
     waveform.enabled_section[1] = state.enabled_section[1]
     waveform.enabled_section[2] = state.enabled_section[2]
     waveform.samples = state.waveform_samples
+
+    if state.waveform_samples[1] then
+        state.scale_waveform = 14 / math.max(table.unpack(state.waveform_samples))
+    end
+
+
 end
 
 
@@ -88,18 +78,18 @@ local function select_sample(state)
         print('selected ' .. file_path)
     end
     fileselect.enter(_path.dust, callback, "audio")
-    page_disabled = true
+    page_disabled = true -- don't render current page
 end
 
 function scale_waveform(state, d)
-    state.scale_waveform = state.scale_waveform + d
+    state_util.adjust_param(state, 'scale_waveform', d, 1, 1, 20, false)
 end
 
 
 local page = Page:create({
     name = page_name,
-    e2 = adjust_loop_pos,
-    e3 = adjust_loop_len,
+    e2 = scale_waveform,
+    e3 = scale_waveform,
     k1_hold_on = nil,
     k1_hold_off = nil,
     k2_on = nil,
@@ -115,16 +105,16 @@ function page:render(state)
     -- show filename and sample length
     screen.font_face(state.default_font)
     screen.level(10)
-    screen.move(10, 42)
+    screen.move(10, 46)
     screen.text(state.filename)
-    screen.move(10, 49)
-    screen.font_size(8)
-    screen.text(math.floor(state.sample_length / 60) .. "'" .. string.format("%02d", math.floor(state.sample_length) % 60) .. "\"")
-    screen.text(" [" .. state.max_sample_length .. "]")
+    -- screen.move(10, 47)
+    -- screen.font_size(8)
+    -- screen.text(math.floor(state.sample_length / 60) .. "'" .. string.format("%02d", math.floor(state.sample_length) % 60) .. "\"")
+    -- screen.text(" [" .. state.max_sample_length .. "]")
 
     update_waveform(state)
 
-
+    waveform.vertical_scale = state.scale_waveform
     waveform:render()
     window:render()
     update_segment_lengths(state)
@@ -161,19 +151,19 @@ function page:initialize(state)
     footer = Footer:new({
         button_text = {
             k2 = {
+                name = "MODE",
+                value = "SAMPL",
+            },
+            k3 = {
                 name = "LOAD",
                 value = "",
             },
-            k3 = {
-                name = "MUTE",
-                value = "",
-            },
             e2 = {
-                name = "SECT",
+                name = "",
                 value = "",
             },
             e3 = {
-                name = "LENGT",
+                name = "",
                 value = "",
             },
         },
@@ -181,9 +171,10 @@ function page:initialize(state)
     })
 
     waveform = Waveform:new({
-        x = (128 - waveform_width) / 2,
+        x = (128 - state.waveform_width) / 2,
         y = 25,
-        w = waveform_width,
+        w = state.waveform_width,
+        highlight = false,
         sample_length = state.sample_length,
         enabled_section = state.enabled_section,
         vertical_scale = state.scale_waveform,
@@ -191,7 +182,7 @@ function page:initialize(state)
     })
     -- setup callback
     softcut.event_render(on_render)
-    softcut.render_buffer(1, 0, state.sample_length, waveform_width)
+    softcut.render_buffer(1, 0, state.sample_length, state.waveform_width)
 end
 
 return page

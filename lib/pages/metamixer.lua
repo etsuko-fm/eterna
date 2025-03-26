@@ -69,6 +69,9 @@ local function gaussian_scan(state, d)
     state_util.adjust_param(state, 'scan_val', d, 1 / 60, 0, 1, true)
     h_slider.val = state.scan_val
     state.levels = gaussian.calculate_gaussian_levels(state.scan_val, state.sigma)
+    for i = 1, 6 do
+        softcut.level(i, state.levels[i])
+    end
 end
 
 
@@ -173,6 +176,8 @@ function page:initialize(state)
         dash_size = 1,
         val = map_sigma(state, state.sigma),
     })
+    -- initialize softcut levels according to mixer levels
+    adjust_sigma(state, 0)
     bars.levels = state.levels
 
     footer = Footer:new({

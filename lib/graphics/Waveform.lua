@@ -4,6 +4,7 @@ Waveform = {
     w = 128,
     hide = false,
     sample_length = 0, -- seconds
+    highlight = true,
     enabled_section = {
         nil,  -- start, in seconds
         nil,  -- end
@@ -30,15 +31,21 @@ function Waveform:render()
     -- the enabled_section table contains 2 values (start and end pos, in seconds) of the slice  of the total sample,
     -- that can be used by the 6 softcut voices - those will play a slice of that slice. 
     -- to highlight that section in the waveform, the seconds need to be converted to a sample index.
-    local enabled_sample_idx_start = math.floor(util.linlin(0, self.sample_length, 0, self.w, self.enabled_section[1]))
-    local enabled_sample_idx_end = math.floor(util.linlin(0, self.sample_length, 0, self.w, self.enabled_section[2]))
-    
+
+    local enabled_sample_idx_start
+    local enabled_sample_idx_end
+
+    if self.highlight then
+        enabled_sample_idx_start = math.floor(util.linlin(0, self.sample_length, 0, self.w, self.enabled_section[1]))
+        enabled_sample_idx_end = math.floor(util.linlin(0, self.sample_length, 0, self.w, self.enabled_section[2]))
+    end
+
     for i, s in ipairs(self.samples) do
         local height = util.round(math.abs(s) * self.vertical_scale)
         screen.move(x_pos, self.y - height)
 
 
-        if i >= enabled_sample_idx_start and i <= enabled_sample_idx_end then
+        if self.highlight and i >= enabled_sample_idx_start and i <= enabled_sample_idx_end then
             -- brighten the selected part of the waveform 
             -- todo: this should be based on the number of seconds, not pixels
             screen.level(self.fill_selected)
