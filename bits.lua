@@ -71,7 +71,10 @@ local state = {
   -- panning.
   panning_spread = 8,
   panning_twist = 0,
-  pan_positions = {0, 0, 0, 0, 0, 0, }, 
+  pan_positions = {0, 0, 0, 0, 0, 0, },
+  pan_lfo = nil,
+  pan_lfo_period = 6,
+  pan_lfo_sync = false,
 
   -- event system
   events = {}

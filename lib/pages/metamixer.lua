@@ -24,10 +24,6 @@ local function adjust_sigma(state, d)
     end
 end
 
-local function e3(state, d)
-    adjust_sigma(state, d)
-    footer.active_knob = "e3"
-end
 
 local function toggle_lfo(state)
     footer.active_knob = "k2"
@@ -65,6 +61,7 @@ local function adjust_lfo_rate(state, d)
     state.scan_lfo_period = new_val
     footer.active_knob = "e2"
 end
+
 local function gaussian_scan(state, d)
     state_util.adjust_param(state, 'scan_val', d, 1 / 60, 0, 1, true)
     h_slider.val = state.scan_val
@@ -75,7 +72,7 @@ local function gaussian_scan(state, d)
 end
 
 
-local function route_e2(state, d)
+local function e2(state, d)
     if state.scan_lfo:get("enabled") == 1 then
         adjust_lfo_rate(state, d)
     else 
@@ -84,10 +81,16 @@ local function route_e2(state, d)
 end
 
 
+local function e3(state, d)
+    adjust_sigma(state, d)
+    footer.active_knob = "e3"
+end
+
+
 local page = Page:create({
     name = page_name,
     e1 = nil,
-    e2 = route_e2,
+    e2 = e2,
     e3 = e3,
     k1_hold_on = nil,
     k1_hold_off = nil,
