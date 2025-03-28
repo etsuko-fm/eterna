@@ -34,7 +34,6 @@ end
 
 
 local function toggle_lfo(state)
-    footer.active_knob = "k2"
     print(state.pan_lfo:get("enabled"))
     if state.pan_lfo:get("enabled") == 1 then
         state.pan_lfo:stop()
@@ -80,6 +79,7 @@ local page = Page:create({
     k2_off = toggle_lfo,
     k3_on = nil,
     k3_off = nil,
+    footer = footer,
 })
 
 function page:render(state)
@@ -90,24 +90,24 @@ function page:render(state)
     panning_graphic:render()
     if state.pan_lfo:get("enabled") == 1 then
         -- When LFO is disabled, E2 controls LFO rate
-        footer.button_text.k2.value = "ON"
-        footer.button_text.e2.name = "RATE"
-        footer.button_text.e2.value = misc_util.trim(tostring(state.pan_lfo_period), 5)
+        page.footer.button_text.k2.value = "ON"
+        page.footer.button_text.e2.name = "RATE"
+        page.footer.button_text.e2.value = misc_util.trim(tostring(state.pan_lfo_period), 5)
     else
         -- When LFO is disabled, E2 controls scan position
-        footer.button_text.k2.value = "OFF"
-        footer.button_text.e2.name = "TWIST"
-        footer.button_text.e2.value = misc_util.trim(tostring( state.panning_twist), 5)
+        page.footer.button_text.k2.value = "OFF"
+        page.footer.button_text.e2.name = "TWIST"
+        page.footer.button_text.e2.value = misc_util.trim(tostring( state.panning_twist), 5)
     end
     if state.pan_lfo_sync == true then
-        footer.button_text.k3.value = "ON"
+        page.footer.button_text.k3.value = "ON"
     else
-        footer.button_text.k3.value = "OFF"
+        page.footer.button_text.k3.value = "OFF"
     end
-    footer.button_text.e3.value = misc_util.trim(tostring(state.panning_spread), 5)
+    page.footer.button_text.e3.value = misc_util.trim(tostring(state.panning_spread), 5)
 
 
-    footer:render()
+    page.footer:render()
 end
 
 function page:initialize(state)
@@ -129,7 +129,7 @@ function page:initialize(state)
     panning_graphic = PanningCircle:new({
         w=state.panning_spread,
     })
-    footer = Footer:new({
+    page.footer = Footer:new({
         button_text = {
             k2 = {
                 name = "LFO",

@@ -239,10 +239,21 @@ end
 function key(n, z)
   if n == 1 and z == 0 and current_page.k1_off then current_page.k1_off(state) end
   if n == 1 and z == 1 and current_page.k1_on then current_page.k1_on(state) end
-  if n == 2 and z == 0 and current_page.k2_off then current_page.k2_off(state) end
-  if n == 2 and z == 1 and current_page.k2_on then current_page.k2_on(state) end
-  if n == 3 and z == 0 and current_page.k3_off then current_page.k3_off(state) end
-  if n == 3 and z == 1 and current_page.k3_on then current_page.k3_on(state) end
+  if n == 2 and z == 0 and current_page.k2_off then
+    current_page.k2_off(state)
+    current_page.footer.active_knob = "k2"
+  end
+  if n == 2 and z == 1 and current_page.k2_on then
+    current_page.k2_on(state)
+    current_page.footer.active_knob = "k2"
+  end
+  if n == 3 and z == 0 and current_page.k3_off then
+    current_page.k3_off(state)
+    current_page.footer.active_knob = "k3"
+  end
+  if n == 3 and z == 1 and current_page.k3_on then
+    current_page.k3_on(state)
+    current_page.footer.active_knob = "k3"  end
 end
 
 local ticks = 0
@@ -263,8 +274,14 @@ function enc(n, d)
       end
     end
   end
-  if n == 2 and current_page.e2 then current_page.e2(state, d) end
-  if n == 3 and current_page.e3 then current_page.e3(state, d) end
+  if n == 2 and current_page.e2 then
+    current_page.e2(state, d)
+    current_page.footer.active_knob = "e2"
+  end
+  if n == 3 and current_page.e3 then
+    current_page.e3(state, d)
+    current_page.footer.active_knob = "e3"
+  end
 end
 
 function query_positions()

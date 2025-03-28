@@ -1,6 +1,6 @@
 Footer = {
     hide = false,
-    active_fill = 5, -- text brightness when corresponding button has been physically modified
+    active_fill = 10, -- text brightness when corresponding button has been physically modified
     foreground_fill = 3, -- default text brightness
     background_fill = 1, -- fill of rect surrounding text
     -- text on buttons; `name` is displayed on top row, `value` on bottom row
@@ -106,7 +106,6 @@ function Footer:render()
 
     for i, btn in ipairs(buttons) do
         if self.active_knob == btn.name then fill = self.active_fill else fill = self.foreground_fill end
-
         screen.level(fill)
         if btn.type == "knob" then
             -- draw knob icon
@@ -128,10 +127,8 @@ function Footer:render()
         screen.move(rect_x_positions[i] + hor_txt_offset, text_y_row_1)
         screen.font_face(self.font_face)
         screen.text(self.button_text[btn.name].name)
-
-        screen.move(rect_x_positions[i] + hor_txt_offset, text_y_row_2)
+        screen.move(rect_x_positions[i] + 3, text_y_row_2)
         screen.text(self.button_text[btn.name].value)
-
     end
 
     screen.stroke()

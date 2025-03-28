@@ -8,7 +8,6 @@ local debug = include("bits/lib/util/debug")
 local state_util = include("bits/lib/util/state")
 
 local max_length_dirty = false
-local footer
 local waveform
 local window
 
@@ -119,7 +118,7 @@ function page:render(state)
     window:render()
     update_segment_lengths(state)
     -- screen.update()
-    footer:render()
+    page.footer:render()
 end
 
 function page:initialize(state)
@@ -148,7 +147,7 @@ function page:initialize(state)
         vertical_separations = 0,
     })
 
-    footer = Footer:new({
+    page.footer = Footer:new({
         button_text = {
             k2 = {
                 name = "MODE",

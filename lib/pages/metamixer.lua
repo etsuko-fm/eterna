@@ -7,7 +7,6 @@ local gaussian = include("bits/lib/util/gaussian")
 local state_util = include("bits/lib/util/state")
 local misc_util = include("bits/lib/util/misc")
 local bars
-local footer
 local window
 
 local function map_sigma(state, v)
@@ -24,26 +23,41 @@ local function adjust_sigma(state, d)
     end
 end
 
-
-local function toggle_lfo(state)
-    footer.active_knob = "k2"
-    print(state.scan_lfo:get("enabled"))
-    if state.scan_lfo:get("enabled") == 1 then
-        state.scan_lfo:stop()
-    else
-        state.scan_lfo:start()
-        state.scan_lfo:set('phase', state.scan_val)
+local function toggle_shape(state)
+    shapes = {"sine", "up", "down", "square", "random"}
+    local shape = state.scan_lfo:get('shape')
+    local new_shape = "sine"
+    if shape == "sine" then
+        new_shape = "up"
+    elseif shape == "up" then
+        new_shape = "down"
+    elseif shape == "down" then
+        new_shape = "random"
     end
+    state.scan_lfo:set('shape', new_shape)
 end
 
+
 local function toggle_sync(state)
-    footer.active_knob = "k3" -- todo: should be part of bits.lua? default functionality
     state.scan_lfo_sync = not state.scan_lfo_sync
     local new_mode
     if state.scan_lfo_sync then new_mode = "clocked" else new_mode = "free" end
     state.scan_lfo:set('mode', new_mode)
     print('Scan LFO set to ' .. new_mode)
 end
+
+local function toggle_lfo(state)
+    if state.scan_lfo:get("enabled") == 1 and not state.scan_lfo_sync then
+        toggle_sync(state)
+    elseif state.scan_lfo:get("enabled") == 1 then
+        state.scan_lfo:stop()
+    else
+        toggle_sync(state)
+        state.scan_lfo:start()
+        state.scan_lfo:set('phase', state.scan_val)
+    end
+end
+
 
 local function adjust_lfo_rate(state, d)
     local k = (10 ^ math.log(state.scan_lfo:get('period'), 10)) / 50
@@ -59,7 +73,6 @@ local function adjust_lfo_rate(state, d)
     end
     state.scan_lfo:set('period', new_val)
     state.scan_lfo_period = new_val
-    footer.active_knob = "e2"
 end
 
 local function gaussian_scan(state, d)
@@ -83,7 +96,6 @@ end
 
 local function e3(state, d)
     adjust_sigma(state, d)
-    footer.active_knob = "e3"
 end
 
 
@@ -97,7 +109,7 @@ local page = Page:create({
     k2_on = nil,
     k2_off = toggle_lfo,
     k3_on = nil,
-    k3_off = toggle_sync,
+    k3_off = toggle_shape,
 })
 
 function update_vslider_val(state)
@@ -118,23 +130,22 @@ function page:render(state)
     window:render()
     if state.scan_lfo:get("enabled") == 1 then
         -- When LFO is disabled, E2 controls LFO rate
-        footer.button_text.k2.value = "ON"
-        footer.button_text.e2.name = "RATE"
-        footer.button_text.e2.value = misc_util.trim(tostring(state.scan_lfo_period), 5)
+        page.footer.button_text.k2.value = "ON"
+        if state.scan_lfo_sync == true then
+            page.footer.button_text.k2.value = "SYNC"
+        end
+        page.footer.button_text.e2.name = "SPEED"
+        page.footer.button_text.e2.value = misc_util.trim(tostring(state.scan_lfo_period), 5)    
     else
         -- When LFO is disabled, E2 controls scan position
-        footer.button_text.k2.value = "OFF"
-        footer.button_text.e2.name = "POS"
-        footer.button_text.e2.value = misc_util.trim(tostring(state.scan_val), 5)
+        page.footer.button_text.k2.value = "OFF"
+        page.footer.button_text.e2.name = "POS"
+        page.footer.button_text.e2.value = misc_util.trim(tostring(state.scan_val), 5)
     end
-    if state.scan_lfo_sync == true then
-        footer.button_text.k3.value = "ON"
-    else
-        footer.button_text.k3.value = "OFF"
-    end
-    footer.button_text.e3.value = misc_util.trim(tostring(map_sigma(state, state.sigma)), 5)
+    page.footer.button_text.k3.value = string.upper(state.scan_lfo:get("shape"))
+    page.footer.button_text.e3.value = misc_util.trim(tostring(map_sigma(state, state.sigma)), 5)
 
-    footer:render()
+    page.footer:render()
 end
 
 function page:initialize(state)
@@ -183,18 +194,18 @@ function page:initialize(state)
     adjust_sigma(state, 0)
     bars.levels = state.levels
 
-    footer = Footer:new({
+    page.footer = Footer:new({
         button_text = {
             k2 = {
                 name = "LFO",
                 value = "",
             },
             k3 = {
-                name = "SYNC",
-                value = "",
+                name = "SHAPE",
+                value = "Sine",
             },
             e2 = {
-                name = "SCAN",
+                name = "POS",
                 value = "",
             },
             e3 = {

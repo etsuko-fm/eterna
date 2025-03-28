@@ -5,7 +5,6 @@ local SixRings = include("bits/lib/graphics/SixRings")
 
 local zigzag_line
 local window
-local footer
 local six_rings
 
 
@@ -62,7 +61,7 @@ function page:initialize(state)
         vertical_separations = 0,
     })
     -- footer
-    footer = Footer:new({
+    page.footer = Footer:new({
         button_text = {
             k2 = {
                 name = "RESET",
@@ -104,7 +103,7 @@ function page:render(state)
     if zigzag_line then
         zigzag_line:render()
     end
-    footer:render()
+    page.footer:render()
 end
 
 return page

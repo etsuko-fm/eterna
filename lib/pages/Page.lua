@@ -13,6 +13,7 @@ local Page = {
   k2_off = nil,
   k3_on = nil,
   k3_off = nil,
+  footer = nil,
 }
 
 function Page:create(o)
