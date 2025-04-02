@@ -11,7 +11,23 @@ function trim(s, max_length)
     end
 end
 
+-- Converts a list (array) into a set (table with keys)
+local function list_to_set(list)
+    local set = {}
+    for _, value in ipairs(list) do
+        set[value] = true
+    end
+    return set
+end
+
+-- Utility function to check if a number exists in the set
+local function set_contains(set, number)
+    return set[number] == true
+end
+
 return {
     round = round,
     trim = trim,
+    list_to_set = list_to_set,
+    set_contains = set_contains,
 }

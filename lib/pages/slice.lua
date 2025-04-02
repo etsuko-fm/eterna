@@ -1,17 +1,33 @@
 local Page = include("bits/lib/pages/Page")
 local Window = include("bits/lib/graphics/Window")
 local state_util = include("bits/lib/util/state")
+local GridGraphic = include("bits/lib/graphics/Grid")
+local Footer = include("bits/lib/graphics/Footer")
 
 local page_name = "Slice"
-local footer
 local window
+local grid_graphic
 
+local function update_grid(state)
+    grid_graphic.start_active = state.pages.slice.seek.start
+    grid_graphic.end_active = state.pages.slice.seek.start + state.pages.slice.seek.width
+end
+
+local function seek(state, d)
+    state_util.adjust_param(state.pages.slice.seek, 'start', 1, d, 1, 128)
+    update_grid(state)
+end
+
+local function adjust_width(state, d)
+    state_util.adjust_param(state.pages.slice.seek, 'width', 1, d, 1, 128)
+    update_grid(state)
+end
 
 local page = Page:create({
     name = page_name,
     e1 = nil,
-    e2 = nil,
-    e3 = nil,
+    e2 = seek,
+    e3 = adjust_width,
     k1_hold_on = nil,
     k1_hold_off = nil,
     k2_on = nil,
@@ -23,7 +39,11 @@ local page = Page:create({
 function page:render(state)
     screen.clear()
     window:render()
-    footer:render()
+    grid_graphic:render()
+    page.footer.button_text.e2.value = state.pages.slice.seek.start
+    page.footer.button_text.e3.value = state.pages.slice.seek.width
+
+    page.footer:render()
 end
 
 local function adjust_loop_pos(state, d)
@@ -43,6 +63,7 @@ local function adjust_loop_len(state, d)
 end
 
 
+
 function page:initialize(state)
     window = Window:new({
         x = 0,
@@ -57,8 +78,9 @@ function page:initialize(state)
         horizontal_separations = 0,
         vertical_separations = 0,
     })
+    grid_graphic = GridGraphic:new()
     -- graphics
-    footer = Footer:new({
+    page.footer = Footer:new({
         button_text = {
             k2 = {
                 name = "LFO",
@@ -70,11 +92,11 @@ function page:initialize(state)
             },
             e2 = {
                 name = "SEEK",
-                value = "",
+                value = state.pages.slice.seek.start,
             },
             e3 = {
                 name = "WIDTH",
-                value = "",
+                value = state.pages.slice.seek.width,
             },
         },
         font_face = state.footer_font,

@@ -38,24 +38,13 @@ local function toggle_shape(state)
 end
 
 
-local function toggle_sync(state)
-    state.scan_lfo_sync = not state.scan_lfo_sync
-    local new_mode
-    if state.scan_lfo_sync then new_mode = "clocked" else new_mode = "free" end
-    state.scan_lfo:set('mode', new_mode)
-    print('Scan LFO set to ' .. new_mode)
-end
-
 local function toggle_lfo(state)
-    if state.scan_lfo:get("enabled") == 1 and not state.scan_lfo_sync then
-        toggle_sync(state)
-    elseif state.scan_lfo:get("enabled") == 1 then
+    if state.scan_lfo:get("enabled") == 1 then
         state.scan_lfo:stop()
     else
-        toggle_sync(state)
         state.scan_lfo:start()
-        state.scan_lfo:set('phase', state.scan_val)
     end
+    state.scan_lfo:set('phase', state.scan_val)
 end
 
 

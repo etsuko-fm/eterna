@@ -76,6 +76,16 @@ local state = {
   pan_lfo_period = 6,
   pan_lfo_sync = false,
 
+
+  -- slice 
+  pages = {
+    slice = {
+      seek = {
+        start = 1,
+        width = 32,
+      },
+    },
+  },
   -- event system
   events = {}
 }
