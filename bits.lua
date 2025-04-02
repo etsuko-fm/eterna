@@ -35,7 +35,7 @@ local state = {
   sample_length = nil,      -- full length of the currently loaded sample
   muted = false,            -- softcut mute
   -- section of the sample that is currently enabled;
-  --  playback position randomizations will be done within this section.
+  --  playback position randomizations will be done within this section. [1] and [2] in seconds.
   enabled_section = { nil, nil },
 
   -- waveform
@@ -57,9 +57,9 @@ local state = {
   sigma = 5,                      -- Width of the gaussian curve, adjustable for sharper or broader curves
   sigma_min = 0.3,
   sigma_max = 15,
-  scan_lfo = nil, --todo: rename to metamixer lfo
-  scan_lfo_period = 6,
-  scan_lfo_sync = false,
+  metamixer_lfo = nil, --todo: rename to metamixer lfo
+  metamixer_lfo_period = 6,
+
   num_bars = 6,
   bar_height = 24,
   graph_width = 64,
@@ -74,12 +74,12 @@ local state = {
   pan_positions = {0, 0, 0, 0, 0, 0, },
   pan_lfo = nil,
   pan_lfo_period = 6,
-  pan_lfo_sync = false,
 
 
   -- slice 
   pages = {
     slice = {
+      lfo = nil,
       seek = {
         start = 1,
         width = 32,
@@ -143,10 +143,12 @@ local function randomize_softcut(state)
   -- randomize playback rate, loop segment and level of all 6 softcut voices
 
   -- a few presets to choose from
+  local rate_values_equal = { 1,1,1, 1,1,1, }
+
   local rate_values_mid = { 0.5, 1, 2, -0.5, -1, -2 }
   local rate_values_low = { 0.25, 0.5, 1, -1, -.5, -.25 }
   local rate_values_sub = { 0.125, 0.25, 0.5, -0.5, -.25, -.125 }
-  local rate_values = rate_values_mid
+  local rate_values = rate_values_equal
 
   for i = 1, 6 do
     -- pick playback rate from rate_values table

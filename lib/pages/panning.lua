@@ -94,19 +94,12 @@ function page:render(state)
         page.footer.button_text.e2.name = "RATE"
         page.footer.button_text.e2.value = misc_util.trim(tostring(state.pan_lfo_period), 5)
     else
-        -- When LFO is disabled, E2 controls scan position
+        -- When LFO is disabled, E2 controls pan position
         page.footer.button_text.k2.value = "OFF"
         page.footer.button_text.e2.name = "TWIST"
         page.footer.button_text.e2.value = misc_util.trim(tostring( state.panning_twist), 5)
     end
-    if state.pan_lfo_sync == true then
-        page.footer.button_text.k3.value = "ON"
-    else
-        page.footer.button_text.k3.value = "OFF"
-    end
     page.footer.button_text.e3.value = misc_util.trim(tostring(state.panning_spread), 5)
-
-
     page.footer:render()
 end
 

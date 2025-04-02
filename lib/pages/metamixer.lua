@@ -25,7 +25,7 @@ end
 
 local function toggle_shape(state)
     shapes = {"sine", "up", "down", "square", "random"}
-    local shape = state.scan_lfo:get('shape')
+    local shape = state.metamixer_lfo:get('shape')
     local new_shape = "sine"
     if shape == "sine" then
         new_shape = "up"
@@ -34,34 +34,34 @@ local function toggle_shape(state)
     elseif shape == "down" then
         new_shape = "random"
     end
-    state.scan_lfo:set('shape', new_shape)
+    state.metamixer_lfo:set('shape', new_shape)
 end
 
 
 local function toggle_lfo(state)
-    if state.scan_lfo:get("enabled") == 1 then
-        state.scan_lfo:stop()
+    if state.metamixer_lfo:get("enabled") == 1 then
+        state.metamixer_lfo:stop()
     else
-        state.scan_lfo:start()
+        state.metamixer_lfo:start()
     end
-    state.scan_lfo:set('phase', state.scan_val)
+    state.metamixer_lfo:set('phase', state.scan_val)
 end
 
 
 local function adjust_lfo_rate(state, d)
-    local k = (10 ^ math.log(state.scan_lfo:get('period'), 10)) / 50
+    local k = (10 ^ math.log(state.metamixer_lfo:get('period'), 10)) / 50
     local min = 0.2
     local max = 256
 
-    new_val = state.scan_lfo:get('period') + (d * k)
+    new_val = state.metamixer_lfo:get('period') + (d * k)
     if new_val < min then
         new_val = min
     end
     if new_val > max then
         new_val = max
     end
-    state.scan_lfo:set('period', new_val)
-    state.scan_lfo_period = new_val
+    state.metamixer_lfo:set('period', new_val)
+    state.metamixer_lfo_period = new_val
 end
 
 local function gaussian_scan(state, d)
@@ -75,7 +75,7 @@ end
 
 
 local function e2(state, d)
-    if state.scan_lfo:get("enabled") == 1 then
+    if state.metamixer_lfo:get("enabled") == 1 then
         adjust_lfo_rate(state, d)
     else 
         gaussian_scan(state, d)
@@ -117,21 +117,18 @@ function page:render(state)
     v_slider:render()
 
     window:render()
-    if state.scan_lfo:get("enabled") == 1 then
+    if state.metamixer_lfo:get("enabled") == 1 then
         -- When LFO is disabled, E2 controls LFO rate
         page.footer.button_text.k2.value = "ON"
-        if state.scan_lfo_sync == true then
-            page.footer.button_text.k2.value = "SYNC"
-        end
         page.footer.button_text.e2.name = "SPEED"
-        page.footer.button_text.e2.value = misc_util.trim(tostring(state.scan_lfo_period), 5)    
+        page.footer.button_text.e2.value = misc_util.trim(tostring(state.metamixer_lfo:get('period')), 5)    
     else
         -- When LFO is disabled, E2 controls scan position
         page.footer.button_text.k2.value = "OFF"
         page.footer.button_text.e2.name = "POS"
         page.footer.button_text.e2.value = misc_util.trim(tostring(state.scan_val), 5)
     end
-    page.footer.button_text.k3.value = string.upper(state.scan_lfo:get("shape"))
+    page.footer.button_text.k3.value = string.upper(state.metamixer_lfo:get("shape"))
     page.footer.button_text.e3.value = misc_util.trim(tostring(map_sigma(state, state.sigma)), 5)
 
     page.footer:render()
@@ -206,13 +203,13 @@ function page:initialize(state)
     })
 
     -- lfo
-    state.scan_lfo = _lfos:add {
+    state.metamixer_lfo = _lfos:add {
         shape = 'up',
         min = 0,
         max = 1,
         depth = 1,
         mode = 'free',
-        period = state.scan_lfo_period,
+        period = state.metamixer_lfo_period,
         phase = 0,
         action = function(scaled, raw)
             state.scan_val = scaled
@@ -223,7 +220,7 @@ function page:initialize(state)
             end
         end
     }
-    state.scan_lfo:set('reset_target', 'mid: rising')
+    state.metamixer_lfo:set('reset_target', 'mid: rising')
 end
 
 return page

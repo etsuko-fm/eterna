@@ -42,7 +42,7 @@ function Grid:render()
             -- print(idx)
             local x =  self.x + (self.block_w + self.margin_w) * column
             local y =  self.y + (self.block_h + self.margin_h) * row
-            if idx >= self.start_active and idx <= self.end_active then
+            if idx >= self.start_active and idx < self.end_active then
                 screen.level(self.active_fill)
             else
                 screen.level(self.fill)
