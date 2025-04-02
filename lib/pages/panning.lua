@@ -5,7 +5,6 @@ local state_util = include("bits/lib/util/state")
 local misc_util = include("bits/lib/util/misc")
 
 local page_name = "Panning"
-local footer
 local window
 
 local panning_graphic
@@ -57,7 +56,6 @@ local function adjust_lfo_rate(state, d)
     end
     state.pan_lfo:set('period', new_val)
     state.pan_lfo_period = new_val
-    footer.active_knob = "e2"
 end
 
 local function e2(state, d)
@@ -79,7 +77,6 @@ local page = Page:create({
     k2_off = toggle_lfo,
     k3_on = nil,
     k3_off = nil,
-    footer = footer,
 })
 
 function page:render(state)

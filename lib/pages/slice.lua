@@ -35,13 +35,16 @@ local function update_grid(state)
 end
 
 local function seek(state, d)
-    state_util.adjust_param(state.pages.slice.seek, 'start', 1, d, 1, 128)
+    local max_start = 129 - state.pages.slice.seek.width
+    state_util.adjust_param(state.pages.slice.seek, 'start', 1, d, 1, max_start)
     update_grid(state)
 end
 
 local function adjust_width(state, d)
-    state_util.adjust_param(state.pages.slice.seek, 'width', 1, d, 1, 128)
-    update_grid(state)  
+    state_util.adjust_param(state.pages.slice.seek, 'width', 1, d, 1, 129 - state.pages.slice.seek.start)
+    local max_start = 129 - state.pages.slice.seek.width
+    state.pages.slice.lfo:set('max', max_start)
+    update_grid(state)
 end
 
 local function toggle_shape(state)
@@ -129,24 +132,6 @@ function page:render(state)
     page.footer:render()
 end
 
-local function adjust_loop_pos(state, d)
-    -- print(state.enabled_section[1] .. ',' .. state.enabled_section[2])
-    state_util.adjust_param(state.enabled_section, 1, d, 1, 0, state.sample_length - state.max_sample_length)
-    state_util.adjust_param(state.enabled_section, 2, d, 1, state.max_sample_length, state.sample_length)
-    max_length_dirty = true
-    state.events['event_randomize_softcut'] = true
-end
-
-local function adjust_loop_len(state, d)
-    -- print(state.enabled_section[1] .. ',' .. state.enabled_section[2])
-    state_util.adjust_param(state, 'max_sample_length', d, 0.1, 0.01, 10)
-    state.enabled_section[2] = state.enabled_section[1] + state.max_sample_length
-    max_length_dirty = true
-    state.events['event_randomize_softcut'] = true
-end
-
-
-
 function page:initialize(state)
     window = Window:new({
         x = 0,
@@ -189,13 +174,15 @@ function page:initialize(state)
     state.pages.slice.lfo = _lfos:add {
         shape = 'up',
         min = 1,
-        max = 128,
+        max = 129 - state.pages.slice.seek.width,
         depth = 1.0, -- 0.0 to 1.0
         mode = 'clocked',
         period = DEFAULT_PERIOD,
         phase = 0,
+        ppqn=24,
         action = function(scaled, raw)
-            state.pages.slice.seek.start = math.floor(scaled+0.5)
+            -- print(scaled)
+            state.pages.slice.seek.start = math.floor(scaled + 0.5)
             update_grid(state)
         end
     }

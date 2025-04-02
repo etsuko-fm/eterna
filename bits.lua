@@ -143,7 +143,7 @@ local function randomize_softcut(state)
   -- randomize playback rate, loop segment and level of all 6 softcut voices
 
   -- a few presets to choose from
-  local rate_values_equal = { 1,1,1, 1,1,1, }
+  local rate_values_equal = { 1.01,.99,1.02, .98,1.005,0.995, }
 
   local rate_values_mid = { 0.5, 1, 2, -0.5, -1, -2 }
   local rate_values_low = { 0.25, 0.5, 1, -1, -.5, -.25 }
