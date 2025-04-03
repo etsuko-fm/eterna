@@ -1,12 +1,13 @@
 PanningCircle = {
+    -- PanningBars? HorizontalMetaPanner?
     x = 64,
     y = 11,
-    radius=2,
-    w = 8,
-    h = 8,
+    w = 32,
+    bar_w = 2,
+    bar_h = 4,
+    margin_h = 2,
     hide = false,
-    pan_positions = {0, 0, 0, 0, 0, 0, },
-    twist = math.pi / 12,
+    twist = math.pi / 12, -- controls x position of each bar, in radians
 }
 
 function PanningCircle:new(o)
@@ -23,14 +24,23 @@ end
 
 function PanningCircle:render()
     if self.hide then return end
-    screen.level(15)
-    -- self.twist = self.twist + 0.01
+    local margin = 2
     for i = 0, 5 do
-        local anglex = (i / 6) * math.pi * 2 + self.twist-- Divide full circle into 6 parts
-        local x = math.floor(self.x + self.radius * self.w * math.cos(anglex))
-        local y = math.floor(self.y + 3 * i * self.radius)
+        screen.level(2)
+        screen.rect(32, self.y + (margin+self.bar_h) * i, 64, self.bar_h)
+        screen.fill()
+
+        screen.level(15)
+        local anglex = (i / 6) * (math.pi * 2) + self.twist-- Divide full circle into 6 parts, offset with twist; in radians
+
+        -- cos goes from -1 to 1, bidirectional and center-based hence the /2
+        -- bar should be centered when math.cos(anglex) == 0; therefore -self.bar_w/2
+        -- self.w is half the total width (as cos is +/-1), therefore half the width is subtracted from the total available motion range
+        local x_float =  -self.bar_w/2 + ((self.w - self.bar_w/2) * math.cos(anglex))
+        local x = math.floor(self.x + x_float + .5)
+        local y = math.floor(self.y + (self.bar_h + self.margin_h) * i)
         screen.move(x,y)
-        screen.rect(x, y, 2, 4)
+        screen.rect(x, y, self.bar_w, self.bar_h)
         screen.fill()
     end
     screen.update()

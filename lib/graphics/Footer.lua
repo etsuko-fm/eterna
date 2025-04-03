@@ -24,6 +24,12 @@ Footer = {
     },
     active_knob = nil,
     font_face = 1,
+    brightness_state = {
+        e2 = background_fill,
+        e3 = background_fill,
+        k2 = background_fill,
+        k3 = background_fill,
+    }
 }
 
 -- default position at bottom of screen; 2 rows of 7px and 1 px spacing
@@ -77,6 +83,7 @@ function Footer:render()
     local fill = self.foreground_fill
 
     -- todo: make a nice for loop
+    -- todo: don't need to redefine every frame
     local buttons = {
         {
             name = "k2",
@@ -103,10 +110,24 @@ function Footer:render()
             y_margin = enc_y,
         }
     }
-
+    
+    local active_button_switched = false
     for i, btn in ipairs(buttons) do
-        if self.active_knob == btn.name then fill = self.active_fill else fill = self.foreground_fill end
-        screen.level(fill)
+
+        if self.active_knob == btn.name then
+            fill = self.active_fill
+            self.active_knob = nil
+            active_button_switched = true
+        else
+            fill = self.foreground_fill
+            if not active_button_switched and self.brightness_state[btn.name] ~= nil and self.brightness_state[btn.name] > fill then
+                fill = self.brightness_state[btn.name] - .1
+            end
+        end
+
+        screen.level(math.floor(fill + .5))
+        self.brightness_state[btn.name] = fill
+
         if btn.type == "knob" then
             -- draw knob icon
             screen.move(rect_x_positions[i] + 4, graphics_y + btn.y_margin)

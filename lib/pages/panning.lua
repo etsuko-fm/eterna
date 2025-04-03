@@ -9,11 +9,13 @@ local window
 
 local panning_graphic
 
+local PANNING_RANGE_PIXELS = 32
+
 
 local function calculate_pan_positions(state)
     for i = 0, 5 do
-        local angle = (i / 6) * math.pi * 2 + state.panning_twist-- Divide full circle into 6 parts
-        state.pan_positions[i+1] = state.panning_spread / 8 * math.cos(angle)
+        local angle = (i / 6) * (math.pi * 2) + state.panning_twist-- Divide full circle into 6 parts
+        state.pan_positions[i+1] = state.panning_spread / PANNING_RANGE_PIXELS * math.cos(angle)
     end
     for i = 1, 6 do
         softcut.pan(i, state.pan_positions[i])
@@ -21,13 +23,13 @@ local function calculate_pan_positions(state)
 end
 
 local function adjust_spread(state, d)
-    state_util.adjust_param(state, 'panning_spread', d, 1, 0, 8, false)
+    state_util.adjust_param(state, 'panning_spread', d, 1, 1, PANNING_RANGE_PIXELS, false)
     calculate_pan_positions(state)
 
 end
 
-function adjust_twist(state, d)
-    state_util.adjust_param(state, 'panning_twist', d/5, 1, 0, math.pi*2, true)
+local function adjust_twist(state, d)
+    state_util.adjust_param(state, 'panning_twist', d/10, 1, 0, math.pi*2, true)
     calculate_pan_positions(state)
 end
 
@@ -47,7 +49,7 @@ local function adjust_lfo_rate(state, d)
     local min = 0.2
     local max = 256
 
-    new_val = state.pan_lfo:get('period') + (d * k)
+    local new_val = state.pan_lfo:get('period') + (d * k)
     if new_val < min then
         new_val = min
     end

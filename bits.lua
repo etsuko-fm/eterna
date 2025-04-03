@@ -2,8 +2,8 @@
 -- 1.0.0 @etsuko.fm
 -- E1: scroll pages
 -- 
--- Other controls:
--- see footer
+-- Other controls, see footer:
+-- | K2 | K3 | E2 | E3 |
 
 
 local audio_util =          include("bits/lib/util/audio_util")
@@ -69,7 +69,7 @@ local state = {
   graph_y = 40,
 
   -- panning.
-  panning_spread = 8,
+  panning_spread = 32,
   panning_twist = 0,
   pan_positions = {0, 0, 0, 0, 0, 0, },
   pan_lfo = nil,
