@@ -6,14 +6,14 @@
 -- | K2 | K3 | E2 | E3 |
 
 
-local audio_util =          include("bits/lib/util/audio_util")
+local audio_util = include("bits/lib/util/audio_util")
 
-local page_playback =       include("bits/lib/pages/playback")
-local page_meta_mixer =     include("bits/lib/pages/metamixer")
-local page_sample_select =  include("bits/lib/pages/sampleselect")
-local page_panning =        include("bits/lib/pages/panning")
-local page_slice =          include("bits/lib/pages/slice")
-
+local page_playback = include("bits/lib/pages/playback")
+local page_meta_mixer = include("bits/lib/pages/metamixer")
+local page_sample_select = include("bits/lib/pages/sampleselect")
+local page_panning = include("bits/lib/pages/panning")
+local page_slice = include("bits/lib/pages/slice")
+local page_pitch = include("bits/lib/pages/pitch")
 -- global lfos
 _lfos = require 'lfo'
 
@@ -96,6 +96,7 @@ local pages = {
   page_playback,
   page_meta_mixer,
   page_slice,
+  page_pitch,
 }
 
 local current_page_index = 1
