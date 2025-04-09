@@ -20,6 +20,11 @@ _lfos = require 'lfo'
 local debug_mode = true
 local fps = 60
 
+PLAYBACK_DIRECTION = {
+  "FWD",
+  "REV",
+  "FWD+REV"
+}
 
 local state = {
   default_font = 68,
@@ -88,7 +93,7 @@ local state = {
       rate_center = 0, -- 0 = center, bipolar, relative to current range
       rate_spread = 1, -- fraction of playback rate
       quantize = true,
-      range = 72, -- semitones - or should do mult/div of rate?
+      direction = PLAYBACK_DIRECTION[3],
     }
   },
   -- event system

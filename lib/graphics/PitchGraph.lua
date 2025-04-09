@@ -1,8 +1,7 @@
-
 PitchGraph = {
     x = 38,
     y = 12,
-    lines = 17,
+    lines = 13,
     voices = 6,
     block_w = 5,
     block_h = 1,
@@ -13,10 +12,13 @@ PitchGraph = {
     active_fill = 15,
     start_active = 1,
     end_active = 17,
-    center = 0, -- current pitch center, corresponds to the number of vertical lines; 0 is middle line
+    center = 0,  -- current pitch center, corresponds to the number of vertical lines; 0 is middle line
     hide = false,
-    voice_pos={}
+    voice_pos = {}, -- value per voice, where each integer step represents one octave up or down; 0 = center (original pitch)
+    voice_dir = {},
 }
+
+local pixels_per_octave = 4
 
 function PitchGraph:new(o)
     -- create state if not provided
@@ -26,10 +28,6 @@ function PitchGraph:new(o)
     setmetatable(o, self)
     self.__index = self
 
-    -- for i=0,5 do
-    --     self.voice_pos[i] = self.y + 32 * math.random()
-    -- end
-
     -- return instance
     return o
 end
@@ -38,43 +36,50 @@ function PitchGraph:set(idx, active)
     self.selected[idx] = active
 end
 
-
 function PitchGraph:render()
     if self.hide then return end
-    local center_line = math.floor(self.lines/2)
+    local center_line = math.floor(self.lines / 2)
     for line = 0, self.lines - 1 do
         for voice = 0, self.voices - 1 do
             -- if center == 0, filled line should be center_line
-            if self.center + center_line == line then
-                -- print("activate line", line, "self.center", self.center, "centerline", center_line)
-                screen.level(self.active_fill)
-            else
-                screen.level(self.fill)
-            end
-            local x =  self.x + (self.block_w + self.margin_w) * voice
-            local y =  self.y + (self.block_h + self.margin_h) * line
-            if line ~= math.floor(self.lines/2 - 1) and line ~= math.floor(self.lines/2 + 1) then
+            -- if self.center + center_line == line then
+            --     -- print("activate line", line, "self.center", self.center, "centerline", center_line)
+            --     screen.level(self.active_fill)
+            -- else
+            -- screen.level(self.fill)
+            -- end
+            screen.level(self.fill)
+
+            local x = self.x + (self.block_w + self.margin_w) * voice
+            local y = self.y + (self.block_h + self.margin_h) * line
+            if line ~= math.floor(self.lines / 2 - 1) and line ~= math.floor(self.lines / 2 + 1) then
                 screen.rect(x, y, self.block_w, self.block_h)
                 screen.fill()
-            end 
-            screen.level(self.active_fill)
-            -- 16 = ?
-            screen.rect(x, 27+self.voice_pos[voice]* 8, self.block_w, 3)
-            screen.fill()
-
+            end
         end
     end
+    for n = 0, self.voices - 1 do
+        screen.level(self.active_fill)
+        local x = self.x + (self.block_w + self.margin_w) * n
 
-    -- screen.move(-2 + self.x, self.y+10)
-    -- screen.line(1 + self.x + (self.block_w + self.margin_w) * 5 + self.block_w, self.y + 10)
-    -- for voice = 0, self.voices - 1 do
-    --     screen.level(self.fill)
-    --     local x =  self.x + (self.block_w + self.margin_w) * voice
+        -- center line acts as middle of graph; voice_pos adds/subtracts value * pixels/octave
+        screen.rect(x, self.y + math.floor(self.lines/2)*(self.block_h + self.margin_h) + self.voice_pos[n] * pixels_per_octave, self.block_w, 1)
+        screen.fill()
 
-    --     -- local y =  self.y + (self.block_h + self.margin_h) * line
-    --     screen.rect(x, self.y, self.block_w, 32)
-    --     screen.stroke()
-    -- end
+        -- 3 is some random extra margin
+        if self.voice_dir[n+1] == PLAYBACK_DIRECTION[1] then
+            -- forward arrow
+            screen.move(x + 1, self.y + (self.block_h + self.margin_h) * self.lines + 3)
+            screen.line_rel(3,2)
+            screen.line_rel(-3,2)
+        else
+            -- backwards arrow
+            screen.move(x + 4, self.y + (self.block_h + self.margin_h) * self.lines + 3)
+            screen.line_rel(-3,2)
+            screen.line_rel(3,2)
+        end
+        screen.stroke()
+    end
 end
 
 return PitchGraph

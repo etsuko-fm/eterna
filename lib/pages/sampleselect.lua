@@ -76,7 +76,7 @@ local function select_sample(state)
         page_disabled = false -- proceed with rendering page instead of file menu
         print('selected ' .. file_path)
     end
-    fileselect.enter(_path.dust, callback, "audio")
+    fileselect.enter(_path.audio, callback, "audio")
     page_disabled = true -- don't render current page
 end
 
@@ -98,7 +98,10 @@ local page = Page:create({
 })
 
 function page:render(state)
-    if page_disabled then return end -- for rendering the fileselect interface
+    if page_disabled then 
+        fileselect:redraw()
+        return    
+    end -- for rendering the fileselect interface
 
     -- show filename and sample length
     screen.font_face(state.default_font)
