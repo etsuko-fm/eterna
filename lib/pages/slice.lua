@@ -4,6 +4,7 @@ local state_util = include("bits/lib/util/state")
 local GridGraphic = include("bits/lib/graphics/Grid")
 local Footer = include("bits/lib/graphics/Footer")
 local misc_util = include("bits/lib/util/misc")
+local lfo_util = include("bits/lib/util/lfo")
 
 local page_name = "Slice"
 local window
@@ -29,7 +30,8 @@ local function update_grid(state)
 
     local current_length = math.min(state.sample_length, state.max_sample_length)
     state.enabled_section[1] = ((state.pages.slice.seek.start - 1) / 128) * current_length
-    state.enabled_section[2] = math.min(state.enabled_section[1] + (state.pages.slice.seek.width / 128 * current_length), state.max_sample_length)
+    state.enabled_section[2] = math.min(state.enabled_section[1] + (state.pages.slice.seek.width / 128 * current_length),
+        state.max_sample_length)
 
     update_segment_lengths(state)
 end
@@ -48,17 +50,8 @@ local function adjust_width(state, d)
 end
 
 local function toggle_shape(state)
-    shapes = {"sine", "up", "down", "square", "random"}
-    local shape = state.pages.slice.lfo:get('shape')
-    local new_shape = "sine"
-    if shape == "sine" then
-        new_shape = "up"
-    elseif shape == "up" then
-        new_shape = "down"
-    elseif shape == "down" then
-        new_shape = "random"
-    end
-    state.pages.slice.lfo:set('shape', new_shape)
+    local shapes = { "sine", "up", "down", "random" }
+    lfo_util.toggle_shape(state.pages.slice.lfo, shapes)
 end
 
 
@@ -90,7 +83,7 @@ end
 local function e2(state, d)
     if state.pages.slice.lfo:get("enabled") == 1 then
         adjust_lfo_rate(state, d)
-    else 
+    else
         seek(state, d)
     end
 end
@@ -178,7 +171,7 @@ function page:initialize(state)
         mode = 'clocked',
         period = DEFAULT_PERIOD,
         phase = 0,
-        ppqn=24,
+        ppqn = 24,
         action = function(scaled, raw)
             -- print(scaled)
             state.pages.slice.seek.start = math.floor(scaled + 0.5)
@@ -186,7 +179,6 @@ function page:initialize(state)
         end
     }
     state.pages.slice.lfo:set('reset_target', 'mid: rising')
-
 end
 
 return page

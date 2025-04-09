@@ -46,9 +46,25 @@ local function adjust_lfo_rate_quant(d, lfo)
     lfo:set('period', new_val)
 end
 
+local function toggle_shape(lfo, available_shapes)
+    local shape = lfo:get('shape')
+    local index = 1
+
+    for i, s in ipairs(available_shapes) do
+        if s == shape then
+            index = i
+            break
+        end
+    end
+
+    local next_index = (index % #available_shapes) + 1
+    lfo:set('shape', available_shapes[next_index])
+end
+
 
 return {
     lfo_period_values = lfo_period_values,
+    toggle_shape = toggle_shape,
     adjust_lfo_rate_quant = adjust_lfo_rate_quant,
     adjust_lfo_rate = adjust_lfo_rate,
 }

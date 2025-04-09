@@ -1,4 +1,4 @@
-PanningCircle = {
+PanningGraphic = {
     -- PanningBars? HorizontalMetaPanner?
     x = 64,
     y = 11,
@@ -10,7 +10,7 @@ PanningCircle = {
     twist = math.pi / 12, -- controls x position of each bar, in radians
 }
 
-function PanningCircle:new(o)
+function PanningGraphic:new(o)
     -- create state if not provided
     o = o or {}
 
@@ -22,7 +22,7 @@ function PanningCircle:new(o)
     return o
 end
 
-function PanningCircle:render()
+function PanningGraphic:render()
     if self.hide then return end
     local margin = 2
     for i = 0, 5 do
@@ -45,4 +45,4 @@ function PanningCircle:render()
     end
 end
 
-return PanningCircle
+return PanningGraphic

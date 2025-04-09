@@ -1,4 +1,4 @@
-GaussianBars = {
+MetaMixerGraphic = {
     x = 0,
     y = 0,
     w = 46, -- width minus bar_width should be dividable by 5
@@ -12,7 +12,7 @@ GaussianBars = {
     hide = false,
 }
 
-function GaussianBars:new(o)
+function MetaMixerGraphic:new(o)
     -- create state if not provided
     o = o or {}
 
@@ -24,7 +24,7 @@ function GaussianBars:new(o)
     return o
 end
 
-function GaussianBars:render()
+function MetaMixerGraphic:render()
     if self.hide then return end
     
     for i = 0, 5 do
@@ -53,4 +53,4 @@ function GaussianBars:render()
 end
 
 
-return GaussianBars
+return MetaMixerGraphic

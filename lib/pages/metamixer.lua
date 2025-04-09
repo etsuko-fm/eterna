@@ -2,7 +2,7 @@ local Page = include("bits/lib/pages/Page")
 local page_name = "ScanLfo"
 local Window = include("bits/lib/graphics/Window")
 local Slider = include("bits/lib/graphics/Slider")
-local GaussianBars = include("bits/lib/graphics/GaussianBars")
+local MetaMixerGraphic = include("bits/lib/graphics/MetaMixerGraphic")
 local gaussian = include("bits/lib/util/gaussian")
 local state_util = include("bits/lib/util/state")
 local misc_util = include("bits/lib/util/misc")
@@ -25,19 +25,9 @@ local function adjust_sigma(state, d)
 end
 
 local function toggle_shape(state)
-    shapes = {"sine", "up", "down", "square", "random"}
-    local shape = state.metamixer_lfo:get('shape')
-    local new_shape = "sine"
-    if shape == "sine" then
-        new_shape = "up"
-    elseif shape == "up" then
-        new_shape = "down"
-    elseif shape == "down" then
-        new_shape = "random"
-    end
-    state.metamixer_lfo:set('shape', new_shape)
+    local shapes = { "sine", "up", "down", "random" }
+    lfo_util.toggle_shape(state.metamixer_lfo, shapes)
 end
-
 
 local function toggle_lfo(state)
     if state.metamixer_lfo:get("enabled") == 1 then
@@ -47,45 +37,6 @@ local function toggle_lfo(state)
     end
     state.metamixer_lfo:set('phase', state.scan_val)
 end
-
-
-local function adjust_lfo_rate(state, d)
-    local k = (10 ^ math.log(state.metamixer_lfo:get('period'), 10)) / 50
-    local min = 0.2
-    local max = 256
-
-    new_val = state.metamixer_lfo:get('period') + (d * k)
-    if new_val < min then
-        new_val = min
-    end
-    if new_val > max then
-        new_val = max
-    end
-    state.metamixer_lfo:set('period', new_val)
-    state.metamixer_lfo_period = new_val
-end
-
-local function adjust_lfo_rate_quant(state, d)
-    local values = lfo_util.lfo_period_values
-    local current_val = state.metamixer_lfo:get('period')
-
-    -- Find the closest index in the predefined values
-    local closest_index = 1
-    for i = 1, #values do
-        if math.abs(values[i] - current_val) < math.abs(values[closest_index] - current_val) then
-            closest_index = i
-        end
-    end
-
-    -- Move to the next or previous value based on `d`
-    local new_index = math.max(1, math.min(#values, closest_index + d))
-    local new_val = values[new_index]
-
-    -- Apply the new value
-    state.metamixer_lfo:set('period', new_val)
-    state.metamixer_lfo_period = new_val
-end
-
 
 local function gaussian_scan(state, d)
     state_util.adjust_param(state, 'scan_val', d, 1 / 60, 0, 1, true)
@@ -99,8 +50,8 @@ end
 
 local function e2(state, d)
     if state.metamixer_lfo:get("enabled") == 1 then
-        adjust_lfo_rate_quant(state, d)
-    else 
+        lfo_util.adjust_lfo_rate_quant(d, state.metamixer_lfo)
+    else
         gaussian_scan(state, d)
     end
 end
@@ -144,7 +95,7 @@ function page:render(state)
         -- When LFO is disabled, E2 controls LFO rate
         page.footer.button_text.k2.value = "ON"
         page.footer.button_text.e2.name = "SPEED"
-        page.footer.button_text.e2.value = misc_util.trim(tostring(state.metamixer_lfo:get('period')), 5)    
+        page.footer.button_text.e2.value = misc_util.trim(tostring(state.metamixer_lfo:get('period')), 5)
     else
         -- When LFO is disabled, E2 controls scan position
         page.footer.button_text.k2.value = "OFF"
@@ -172,7 +123,7 @@ function page:initialize(state)
         vertical_separations = 0,
     })
     -- graphics
-    bars = GaussianBars:new({
+    bars = MetaMixerGraphic:new({
         x = state.graph_x,
         y = state.graph_y,
         bar_width = state.bar_width,

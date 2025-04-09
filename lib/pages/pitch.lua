@@ -33,11 +33,9 @@ local function calculate_rates(state)
         state.rates[i + 1] = rate
         -- graph is linear while rate is exponential 
         page.pitch_graph.voice_pos[i] = -math.log(math.abs(rate), 2)
-        print(i, "voice pos", -math.log(rate, 2))
     end
     for i = 1, 6 do
         softcut.rate(i, state.rates[i])
-        print(i, state.rates[i])
     end
 end
 
@@ -94,7 +92,7 @@ end
 
 
 local function adjust_center(state, d)
-    local step = state.pages.pitch.quantize and 1 or 1/100
+    local step = state.pages.pitch.quantize and 1 or 1/50
     state_util.adjust_param(state.pages.pitch, 'rate_center', d*step, 1, -3, 3, false)
     calculate_rates(state)
     page.pitch_graph.center = state.pages.pitch.rate_center * -2

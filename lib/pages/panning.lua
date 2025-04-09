@@ -1,8 +1,9 @@
 local Page = include("bits/lib/pages/Page")
 local Window = include("bits/lib/graphics/Window")
-local PanningCircle = include("bits/lib/graphics/PanningCircle")
+local PanningGraphic = include("bits/lib/graphics/PanningGraphic")
 local state_util = include("bits/lib/util/state")
 local misc_util = include("bits/lib/util/misc")
+local lfo_util = include("bits/lib/util/lfo")
 
 local page_name = "Panning"
 local window
@@ -14,8 +15,8 @@ local PANNING_RANGE_PIXELS = 32
 
 local function calculate_pan_positions(state)
     for i = 0, 5 do
-        local angle = (i / 6) * (math.pi * 2) + state.panning_twist-- Divide full circle into 6 parts
-        state.pan_positions[i+1] = state.panning_spread / PANNING_RANGE_PIXELS * math.cos(angle)
+        local angle = (i / 6) * (math.pi * 2) + state.panning_twist -- Divide full circle into 6 parts
+        state.pan_positions[i + 1] = state.panning_spread / PANNING_RANGE_PIXELS * math.cos(angle)
     end
     for i = 1, 6 do
         softcut.pan(i, state.pan_positions[i])
@@ -25,11 +26,10 @@ end
 local function adjust_spread(state, d)
     state_util.adjust_param(state, 'panning_spread', d, 1, 1, PANNING_RANGE_PIXELS, false)
     calculate_pan_positions(state)
-
 end
 
 local function adjust_twist(state, d)
-    state_util.adjust_param(state, 'panning_twist', d/10, 1, 0, math.pi*2, true)
+    state_util.adjust_param(state, 'panning_twist', d / 10, 1, 0, math.pi * 2, true)
     calculate_pan_positions(state)
 end
 
@@ -43,27 +43,16 @@ local function toggle_lfo(state)
     end
 end
 
-local function adjust_lfo_rate(state, d)
-    -- todo: code is duplicated with PanningCircle
-    local k = (10 ^ math.log(state.pan_lfo:get('period'), 10)) / 50
-    local min = 0.2
-    local max = 256
-
-    local new_val = state.pan_lfo:get('period') + (d * k)
-    if new_val < min then
-        new_val = min
-    end
-    if new_val > max then
-        new_val = max
-    end
-    state.pan_lfo:set('period', new_val)
-    state.pan_lfo_period = new_val
+local function toggle_shape(state)
+    shapes = { "sine", "up", "down", "random" }
+    lfo_util.toggle_shape(state.pan_lfo, shapes)
 end
+
 
 local function e2(state, d)
     if state.pan_lfo:get("enabled") == 1 then
-        adjust_lfo_rate(state, d)
-    else 
+        lfo_util.adjust_lfo_rate_quant(d, state.pan_lfo)
+    else
         adjust_twist(state, d)
     end
 end
@@ -78,7 +67,7 @@ local page = Page:create({
     k2_on = nil,
     k2_off = toggle_lfo,
     k3_on = nil,
-    k3_off = nil,
+    k3_off = toggle_shape,
 })
 
 function page:render(state)
@@ -90,14 +79,15 @@ function page:render(state)
         -- When LFO is disabled, E2 controls LFO rate
         page.footer.button_text.k2.value = "ON"
         page.footer.button_text.e2.name = "RATE"
-        page.footer.button_text.e2.value = misc_util.trim(tostring(state.pan_lfo_period), 5)
+        page.footer.button_text.e2.value = misc_util.trim(tostring(state.pan_lfo:get('period')), 5)
     else
         -- When LFO is disabled, E2 controls pan position
         page.footer.button_text.k2.value = "OFF"
         page.footer.button_text.e2.name = "TWIST"
-        page.footer.button_text.e2.value = misc_util.trim(tostring( state.panning_twist), 5)
+        page.footer.button_text.e2.value = misc_util.trim(tostring(state.panning_twist), 5)
     end
     page.footer.button_text.e3.value = misc_util.trim(tostring(state.panning_spread), 5)
+    page.footer.button_text.k3.value = string.upper(state.pan_lfo:get("shape"))
     page.footer:render()
 end
 
@@ -117,8 +107,8 @@ function page:initialize(state)
         vertical_separations = 0,
     })
     -- graphics
-    panning_graphic = PanningCircle:new({
-        w=state.panning_spread,
+    panning_graphic = PanningGraphic:new({
+        w = state.panning_spread,
     })
     page.footer = Footer:new({
         button_text = {
@@ -157,7 +147,6 @@ function page:initialize(state)
         end
     }
     state.pan_lfo:set('reset_target', 'mid: rising')
-    
 end
 
 return page
