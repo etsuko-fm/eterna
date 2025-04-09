@@ -1,7 +1,7 @@
 MetaMixerGraphic = {
     x = 0,
     y = 0,
-    w = 46, -- width minus bar_width should be dividable by 5
+    w = 56, -- width minus bar_width should be dividable by 5
     h = 24,
     bar_width=6,
     num_bars=6,

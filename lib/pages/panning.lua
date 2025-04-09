@@ -15,43 +15,43 @@ local PANNING_RANGE_PIXELS = 32
 
 local function calculate_pan_positions(state)
     for i = 0, 5 do
-        local angle = (i / 6) * (math.pi * 2) + state.panning_twist -- Divide full circle into 6 parts
-        state.pan_positions[i + 1] = state.panning_spread / PANNING_RANGE_PIXELS * math.cos(angle)
+        local angle = (i / 6) * (math.pi * 2) + state.pages.panning.twist -- Divide full circle into 6 parts
+        state.pages.panning.pan_positions[i + 1] = state.pages.panning.spread / PANNING_RANGE_PIXELS * math.cos(angle)
     end
     for i = 1, 6 do
-        softcut.pan(i, state.pan_positions[i])
+        softcut.pan(i, state.pages.panning.pan_positions[i])
     end
 end
 
 local function adjust_spread(state, d)
-    state_util.adjust_param(state, 'panning_spread', d, 1, 1, PANNING_RANGE_PIXELS, false)
+    state_util.adjust_param(state.pages.panning, 'spread', d, 1, 1, PANNING_RANGE_PIXELS, false)
     calculate_pan_positions(state)
 end
 
 local function adjust_twist(state, d)
-    state_util.adjust_param(state, 'panning_twist', d / 10, 1, 0, math.pi * 2, true)
+    state_util.adjust_param(state.pages.panning, 'twist', d / 10, 1, 0, math.pi * 2, true)
     calculate_pan_positions(state)
 end
 
 
 local function toggle_lfo(state)
-    print(state.pan_lfo:get("enabled"))
-    if state.pan_lfo:get("enabled") == 1 then
-        state.pan_lfo:stop()
+    print(state.pages.panning.lfo:get("enabled"))
+    if state.pages.panning.lfo:get("enabled") == 1 then
+        state.pages.panning.lfo:stop()
     else
-        state.pan_lfo:start()
+        state.pages.panning.lfo:start()
     end
 end
 
 local function toggle_shape(state)
     shapes = { "sine", "up", "down", "random" }
-    lfo_util.toggle_shape(state.pan_lfo, shapes)
+    lfo_util.toggle_shape(state.pages.panning.lfo, shapes)
 end
 
 
 local function e2(state, d)
-    if state.pan_lfo:get("enabled") == 1 then
-        lfo_util.adjust_lfo_rate_quant(d, state.pan_lfo)
+    if state.pages.panning.lfo:get("enabled") == 1 then
+        lfo_util.adjust_lfo_rate_quant(d, state.pages.panning.lfo)
     else
         adjust_twist(state, d)
     end
@@ -72,22 +72,22 @@ local page = Page:create({
 
 function page:render(state)
     window:render()
-    panning_graphic.w = state.panning_spread
-    panning_graphic.twist = state.panning_twist
+    panning_graphic.w = state.pages.panning.spread
+    panning_graphic.twist = state.pages.panning.twist
     panning_graphic:render()
-    if state.pan_lfo:get("enabled") == 1 then
+    if state.pages.panning.lfo:get("enabled") == 1 then
         -- When LFO is disabled, E2 controls LFO rate
         page.footer.button_text.k2.value = "ON"
         page.footer.button_text.e2.name = "RATE"
-        page.footer.button_text.e2.value = misc_util.trim(tostring(state.pan_lfo:get('period')), 5)
+        page.footer.button_text.e2.value = misc_util.trim(tostring(state.pages.panning.lfo:get('period')), 5)
     else
         -- When LFO is disabled, E2 controls pan position
         page.footer.button_text.k2.value = "OFF"
         page.footer.button_text.e2.name = "TWIST"
-        page.footer.button_text.e2.value = misc_util.trim(tostring(state.panning_twist), 5)
+        page.footer.button_text.e2.value = misc_util.trim(tostring(state.pages.panning.twist), 5)
     end
-    page.footer.button_text.e3.value = misc_util.trim(tostring(state.panning_spread), 5)
-    page.footer.button_text.k3.value = string.upper(state.pan_lfo:get("shape"))
+    page.footer.button_text.e3.value = misc_util.trim(tostring(state.pages.panning.spread), 5)
+    page.footer.button_text.k3.value = string.upper(state.pages.panning.lfo:get("shape"))
     page.footer:render()
 end
 
@@ -108,7 +108,7 @@ function page:initialize(state)
     })
     -- graphics
     panning_graphic = PanningGraphic:new({
-        w = state.panning_spread,
+        w = state.pages.panning.spread,
     })
     page.footer = Footer:new({
         button_text = {
@@ -132,21 +132,21 @@ function page:initialize(state)
         font_face = state.footer_font,
     })
     -- lfo
-    state.pan_lfo = _lfos:add {
+    state.pages.panning.lfo = _lfos:add {
         shape = 'up',
         min = 0,
         max = 1,
         depth = 1,
         mode = 'free',
-        period = state.pan_lfo_period,
+        period = state.pages.panning.default_lfo_period,
         phase = 0,
         action = function(scaled, raw)
-            state.panning_twist = scaled * math.pi * 2
-            panning_graphic.twist = state.panning_twist
+            state.pages.panning.twist = scaled * math.pi * 2
+            panning_graphic.twist = state.pages.panning.twist
             calculate_pan_positions(state)
         end
     }
-    state.pan_lfo:set('reset_target', 'mid: rising')
+    state.pages.panning.lfo:set('reset_target', 'mid: rising')
 end
 
 return page

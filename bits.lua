@@ -65,23 +65,14 @@ local state = {
   metamixer_lfo = nil, --todo: rename to metamixer lfo
   metamixer_lfo_period = 6,
 
-  num_bars = 6,
-  bar_height = 24,
-  graph_width = 46,
-  window_width = 128,
-  bar_width = 6,
-  graph_x = 41, -- (window_width - graph_width) / 2
-  graph_y = 40,
-
-  -- panning.
-  panning_spread = 32,
-  panning_twist = 0,
-  pan_positions = {0, 0, 0, 0, 0, 0, },
-  pan_lfo = nil,
-  pan_lfo_period = 6,
-
-
   pages = {
+    panning = {
+      lfo = nil,
+      twist = 0,
+      spread = 32,
+      pan_positions = {0, 0, 0, 0, 0, 0, },
+      default_lfo_period = 6,
+    },
     slice = {
       lfo = nil,
       seek = {
@@ -103,7 +94,6 @@ local state = {
 local pages = {
   page_sample_select,
   page_panning,
-  page_playback,
   page_meta_mixer,
   page_slice,
   page_pitch,

@@ -10,6 +10,9 @@ local lfo_util = include("bits/lib/util/lfo")
 local bars
 local window
 
+local graph_x = 36 -- (128 - graph_width) / 2
+local graph_y = 40
+
 local function map_sigma(state, v)
     return util.explin(state.sigma_min, state.sigma_max, 0, 1, v)
 end
@@ -40,7 +43,7 @@ end
 
 local function gaussian_scan(state, d)
     state_util.adjust_param(state, 'scan_val', d, 1 / 60, 0, 1, true)
-    h_slider.val = state.scan_val
+    -- h_slider.val = state.scan_val
     state.levels = gaussian.calculate_gaussian_levels(state.scan_val, state.sigma)
     for i = 1, 6 do
         softcut.level(i, state.levels[i])
@@ -76,19 +79,19 @@ local page = Page:create({
 })
 
 function update_vslider_val(state)
-    v_slider.val = util.explin(state.sigma_min, state.sigma_max, 0, 1, state.sigma)
+    -- v_slider.val = util.explin(state.sigma_min, state.sigma_max, 0, 1, state.sigma)
 end
 
 function page:render(state)
     -- todo: this should be a graphic component, the entire thing belongs together
-    h_slider.val = state.scan_val
+    -- h_slider.val = state.scan_val
     update_vslider_val(state)
     state.levels = gaussian.calculate_gaussian_levels(state.scan_val, state.sigma)
     bars.levels = state.levels
     screen.clear()
     bars:render()
-    h_slider:render()
-    v_slider:render()
+    -- h_slider:render()
+    -- v_slider:render()
 
     window:render()
     if state.metamixer_lfo:get("enabled") == 1 then
@@ -124,32 +127,14 @@ function page:initialize(state)
     })
     -- graphics
     bars = MetaMixerGraphic:new({
-        x = state.graph_x,
-        y = state.graph_y,
-        bar_width = state.bar_width,
-        max_bar_height = state.bar_height,
-        num_bars = state.num_bars,
+        x = graph_x,
+        y = graph_y,
+        bar_width = 6,
+        max_bar_height = 24,
+        num_bars = 6,
         brightness = 15,
     })
-    h_slider = Slider:new({
-        direction = 'HORIZONTAL',
-        x = state.graph_x,
-        y = state.graph_y + 3,
-        w = state.graph_width,
-        h = 3,
-        dash_size = 1,
-        dash_fill = 5,
-        val = state.scan_val,
-    })
-    v_slider = Slider:new({
-        direction = 'VERTICAL',
-        x = state.graph_x + state.graph_width + 3,
-        y = state.graph_y - state.bar_height,
-        w = 3,
-        h = state.bar_height,
-        dash_size = 1,
-        val = map_sigma(state, state.sigma),
-    })
+
     -- initialize softcut levels according to mixer levels
     adjust_sigma(state, 0)
     bars.levels = state.levels
