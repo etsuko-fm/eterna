@@ -38,7 +38,7 @@ function Slider:render()
         screen.rect(self.x, (self.y + self.h - self.dash_size) - ((self.h - 1) * self.val), self.w, self.dash_size)
     end
     screen.fill()
-    screen.update()
+    -- screen.update()
 end
 
 return Slider

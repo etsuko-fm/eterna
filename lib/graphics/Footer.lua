@@ -153,7 +153,6 @@ function Footer:render()
     end
 
     screen.stroke()
-    screen.update()
 end
 
 return Footer

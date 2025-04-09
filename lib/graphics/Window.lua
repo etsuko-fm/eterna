@@ -83,7 +83,7 @@ function Window:render()
         end
     end
     -- todo: horizontal separations
-    screen.update()
+    -- screen.update()
 end
 
 return Window

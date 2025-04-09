@@ -22,13 +22,13 @@ local fps = 60
 
 
 local state = {
-  default_font = 68, -- alt: 68
+  default_font = 68,
   title_font = 68,
   footer_font = 68,
   -- sample
   filename="",
   playback_positions = {},
-  rates = {},               -- playback rates
+  rates = {},               -- playback rates, 1 per voice, 1.0 = normal speed
   pans = {},
   max_sample_length = 10.0, -- limits the allowed enabled section of the sample
   selected_sample = _path.audio .. "etsuko/sea-minor/sea-minor-chords.wav",
@@ -62,10 +62,10 @@ local state = {
 
   num_bars = 6,
   bar_height = 24,
-  graph_width = 64,
+  graph_width = 46,
   window_width = 128,
   bar_width = 6,
-  graph_x = 32, -- (window_width - graph_width) / 2
+  graph_x = 41, -- (window_width - graph_width) / 2
   graph_y = 40,
 
   -- panning.
@@ -76,7 +76,6 @@ local state = {
   pan_lfo_period = 6,
 
 
-  -- slice 
   pages = {
     slice = {
       lfo = nil,
@@ -85,6 +84,12 @@ local state = {
         width = 32,
       },
     },
+    pitch = { -- should maybe rename to playback rate
+      rate_center = 0, -- 0 = center, bipolar, relative to current range
+      rate_spread = 1, -- fraction of playback rate
+      quantize = true,
+      range = 72, -- semitones - or should do mult/div of rate?
+    }
   },
   -- event system
   events = {}
@@ -144,16 +149,16 @@ local function randomize_softcut(state)
   -- randomize playback rate, loop segment and level of all 6 softcut voices
 
   -- a few presets to choose from
-  local rate_values_equal = { 1.01,.99,1.02, .98,1.005,0.995, }
+  -- local rate_values_equal = { 1.01,.99,1.02, .98,1.005,0.995, }
 
-  local rate_values_mid = { 0.5, 1, 2, -0.5, -1, -2 }
-  local rate_values_low = { 0.25, 0.5, 1, -1, -.5, -.25 }
-  local rate_values_sub = { 0.125, 0.25, 0.5, -0.5, -.25, -.125 }
-  local rate_values = rate_values_equal
+  -- local rate_values_mid = { 0.5, 1, 2, -0.5, -1, -2 }
+  -- local rate_values_low = { 0.25, 0.5, 1, -1, -.5, -.25 }
+  -- local rate_values_sub = { 0.125, 0.25, 0.5, -0.5, -.25, -.125 }
+  -- local rate_values = rate_values_equal
 
   for i = 1, 6 do
     -- pick playback rate from rate_values table
-    state.rates[i] = rate_values[math.random(#rate_values)]
+    -- state.rates[i] = rate_values[math.random(#rate_values)]
 
     -- generate loop segment based on sample length
     state.loop_sections[i] = {}
@@ -161,7 +166,7 @@ local function randomize_softcut(state)
     -- print(i .. ": a=" .. state.loop_sections[i][1] .. "  b=" .. state.loop_sections[i][2])
 
     -- configure softcut voice
-    softcut.rate(i, state.rates[i])
+    -- softcut.rate(i, state.rates[i])
     softcut.position(i, state.loop_sections[i][1])
     softcut.loop_start(i, state.loop_sections[i][1])
     softcut.loop_end(i, state.loop_sections[i][2])
@@ -187,7 +192,7 @@ local function update_positions(i, pos)
 end
 
 local function enable_all_voices()
-  local pan_locations = { -1, -.5, -.25, .25, .5, 1 }
+  local pan_locations = { -1, -.5, -.25, .25, .5, 1 } -- todo: should be based on pan page
 
   for i = 1, 6 do
     softcut.enable(i, 1)
@@ -214,7 +219,9 @@ end
 
 function init()
   -- hardware sensitivity
-  for i = 1, 3 do
+  norns.enc.sens(1, 5)
+
+  for i = 2, 3 do
     norns.enc.sens(i, 1)
     norns.enc.accel(i, false)
   end
@@ -269,22 +276,12 @@ function key(n, z)
     current_page.footer.active_knob = "k3"  end
 end
 
-local ticks = 0
 function enc(n, d)
   if n == 1 then
-    -- the ticks mechanism verifies that page switch is intentional todo: ticks not necessary except if displayed
     if d > 0 then
-      ticks = ticks + 1
-      if ticks >= 5 then
-        cycle_page_forward()
-        ticks = 0
-      end
+      cycle_page_forward()
     else
-      ticks = ticks - 1
-      if ticks <= -5 then
-        cycle_page_backward()
-        ticks = 0
-      end
+      cycle_page_backward()
     end
   end
   if n == 2 and current_page.e2 then
@@ -318,10 +315,14 @@ function execute_event(handler, request, ...)
   state.events[request] = false -- Reset the event request
 end
 
+
 function refresh()
   if ready then
     query_positions()
+    screen.clear()
     current_page:render(state)
+    screen.update()
+
 
     -- sort of an event based system, allows pages to request main functionality
     -- usage: state.events['event_randomize_softcut'] = true
@@ -337,8 +338,4 @@ end
 
 function rerun()
   norns.script.load(norns.state.script)
-end
-
-function stop()
-  norns.script.clear()
 end

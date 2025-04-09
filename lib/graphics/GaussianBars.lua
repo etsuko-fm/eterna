@@ -1,7 +1,7 @@
 GaussianBars = {
     x = 0,
     y = 0,
-    w = 64,
+    w = 46, -- width minus bar_width should be dividable by 5
     h = 24,
     bar_width=6,
     num_bars=6,
@@ -30,7 +30,7 @@ function GaussianBars:render()
     for i = 0, 5 do
         if self.render_text then
             screen.level(self.brightness)
-            screen.move(i * 20, 10)
+            screen.move(i * self.bar_width + self.bar_spacing, 10)
             screen.text(string.format("%.2f", self.levels[i + 1]))
         end
         screen.level(self.bg_bar_brightness)
@@ -50,8 +50,6 @@ function GaussianBars:render()
         )
         screen.fill()
     end
-
-    screen.update()
 end
 
 

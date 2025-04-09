@@ -94,9 +94,7 @@ function page:initialize(state)
     })
 end
 
-
 function page:render(state)
-    screen.clear()
     window:render()
     six_rings.playback_positions = state.playback_positions
     six_rings:render()

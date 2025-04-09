@@ -39,7 +39,6 @@ function Ring:render()
     )
     screen.arc(self.x, self.y, layer.radius, layer.a1, layer.a2)
     screen.stroke()
-    screen.update()
   end
 end
 

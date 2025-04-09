@@ -110,7 +110,6 @@ local page = Page:create({
 })
 
 function page:render(state)
-    screen.clear()
     window:render()
     grid_graphic:render()
 

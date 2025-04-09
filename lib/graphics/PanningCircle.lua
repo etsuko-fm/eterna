@@ -43,7 +43,6 @@ function PanningCircle:render()
         screen.rect(x, y, self.bar_w, self.bar_h)
         screen.fill()
     end
-    screen.update()
 end
 
 return PanningCircle

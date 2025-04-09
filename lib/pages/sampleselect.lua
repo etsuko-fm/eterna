@@ -99,7 +99,6 @@ local page = Page:create({
 
 function page:render(state)
     if page_disabled then return end -- for rendering the fileselect interface
-    screen.clear()
 
     -- show filename and sample length
     screen.font_face(state.default_font)

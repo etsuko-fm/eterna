@@ -82,7 +82,6 @@ local page = Page:create({
 })
 
 function page:render(state)
-    screen.clear()
     window:render()
     panning_graphic.w = state.panning_spread
     panning_graphic.twist = state.panning_twist

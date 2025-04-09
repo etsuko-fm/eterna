@@ -105,7 +105,7 @@ function SixRings:render()
 end
 
 function SixRings:initialize()
-    screen.update()
+    -- screen.update()
 end
 
 return SixRings

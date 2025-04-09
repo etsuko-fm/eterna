@@ -57,7 +57,7 @@ function Waveform:render()
         x_pos = x_pos + 1
     end
 
-    screen.update()
+    -- screen.update()
 end
 
 return Waveform

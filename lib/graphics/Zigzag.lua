@@ -33,7 +33,7 @@ function Zigzag:render()
     )
   end
   screen.stroke()
-  screen.update()
+  -- screen.update()
 end
 
 return Zigzag

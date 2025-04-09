@@ -51,7 +51,6 @@ function Grid:render()
             screen.fill()
         end    
     end
-    screen.update()
 end
 
 return Grid
