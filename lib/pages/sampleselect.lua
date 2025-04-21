@@ -37,13 +37,11 @@ local function update_waveform(state)
     waveform.sample_length = state.sample_length
     waveform.enabled_section[1] = state.enabled_section[1]
     waveform.enabled_section[2] = state.enabled_section[2]
-    waveform.samples = state.waveform_samples
+    waveform.samples = state.pages.sample.waveform_samples
 
-    if state.waveform_samples[1] then
-        state.scale_waveform = 14 / math.max(table.unpack(state.waveform_samples))
+    if state.pages.sample.waveform_samples[1] then
+        state.pages.sample.scale_waveform = 14 / math.max(table.unpack(state.pages.sample.waveform_samples))
     end
-
-
 end
 
 
@@ -81,7 +79,7 @@ local function select_sample(state)
 end
 
 local function scale_waveform(state, d)
-    state_util.adjust_param(state, 'scale_waveform', d, 1, 1, 20, false)
+    state_util.adjust_param(state.pages.sample, 'scale_waveform', d, 1, 1, 20, false)
 end
 
 local function switch_mode(state)
@@ -149,7 +147,7 @@ function page:render(state)
     screen.font_face(state.default_font)
     screen.level(10)
     screen.move(10, 46)
-    screen.text(state.filename)
+    screen.text(state.pages.sample.filename)
 
     page.footer.button_text.k2.value = state.pages.sample.mode
     if state.pages.sample.mode == SAMPLE_MODE["DELAY"] then
@@ -161,7 +159,7 @@ function page:render(state)
 
     update_waveform(state)
 
-    waveform.vertical_scale = state.scale_waveform
+    waveform.vertical_scale = state.pages.sample.scale_waveform
     waveform:render()
     window:render()
     update_segment_lengths(state)
@@ -173,11 +171,11 @@ function page:initialize(state)
     local function on_render(ch, start, i, s)
         -- this is a callback, for every softcut.render_buffer() invocation
         print('buffer contents rendered')
-        state.waveform_samples = as_abs_values(s)
+        state.pages.sample.waveform_samples = as_abs_values(s)
         state.interval = i -- represents the interval at which the waveform is sampled for rendering
-        state.filename = path_to_file_name(state.selected_sample)
+        state.pages.sample.filename = path_to_file_name(state.pages.sample.selected_sample)
         print("interval: " .. i)
-        print('max sample val:' .. math.max(table.unpack(state.waveform_samples)))
+        print('max sample val:' .. math.max(table.unpack(state.pages.sample.waveform_samples)))
         update_waveform(state)
     end
 
@@ -218,18 +216,18 @@ function page:initialize(state)
     })
 
     waveform = Waveform:new({
-        x = (128 - state.waveform_width) / 2,
+        x = (128 - state.pages.sample.waveform_width) / 2,
         y = 25,
-        w = state.waveform_width,
+        w = state.pages.sample.waveform_width,
         highlight = false,
         sample_length = state.sample_length,
         enabled_section = state.enabled_section,
-        vertical_scale = state.scale_waveform,
-        samples = state.waveform_samples,
+        vertical_scale = state.pages.sample.scale_waveform,
+        samples = state.pages.sample.waveform_samples,
     })
     -- setup callback
     softcut.event_render(on_render)
-    softcut.render_buffer(1, 0, state.sample_length, state.waveform_width)
+    softcut.render_buffer(1, 0, state.sample_length, state.pages.sample.waveform_width)
 end
 
 return page

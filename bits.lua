@@ -35,13 +35,11 @@ local state = {
   default_font = 68,
   title_font = 68,
   footer_font = 68,
-  -- sample
-  filename="",
+  -- softcut
   playback_positions = {},
   rates = {},               -- playback rates, 1 per voice, 1.0 = normal speed
   pans = {},
   max_sample_length = 10.0, -- limits the allowed enabled section of the sample
-  selected_sample = _path.audio .. "etsuko/sea-minor/sea-minor-chords.wav",
   sample_length = nil,      -- full length of the currently loaded sample
   muted = false,            -- softcut mute
   -- section of the sample that is currently enabled;
@@ -49,28 +47,25 @@ local state = {
   enabled_section = { nil, nil },
 
   -- waveform
-  waveform_samples = {},
-  waveform_width = 64,
-  scale_waveform = 10,
 
   -- time controls
   fade_time = .2,                    -- crossfade when looping playback
   request_randomize_softcut = false, -- todo: is this still used or replaced it with events?
   loop_sections = {},                -- one item per softcut voice [i][1] = start and [i][2] is end
 
-  -- scanning / gaussian graph settings
-  scan = {
-    windows = {}
-  },
-  scan_val = 0.5,                 -- 0 to 1; allows scanning through softcut voices (think smooth soloing/muting)
-  levels = { 0, 0, 0, 0, 0, 0, }, -- softcut levels; initialized later by the metamixer page
-  sigma = 5,                      -- Width of the gaussian curve, adjustable for sharper or broader curves
-  sigma_min = 0.3,
-  sigma_max = 15,
-  metamixer_lfo = nil, --todo: rename to metamixer lfo
-  metamixer_lfo_period = 6,
 
   pages = {
+    -- scanning / gaussian graph settings
+    metamixer = {
+      windows = {},
+      scan_val = 0.5,                 -- 0 to 1; allows scanning through softcut voices (think smooth soloing/muting)
+      levels = { 0, 0, 0, 0, 0, 0, }, -- softcut levels; initialized later by the metamixer page
+      sigma = 5,                      -- Width of the gaussian curve, adjustable for sharper or broader curves
+      sigma_min = 0.3,
+      sigma_max = 15,
+      lfo = nil,
+      lfo_period = 6,
+    },  
     panning = {
       lfo = nil,
       twist = 0,
@@ -92,7 +87,12 @@ local state = {
       direction = PLAYBACK_DIRECTION["FWD_REV"],
     },
     sample = {
-      mode = SAMPLE_MODE["SAMPLE"]
+      mode = SAMPLE_MODE["SAMPLE"],
+      waveform_samples = {},
+      waveform_width = 64,
+      scale_waveform = 10,
+      filename="",
+      selected_sample = _path.audio .. "etsuko/sea-minor/sea-minor-chords.wav",
     }
   },
   -- event system
@@ -216,7 +216,7 @@ local function switch_sample(file)
     state.enabled_section = { 0, state.sample_length }
   end
 
-  softcut.render_buffer(1, 0, state.sample_length, state.waveform_width)
+  softcut.render_buffer(1, 0, state.sample_length, state.pages.sample.waveform_width)
   randomize_softcut(state)
 end
 
@@ -309,7 +309,7 @@ local event_handlers = {
     execute_event(randomize_softcut, "event_randomize_softcut", state)
   end,
   event_switch_sample = function()
-    execute_event(switch_sample, "event_switch_sample", state.selected_sample)
+    execute_event(switch_sample, "event_switch_sample", state.pages.sample.selected_sample)
   end,
 }
 
