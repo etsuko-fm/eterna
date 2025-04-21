@@ -67,7 +67,7 @@ function PitchGraph:render()
         screen.fill()
 
         -- 3 is some random extra margin
-        if self.voice_dir[n+1] == PLAYBACK_DIRECTION[1] then
+        if self.voice_dir[n+1] == PLAYBACK_DIRECTION["FWD"] then
             -- forward arrow
             screen.move(x + 1, self.y + (self.block_h + self.margin_h) * self.lines + 3)
             screen.line_rel(3,2)

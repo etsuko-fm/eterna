@@ -23,10 +23,10 @@ local function calculate_rates(state)
             pitch = math.floor(pitch + 0.5)
         end
 
-        rate = util.clamp(2 ^ pitch, 1/8, 8)
+        local rate = util.clamp(2 ^ pitch, 1 / 8, 8)
 
-        
-        if page.pitch_graph.voice_dir[i] == PLAYBACK_DIRECTION[2] then
+
+        if page.pitch_graph.voice_dir[i] == PLAYBACK_DIRECTION["REV"] then
             -- reverse playback
             rate = -rate
         end
@@ -40,23 +40,21 @@ local function calculate_rates(state)
 end
 
 local function update_playback_dir(state)
-    if state.pages.pitch.direction == PLAYBACK_DIRECTION[1] then
-        print(PLAYBACK_DIRECTION[1])
-        for i = 1,6 do
-            page.pitch_graph.voice_dir[i] = PLAYBACK_DIRECTION[1]
+    if state.pages.pitch.direction == PLAYBACK_DIRECTION["FWD"] then
+        for i = 1, 6 do
+            page.pitch_graph.voice_dir[i] = PLAYBACK_DIRECTION["FWD"]
         end
-    elseif state.pages.pitch.direction == PLAYBACK_DIRECTION[2] then
-        print(PLAYBACK_DIRECTION[2])
-        for i = 1,6 do
-            page.pitch_graph.voice_dir[i] = PLAYBACK_DIRECTION[2]
+    elseif state.pages.pitch.direction == PLAYBACK_DIRECTION["REV"] then
+        for i = 1, 6 do
+            page.pitch_graph.voice_dir[i] = PLAYBACK_DIRECTION["REV"]
         end
     else
-        print(PLAYBACK_DIRECTION[3])
-        for i = 1,5,2 do
-            page.pitch_graph.voice_dir[i] = PLAYBACK_DIRECTION[1]
+        print(PLAYBACK_DIRECTION["FWD_REV"])
+        for i = 1, 5, 2 do
+            page.pitch_graph.voice_dir[i] = PLAYBACK_DIRECTION["FWD"]
         end
-        for i = 2,6,2 do
-            page.pitch_graph.voice_dir[i] = PLAYBACK_DIRECTION[2]
+        for i = 2, 6, 2 do
+            page.pitch_graph.voice_dir[i] = PLAYBACK_DIRECTION["REV"]
         end
     end
     calculate_rates(state)
@@ -64,23 +62,17 @@ end
 
 local function cycle_direction(state)
     local current = state.pages.pitch.direction
-
-    -- Find index of current value
-    local next_index = 1
-    for i, v in ipairs(PLAYBACK_DIRECTION) do
-        if v == current then
-            next_index = i + 1
-            break
-        end
+    local next
+    if current == PLAYBACK_DIRECTION["FWD"] then
+        next = "REV"
+    elseif current == PLAYBACK_DIRECTION["REV"] then
+        next = "FWD_REV"
+    else
+        next = "FWD"
     end
 
-    -- Wrap around if we're past the last index
-    if next_index > #PLAYBACK_DIRECTION then
-        next_index = 1
-    end
-    state.pages.pitch.direction = PLAYBACK_DIRECTION[next_index]
+    state.pages.pitch.direction = PLAYBACK_DIRECTION[next]
     update_playback_dir(state)
-
 end
 
 
@@ -92,8 +84,8 @@ end
 
 
 local function adjust_center(state, d)
-    local step = state.pages.pitch.quantize and 1 or 1/50
-    state_util.adjust_param(state.pages.pitch, 'rate_center', d*step, 1, -3, 3, false)
+    local step = state.pages.pitch.quantize and 1 or 1 / 50
+    state_util.adjust_param(state.pages.pitch, 'rate_center', d * step, 1, -3, 3, false)
     calculate_rates(state)
     page.pitch_graph.center = state.pages.pitch.rate_center * -2
 end

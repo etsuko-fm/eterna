@@ -80,10 +80,52 @@ local function select_sample(state)
     page_disabled = true -- don't render current page
 end
 
-function scale_waveform(state, d)
+local function scale_waveform(state, d)
     state_util.adjust_param(state, 'scale_waveform', d, 1, 1, 20, false)
 end
 
+local function switch_mode(state)
+    if state.pages.sample.mode == SAMPLE_MODE["SAMPLE"] then
+        state.pages.sample.mode = SAMPLE_MODE["DELAY"]
+
+        -- voice 1 will be recording to buffer 2
+
+        -- adc is analog-to-digital, i.e. analog input channels
+        audio.level_adc_cut(1)
+        audio.level_eng_cut(0)
+        audio.level_tape_cut(0)
+        local rec = 1.0
+        local pre = 0.75
+        local delay_time = 4 -- seconds
+        state.enabled_section = {0, delay_time}
+        state.sample_length = delay_time
+        state.max_sample_length = delay_time
+        -- all voices playback from buffer 2
+        for i=1,6 do
+            -- buffer beperken tot delay_time
+            softcut.buffer(i,2)
+            softcut.rec(i,1)
+            softcut.level_input_cut(1, i, 0.5)
+            softcut.level_input_cut(2, i, 0.5)
+            softcut.rec_level(i,rec)
+            -- set voice 1 pre level
+            softcut.pre_level(i,pre)
+        end
+        state.events['event_randomize_softcut'] = true
+
+    else
+        -- turn off recording, switch back to buffer 1
+        state.pages.sample.mode = SAMPLE_MODE["SAMPLE"]
+        softcut.rec(1,0)
+        for i=1,6 do
+            softcut.buffer(i,1)
+            softcut.rec(i,0)
+        end
+    end
+
+
+
+end
 
 local page = Page:create({
     name = page_name,
@@ -92,9 +134,9 @@ local page = Page:create({
     k1_hold_on = nil,
     k1_hold_off = nil,
     k2_on = nil,
-    k2_off = select_sample,
+    k2_off = switch_mode,
     k3_on = nil,
-    k3_off = nil,
+    k3_off = select_sample,
 })
 
 function page:render(state)
@@ -108,10 +150,14 @@ function page:render(state)
     screen.level(10)
     screen.move(10, 46)
     screen.text(state.filename)
-    -- screen.move(10, 47)
-    -- screen.font_size(8)
-    -- screen.text(math.floor(state.sample_length / 60) .. "'" .. string.format("%02d", math.floor(state.sample_length) % 60) .. "\"")
-    -- screen.text(" [" .. state.max_sample_length .. "]")
+
+    page.footer.button_text.k2.value = state.pages.sample.mode
+    if state.pages.sample.mode == SAMPLE_MODE["DELAY"] then
+        page.footer.button_text.k3.name = ""
+    else
+        page.footer.button_text.k3.name = "LOAD"
+    end
+
 
     update_waveform(state)
 
@@ -124,7 +170,7 @@ function page:render(state)
 end
 
 function page:initialize(state)
-    function on_render(ch, start, i, s)
+    local function on_render(ch, start, i, s)
         -- this is a callback, for every softcut.render_buffer() invocation
         print('buffer contents rendered')
         state.waveform_samples = as_abs_values(s)

@@ -21,9 +21,14 @@ local debug_mode = true
 local fps = 60
 
 PLAYBACK_DIRECTION = {
-  "FWD",
-  "REV",
-  "FWD+REV"
+  FWD="FWD",
+  REV="REV",
+  FWD_REV="FWD_REV"
+}
+
+SAMPLE_MODE = {
+  SAMPLE="SAMPLE",
+  DELAY="DELAY",
 }
 
 local state = {
@@ -84,7 +89,10 @@ local state = {
       rate_center = 0, -- 0 = center, bipolar, relative to current range
       rate_spread = 1, -- fraction of playback rate
       quantize = true,
-      direction = PLAYBACK_DIRECTION[3],
+      direction = PLAYBACK_DIRECTION["FWD_REV"],
+    },
+    sample = {
+      mode = SAMPLE_MODE["SAMPLE"]
     }
   },
   -- event system
