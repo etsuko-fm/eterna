@@ -1,4 +1,4 @@
-function adjust_param(tbl, param, d, mult, min, max, loop)
+local function adjust_param(tbl, param, d, mult, min, max, loop)
     local fraction = d * mult
     if loop and max ~= nil then
         tbl[param] = (tbl[param] + fraction) % max

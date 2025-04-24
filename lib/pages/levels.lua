@@ -1,8 +1,7 @@
 local Page = include("bits/lib/pages/Page")
 local page_name = "ScanLfo"
 local Window = include("bits/lib/graphics/Window")
-local Slider = include("bits/lib/graphics/Slider")
-local MetaMixerGraphic = include("bits/lib/graphics/MetaMixerGraphic")
+local LevelsGraphic = include("bits/lib/graphics/LevelsGraphic")
 local gaussian = include("bits/lib/util/gaussian")
 local state_util = include("bits/lib/util/state")
 local misc_util = include("bits/lib/util/misc")
@@ -48,7 +47,6 @@ local function gaussian_scan(state, d)
         softcut.level(i, state.levels[i])
     end
 end
-
 
 local function e2(state, d)
     if state.pages.metamixer.lfo:get("enabled") == 1 then
@@ -108,7 +106,7 @@ function page:initialize(state)
         y = 0,
         w = 128,
         h = 64,
-        title = "META MIXER",
+        title = "LEVELS",
         font_face = state.title_font,
         brightness = 15,
         border = false,
@@ -116,8 +114,9 @@ function page:initialize(state)
         horizontal_separations = 0,
         vertical_separations = 0,
     })
+
     -- graphics
-    bars = MetaMixerGraphic:new({
+    bars = LevelsGraphic:new({
         x = graph_x,
         y = graph_y,
         bar_width = 6,

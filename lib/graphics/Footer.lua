@@ -25,15 +25,18 @@ Footer = {
     active_knob = nil,
     font_face = 1,
     brightness_state = {
-        e2 = background_fill,
-        e3 = background_fill,
-        k2 = background_fill,
-        k3 = background_fill,
+        e2 = 1,
+        e3 = 1,
+        k2 = 1,
+        k3 = 1,
     }
 }
 
--- default position at bottom of screen; 2 rows of 7px and 1 px spacing
+
+local btn_width = 128/4 - 1
 local btn_height = 7
+
+-- default position at bottom of screen; 2 rows of 7px and 1 px spacing
 local ver_btn_spacing = 1
 local base_y_row1 = 64 - (btn_height*2) - ver_btn_spacing
 local base_y_row2 = 64 - btn_height
@@ -41,7 +44,6 @@ local base_y_row2 = 64 - btn_height
 -- positioning of footer elements
 local graphics_ver_spacing = 2
 local graphics_y = base_y_row1 + graphics_ver_spacing
-local btn_width = 128/4 - 1
 
 local text_y_row_1 = base_y_row1 + 6
 local text_y_row_2 = base_y_row2 + 6
@@ -73,6 +75,7 @@ function Footer:render()
     local text_trim_width = 21
     screen.line_width(1)
 
+    -- draw 8 blocks
     screen.level(self.background_fill)
     for i = 1, 4 do
         screen.rect(rect_x_positions[i], base_y_row1, btn_width, btn_height)
@@ -110,7 +113,6 @@ function Footer:render()
             y_margin = enc_y,
         }
     }
-    
     local active_button_switched = false
     for i, btn in ipairs(buttons) do
 
@@ -145,6 +147,7 @@ function Footer:render()
 
         screen.fill()
 
+        -- write button text
         screen.move(rect_x_positions[i] + hor_txt_offset, text_y_row_1)
         screen.font_face(self.font_face)
         screen.text(self.button_text[btn.name].name)

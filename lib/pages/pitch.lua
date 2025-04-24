@@ -49,7 +49,6 @@ local function update_playback_dir(state)
             page.pitch_graph.voice_dir[i] = PLAYBACK_DIRECTION["REV"]
         end
     else
-        print(PLAYBACK_DIRECTION["FWD_REV"])
         for i = 1, 5, 2 do
             page.pitch_graph.voice_dir[i] = PLAYBACK_DIRECTION["FWD"]
         end
@@ -84,14 +83,15 @@ end
 
 
 local function adjust_center(state, d)
-    local step = state.pages.pitch.quantize and 1 or 1 / 50
-    state_util.adjust_param(state.pages.pitch, 'rate_center', d * step, 1, -3, 3, false)
+    -- todo: map to semitones
+    local step = state.pages.pitch.quantize and 1 or 1 / 120
+    state_util.adjust_param(state.pages.pitch, 'rate_center', d, step, -3, 3, false)
     calculate_rates(state)
-    page.pitch_graph.center = state.pages.pitch.rate_center * -2
+    page.pitch_graph.center = state.pages.pitch.rate_center * -2 -- why *-2?
 end
 
 local function adjust_spread(state, d)
-    state_util.adjust_param(state.pages.pitch, 'rate_spread', d / 5, 1, 0, 2, false)
+    state_util.adjust_param(state.pages.pitch, 'rate_spread', d, 0.1, 0, 2, false)
     calculate_rates(state)
 end
 
@@ -112,8 +112,12 @@ function page:render(state)
     page.window:render()
     page.footer.button_text.k2.value = state.pages.pitch.direction
     page.footer.button_text.k3.value = state.pages.pitch.quantize and "ON" or "OFF"
-    page.footer.button_text.e2.value = misc_util.trim(tostring(state.pages.pitch.rate_center), 5)
-    page.footer.button_text.e3.value = misc_util.trim(tostring(state.pages.pitch.rate_spread), 5)
+    page.footer.button_text.e2.value = misc_util.trim(tostring(
+        math.floor(state.pages.pitch.rate_center * 1200 + .5) / 100
+    ), 5)
+    page.footer.button_text.e3.value = misc_util.trim(tostring(
+        math.floor(state.pages.pitch.rate_spread * 1000 + .5) / 1000
+    ), 5)
 
     page.pitch_graph:render()
     page.footer:render()

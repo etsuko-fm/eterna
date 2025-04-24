@@ -1,4 +1,4 @@
-MetaMixerGraphic = {
+LevelsGraphic = {
     x = 0,
     y = 0,
     w = 56, -- width minus bar_width should be dividable by 5
@@ -12,7 +12,7 @@ MetaMixerGraphic = {
     hide = false,
 }
 
-function MetaMixerGraphic:new(o)
+function LevelsGraphic:new(o)
     -- create state if not provided
     o = o or {}
 
@@ -24,9 +24,9 @@ function MetaMixerGraphic:new(o)
     return o
 end
 
-function MetaMixerGraphic:render()
+function LevelsGraphic:render()
     if self.hide then return end
-    
+
     for i = 0, 5 do
         if self.render_text then
             screen.level(self.brightness)
@@ -53,4 +53,4 @@ function MetaMixerGraphic:render()
 end
 
 
-return MetaMixerGraphic
+return LevelsGraphic

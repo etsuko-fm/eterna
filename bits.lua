@@ -8,8 +8,7 @@
 
 local audio_util = include("bits/lib/util/audio_util")
 
-local page_playback = include("bits/lib/pages/playback")
-local page_meta_mixer = include("bits/lib/pages/metamixer")
+local page_levels = include("bits/lib/pages/levels")
 local page_sample_select = include("bits/lib/pages/sampleselect")
 local page_panning = include("bits/lib/pages/panning")
 local page_slice = include("bits/lib/pages/slice")
@@ -19,6 +18,7 @@ _lfos = require 'lfo'
 
 local debug_mode = true
 local fps = 60
+local ready
 
 PLAYBACK_DIRECTION = {
   FWD="FWD",
@@ -36,7 +36,6 @@ local state = {
   title_font = 68,
   footer_font = 68,
   -- softcut
-  playback_positions = {},
   rates = {},               -- playback rates, 1 per voice, 1.0 = normal speed
   pans = {},
   max_sample_length = 10.0, -- limits the allowed enabled section of the sample
@@ -44,7 +43,6 @@ local state = {
   muted = false,            -- softcut mute
   -- section of the sample that is currently enabled;
   --  playback position randomizations will be done within this section. [1] and [2] in seconds.
-  enabled_section = { nil, nil },
 
   -- waveform
 
@@ -65,7 +63,7 @@ local state = {
       sigma_max = 15,
       lfo = nil,
       lfo_period = 6,
-    },  
+    },
     panning = {
       lfo = nil,
       twist = 0,
@@ -75,6 +73,8 @@ local state = {
     },
     slice = {
       lfo = nil,
+      playback_positions = {},
+      enabled_section = { nil, nil },
       seek = {
         start = 1,
         width = 32,
@@ -89,10 +89,14 @@ local state = {
     sample = {
       mode = SAMPLE_MODE["SAMPLE"],
       waveform_samples = {},
-      waveform_width = 64,
+      waveform_width = 59,
       scale_waveform = 10,
       filename="",
       selected_sample = _path.audio .. "etsuko/sea-minor/sea-minor-chords.wav",
+      echo = {
+        feedback = 0.8,
+        time = 4, -- seconds
+      }
     }
   },
   -- event system
@@ -102,7 +106,7 @@ local state = {
 local pages = {
   page_sample_select,
   page_panning,
-  page_meta_mixer,
+  page_levels,
   page_slice,
   page_pitch,
 }
@@ -137,28 +141,18 @@ local function generate_loop_segment(state)
   -- (b - a) < max_length
 
   -- introduce some padding so that `a` isn't closer than 1% to the sample end [todo: why 1%?]
-  local max_allowed_length = (state.enabled_section[2] - state.enabled_section[1])
+  local max_allowed_length = (state.pages.slice.enabled_section[2] - state.pages.slice.enabled_section[1])
   local padding = max_allowed_length / 100
 
   -- pick start position
-  local a = state.enabled_section[1] + (math.random() * (max_allowed_length - padding))
+  local a = state.pages.slice.enabled_section[1] + (math.random() * (max_allowed_length - padding))
 
   -- End position should be a larger number than start position; and confine to the defined max length
-  local b = a + (math.random() * (state.enabled_section[2] - a))
+  local b = a + (math.random() * (state.pages.slice.enabled_section[2] - a))
   return a, b
 end
 
 local function randomize_softcut(state)
-  -- randomize playback rate, loop segment and level of all 6 softcut voices
-
-  -- a few presets to choose from
-  -- local rate_values_equal = { 1.01,.99,1.02, .98,1.005,0.995, }
-
-  -- local rate_values_mid = { 0.5, 1, 2, -0.5, -1, -2 }
-  -- local rate_values_low = { 0.25, 0.5, 1, -1, -.5, -.25 }
-  -- local rate_values_sub = { 0.125, 0.25, 0.5, -0.5, -.25, -.125 }
-  -- local rate_values = rate_values_equal
-
   for i = 1, 6 do
     -- pick playback rate from rate_values table
     -- state.rates[i] = rate_values[math.random(#rate_values)]
@@ -174,9 +168,6 @@ local function randomize_softcut(state)
     softcut.loop_start(i, state.loop_sections[i][1])
     softcut.loop_end(i, state.loop_sections[i][2])
   end
-
-  -- update rings in the playback page
-  page_playback:initialize(state)
 end
 
 local function update_positions(i, pos)
@@ -189,8 +180,8 @@ local function update_positions(i, pos)
   ---   pos = 0 means absolute position 0:05
   ---   pos = 1 means absolute position is 0:15
   --- This is used to display the playback positions in the rings. 
-  enabled_section_length = state.enabled_section[2] - state.enabled_section[1]
-  state.playback_positions[i] = (pos - state.enabled_section[1]) / enabled_section_length
+  local enabled_section_length = state.pages.slice.enabled_section[2] - state.pages.slice.enabled_section[1]
+  state.pages.slice.playback_positions[i] = (pos - state.pages.slice.enabled_section[1]) / enabled_section_length
   -- print("voice" .. i..":"..pos .. "loop: "..state.loop_starts[i].." - " .. state.loop_ends[i])
 end
 
@@ -211,9 +202,9 @@ end
 local function switch_sample(file)
   -- use specified `file` as a sample
   state.sample_length = audio_util.load_sample(file, true)
-  state.enabled_section = { 0, state.max_sample_length }
+  state.pages.slice.enabled_section = { 0, state.max_sample_length }
   if state.sample_length < state.max_sample_length then
-    state.enabled_section = { 0, state.sample_length }
+    state.pages.slice.enabled_section = { 0, state.sample_length }
   end
 
   softcut.render_buffer(1, 0, state.sample_length, state.pages.sample.waveform_width)

@@ -1,14 +1,17 @@
 local Page = include("bits/lib/pages/Page")
 local Window = include("bits/lib/graphics/Window")
 local Waveform = include("bits/lib/graphics/Waveform")
+local EchoGraphic = include("bits/lib/graphics/EchoGraphic")
 local page_name = "SampleSelect"
 local fileselect = require('fileselect')
 local page_disabled = false
 local debug = include("bits/lib/util/debug")
 local state_util = include("bits/lib/util/state")
+local misc_util = include("bits/lib/util/misc")
 
 local max_length_dirty = false
 local waveform
+local echo_graphic
 local window
 
 --[[
@@ -35,15 +38,23 @@ end
 
 local function update_waveform(state)
     waveform.sample_length = state.sample_length
-    waveform.enabled_section[1] = state.enabled_section[1]
-    waveform.enabled_section[2] = state.enabled_section[2]
     waveform.samples = state.pages.sample.waveform_samples
 
     if state.pages.sample.waveform_samples[1] then
-        state.pages.sample.scale_waveform = 14 / math.max(table.unpack(state.pages.sample.waveform_samples))
+        -- adjust scale so scale at peak == 1, is norm_scale; lower amp is higher scaling
+        local norm_scale = 12
+        state.pages.sample.scale_waveform = norm_scale / math.max(table.unpack(state.pages.sample.waveform_samples))
     end
 end
 
+local function adjust_time(state, d)
+    state_util.adjust_param(state.pages.sample.echo, 'time', 1, d, .1)
+
+end
+
+local function adjust_feedback(state, d)
+    state_util.adjust_param(state.pages.sample.echo, 'feedback', 1, d, .1)
+end
 
 local function update_segment_lengths(state)
     -- update loop end points when max length has changed
@@ -68,21 +79,18 @@ end
 local function select_sample(state)
     local function callback(file_path)
         if file_path ~= 'cancel' then
-            state.selected_sample = file_path
+            state.pages.sample.selected_sample = file_path
             state.events.event_switch_sample = true
         end
         page_disabled = false -- proceed with rendering page instead of file menu
         print('selected ' .. file_path)
     end
-    fileselect.enter(_path.audio, callback, "audio")
+    fileselect.enter(_path.audio, callback, "audio", state)
     page_disabled = true -- don't render current page
 end
 
-local function scale_waveform(state, d)
-    state_util.adjust_param(state.pages.sample, 'scale_waveform', d, 1, 1, 20, false)
-end
-
 local function switch_mode(state)
+    -- switch between delay mode and sample mode
     if state.pages.sample.mode == SAMPLE_MODE["SAMPLE"] then
         state.pages.sample.mode = SAMPLE_MODE["DELAY"]
 
@@ -95,40 +103,48 @@ local function switch_mode(state)
         local rec = 1.0
         local pre = 0.75
         local delay_time = 4 -- seconds
-        state.enabled_section = {0, delay_time}
+        state.enabled_section = { 0, delay_time }
         state.sample_length = delay_time
         state.max_sample_length = delay_time
         -- all voices playback from buffer 2
-        for i=1,6 do
+        for i = 1, 6 do
             -- buffer beperken tot delay_time
-            softcut.buffer(i,2)
-            softcut.rec(i,1)
+            softcut.buffer(i, 2)
+            softcut.rec(i, 1)
             softcut.level_input_cut(1, i, 0.5)
             softcut.level_input_cut(2, i, 0.5)
-            softcut.rec_level(i,rec)
+            softcut.rec_level(i, rec)
             -- set voice 1 pre level
-            softcut.pre_level(i,pre)
+            softcut.pre_level(i, pre)
         end
         state.events['event_randomize_softcut'] = true
-
     else
         -- turn off recording, switch back to buffer 1
         state.pages.sample.mode = SAMPLE_MODE["SAMPLE"]
-        softcut.rec(1,0)
-        for i=1,6 do
-            softcut.buffer(i,1)
-            softcut.rec(i,0)
+        softcut.rec(1, 0)
+        for i = 1, 6 do
+            softcut.buffer(i, 1)
+            softcut.rec(i, 0)
         end
     end
+end
 
+local function e2(state, d)
+    if state.pages.sample.mode == SAMPLE_MODE["DELAY"] then
+        adjust_time(state, d)
+    end
+end
 
-
+local function e3(state, d)
+    if state.pages.sample.mode == SAMPLE_MODE["DELAY"] then
+        adjust_feedback(state, d)
+    end
 end
 
 local page = Page:create({
     name = page_name,
-    e2 = scale_waveform,
-    e3 = scale_waveform,
+    e2 = e2,
+    e3 = e3,
     k1_hold_on = nil,
     k1_hold_off = nil,
     k2_on = nil,
@@ -138,29 +154,37 @@ local page = Page:create({
 })
 
 function page:render(state)
-    if page_disabled then 
+    if page_disabled then
         fileselect:redraw()
-        return    
+        return
     end -- for rendering the fileselect interface
 
-    -- show filename and sample length
-    screen.font_face(state.default_font)
-    screen.level(10)
-    screen.move(10, 46)
-    screen.text(state.pages.sample.filename)
 
     page.footer.button_text.k2.value = state.pages.sample.mode
     if state.pages.sample.mode == SAMPLE_MODE["DELAY"] then
-        page.footer.button_text.k3.name = ""
+        page.footer.button_text.k3.name = "STYLE"
+        page.footer.button_text.e2.name = "TIME"
+        page.footer.button_text.e3.name = "FEEDB"
     else
         page.footer.button_text.k3.name = "LOAD"
+        page.footer.button_text.e2.name = ""
+        page.footer.button_text.e3.name = ""
     end
 
-
-    update_waveform(state)
-
-    waveform.vertical_scale = state.pages.sample.scale_waveform
-    waveform:render()
+    if state.pages.sample.mode == SAMPLE_MODE["SAMPLE"] then
+        update_waveform(state)
+        waveform.vertical_scale = state.pages.sample.scale_waveform
+        waveform:render()
+        -- show filename and sample length
+        screen.font_face(state.default_font)
+        screen.level(5)
+        screen.move(34, 46)
+        screen.text(misc_util.trim(state.pages.sample.filename, 16))
+    else
+        echo_graphic.feedback = state.pages.sample.echo.feedback
+        echo_graphic.time = state.pages.sample.echo.time
+        echo_graphic:render()
+    end
     window:render()
     update_segment_lengths(state)
     -- screen.update()
@@ -184,7 +208,7 @@ function page:initialize(state)
         y = 0,
         w = 128,
         h = 64,
-        title = "SAMPLE BROWSER",
+        title = "SAMPLING",
         font_face = state.title_font,
         brightness = 15,
         border = false,
@@ -212,7 +236,7 @@ function page:initialize(state)
                 value = "",
             },
         },
-        font_face=state.footer_font
+        font_face = state.footer_font
     })
 
     waveform = Waveform:new({
@@ -225,7 +249,12 @@ function page:initialize(state)
         vertical_scale = state.pages.sample.scale_waveform,
         samples = state.pages.sample.waveform_samples,
     })
-    -- setup callback
+
+    echo_graphic = EchoGraphic:new({
+        feedback = state.pages.sample.echo.feedback,
+        time = state.pages.sample.echo.time,
+    })
+    -- setup callback1
     softcut.event_render(on_render)
     softcut.render_buffer(1, 0, state.sample_length, state.pages.sample.waveform_width)
 end

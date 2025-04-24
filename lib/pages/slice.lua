@@ -29,8 +29,8 @@ local function update_grid(state)
     grid_graphic.end_active = state.pages.slice.seek.start + state.pages.slice.seek.width
 
     local current_length = math.min(state.sample_length, state.max_sample_length)
-    state.enabled_section[1] = ((state.pages.slice.seek.start - 1) / 128) * current_length
-    state.enabled_section[2] = math.min(state.enabled_section[1] + (state.pages.slice.seek.width / 128 * current_length),
+    state.pages.slice.enabled_section[1] = ((state.pages.slice.seek.start - 1) / 128) * current_length
+    state.pages.slice.enabled_section[2] = math.min(state.pages.slice.enabled_section[1] + (state.pages.slice.seek.width / 128 * current_length),
         state.max_sample_length)
 
     update_segment_lengths(state)
