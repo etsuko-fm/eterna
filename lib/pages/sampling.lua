@@ -14,6 +14,13 @@ local waveform
 local echo_graphic
 local window
 
+local min_feedback = 0
+local max_feedback = 100
+
+local min_time = 0.1
+local max_time = 2.0
+
+
 --[[
 Sample select page
 Graphics:
@@ -48,12 +55,26 @@ local function update_waveform(state)
 end
 
 local function adjust_time(state, d)
-    state_util.adjust_param(state.pages.sample.echo, 'time', 1, d, .1)
-
+    state_util.adjust_param(state.pages.sample.echo, 'time', d, 0.1, min_time, max_time)
+    state.enabled_section = { 0, state.pages.sample.echo.time }
+    state.sample_length = state.pages.sample.echo.time
+    state.max_sample_length = state.pages.sample.echo.time
+    state.events['event_randomize_softcut'] = true
 end
 
 local function adjust_feedback(state, d)
-    state_util.adjust_param(state.pages.sample.echo, 'feedback', 1, d, .1)
+    state_util.adjust_param(
+        state.pages.sample.echo,
+        'feedback',
+        d,
+        1 + 10 ^ math.log(state.pages.sample.echo.feedback, 100) / 25,
+        min_feedback,
+        max_feedback
+    )
+
+    for i = 1, 6 do
+        softcut.pre_level(i, state.pages.sample.echo.feedback / 100)
+    end
 end
 
 local function update_segment_lengths(state)
@@ -85,9 +106,11 @@ local function select_sample(state)
         page_disabled = false -- proceed with rendering page instead of file menu
         print('selected ' .. file_path)
     end
-    fileselect.enter(_path.audio, callback, "audio", state)
+    fileselect.enter(_path.audio, callback, "audio")
     page_disabled = true -- don't render current page
 end
+
+
 
 local function switch_mode(state)
     -- switch between delay mode and sample mode
@@ -101,8 +124,8 @@ local function switch_mode(state)
         audio.level_eng_cut(0)
         audio.level_tape_cut(0)
         local rec = 1.0
-        local pre = 0.75
-        local delay_time = 4 -- seconds
+        local pre = state.pages.sample.echo.feedback / 100 -- 0 to 1 
+        local delay_time = 4                               -- seconds
         state.enabled_section = { 0, delay_time }
         state.sample_length = delay_time
         state.max_sample_length = delay_time
@@ -165,13 +188,18 @@ function page:render(state)
         page.footer.button_text.k3.name = "STYLE"
         page.footer.button_text.e2.name = "TIME"
         page.footer.button_text.e3.name = "FEEDB"
+        page.footer.button_text.e3.value = "FEEDB"
+        page.footer.button_text.e2.value = misc_util.trim(tostring(state.pages.sample.echo.time), 5)
+        page.footer.button_text.e3.value = misc_util.trim(tostring(state.pages.sample.echo.feedback), 5)
+        echo_graphic.feedback = util.linlin(min_feedback, max_feedback, 0, 1, state.pages.sample.echo.feedback)
+        echo_graphic.time = util.linlin(min_time,max_time, 0, 1, state.pages.sample.echo.time)
+        echo_graphic:render()
     else
         page.footer.button_text.k3.name = "LOAD"
         page.footer.button_text.e2.name = ""
         page.footer.button_text.e3.name = ""
-    end
-
-    if state.pages.sample.mode == SAMPLE_MODE["SAMPLE"] then
+        page.footer.button_text.e2.value = ""
+        page.footer.button_text.e3.value = ""
         update_waveform(state)
         waveform.vertical_scale = state.pages.sample.scale_waveform
         waveform:render()
@@ -180,10 +208,6 @@ function page:render(state)
         screen.level(5)
         screen.move(34, 46)
         screen.text(misc_util.trim(state.pages.sample.filename, 16))
-    else
-        echo_graphic.feedback = state.pages.sample.echo.feedback
-        echo_graphic.time = state.pages.sample.echo.time
-        echo_graphic:render()
     end
     window:render()
     update_segment_lengths(state)
@@ -252,8 +276,10 @@ function page:initialize(state)
 
     echo_graphic = EchoGraphic:new({
         feedback = state.pages.sample.echo.feedback,
+        max_feedback = max_feedback,
         time = state.pages.sample.echo.time,
     })
+
     -- setup callback1
     softcut.event_render(on_render)
     softcut.render_buffer(1, 0, state.sample_length, state.pages.sample.waveform_width)

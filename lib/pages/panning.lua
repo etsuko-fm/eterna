@@ -10,6 +10,7 @@ local window
 
 local panning_graphic
 
+-- width of the panning bars
 local PANNING_RANGE_PIXELS = 32
 
 

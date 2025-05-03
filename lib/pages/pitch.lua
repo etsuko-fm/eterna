@@ -30,12 +30,12 @@ local function calculate_rates(state)
             -- reverse playback
             rate = -rate
         end
-        state.rates[i + 1] = rate
+        state.softcut.rates[i + 1] = rate
         -- graph is linear while rate is exponential 
         page.pitch_graph.voice_pos[i] = -math.log(math.abs(rate), 2)
     end
     for i = 1, 6 do
-        softcut.rate(i, state.rates[i])
+        softcut.rate(i, state.softcut.rates[i])
     end
 end
 

@@ -38,12 +38,12 @@ end
 
 local function seek(state, d)
     local max_start = 129 - state.pages.slice.seek.width
-    state_util.adjust_param(state.pages.slice.seek, 'start', 1, d, 1, max_start)
+    state_util.adjust_param(state.pages.slice.seek, 'start', d, 1, 1, max_start)
     update_grid(state)
 end
 
 local function adjust_width(state, d)
-    state_util.adjust_param(state.pages.slice.seek, 'width', 1, d, 1, 129 - state.pages.slice.seek.start)
+    state_util.adjust_param(state.pages.slice.seek, 'width', d, 1, 1, 129 - state.pages.slice.seek.start)
     local max_start = 129 - state.pages.slice.seek.width
     state.pages.slice.lfo:set('max', max_start)
     update_grid(state)
@@ -70,7 +70,7 @@ local function adjust_lfo_rate(state, d)
     local min = 0.2
     local max = 256
 
-    new_val = state.pages.slice.lfo:get('period') + (d * k)
+    local new_val = state.pages.slice.lfo:get('period') + (d * k)
     if new_val < min then
         new_val = min
     end

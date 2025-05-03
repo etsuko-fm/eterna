@@ -5,20 +5,20 @@
 -- Other controls, see footer:
 -- | K2 | K3 | E2 | E3 |
 
+_lfos = require 'lfo'
+MusicUtil = require "musicutil"
 
 local audio_util = include("bits/lib/util/audio_util")
-
 local page_levels = include("bits/lib/pages/levels")
-local page_sample_select = include("bits/lib/pages/sampleselect")
+local page_sampling = include("bits/lib/pages/sampling")
 local page_panning = include("bits/lib/pages/panning")
 local page_slice = include("bits/lib/pages/slice")
 local page_pitch = include("bits/lib/pages/pitch")
--- global lfos
-_lfos = require 'lfo'
 
 local debug_mode = true
 local fps = 60
 local ready
+-- engine.name = "Sines"
 
 PLAYBACK_DIRECTION = {
   FWD="FWD",
@@ -36,15 +36,13 @@ local state = {
   title_font = 68,
   footer_font = 68,
   -- softcut
-  rates = {},               -- playback rates, 1 per voice, 1.0 = normal speed
-  pans = {},
-  max_sample_length = 10.0, -- limits the allowed enabled section of the sample
-  sample_length = nil,      -- full length of the currently loaded sample
-  muted = false,            -- softcut mute
-  -- section of the sample that is currently enabled;
-  --  playback position randomizations will be done within this section. [1] and [2] in seconds.
+  softcut = {
+    rates = {},               -- playback rates, 1 per voice, 1.0 = normal speed
+    muted = false,            -- softcut mute
+  },
 
-  -- waveform
+  max_sample_length = 128.0, -- in seconds, longer samples are truncated
+  sample_length = nil,      -- full length of the currently loaded sample
 
   -- time controls
   fade_time = .2,                    -- crossfade when looping playback
@@ -74,6 +72,8 @@ local state = {
     slice = {
       lfo = nil,
       playback_positions = {},
+      -- section of the sample that is currently enabled;
+      --  playback position randomizations will be done within this section. [1] and [2] in seconds.
       enabled_section = { nil, nil },
       seek = {
         start = 1,
@@ -94,7 +94,7 @@ local state = {
       filename="",
       selected_sample = _path.audio .. "etsuko/sea-minor/sea-minor-chords.wav",
       echo = {
-        feedback = 0.8,
+        feedback = 80,
         time = 4, -- seconds
       }
     }
@@ -104,7 +104,7 @@ local state = {
 }
 
 local pages = {
-  page_sample_select,
+  page_sampling,
   page_panning,
   page_levels,
   page_slice,
@@ -253,6 +253,9 @@ end
 function key(n, z)
   if n == 1 and z == 0 and current_page.k1_off then current_page.k1_off(state) end
   if n == 1 and z == 1 and current_page.k1_on then current_page.k1_on(state) end
+  -- engine.hz(0, 440)
+  -- -- engine.vol(0, 1)
+
   if n == 2 and z == 0 and current_page.k2_off then
     current_page.k2_off(state)
     current_page.footer.active_knob = "k2"
@@ -316,7 +319,6 @@ function refresh()
     screen.clear()
     current_page:render(state)
     screen.update()
-
 
     -- sort of an event based system, allows pages to request main functionality
     -- usage: state.events['event_randomize_softcut'] = true
