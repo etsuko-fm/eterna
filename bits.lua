@@ -12,7 +12,6 @@ local audio_util = include("bits/lib/util/audio_util")
 local page_levels = include("bits/lib/pages/levels")
 local page_sampling = include("bits/lib/pages/sampling")
 local page_panning = include("bits/lib/pages/panning")
-local page_microloops = include("bits/lib/pages/microloops")
 local page_slice = include("bits/lib/pages/slice")
 local page_pitch = include("bits/lib/pages/pitch")
 

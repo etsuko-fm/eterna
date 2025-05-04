@@ -1,4 +1,4 @@
-local Page = include("bits/lib/pages/Page")
+local Page = include("bits/lib/Page")
 local Window = include("bits/lib/graphics/Window")
 local PitchGraph = include("bits/lib/graphics/PitchGraph")
 local page_name = "Playback"

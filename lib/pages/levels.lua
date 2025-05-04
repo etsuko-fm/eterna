@@ -1,4 +1,4 @@
-local Page = include("bits/lib/pages/Page")
+local Page = include("bits/lib/Page")
 local page_name = "ScanLfo"
 local Window = include("bits/lib/graphics/Window")
 local LevelsGraphic = include("bits/lib/graphics/LevelsGraphic")

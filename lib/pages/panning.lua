@@ -1,4 +1,4 @@
-local Page = include("bits/lib/pages/Page")
+local Page = include("bits/lib/Page")
 local Window = include("bits/lib/graphics/Window")
 local PanningGraphic = include("bits/lib/graphics/PanningGraphic")
 local state_util = include("bits/lib/util/state")
