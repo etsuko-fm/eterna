@@ -81,10 +81,10 @@ local function update_segment_lengths(state)
     -- update loop end points when max length has changed
     if max_length_dirty == false then return end
     for i = 1, 6 do
-        if state.loop_sections[i][2] - state.loop_sections[i][1] > state.max_sample_length then
+        if state.enabled_section[2] - state.enabled_section[1] > state.max_sample_length then
             -- no need to protect for empty buffer, as it's shortening it only
-            state.loop_sections[i][2] = state.loop_sections[i][1] + state.max_sample_length
-            softcut.loop_end(i, state.loop_sections[i][2])
+            state.enabled_section[2] = state.enabled_section[1] + state.max_sample_length
+            softcut.loop_end(i, state.enabled_section[2])
         end
     end
     max_length_dirty = false

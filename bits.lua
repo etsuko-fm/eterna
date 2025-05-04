@@ -47,8 +47,6 @@ local state = {
   -- time controls
   fade_time = .2,                    -- crossfade when looping playback
   request_update_softcut = false, -- todo: is this still used or replaced it with events?
-  loop_sections = {},                -- one item per softcut voice [i][1] = start and [i][2] is end
-
 
   pages = {
     -- scanning / gaussian graph settings
@@ -133,10 +131,6 @@ end
 
 local function update_softcut(state)
   for i = 1, 6 do
-    state.loop_sections[i] = {}
-    state.loop_sections[i][1] = state.pages.slice.enabled_section[1]
-    state.loop_sections[i][2] = state.pages.slice.enabled_section[2]
-
     -- configure softcut voice
     softcut.position(i, state.pages.slice.enabled_section[1])
     softcut.loop_start(i, state.pages.slice.enabled_section[1])
@@ -144,37 +138,19 @@ local function update_softcut(state)
   end
 end
 
-local function update_positions(i, pos)
-  --- callback for softcut.event_position.
-  --- i:   softcut voice
-  --- pos: playback position of voice i, in seconds
-  ---
-  --- updates state.playback_positions[i] with a val between 0 and 1, relative to the length of the enabled section.
-  --- if the enabled section is 10s long, starts at 0:05:
-  ---   pos = 0 means absolute position 0:05
-  ---   pos = 1 means absolute position is 0:15
-  --- This is used to display the playback positions in the rings.
-  local enabled_section_length = state.pages.slice.enabled_section[2] - state.pages.slice.enabled_section[1]
-  state.pages.slice.playback_positions[i] = (pos - state.pages.slice.enabled_section[1]) / enabled_section_length
-  -- print("voice" .. i..":"..pos .. "loop: "..state.loop_starts[i].." - " .. state.loop_ends[i])
-end
-
 local function enable_all_voices()
-  local pan_locations = { -1, -.5, -.25, .25, .5, 1 } -- todo: should be based on pan page
-
   for i = 1, 6 do
     softcut.enable(i, 1)
     softcut.buffer(i, 1)
     softcut.loop(i, 1)
     softcut.play(i, 1)
-    softcut.pan(i, pan_locations[i]) -- seems to clash with pan randomization
     softcut.fade_time(i, state.fade_time)
     softcut.level(i, state.levels[i])
   end
 end
 
 local function switch_sample(file)
-  -- use specified `file` as a sample
+  -- use specified `file` as a sample and store enabled length of softcut buffer in state
   state.sample_length = audio_util.load_sample(file, true)
   state.pages.slice.enabled_section = { 0, state.max_sample_length }
   if state.sample_length < state.max_sample_length then
@@ -205,14 +181,6 @@ function init()
   local sample1 = "audio/etsuko/sea-minor/sea-minor-chords.wav"
   local sample2 = "audio/etsuko/neon-light/neon intro.wav"
   if debug_mode then switch_sample(_path.dust .. sample2) end
-  -- softcut.phase_quant(1, 1/fps)
-  -- softcut.event_phase(update_positions)
-  -- softcut.poll_start_phase()
-  softcut.event_position(update_positions)
-
-  -- get initial position values for softcut voices
-  query_positions()
-
   for _, page in ipairs(pages) do
     page:initialize(state)
   end
@@ -266,12 +234,6 @@ function enc(n, d)
   end
 end
 
-function query_positions()
-  for i = 1, 6 do
-    softcut.query_position(i)
-  end
-end
-
 local event_handlers = {
   -- maps event names to functions
   event_update_softcut = function()
@@ -289,7 +251,6 @@ end
 
 function refresh()
   if ready then
-    query_positions()
     screen.clear()
     current_page:render(state)
     screen.update()
