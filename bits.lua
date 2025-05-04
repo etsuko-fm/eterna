@@ -1,7 +1,7 @@
 -- bits: 6-voice sample player
 -- 1.0.0 @etsuko.fm
 -- E1: scroll pages
--- 
+--
 -- Other controls, see footer:
 -- | K2 | K3 | E2 | E3 |
 
@@ -12,6 +12,7 @@ local audio_util = include("bits/lib/util/audio_util")
 local page_levels = include("bits/lib/pages/levels")
 local page_sampling = include("bits/lib/pages/sampling")
 local page_panning = include("bits/lib/pages/panning")
+local page_microloops = include("bits/lib/pages/microloops")
 local page_slice = include("bits/lib/pages/slice")
 local page_pitch = include("bits/lib/pages/pitch")
 
@@ -21,14 +22,14 @@ local ready
 -- engine.name = "Sines"
 
 PLAYBACK_DIRECTION = {
-  FWD="FWD",
-  REV="REV",
-  FWD_REV="FWD_REV"
+  FWD = "FWD",
+  REV = "REV",
+  FWD_REV = "FWD_REV"
 }
 
 SAMPLE_MODE = {
-  SAMPLE="SAMPLE",
-  DELAY="DELAY",
+  SAMPLE = "SAMPLE",
+  DELAY = "DELAY",
 }
 
 local state = {
@@ -37,16 +38,16 @@ local state = {
   footer_font = 68,
   -- softcut
   softcut = {
-    rates = {},               -- playback rates, 1 per voice, 1.0 = normal speed
-    muted = false,            -- softcut mute
+    rates = {},    -- playback rates, 1 per voice, 1.0 = normal speed
+    muted = false, -- softcut mute
   },
 
   max_sample_length = 128.0, -- in seconds, longer samples are truncated
-  sample_length = nil,      -- full length of the currently loaded sample
+  sample_length = nil,       -- full length of the currently loaded sample
 
   -- time controls
   fade_time = .2,                    -- crossfade when looping playback
-  request_randomize_softcut = false, -- todo: is this still used or replaced it with events?
+  request_update_softcut = false, -- todo: is this still used or replaced it with events?
   loop_sections = {},                -- one item per softcut voice [i][1] = start and [i][2] is end
 
 
@@ -66,7 +67,7 @@ local state = {
       lfo = nil,
       twist = 0,
       spread = 32,
-      pan_positions = {0, 0, 0, 0, 0, 0, },
+      pan_positions = { 0, 0, 0, 0, 0, 0, },
       default_lfo_period = 6,
     },
     slice = {
@@ -80,7 +81,7 @@ local state = {
         width = 32,
       },
     },
-    pitch = { -- should maybe rename to playback rate
+    pitch = {          -- should maybe rename to playback rate
       rate_center = 0, -- 0 = center, bipolar, relative to current range
       rate_spread = 1, -- fraction of playback rate
       quantize = true,
@@ -91,7 +92,7 @@ local state = {
       waveform_samples = {},
       waveform_width = 59,
       scale_waveform = 10,
-      filename="",
+      filename = "",
       selected_sample = _path.audio .. "etsuko/sea-minor/sea-minor-chords.wav",
       echo = {
         feedback = 80,
@@ -114,8 +115,6 @@ local pages = {
 local current_page_index = 4
 local current_page = pages[current_page_index]
 
--- todo: this is re-usable functionality, move to lib; also confusing otherwise
--- should then be in a PageManager class. However cyling pages is not always the most straightforward thing to do.
 local function cycle_page_forward()
   -- Increment the current page index, reset to 1 if we exceed the table length
   current_page_index = (current_page_index % #pages) + 1
@@ -133,40 +132,16 @@ local function count()
   ready = true
 end
 
-
-local function generate_loop_segment(state)
-  -- Generate a pair of numbers (a, b) reflecting a loop segment.
-  -- a = loop start, b = loop end
-  -- a < b < sample duration
-  -- (b - a) < max_length
-
-  -- introduce some padding so that `a` isn't closer than 1% to the sample end [todo: why 1%?]
-  local max_allowed_length = (state.pages.slice.enabled_section[2] - state.pages.slice.enabled_section[1])
-  local padding = max_allowed_length / 100
-
-  -- pick start position
-  local a = state.pages.slice.enabled_section[1] + (math.random() * (max_allowed_length - padding))
-
-  -- End position should be a larger number than start position; and confine to the defined max length
-  local b = a + (math.random() * (state.pages.slice.enabled_section[2] - a))
-  return a, b
-end
-
-local function randomize_softcut(state)
+local function update_softcut(state)
   for i = 1, 6 do
-    -- pick playback rate from rate_values table
-    -- state.rates[i] = rate_values[math.random(#rate_values)]
-
-    -- generate loop segment based on sample length
     state.loop_sections[i] = {}
-    state.loop_sections[i][1], state.loop_sections[i][2] = generate_loop_segment(state)
-    -- print(i .. ": a=" .. state.loop_sections[i][1] .. "  b=" .. state.loop_sections[i][2])
+    state.loop_sections[i][1] = state.pages.slice.enabled_section[1]
+    state.loop_sections[i][2] = state.pages.slice.enabled_section[2]
 
     -- configure softcut voice
-    -- softcut.rate(i, state.rates[i])
-    softcut.position(i, state.loop_sections[i][1])
-    softcut.loop_start(i, state.loop_sections[i][1])
-    softcut.loop_end(i, state.loop_sections[i][2])
+    softcut.position(i, state.pages.slice.enabled_section[1])
+    softcut.loop_start(i, state.pages.slice.enabled_section[1])
+    softcut.loop_end(i, state.pages.slice.enabled_section[2])
   end
 end
 
@@ -179,7 +154,7 @@ local function update_positions(i, pos)
   --- if the enabled section is 10s long, starts at 0:05:
   ---   pos = 0 means absolute position 0:05
   ---   pos = 1 means absolute position is 0:15
-  --- This is used to display the playback positions in the rings. 
+  --- This is used to display the playback positions in the rings.
   local enabled_section_length = state.pages.slice.enabled_section[2] - state.pages.slice.enabled_section[1]
   state.pages.slice.playback_positions[i] = (pos - state.pages.slice.enabled_section[1]) / enabled_section_length
   -- print("voice" .. i..":"..pos .. "loop: "..state.loop_starts[i].." - " .. state.loop_ends[i])
@@ -208,7 +183,7 @@ local function switch_sample(file)
   end
 
   softcut.render_buffer(1, 0, state.sample_length, state.pages.sample.waveform_width)
-  randomize_softcut(state)
+  update_softcut(state)
 end
 
 function init()
@@ -270,7 +245,8 @@ function key(n, z)
   end
   if n == 3 and z == 1 and current_page.k3_on then
     current_page.k3_on(state)
-    current_page.footer.active_knob = "k3"  end
+    current_page.footer.active_knob = "k3"
+  end
 end
 
 function enc(n, d)
@@ -299,8 +275,8 @@ end
 
 local event_handlers = {
   -- maps event names to functions
-  event_randomize_softcut = function()
-    execute_event(randomize_softcut, "event_randomize_softcut", state)
+  event_update_softcut = function()
+    execute_event(update_softcut, "event_update_softcut", state)
   end,
   event_switch_sample = function()
     execute_event(switch_sample, "event_switch_sample", state.pages.sample.selected_sample)
@@ -312,7 +288,6 @@ function execute_event(handler, request, ...)
   state.events[request] = false -- Reset the event request
 end
 
-
 function refresh()
   if ready then
     query_positions()
@@ -321,7 +296,7 @@ function refresh()
     screen.update()
 
     -- sort of an event based system, allows pages to request main functionality
-    -- usage: state.events['event_randomize_softcut'] = true
+    -- usage: state.events['event_update_softcut'] = true
 
     for event, handler in pairs(event_handlers) do
       if state.events[event] == true then

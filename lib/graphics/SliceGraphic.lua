@@ -5,15 +5,17 @@ SliceGraphic = {
     x = 32,
     y = 14,
     rows = 6,
-    columns = 20,
-    block_w = 3,
-    block_h = 3,
-    margin_w = 0,
-    margin_h = 2,
+    columns = 21,
+    block_w = 2,
+    block_h = 4,
+    margin_w = 1,
+    margin_h = 1,
     fill = 2,
     active_fill = 15,
-    start_active = 1,
-    end_active = 17,
+    start_active = 1, -- playback position
+    playback_positions = {0,0,0, 0,0,0,},
+    width_per_slice = 1, -- 1 to columns
+    end_active = 17, -- width per slice
     hide = false,
 }
 

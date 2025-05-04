@@ -1,7 +1,7 @@
 local Page = include("bits/lib/pages/Page")
 local Window = include("bits/lib/graphics/Window")
 local state_util = include("bits/lib/util/state")
-local SliceGraphic = include("bits/lib/graphics/SliceGraphic")
+local GridGraphic = include("bits/lib/graphics/Grid")
 local Footer = include("bits/lib/graphics/Footer")
 local misc_util = include("bits/lib/util/misc")
 local lfo_util = include("bits/lib/util/lfo")
@@ -10,17 +10,20 @@ local page_name = "Slice"
 local window
 local grid_graphic
 local DEFAULT_PERIOD = 6
-
+local ROWS = 10
+local COLUMNS = 21
+local MAX_SLICES = ROWS*COLUMNS
 
 local function update_segment_lengths(state)
+    --todo: not sure if still needed after randomization change
     for i = 1, 6 do
-        if state.loop_sections[i][2] - state.loop_sections[i][1] > state.max_sample_length then
+        if state.pages.slice.enabled_section[2] - state.pages.slice.enabled_section[1] > state.max_sample_length then
             -- no need to protect for empty buffer, as it's shortening it only
-            state.loop_sections[i][2] = state.loop_sections[i][1] + state.max_sample_length
-            softcut.loop_end(i, state.loop_sections[i][2])
+            state.pages.slice.enabled_section[2] = state.pages.slice.enabled_section[1] + state.max_sample_length
+            softcut.loop_end(i, state.pages.slice.enabled_section[2])
         end
     end
-    state.events['event_randomize_softcut'] = true
+    state.events['event_update_softcut'] = true
 end
 
 
@@ -29,22 +32,22 @@ local function update_grid(state)
     grid_graphic.end_active = state.pages.slice.seek.start + state.pages.slice.seek.width
 
     local current_length = math.min(state.sample_length, state.max_sample_length)
-    state.pages.slice.enabled_section[1] = ((state.pages.slice.seek.start - 1) / 128) * current_length
-    state.pages.slice.enabled_section[2] = math.min(state.pages.slice.enabled_section[1] + (state.pages.slice.seek.width / 128 * current_length),
+    state.pages.slice.enabled_section[1] = ((state.pages.slice.seek.start - 1) / MAX_SLICES) * current_length
+    state.pages.slice.enabled_section[2] = math.min(state.pages.slice.enabled_section[1] + (state.pages.slice.seek.width / MAX_SLICES * current_length),
         state.max_sample_length)
 
     update_segment_lengths(state)
 end
 
 local function seek(state, d)
-    local max_start = 129 - state.pages.slice.seek.width
+    local max_start = (MAX_SLICES+1) - state.pages.slice.seek.width
     state_util.adjust_param(state.pages.slice.seek, 'start', d, 1, 1, max_start)
     update_grid(state)
 end
 
 local function adjust_width(state, d)
-    state_util.adjust_param(state.pages.slice.seek, 'width', d, 1, 1, 129 - state.pages.slice.seek.start)
-    local max_start = 129 - state.pages.slice.seek.width
+    state_util.adjust_param(state.pages.slice.seek, 'width', d, 1, 1, (MAX_SLICES+1) - state.pages.slice.seek.start)
+    local max_start = (MAX_SLICES+1) - state.pages.slice.seek.width
     state.pages.slice.lfo:set('max', max_start)
     update_grid(state)
 end
@@ -138,7 +141,10 @@ function page:initialize(state)
         horizontal_separations = 0,
         vertical_separations = 0,
     })
-    grid_graphic = SliceGraphic:new()
+    grid_graphic = GridGraphic:new({
+        rows=ROWS,
+        columns=COLUMNS,
+    })
     -- graphics
     page.footer = Footer:new({
         button_text = {

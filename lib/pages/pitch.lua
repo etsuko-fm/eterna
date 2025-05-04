@@ -1,7 +1,7 @@
 local Page = include("bits/lib/pages/Page")
 local Window = include("bits/lib/graphics/Window")
 local PitchGraph = include("bits/lib/graphics/PitchGraph")
-local page_name = "Pitch"
+local page_name = "Playback"
 local debug = include("bits/lib/util/debug")
 local state_util = include("bits/lib/util/state")
 local misc_util = include("bits/lib/util/misc")
@@ -129,7 +129,7 @@ function page:initialize(state)
         y = 0,
         w = 128,
         h = 64,
-        title = "PITCH",
+        title = "PLAYBACK RATES",
         font_face = state.title_font,
         brightness = 15,
         border = false,
