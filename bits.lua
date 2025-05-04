@@ -56,7 +56,7 @@ local state = {
       windows = {},
       scan_val = 0.5,                 -- 0 to 1; allows scanning through softcut voices (think smooth soloing/muting)
       levels = { 0, 0, 0, 0, 0, 0, }, -- softcut levels; initialized later by the metamixer page
-      sigma = 5,                      -- Width of the gaussian curve, adjustable for sharper or broader curves
+      sigma = 2,                      -- Width of the gaussian curve, adjustable for sharper or broader curves
       sigma_min = 0.3,
       sigma_max = 15,
       lfo = nil,
@@ -111,7 +111,7 @@ local pages = {
   page_pitch,
 }
 
-local current_page_index = 1
+local current_page_index = 4
 local current_page = pages[current_page_index]
 
 -- todo: this is re-usable functionality, move to lib; also confusing otherwise

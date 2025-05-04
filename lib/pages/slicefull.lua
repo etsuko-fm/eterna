@@ -1,7 +1,7 @@
 local Page = include("bits/lib/pages/Page")
 local Window = include("bits/lib/graphics/Window")
 local state_util = include("bits/lib/util/state")
-local SliceGraphic = include("bits/lib/graphics/SliceGraphic")
+local GridGraphic = include("bits/lib/graphics/Grid")
 local Footer = include("bits/lib/graphics/Footer")
 local misc_util = include("bits/lib/util/misc")
 local lfo_util = include("bits/lib/util/lfo")
@@ -138,7 +138,7 @@ function page:initialize(state)
         horizontal_separations = 0,
         vertical_separations = 0,
     })
-    grid_graphic = SliceGraphic:new()
+    grid_graphic = GridGraphic:new()
     -- graphics
     page.footer = Footer:new({
         button_text = {
