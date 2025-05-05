@@ -12,13 +12,22 @@ local window
 local graph_x = 36 -- (128 - graph_width) / 2
 local graph_y = 40
 
+local LFO_SHAPES = { "sine", "up", "down", "random" }
+
+local POSITION_MIN = 0
+local POSITION_MAX = 1
+
+local SIGMA_MIN = 0.3
+local SIGMA_MAX = 15
+
 local function map_sigma(state, v)
-    return util.explin(state.pages.metamixer.sigma_min, state.pages.metamixer.sigma_max, 0, 1, v)
+    return util.explin(SIGMA_MIN, SIGMA_MAX, 0, 1, v)
 end
 
 local function adjust_sigma(state, d)
     local k = (10 ^ math.log(state.pages.metamixer.sigma, 10)) / 25
-    state_util.adjust_param(state.pages.metamixer, 'sigma', d, k, state.pages.metamixer.sigma_min, state.pages.metamixer.sigma_max, false)
+    state_util.adjust_param(state.pages.metamixer, 'sigma', d, k, state.pages.metamixer.sigma_min,
+        state.pages.metamixer.sigma_max, false)
     state.levels = gaussian.calculate_gaussian_levels(state.pages.metamixer.scan_val, state.pages.metamixer.sigma)
     for i = 1, 6 do
         softcut.level(i, state.levels[i])
@@ -26,8 +35,7 @@ local function adjust_sigma(state, d)
 end
 
 local function toggle_shape(state)
-    local shapes = { "sine", "up", "down", "random" }
-    lfo_util.toggle_shape(state.pages.metamixer.lfo, shapes)
+    lfo_util.toggle_shape(state.pages.metamixer.lfo, LFO_SHAPES)
 end
 
 local function toggle_lfo(state)
@@ -40,17 +48,21 @@ local function toggle_lfo(state)
 end
 
 local function gaussian_scan(state, d)
-    state_util.adjust_param(state.pages.metamixer, 'scan_val', d, 1 / 60, 0, 1, true)
-    -- h_slider.val = state.scan_val
+    state_util.adjust_param(state.pages.metamixer, 'scan_val', d, 1 / 60, POSITION_MIN, POSITION_MAX, true)
     state.levels = gaussian.calculate_gaussian_levels(state.pages.metamixer.scan_val, state.pages.metamixer.sigma)
     for i = 1, 6 do
         softcut.level(i, state.levels[i])
     end
 end
 
+local function adjust_lfo_rate(state, d)
+    lfo_util.adjust_lfo_rate_quant(d, state.pages.metamixer.lfo)
+end
+
+
 local function e2(state, d)
     if state.pages.metamixer.lfo:get("enabled") == 1 then
-        lfo_util.adjust_lfo_rate_quant(d, state.pages.metamixer.lfo)
+        adjust_lfo_rate(state, d)
     else
         gaussian_scan(state, d)
     end
@@ -100,7 +112,27 @@ function page:render(state)
     page.footer:render()
 end
 
+local function add_params(state)
+    params:add_separator("BITS_LEVELS", "LEVELS")
+
+    params:add_binary("levels_lfo_enabled", "LFO enabled", "toggle", 1)
+    params:set_action("levels_lfo_enabled", function() toggle_lfo(state) end)
+
+    params:add_option("levels_lfo_shape", "LFO shape", LFO_SHAPES, 1)
+    params:set_action("levels_lfo_shape", function() toggle_shape(state) end)
+
+    params:add_option("levels_lfo_rate", "LFO rate", lfo_util.lfo_period_values, 1)
+    params:set_action("levels_lfo_rate", function() toggle_shape(state) end)
+
+    params:add_number("levels_position", "Position", POSITION_MIN, POSITION_MAX)
+    params:set_action("levels_position", function() toggle_shape(state) end)
+
+    params:add_number("levels_amp", "Amp", SIGMA_MIN, SIGMA_MAX)
+    params:set_action("levels_amp", function() toggle_shape(state) end)
+end
+
 function page:initialize(state)
+    add_params(state)
     window = Window:new({
         x = 0,
         y = 0,
@@ -163,7 +195,8 @@ function page:initialize(state)
         action = function(scaled, raw)
             state.pages.metamixer.scan_val = scaled
             bars.scan_val = scaled
-            state.levels = gaussian.calculate_gaussian_levels(state.pages.metamixer.scan_val, state.pages.metamixer.sigma)
+            state.levels = gaussian.calculate_gaussian_levels(state.pages.metamixer.scan_val, state.pages.metamixer
+                .sigma)
             for i = 1, 6 do
                 softcut.level(i, state.levels[i])
             end

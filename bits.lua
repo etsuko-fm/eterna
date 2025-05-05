@@ -55,8 +55,6 @@ local state = {
       scan_val = 0.5,                 -- 0 to 1; allows scanning through softcut voices (think smooth soloing/muting)
       levels = { 0, 0, 0, 0, 0, 0, }, -- softcut levels; initialized later by the metamixer page
       sigma = 2,                      -- Width of the gaussian curve, adjustable for sharper or broader curves
-      sigma_min = 0.3,
-      sigma_max = 15,
       lfo = nil,
       lfo_period = 6,
     },
@@ -92,8 +90,9 @@ local state = {
       filename = "",
       selected_sample = _path.audio .. "etsuko/sea-minor/sea-minor-chords.wav",
       echo = {
-        feedback = 80,
+        feedback = 80, -- 0 to 100, user-friendly value
         time = 4, -- seconds
+        mix = 100, -- 0 to 100
       }
     }
   },
@@ -129,14 +128,22 @@ local function count()
   ready = true
 end
 
-local function update_softcut(state)
+function update_softcut(state)
+  -- no need for events, just make it a global function
+  -- resets softcut voice to start of buffer, limits loop length to enabled section
+  -- todo: better name, sync_softcut?
   for i = 1, 6 do
-    -- configure softcut voice
-    softcut.position(i, state.pages.slice.enabled_section[1])
     softcut.loop_start(i, state.pages.slice.enabled_section[1])
     softcut.loop_end(i, state.pages.slice.enabled_section[2])
   end
 end
+
+function reset_softcut_positions(state)
+  for i = 1, 6 do
+    softcut.position(i, state.pages.slice.enabled_section[1])
+  end
+end
+
 
 local function enable_all_voices()
   for i = 1, 6 do
@@ -161,7 +168,18 @@ local function switch_sample(file)
   update_softcut(state)
 end
 
+
+---- params
+local function add_params(state)
+  params:add_separator("BITS", "BITS")
+
+  -- file selection
+  params:add_file('audio_file_1', 'file')
+  params:set_action("audio_file_1", function(file) switch_sample(file) end)
+end
+
 function init()
+  add_params(state)
   -- hardware sensitivity
   norns.enc.sens(1, 5)
 
@@ -169,13 +187,6 @@ function init()
     norns.enc.sens(i, 1)
     norns.enc.accel(i, false)
   end
-
-  -- file selection
-  params:add_separator("bits", "bits")
-  params:add_file('audio_file_1', 'file')
-  params:set_action("audio_file_1", function(file) switch_sample(file) end)
-
-  -- params:add_number('max_granularity')
 
   -- init softcut
   local sample1 = "audio/etsuko/sea-minor/sea-minor-chords.wav"
@@ -236,9 +247,6 @@ end
 
 local event_handlers = {
   -- maps event names to functions
-  event_update_softcut = function()
-    execute_event(update_softcut, "event_update_softcut", state)
-  end,
   event_switch_sample = function()
     execute_event(switch_sample, "event_switch_sample", state.pages.sample.selected_sample)
   end,
@@ -267,6 +275,20 @@ function refresh()
   end
 end
 
+-- convenience methods for matron
 function rerun()
   norns.script.load(norns.state.script)
 end
+
+function off()
+  for i = 1, 6 do
+    softcut.play(i, 0)
+  end
+end
+
+function on()
+  for i = 1, 6 do
+    softcut.play(i, 1)
+  end
+end
+

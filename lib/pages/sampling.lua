@@ -2,23 +2,25 @@ local Page = include("bits/lib/Page")
 local Window = include("bits/lib/graphics/Window")
 local Waveform = include("bits/lib/graphics/Waveform")
 local EchoGraphic = include("bits/lib/graphics/EchoGraphic")
-local page_name = "SampleSelect"
+local page_name = "SAMPLING"
 local fileselect = require('fileselect')
 local page_disabled = false
 local debug = include("bits/lib/util/debug")
 local state_util = include("bits/lib/util/state")
 local misc_util = include("bits/lib/util/misc")
 
-local max_length_dirty = false
 local waveform
 local echo_graphic
 local window
 
-local min_feedback = 0
-local max_feedback = 100
+local MIN_FEEDBACK = 0
+local MAX_FEEDBACK = 100
 
-local min_time = 0.1
-local max_time = 2.0
+local MIN_TIME = 0.05
+local MAX_TIME = 2.0
+
+local MIN_MIX = 0
+local MAX_MIX = 100
 
 
 --[[
@@ -55,11 +57,11 @@ local function update_waveform(state)
 end
 
 local function adjust_time(state, d)
-    state_util.adjust_param(state.pages.sample.echo, 'time', d, 0.1, min_time, max_time)
+    state_util.adjust_param(state.pages.sample.echo, 'time', d, 0.1, MIN_TIME, MAX_TIME)
     state.enabled_section = { 0, state.pages.sample.echo.time }
     state.sample_length = state.pages.sample.echo.time
     state.max_sample_length = state.pages.sample.echo.time
-    state.events['event_randomize_softcut'] = true
+    update_softcut(state)
 end
 
 local function adjust_feedback(state, d)
@@ -68,26 +70,13 @@ local function adjust_feedback(state, d)
         'feedback',
         d,
         1 + 10 ^ math.log(state.pages.sample.echo.feedback, 100) / 25,
-        min_feedback,
-        max_feedback
+        MIN_FEEDBACK,
+        MAX_FEEDBACK
     )
 
     for i = 1, 6 do
         softcut.pre_level(i, state.pages.sample.echo.feedback / 100)
     end
-end
-
-local function update_segment_lengths(state)
-    -- update loop end points when max length has changed
-    if max_length_dirty == false then return end
-    for i = 1, 6 do
-        if state.enabled_section[2] - state.enabled_section[1] > state.max_sample_length then
-            -- no need to protect for empty buffer, as it's shortening it only
-            state.enabled_section[2] = state.enabled_section[1] + state.max_sample_length
-            softcut.loop_end(i, state.enabled_section[2])
-        end
-    end
-    max_length_dirty = false
 end
 
 local function path_to_file_name(file_path)
@@ -117,6 +106,9 @@ local function switch_mode(state)
     if state.pages.sample.mode == SAMPLE_MODE["SAMPLE"] then
         state.pages.sample.mode = SAMPLE_MODE["DELAY"]
 
+        -- clear the buffer, may have leftovers if delay mode has been activated before in the session
+        softcut.buffer_clear_channel(2)
+
         -- voice 1 will be recording to buffer 2
 
         -- adc is analog-to-digital, i.e. analog input channels
@@ -125,10 +117,7 @@ local function switch_mode(state)
         audio.level_tape_cut(0)
         local rec = 1.0
         local pre = state.pages.sample.echo.feedback / 100 -- 0 to 1 
-        local delay_time = 4                               -- seconds
-        state.enabled_section = { 0, delay_time }
-        state.sample_length = delay_time
-        state.max_sample_length = delay_time
+        local delay_time = 2                               -- seconds
         -- all voices playback from buffer 2
         for i = 1, 6 do
             -- buffer beperken tot delay_time
@@ -140,7 +129,11 @@ local function switch_mode(state)
             -- set voice 1 pre level
             softcut.pre_level(i, pre)
         end
-        state.events['event_randomize_softcut'] = true
+        state.sample_length = delay_time
+        state.max_sample_length = delay_time
+        -- update enabled section, function defined in slice page
+        update_enabled_section(state)
+        update_softcut(state)
     else
         -- turn off recording, switch back to buffer 1
         state.pages.sample.mode = SAMPLE_MODE["SAMPLE"]
@@ -152,9 +145,13 @@ local function switch_mode(state)
     end
 end
 
+local function adjust_mix(state, d)
+    state_util.adjust_param(state.pages.sample.echo, 'mix', d, 1, MIN_MIX, MAX_MIX)
+end
+
 local function e2(state, d)
     if state.pages.sample.mode == SAMPLE_MODE["DELAY"] then
-        adjust_time(state, d)
+        -- adjust_time(state, d)
     end
 end
 
@@ -191,8 +188,8 @@ function page:render(state)
         page.footer.button_text.e3.value = "FEEDB"
         page.footer.button_text.e2.value = misc_util.trim(tostring(state.pages.sample.echo.time), 5)
         page.footer.button_text.e3.value = misc_util.trim(tostring(state.pages.sample.echo.feedback), 5)
-        echo_graphic.feedback = util.linlin(min_feedback, max_feedback, 0, 1, state.pages.sample.echo.feedback)
-        echo_graphic.time = util.linlin(min_time,max_time, 0, 1, state.pages.sample.echo.time)
+        echo_graphic.feedback = util.linlin(MIN_FEEDBACK, MAX_FEEDBACK, 0, 1, state.pages.sample.echo.feedback)
+        echo_graphic.time = util.linlin(MIN_TIME, MAX_TIME, 0, 1, state.pages.sample.echo.time)
         echo_graphic:render()
     else
         page.footer.button_text.k3.name = "LOAD"
@@ -210,12 +207,16 @@ function page:render(state)
         screen.text(misc_util.trim(state.pages.sample.filename, 16))
     end
     window:render()
-    update_segment_lengths(state)
     -- screen.update()
     page.footer:render()
 end
 
+local function add_params(state)
+    params:add_separator("SAMPLING", page_name)
+end
+
 function page:initialize(state)
+    add_params(state)
     local function on_render(ch, start, i, s)
         -- this is a callback, for every softcut.render_buffer() invocation
         print('buffer contents rendered')
@@ -276,7 +277,7 @@ function page:initialize(state)
 
     echo_graphic = EchoGraphic:new({
         feedback = state.pages.sample.echo.feedback,
-        max_feedback = max_feedback,
+        max_feedback = MAX_FEEDBACK,
         time = state.pages.sample.echo.time,
     })
 

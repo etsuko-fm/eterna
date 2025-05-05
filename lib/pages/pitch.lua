@@ -7,6 +7,19 @@ local state_util = include("bits/lib/util/state")
 local misc_util = include("bits/lib/util/misc")
 local page
 
+local function add_params(state)
+    -- params:add_group('playback_rates', 'playback rates', 5)
+
+    params:add_separator("PLAYBACK_RATES", "PLAYBACK RATES")
+    params:add_binary('quantize', 'Quantize', "toggle", state.pages.pitch.quantize and 1 or 0)
+    params:add_number("rate_center", "center", -3, 3, state.pages.pitch.rate_center)
+    params:add_number("rate_spread", "spread", -3, 3, state.pages.pitch.rate_spread)
+    local p = {"FWD", "REV", "FWD_REV"}
+    params:add_option("direction", "direction", p, 1)
+
+    -- direction = PLAYBACK_DIRECTION["FWD_REV"],
+end
+
 local function calculate_rates(state)
     for i = 0, 5 do
         local radians = i / 6 * math.pi * 2 * 2.67 -- manually tuned, 2.7 is also nice
@@ -124,6 +137,7 @@ function page:render(state)
 end
 
 function page:initialize(state)
+    add_params(state)
     page.window = Window:new({
         x = 0,
         y = 0,

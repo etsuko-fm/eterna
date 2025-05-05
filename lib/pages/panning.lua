@@ -5,7 +5,7 @@ local state_util = include("bits/lib/util/state")
 local misc_util = include("bits/lib/util/misc")
 local lfo_util = include("bits/lib/util/lfo")
 
-local page_name = "Panning"
+local page_name = "PANNING"
 local window
 
 local panning_graphic
@@ -92,8 +92,12 @@ function page:render(state)
     page.footer:render()
 end
 
+local function add_params(state)
+    params:add_separator("PANNING", page_name)
+end
+
 function page:initialize(state)
-    print("panning initialized")
+    add_params(state)
     window = Window:new({
         x = 0,
         y = 0,

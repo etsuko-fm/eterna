@@ -6,49 +6,53 @@ local Footer = include("bits/lib/graphics/Footer")
 local misc_util = include("bits/lib/util/misc")
 local lfo_util = include("bits/lib/util/lfo")
 
-local page_name = "Slice"
+local page_name = "SLICE"
 local window
 local grid_graphic
 local DEFAULT_PERIOD = 6
 local ROWS = 10
 local COLUMNS = 21
-local MAX_SLICES = ROWS*COLUMNS
-
-local function update_segment_lengths(state)
-    --todo: not sure if still needed after randomization change
-    for i = 1, 6 do
-        if state.pages.slice.enabled_section[2] - state.pages.slice.enabled_section[1] > state.max_sample_length then
-            -- no need to protect for empty buffer, as it's shortening it only
-            state.pages.slice.enabled_section[2] = state.pages.slice.enabled_section[1] + state.max_sample_length
-            softcut.loop_end(i, state.pages.slice.enabled_section[2])
-        end
-    end
-    state.events['event_update_softcut'] = true
-end
+local MAX_SLICES = ROWS * COLUMNS
 
 
 local function update_grid(state)
+    -- update grid graphic to reflect update state by user or lfo
     grid_graphic.start_active = state.pages.slice.seek.start
     grid_graphic.end_active = state.pages.slice.seek.start + state.pages.slice.seek.width
+end
 
+function update_enabled_section(state)
     local current_length = math.min(state.sample_length, state.max_sample_length)
     state.pages.slice.enabled_section[1] = ((state.pages.slice.seek.start - 1) / MAX_SLICES) * current_length
-    state.pages.slice.enabled_section[2] = math.min(state.pages.slice.enabled_section[1] + (state.pages.slice.seek.width / MAX_SLICES * current_length),
+    state.pages.slice.enabled_section[2] = math.min(
+        state.pages.slice.enabled_section[1] + (state.pages.slice.seek.width / MAX_SLICES * current_length),
         state.max_sample_length)
 
-    update_segment_lengths(state)
+    --todo: not sure if still needed after randomization change
+    local enabled_section_length = state.pages.slice.enabled_section[2] - state.pages.slice.enabled_section[1]
+    if enabled_section_length > state.max_sample_length then
+        state.pages.slice.enabled_section[2] = state.pages.slice.enabled_section[1] + state.max_sample_length
+    end
+    update_softcut(state)
 end
 
 local function seek(state, d)
-    local max_start = (MAX_SLICES+1) - state.pages.slice.seek.width
+    local max_start = (MAX_SLICES + 1) - state.pages.slice.seek.width
     state_util.adjust_param(state.pages.slice.seek, 'start', d, 1, 1, max_start)
+    update_enabled_section(state)
+    reset_softcut_positions(state)
     update_grid(state)
 end
 
 local function adjust_width(state, d)
-    state_util.adjust_param(state.pages.slice.seek, 'width', d, 1, 1, (MAX_SLICES+1) - state.pages.slice.seek.start)
-    local max_start = (MAX_SLICES+1) - state.pages.slice.seek.width
+    state_util.adjust_param(state.pages.slice.seek, 'width', d, 1, 1, (MAX_SLICES + 1) - state.pages.slice.seek.start)
+    local max_start = (MAX_SLICES + 1) - state.pages.slice.seek.width
     state.pages.slice.lfo:set('max', max_start)
+
+    if d < 0 then
+        reset_softcut_positions(state)
+    end
+    update_enabled_section(state)
     update_grid(state)
 end
 
@@ -127,7 +131,12 @@ function page:render(state)
     page.footer:render()
 end
 
+local function add_params(state)
+    params:add_separator("SLICE", page_name)
+end
+
 function page:initialize(state)
+    add_params(state)
     window = Window:new({
         x = 0,
         y = 0,
@@ -142,8 +151,8 @@ function page:initialize(state)
         vertical_separations = 0,
     })
     grid_graphic = GridGraphic:new({
-        rows=ROWS,
-        columns=COLUMNS,
+        rows = ROWS,
+        columns = COLUMNS,
     })
     -- graphics
     page.footer = Footer:new({
@@ -182,6 +191,7 @@ function page:initialize(state)
             -- print(scaled)
             state.pages.slice.seek.start = math.floor(scaled + 0.5)
             update_grid(state)
+            update_enabled_section(state)
         end
     }
     state.pages.slice.lfo:set('reset_target', 'mid: rising')
