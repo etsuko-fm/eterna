@@ -20,6 +20,9 @@ local POSITION_MAX = 1
 local SIGMA_MIN = 0.3
 local SIGMA_MAX = 15
 
+local PARAM_ID_LFO_ENABLED = "levels_lfo_enabled"
+local PARAM_ID_LFO_SHAPE = "levels_lfo_shape"
+
 local function map_sigma(state, v)
     return util.explin(SIGMA_MIN, SIGMA_MAX, 0, 1, v)
 end
@@ -28,14 +31,17 @@ local function adjust_sigma(state, d)
     local k = (10 ^ math.log(state.pages.metamixer.sigma, 10)) / 25
     state_util.adjust_param(state.pages.metamixer, 'sigma', d, k, state.pages.metamixer.sigma_min,
         state.pages.metamixer.sigma_max, false)
-    state.levels = gaussian.calculate_gaussian_levels(state.pages.metamixer.scan_val, state.pages.metamixer.sigma)
+    state.pages.metamixer.levels = gaussian.calculate_gaussian_levels(state.pages.metamixer.scan_val,
+        state.pages.metamixer.sigma)
     for i = 1, 6 do
-        softcut.level(i, state.levels[i])
+        softcut.level(i, state.pages.metamixer.levels[i])
     end
 end
 
 local function toggle_shape(state)
-    lfo_util.toggle_shape(state.pages.metamixer.lfo, LFO_SHAPES)
+    local index = params:get(PARAM_ID_LFO_SHAPE)
+    local next_index = (index % #LFO_SHAPES) + 1
+    params:set(PARAM_ID_LFO_SHAPE, next_index, false)
 end
 
 local function toggle_lfo(state)
@@ -49,9 +55,10 @@ end
 
 local function gaussian_scan(state, d)
     state_util.adjust_param(state.pages.metamixer, 'scan_val', d, 1 / 60, POSITION_MIN, POSITION_MAX, true)
-    state.levels = gaussian.calculate_gaussian_levels(state.pages.metamixer.scan_val, state.pages.metamixer.sigma)
+    state.pages.metamixer.levels = gaussian.calculate_gaussian_levels(state.pages.metamixer.scan_val,
+        state.pages.metamixer.sigma)
     for i = 1, 6 do
-        softcut.level(i, state.levels[i])
+        softcut.level(i, state.pages.metamixer.levels[i])
     end
 end
 
@@ -89,8 +96,9 @@ local page = Page:create({
 
 function page:render(state)
     -- todo: this should be a graphic component, the entire thing belongs together
-    state.levels = gaussian.calculate_gaussian_levels(state.pages.metamixer.scan_val, state.pages.metamixer.sigma)
-    bars.levels = state.levels
+    state.pages.metamixer.levels = gaussian.calculate_gaussian_levels(state.pages.metamixer.scan_val,
+        state.pages.metamixer.sigma)
+    bars.levels = state.pages.metamixer.levels
     screen.clear()
     bars:render()
 
@@ -99,6 +107,7 @@ function page:render(state)
         -- When LFO is disabled, E2 controls LFO rate
         page.footer.button_text.k2.value = "ON"
         page.footer.button_text.e2.name = "SPEED"
+
         page.footer.button_text.e2.value = misc_util.trim(tostring(state.pages.metamixer.lfo:get('period')), 5)
     else
         -- When LFO is disabled, E2 controls scan position
@@ -106,7 +115,7 @@ function page:render(state)
         page.footer.button_text.e2.name = "POS"
         page.footer.button_text.e2.value = misc_util.trim(tostring(state.pages.metamixer.scan_val), 5)
     end
-    page.footer.button_text.k3.value = string.upper(state.pages.metamixer.lfo:get("shape"))
+    page.footer.button_text.k3.value = string.upper(params:string(PARAM_ID_LFO_SHAPE))
     page.footer.button_text.e3.value = misc_util.trim(tostring(map_sigma(state, state.pages.metamixer.sigma)), 5)
 
     page.footer:render()
@@ -115,20 +124,20 @@ end
 local function add_params(state)
     params:add_separator("BITS_LEVELS", "LEVELS")
 
-    params:add_binary("levels_lfo_enabled", "LFO enabled", "toggle", 1)
-    params:set_action("levels_lfo_enabled", function() toggle_lfo(state) end)
+    params:add_binary(PARAM_ID_LFO_ENABLED, "LFO enabled", "toggle", 1)
+    params:set_action(PARAM_ID_LFO_ENABLED, function() toggle_lfo(state) end)
 
-    params:add_option("levels_lfo_shape", "LFO shape", LFO_SHAPES, 1)
-    params:set_action("levels_lfo_shape", function() toggle_shape(state) end)
+    params:add_option(PARAM_ID_LFO_SHAPE, "LFO shape", LFO_SHAPES, 1)
+    params:set_action(PARAM_ID_LFO_SHAPE, function() state.pages.metamixer.lfo:set('shape', params:string(PARAM_ID_LFO_SHAPE)) end)
 
     params:add_option("levels_lfo_rate", "LFO rate", lfo_util.lfo_period_values, 1)
-    params:set_action("levels_lfo_rate", function() toggle_shape(state) end)
+    params:set_action("levels_lfo_rate", function() adjust_lfo_rate(state, d) end)
 
     params:add_number("levels_position", "Position", POSITION_MIN, POSITION_MAX)
-    params:set_action("levels_position", function() toggle_shape(state) end)
+    params:set_action("levels_position", function() end)
 
     params:add_number("levels_amp", "Amp", SIGMA_MIN, SIGMA_MAX)
-    params:set_action("levels_amp", function() toggle_shape(state) end)
+    params:set_action("levels_amp", function() end)
 end
 
 function page:initialize(state)
@@ -159,7 +168,7 @@ function page:initialize(state)
 
     -- initialize softcut levels according to mixer levels
     adjust_sigma(state, 0)
-    bars.levels = state.levels
+    bars.levels = state.pages.metamixer.levels
 
     page.footer = Footer:new({
         button_text = {
@@ -195,10 +204,11 @@ function page:initialize(state)
         action = function(scaled, raw)
             state.pages.metamixer.scan_val = scaled
             bars.scan_val = scaled
-            state.levels = gaussian.calculate_gaussian_levels(state.pages.metamixer.scan_val, state.pages.metamixer
+            state.pages.metamixer.levels = gaussian.calculate_gaussian_levels(state.pages.metamixer.scan_val,
+                state.pages.metamixer
                 .sigma)
             for i = 1, 6 do
-                softcut.level(i, state.levels[i])
+                softcut.level(i, state.pages.metamixer.levels[i])
             end
         end
     }

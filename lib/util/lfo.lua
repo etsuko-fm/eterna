@@ -26,6 +26,83 @@ local function adjust_lfo_rate(state, d, lfo)
     lfo:set('period', new_val)
 end
 
+-- todo: verify gcd, decimal_to_fraction, lfo_period_labels; ai-generated
+local function gcd(a, b)
+    while b ~= 0 do
+        a, b = b, a % b
+    end
+    return a
+end
+
+local function decimal_to_fraction(x)
+    local precision = 1e-6
+    local denominator = 1
+    while true do
+        local numerator = x * denominator
+        if math.abs(numerator - math.floor(numerator + 0.5)) < precision then
+            numerator = math.floor(numerator + 0.5)
+            local g = gcd(numerator, denominator)
+            return numerator // g, denominator // g
+        end
+        denominator = denominator + 1
+        if denominator > 512 then break end -- prevent infinite loop
+    end
+    return x, 1 -- fallback
+end
+
+local lfo_period_labels = {}
+
+for _, v in ipairs(lfo_period_values) do
+    if v < 4 and v % 1 ~= 0 then
+        local num, denom = decimal_to_fraction(v)
+        lfo_period_labels[v] = string.format("%d/%d", num, denom)
+    else
+        lfo_period_labels[v] = tostring(v)
+    end
+end
+
+local function rate_to_period(rate)
+    -- period = 4 means 4 cycles per BPM
+    -- rate   = 4 cycles per bpm = 1/4
+    -- period >> rate: 4 becomes 1/4 >> 1 / period
+    -- 1/x is its own inverse
+    return 1/rate
+end
+
+local function gcd(a, b)
+    while b ~= 0 do
+        a, b = b, a % b
+    end
+    return a
+end
+
+local function decimal_to_fraction(x)
+    local precision = 1e-6
+    local denominator = 1
+    while true do
+        local numerator = x * denominator
+        if math.abs(numerator - math.floor(numerator + 0.5)) < precision then
+            numerator = math.floor(numerator + 0.5)
+            local g = gcd(numerator, denominator)
+            return numerator // g, denominator // g
+        end
+        denominator = denominator + 1
+        if denominator > 512 then break end -- prevent infinite loop
+    end
+    return x, 1 -- fallback
+end
+
+local lfo_period_labels = {}
+
+for _, v in ipairs(lfo_period_values) do
+    if v < 4 and v % 1 ~= 0 then
+        local num, denom = decimal_to_fraction(v)
+        lfo_period_labels[v] = string.format("%d/%d", num, denom)
+    else
+        lfo_period_labels[v] = tostring(v)
+    end
+end
+
 local function adjust_lfo_rate_quant(d, lfo)
     local values = lfo_period_values
     local current_val = lfo:get('period')
@@ -64,6 +141,7 @@ end
 
 return {
     lfo_period_values = lfo_period_values,
+    lfo_period_labels = lfo_period_labels,
     toggle_shape = toggle_shape,
     adjust_lfo_rate_quant = adjust_lfo_rate_quant,
     adjust_lfo_rate = adjust_lfo_rate,

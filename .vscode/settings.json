@@ -6,6 +6,7 @@
         "norns",
         "params",
         "_path",
-        "screen"
+        "screen",
+        "util"
     ]
 }
