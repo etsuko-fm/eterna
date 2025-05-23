@@ -1,7 +1,6 @@
 local Page = include("bits/lib/Page")
 local Window = include("bits/lib/graphics/Window")
 local Waveform = include("bits/lib/graphics/Waveform")
-local EchoGraphic = include("bits/lib/graphics/EchoGraphic")
 local page_name = "SAMPLING"
 local fileselect = require('fileselect')
 local page_disabled = false
@@ -10,18 +9,7 @@ local state_util = include("bits/lib/util/state")
 local misc_util = include("bits/lib/util/misc")
 
 local waveform
-local echo_graphic
 local window
-
-local MIN_FEEDBACK = 0
-local MAX_FEEDBACK = 100
-
-local MIN_TIME = 0.05
-local MAX_TIME = 2.0
-
-local MIN_MIX = 0
-local MAX_MIX = 100
-
 
 --[[
 Sample select page
@@ -56,28 +44,6 @@ local function update_waveform(state)
     end
 end
 
-local function adjust_time(state, d)
-    state_util.adjust_param(state.pages.sample.echo, 'time', d, 0.1, MIN_TIME, MAX_TIME)
-    state.enabled_section = { 0, state.pages.sample.echo.time }
-    state.sample_length = state.pages.sample.echo.time
-    state.max_sample_length = state.pages.sample.echo.time
-    update_softcut(state)
-end
-
-local function adjust_feedback(state, d)
-    state_util.adjust_param(
-        state.pages.sample.echo,
-        'feedback',
-        d,
-        1 + 10 ^ math.log(state.pages.sample.echo.feedback, 100) / 25,
-        MIN_FEEDBACK,
-        MAX_FEEDBACK
-    )
-
-    for i = 1, 6 do
-        softcut.pre_level(i, state.pages.sample.echo.feedback / 100)
-    end
-end
 
 local function path_to_file_name(file_path)
     -- strips '/foo/bar/audio.wav' to 'audio.wav'
@@ -99,76 +65,14 @@ local function select_sample(state)
     page_disabled = true -- don't render current page
 end
 
-
-
-local function switch_mode(state)
-    -- switch between delay mode and sample mode
-    if state.pages.sample.mode == SAMPLE_MODE["SAMPLE"] then
-        state.pages.sample.mode = SAMPLE_MODE["DELAY"]
-
-        -- clear the buffer, may have leftovers if delay mode has been activated before in the session
-        softcut.buffer_clear_channel(2)
-
-        -- voice 1 will be recording to buffer 2
-
-        -- adc is analog-to-digital, i.e. analog input channels
-        audio.level_adc_cut(1)
-        audio.level_eng_cut(0)
-        audio.level_tape_cut(0)
-        local rec = 1.0
-        local pre = state.pages.sample.echo.feedback / 100 -- 0 to 1 
-        local delay_time = 2                               -- seconds
-        -- all voices playback from buffer 2
-        for i = 1, 6 do
-            -- buffer beperken tot delay_time
-            softcut.buffer(i, 2)
-            softcut.rec(i, 1)
-            softcut.level_input_cut(1, i, 0.5)
-            softcut.level_input_cut(2, i, 0.5)
-            softcut.rec_level(i, rec)
-            -- set voice 1 pre level
-            softcut.pre_level(i, pre)
-        end
-        state.sample_length = delay_time
-        state.max_sample_length = delay_time
-        -- update enabled section, function defined in slice page
-        update_enabled_section(state)
-        update_softcut(state)
-    else
-        -- turn off recording, switch back to buffer 1
-        state.pages.sample.mode = SAMPLE_MODE["SAMPLE"]
-        softcut.rec(1, 0)
-        for i = 1, 6 do
-            softcut.buffer(i, 1)
-            softcut.rec(i, 0)
-        end
-    end
-end
-
-local function adjust_mix(state, d)
-    state_util.adjust_param(state.pages.sample.echo, 'mix', d, 1, MIN_MIX, MAX_MIX)
-end
-
-local function e2(state, d)
-    if state.pages.sample.mode == SAMPLE_MODE["DELAY"] then
-        -- adjust_time(state, d)
-    end
-end
-
-local function e3(state, d)
-    if state.pages.sample.mode == SAMPLE_MODE["DELAY"] then
-        adjust_feedback(state, d)
-    end
-end
-
 local page = Page:create({
     name = page_name,
-    e2 = e2,
-    e3 = e3,
+    e2 = nil,
+    e3 = nil,
     k1_hold_on = nil,
     k1_hold_off = nil,
     k2_on = nil,
-    k2_off = switch_mode,
+    k2_off = nil,
     k3_on = nil,
     k3_off = select_sample,
 })
@@ -179,33 +83,19 @@ function page:render(state)
         return
     end -- for rendering the fileselect interface
 
-
-    page.footer.button_text.k2.value = state.pages.sample.mode
-    if state.pages.sample.mode == SAMPLE_MODE["DELAY"] then
-        page.footer.button_text.k3.name = "STYLE"
-        page.footer.button_text.e2.name = "TIME"
-        page.footer.button_text.e3.name = "FEEDB"
-        page.footer.button_text.e3.value = "FEEDB"
-        page.footer.button_text.e2.value = misc_util.trim(tostring(state.pages.sample.echo.time), 5)
-        page.footer.button_text.e3.value = misc_util.trim(tostring(state.pages.sample.echo.feedback), 5)
-        echo_graphic.feedback = util.linlin(MIN_FEEDBACK, MAX_FEEDBACK, 0, 1, state.pages.sample.echo.feedback)
-        echo_graphic.time = util.linlin(MIN_TIME, MAX_TIME, 0, 1, state.pages.sample.echo.time)
-        echo_graphic:render()
-    else
-        page.footer.button_text.k3.name = "LOAD"
-        page.footer.button_text.e2.name = ""
-        page.footer.button_text.e3.name = ""
-        page.footer.button_text.e2.value = ""
-        page.footer.button_text.e3.value = ""
-        update_waveform(state)
-        waveform.vertical_scale = state.pages.sample.scale_waveform
-        waveform:render()
-        -- show filename and sample length
-        screen.font_face(state.default_font)
-        screen.level(5)
-        screen.move(34, 46)
-        screen.text(misc_util.trim(state.pages.sample.filename, 16))
-    end
+    page.footer.button_text.k3.name = "LOAD"
+    page.footer.button_text.e2.name = ""
+    page.footer.button_text.e3.name = ""
+    page.footer.button_text.e2.value = ""
+    page.footer.button_text.e3.value = ""
+    update_waveform(state)
+    waveform.vertical_scale = state.pages.sample.scale_waveform
+    waveform:render()
+    -- show filename and sample length
+    screen.font_face(state.default_font)
+    screen.level(5)
+    screen.move(34, 46)
+    screen.text(misc_util.trim(state.pages.sample.filename, 16))
     window:render()
     -- screen.update()
     page.footer:render()
@@ -275,13 +165,7 @@ function page:initialize(state)
         samples = state.pages.sample.waveform_samples,
     })
 
-    echo_graphic = EchoGraphic:new({
-        feedback = state.pages.sample.echo.feedback,
-        max_feedback = MAX_FEEDBACK,
-        time = state.pages.sample.echo.time,
-    })
-
-    -- setup callback1
+    -- setup callback
     softcut.event_render(on_render)
     softcut.render_buffer(1, 0, state.sample_length, state.pages.sample.waveform_width)
 end

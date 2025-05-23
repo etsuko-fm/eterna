@@ -13,6 +13,9 @@ local panning_graphic
 -- width of the panning bars
 local PANNING_RANGE_PIXELS = 32
 
+local PARAM_ID_LFO_ENABLED = "panning_lfo_enabled"
+local PARAM_ID_LFO_SHAPE = "panning_lfo_shape"
+local LFO_SHAPES = { "sine", "up", "down", "random" }
 
 local function calculate_pan_positions(state)
     for i = 0, 5 do
@@ -36,17 +39,13 @@ end
 
 
 local function toggle_lfo(state)
-    print(state.pages.panning.lfo:get("enabled"))
-    if state.pages.panning.lfo:get("enabled") == 1 then
-        state.pages.panning.lfo:stop()
-    else
-        state.pages.panning.lfo:start()
-    end
+    params:set(PARAM_ID_LFO_ENABLED, 1 - state.pages.panning.lfo:get("enabled"), false)
 end
 
 local function toggle_shape(state)
-    shapes = { "sine", "up", "down", "random" }
-    lfo_util.toggle_shape(state.pages.panning.lfo, shapes)
+    local index = params:get(PARAM_ID_LFO_SHAPE)
+    local next_index = (index % #LFO_SHAPES) + 1
+    params:set(PARAM_ID_LFO_SHAPE, next_index, false)
 end
 
 
@@ -94,6 +93,20 @@ end
 
 local function add_params(state)
     params:add_separator("PANNING", page_name)
+    params:add_binary(PARAM_ID_LFO_ENABLED, "LFO enabled", "toggle", 0)
+    params:set_action(PARAM_ID_LFO_ENABLED,
+        function()
+            if state.pages.panning.lfo:get("enabled") == 1 then
+                state.pages.panning.lfo:stop()
+            else
+                state.pages.panning.lfo:start()
+            end
+        end
+    )
+
+    params:add_option(PARAM_ID_LFO_SHAPE, "LFO shape", LFO_SHAPES, 1)
+    params:set_action(PARAM_ID_LFO_SHAPE, function() state.pages.panning.lfo:set('shape', params:string(PARAM_ID_LFO_SHAPE)) end)
+
 end
 
 function page:initialize(state)

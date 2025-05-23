@@ -41,16 +41,11 @@ end
 local function toggle_shape(state)
     local index = params:get(PARAM_ID_LFO_SHAPE)
     local next_index = (index % #LFO_SHAPES) + 1
-    params:set(PARAM_ID_LFO_SHAPE, next_index, false)
+    params:set(PARAM_ID_LFO_SHAPE, next_index, false) -- todo: is there a way to scroll through the params values?
 end
 
 local function toggle_lfo(state)
-    if state.pages.metamixer.lfo:get("enabled") == 1 then
-        state.pages.metamixer.lfo:stop()
-    else
-        state.pages.metamixer.lfo:start()
-    end
-    state.pages.metamixer.lfo:set('phase', state.pages.metamixer.scan_val)
+    params:set(PARAM_ID_LFO_ENABLED, 1 - state.pages.metamixer.lfo:get("enabled"), false)
 end
 
 local function gaussian_scan(state, d)
@@ -95,7 +90,6 @@ local page = Page:create({
 })
 
 function page:render(state)
-    -- todo: this should be a graphic component, the entire thing belongs together
     state.pages.metamixer.levels = gaussian.calculate_gaussian_levels(state.pages.metamixer.scan_val,
         state.pages.metamixer.sigma)
     bars.levels = state.pages.metamixer.levels
@@ -124,14 +118,23 @@ end
 local function add_params(state)
     params:add_separator("BITS_LEVELS", "LEVELS")
 
-    params:add_binary(PARAM_ID_LFO_ENABLED, "LFO enabled", "toggle", 1)
-    params:set_action(PARAM_ID_LFO_ENABLED, function() toggle_lfo(state) end)
+    params:add_binary(PARAM_ID_LFO_ENABLED, "LFO enabled", "toggle", 0)
+    params:set_action(PARAM_ID_LFO_ENABLED, 
+        function()
+            if state.pages.metamixer.lfo:get("enabled") == 1 then
+                state.pages.metamixer.lfo:stop()
+            else
+                state.pages.metamixer.lfo:start()
+            end
+            state.pages.metamixer.lfo:set('phase', state.pages.metamixer.scan_val)            
+        end
+    )
 
     params:add_option(PARAM_ID_LFO_SHAPE, "LFO shape", LFO_SHAPES, 1)
     params:set_action(PARAM_ID_LFO_SHAPE, function() state.pages.metamixer.lfo:set('shape', params:string(PARAM_ID_LFO_SHAPE)) end)
 
     params:add_option("levels_lfo_rate", "LFO rate", lfo_util.lfo_period_values, 1)
-    params:set_action("levels_lfo_rate", function() adjust_lfo_rate(state, d) end)
+    params:set_action("levels_lfo_rate", function() adjust_lfo_rate(state, d) end) --todo: d? 
 
     params:add_number("levels_position", "Position", POSITION_MIN, POSITION_MAX)
     params:set_action("levels_position", function() end)

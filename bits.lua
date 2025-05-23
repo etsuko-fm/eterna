@@ -13,22 +13,16 @@ local page_levels = include("bits/lib/pages/levels")
 local page_sampling = include("bits/lib/pages/sampling")
 local page_panning = include("bits/lib/pages/panning")
 local page_slice = include("bits/lib/pages/slice")
-local page_p foitch = include("bits/lib/pages/pitch")
+local page_pitch = include("bits/lib/pages/pitch")
 
 local debug_mode = true
 local fps = 60
 local ready
--- engine.name = "Sines"
 
 PLAYBACK_DIRECTION = {
   FWD = "FWD",
   REV = "REV",
   FWD_REV = "FWD_REV"
-}
-
-SAMPLE_MODE = {
-  SAMPLE = "SAMPLE",
-  DELAY = "DELAY",
 }
 
 local state = {
@@ -82,17 +76,11 @@ local state = {
       direction = PLAYBACK_DIRECTION["FWD_REV"],
     },
     sample = {
-      mode = SAMPLE_MODE["SAMPLE"],
       waveform_samples = {},
       waveform_width = 59,
       scale_waveform = 10,
       filename = "",
       selected_sample = _path.audio .. "etsuko/sea-minor/sea-minor-chords.wav",
-      echo = {
-        feedback = 80, -- 0 to 100, user-friendly value
-        time = 4, -- seconds
-        mix = 100, -- 0 to 100
-      }
     }
   },
   -- event system
