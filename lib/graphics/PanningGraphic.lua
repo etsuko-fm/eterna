@@ -7,7 +7,7 @@ PanningGraphic = {
     bar_h = 4,
     margin_h = 2,
     hide = false,
-    twist = math.pi / 12, -- controls x position of each bar, in radians
+    twist = 0, -- controls x position of each bar, in radians
 }
 
 function PanningGraphic:new(o)
