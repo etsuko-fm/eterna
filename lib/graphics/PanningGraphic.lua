@@ -2,7 +2,8 @@ PanningGraphic = {
     -- PanningBars? HorizontalMetaPanner?
     x = 64,
     y = 11,
-    w = 32,
+    spread = 1, -- 0 to 1
+    pixel_width=32,
     bar_w = 2,
     bar_h = 4,
     margin_h = 2,
@@ -35,8 +36,8 @@ function PanningGraphic:render()
 
         -- cos goes from -1 to 1, bidirectional and center-based hence the /2
         -- bar should be centered when math.cos(anglex) == 0; therefore -self.bar_w/2
-        -- self.w is half the total width (as cos is +/-1), therefore half the width is subtracted from the total available motion range
-        local x_float =  -self.bar_w/2 + ((self.w - self.bar_w/2) * math.cos(anglex))
+        -- self.spread*self.pixel_width is half the total width (as cos is +/-1), therefore half the width is subtracted from the total available motion range
+        local x_float =  -self.bar_w/2 + ((self.spread*self.pixel_width - self.bar_w/2) * math.cos(anglex))
         local x = math.floor(self.x + x_float + .5)
         local y = math.floor(self.y + (self.bar_h + self.margin_h) * i)
         screen.move(x,y)

@@ -54,7 +54,6 @@ local state = {
     panning = {
       lfo = nil,
       twist = 0,
-      spread = 32,
       pan_positions = { 0, 0, 0, 0, 0, 0, },
       default_lfo_period = 6,
     },

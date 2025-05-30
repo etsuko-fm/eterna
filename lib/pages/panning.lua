@@ -10,50 +10,50 @@ local window
 
 local panning_graphic
 
--- width of the panning bars
-local PANNING_RANGE_PIXELS = 32
-
 local PARAM_ID_LFO_ENABLED = "panning_lfo_enabled"
 local PARAM_ID_LFO_SHAPE = "panning_lfo_shape"
 local PARAM_ID_LFO_RATE = "panning_lfo_rate"
 local PARAM_ID_TWIST = "panning_twist"
-local PARAM_ID_WIDTH = "panning_width"
+local PARAM_ID_SPREAD = "panning_spread"
 
 local TWIST_MIN = 0
-local TWIST_MAX =  1
+local TWIST_MAX = 1
 
-local SPREAD_MIN = 1
-local SPREAD_MAX = PANNING_RANGE_PIXELS
+local SPREAD_MIN = 0
+local SPREAD_MAX = 1
 
-local  controlspec_twist = controlspec.def {
-        min = TWIST_MIN, -- the minimum value
-        max = TWIST_MAX, -- the maximum value
-        warp = 'lin', -- a shaping option for the raw value
-        step = 0.005, -- output value quantization
-        default = 0, -- default value
-        units = '', -- displayed on PARAMS UI
-        quantum = 0.005, -- each delta will change raw value by this much
-        wrap = true -- wrap around on overflow (true) or clamp (false)
-    }
+local controlspec_twist = controlspec.def {
+    min = TWIST_MIN,     -- the minimum value
+    max = TWIST_MAX,     -- the maximum value
+    warp = 'lin',        -- a shaping option for the raw value
+    step = 0.005,        -- output value quantization
+    default = 0,         -- default value
+    units = '',          -- displayed on PARAMS UI
+    quantum = 0.005,     -- each delta will change raw value by this much
+    wrap = true          -- wrap around on overflow (true) or clamp (false)
+}
 
 local controlspec_spread = controlspec.def {
     min = SPREAD_MIN, -- the minimum value
     max = SPREAD_MAX, -- the maximum value
-    warp = 'lin', -- a shaping option for the raw value
-    step = 0.005, -- output value quantization
-    default = 0, -- default value
-    units = '', -- displayed on PARAMS UI
-    quantum = 0.005, -- each delta will change raw value by this much
-    wrap = true -- wrap around on overflow (true) or clamp (false)
+    warp = 'lin',     -- a shaping option for the raw value
+    step = 0.01,      -- output value quantization
+    default = 1.0,      -- default value
+    units = '',       -- displayed on PARAMS UI
+    quantum = 0.01,   -- each delta will change raw value by this much
+    wrap = false      -- wrap around on overflow (true) or clamp (false)
 }
 
 local LFO_SHAPES = { "sine", "up", "down", "random" }
 
 local function calculate_pan_positions(state)
     local twist = params:get(PARAM_ID_TWIST)
+    local spread = params:get(PARAM_ID_SPREAD)
     for i = 0, 5 do
-        local angle = (i / 6) * (math.pi * 2) + twist -- Divide full circle into 6 parts
-        state.pages.panning.pan_positions[i + 1] = state.pages.panning.spread / PANNING_RANGE_PIXELS * math.cos(angle)
+        local angle = (i / 6) * (math.pi * 2) + twist -- Divide the range of radians into 6 equal parts, add offset
+
+        -- could remove panning range here
+        state.pages.panning.pan_positions[i + 1] = spread * math.cos(angle)
     end
     for i = 1, 6 do
         softcut.pan(i, state.pages.panning.pan_positions[i])
@@ -61,13 +61,14 @@ local function calculate_pan_positions(state)
 end
 
 local function adjust_spread(state, d)
-    state_util.adjust_param(state.pages.panning, 'spread', d, 1, SPREAD_MIN, SPREAD_MAX, false)
-    calculate_pan_positions(state)
+    local incr = d * controlspec_spread.quantum
+    local curr = params:get(PARAM_ID_SPREAD)
+    local new_val = curr + incr
+    params:set(PARAM_ID_SPREAD, new_val, false)
 end
 
 local function adjust_twist(state, d)
-    -- state_util.adjust_param(state.pages.panning, 'twist', d / 10, 1, TWIST_MIN, TWIST_MAX, true)
-    local incr = d*controlspec_twist.quantum
+    local incr = d * controlspec_twist.quantum
     local curr = params:get(PARAM_ID_TWIST)
     local new_val = curr + incr
     params:set(PARAM_ID_TWIST, new_val, false)
@@ -109,20 +110,22 @@ local page = Page:create({
 function page:render(state)
     window:render()
     local twist = params:get(PARAM_ID_TWIST)
-    panning_graphic.w = state.pages.panning.spread
+    local spread = params:get(PARAM_ID_SPREAD)
     panning_graphic:render()
     if state.pages.panning.lfo:get("enabled") == 1 then
         -- When LFO is disabled, E2 controls LFO rate
         page.footer.button_text.k2.value = "ON"
         page.footer.button_text.e2.name = "RATE"
-        page.footer.button_text.e2.value = misc_util.trim(tostring(state.pages.panning.lfo:get('period')), 5)
+        -- convert period to label representation
+        local period = state.pages.panning.lfo:get('period')
+        page.footer.button_text.e2.value = lfo_util.lfo_period_value_labels[period]
     else
         -- When LFO is disabled, E2 controls pan position
         page.footer.button_text.k2.value = "OFF"
         page.footer.button_text.e2.name = "TWIST"
         page.footer.button_text.e2.value = misc_util.trim(tostring(twist), 5)
     end
-    page.footer.button_text.e3.value = misc_util.trim(tostring(state.pages.panning.spread), 5)
+    page.footer.button_text.e3.value = misc_util.trim(tostring(spread), 5)
     page.footer.button_text.k3.value = string.upper(state.pages.panning.lfo:get("shape"))
     page.footer:render()
 end
@@ -137,17 +140,33 @@ local function add_params(state)
             else
                 state.pages.panning.lfo:start()
             end
+            state.pages.panning.lfo:set('phase', params:get(PARAM_ID_TWIST))
         end
     )
 
     params:add_option(PARAM_ID_LFO_SHAPE, "LFO shape", LFO_SHAPES, 1)
-    params:set_action(PARAM_ID_LFO_SHAPE, function() state.pages.panning.lfo:set('shape', params:string(PARAM_ID_LFO_SHAPE)) end)
+    params:set_action(PARAM_ID_LFO_SHAPE,
+        function() state.pages.panning.lfo:set('shape', params:string(PARAM_ID_LFO_SHAPE)) end)
+
+    params:add_option(PARAM_ID_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels)
+    params:set_action(PARAM_ID_LFO_RATE,
+        function() state.pages.panning.lfo:set('period', lfo_util.lfo_period_label_values[params:string(PARAM_ID_LFO_RATE)]) end)
+
 
     params:add_control(PARAM_ID_TWIST, "twist", controlspec_twist)
     params:set_action(PARAM_ID_TWIST,
-        function ()
+        function()
             calculate_pan_positions(state)
+            -- convert 0-1 to radians
             panning_graphic.twist = params:get(PARAM_ID_TWIST) * math.pi * 2
+        end
+    )
+
+    params:add_control(PARAM_ID_SPREAD, "spread", controlspec_spread)
+    params:set_action(PARAM_ID_SPREAD,
+        function()
+            calculate_pan_positions(state)
+            panning_graphic.spread = params:get(PARAM_ID_SPREAD)
         end
     )
 end
@@ -169,7 +188,8 @@ function page:initialize(state)
     })
     -- graphics
     panning_graphic = PanningGraphic:new({
-        w = state.pages.panning.spread,
+        twist = params:get(PARAM_ID_TWIST) * math.pi * 2,
+        spread = params:get(PARAM_ID_SPREAD),
     })
     page.footer = Footer:new({
         button_text = {
@@ -198,7 +218,7 @@ function page:initialize(state)
         min = 0,
         max = 1,
         depth = 1,
-        mode = 'free',
+        mode = 'clocked',
         period = state.pages.panning.default_lfo_period,
         phase = 0,
         action = function(scaled, raw)

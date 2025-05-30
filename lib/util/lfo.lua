@@ -1,30 +1,24 @@
 local lfo_period_values = {
-        1/8, 1/6, 1/4, 1/3, 1/2, 
-        1, 1.25, 1 + 1/3, 1.5, 1 + 2/3, 1.75,
-        2, 2.25, 2 + 1/3, 2.5, 2 + 2/3, 2.75,
-        3, 3.25, 3 + 1/3, 3.5, 3 + 2/3, 3.75,
-        4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-        22, 24, 26, 28, 30, 32, 33, 34, 36, 38, 40, 48, 50,
-        52, 56, 60, 64, 68, 72, 75, 76, 80, 84, 88, 92, 96, 
-        100, 104, 108, 112, 116, 120, 124, 125, 128, 132, 136, 140, 144, 148, 150, 152, 
-        156, 160, 164, 168, 172, 175, 176, 180, 184, 188, 192, 196, 200, 204, 208, 
-        212, 216, 220, 224, 225, 228, 232, 236, 240, 244, 248, 250, 252, 256
+    1 / 32, 1 / 24, 1 / 16, 1 / 12, 1 / 8, 1 / 6, 1 / 4, 1 / 3, 3 / 8, 1 / 2, 5 / 8, 3 / 4, 7 / 8, 15 / 16,
+    1, 1.5,
+    2, 2.5,
+    3,
+    4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    22, 24, 26, 28, 30, 32, 33, 34, 36, 38, 40, 48, 50,
+    52, 56, 60, 64, 68, 72, 75, 76, 80, 84, 88, 92, 96,
+    100, 104, 108, 112, 116, 120, 124, 125, 128, 132, 136, 140, 144, 148, 150, 152,
+    156, 160, 164, 168, 172, 175, 176, 180, 184, 188, 192, 196, 200, 204, 208,
+    212, 216, 220, 224, 225, 228, 232, 236, 240, 244, 248, 250, 252, 256
 }
 
-local function adjust_lfo_rate(state, d, lfo)
-    local k = (10 ^ math.log(lfo:get('period'), 10)) / 50
-    local min = 0.2
-    local max = 256
+-- labels only, e.g. for paramset options
+local lfo_period_labels = {}
 
-    new_val = lfo:get('period') + (d * k)
-    if new_val < min then
-        new_val = min
-    end
-    if new_val > max then
-        new_val = max
-    end
-    lfo:set('period', new_val)
-end
+-- for converting from label to float value
+local lfo_period_label_values = {}
+
+-- for converting from float value to label
+local lfo_period_value_labels = {}
 
 -- todo: verify gcd, decimal_to_fraction, lfo_period_labels; ai-generated
 local function gcd(a, b)
@@ -34,46 +28,13 @@ local function gcd(a, b)
     return a
 end
 
-local function decimal_to_fraction(x)
-    local precision = 1e-6
-    local denominator = 1
-    while true do
-        local numerator = x * denominator
-        if math.abs(numerator - math.floor(numerator + 0.5)) < precision then
-            numerator = math.floor(numerator + 0.5)
-            local g = gcd(numerator, denominator)
-            return numerator // g, denominator // g
-        end
-        denominator = denominator + 1
-        if denominator > 512 then break end -- prevent infinite loop
-    end
-    return x, 1 -- fallback
-end
-
-local lfo_period_labels = {}
-
-for _, v in ipairs(lfo_period_values) do
-    if v < 4 and v % 1 ~= 0 then
-        local num, denom = decimal_to_fraction(v)
-        lfo_period_labels[v] = string.format("%d/%d", num, denom)
-    else
-        lfo_period_labels[v] = tostring(v)
-    end
-end
 
 local function rate_to_period(rate)
     -- period = 4 means 4 cycles per BPM
     -- rate   = 4 cycles per bpm = 1/4
     -- period >> rate: 4 becomes 1/4 >> 1 / period
     -- 1/x is its own inverse
-    return 1/rate
-end
-
-local function gcd(a, b)
-    while b ~= 0 do
-        a, b = b, a % b
-    end
-    return a
+    return 1 / rate
 end
 
 local function decimal_to_fraction(x)
@@ -89,21 +50,27 @@ local function decimal_to_fraction(x)
         denominator = denominator + 1
         if denominator > 512 then break end -- prevent infinite loop
     end
-    return x, 1 -- fallback
+    return x, 1                             -- fallback
 end
 
-local lfo_period_labels = {}
-
-for _, v in ipairs(lfo_period_values) do
+local function fraction_to_label(v)
     if v < 4 and v % 1 ~= 0 then
         local num, denom = decimal_to_fraction(v)
-        lfo_period_labels[v] = string.format("%d/%d", num, denom)
+        return string.format("%d/%d", num, denom)
     else
-        lfo_period_labels[v] = tostring(v)
+        return tostring(v)
     end
 end
 
+for i, v in ipairs(lfo_period_values) do
+    local label = fraction_to_label(v)
+    lfo_period_label_values[label] = v
+    lfo_period_labels[i] = label
+    lfo_period_value_labels[v] = label
+end
+
 local function adjust_lfo_rate_quant(d, lfo)
+    -- d should be a positive or negative integer
     local values = lfo_period_values
     local current_val = lfo:get('period')
 
@@ -142,7 +109,8 @@ end
 return {
     lfo_period_values = lfo_period_values,
     lfo_period_labels = lfo_period_labels,
+    lfo_period_value_labels = lfo_period_value_labels,
+    lfo_period_label_values = lfo_period_label_values,
     toggle_shape = toggle_shape,
     adjust_lfo_rate_quant = adjust_lfo_rate_quant,
-    adjust_lfo_rate = adjust_lfo_rate,
 }

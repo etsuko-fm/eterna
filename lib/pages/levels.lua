@@ -126,7 +126,7 @@ local function add_params(state)
             else
                 state.pages.metamixer.lfo:start()
             end
-            state.pages.metamixer.lfo:set('phase', state.pages.metamixer.scan_val)            
+            state.pages.metamixer.lfo:set('phase', state.pages.metamixer.scan_val)
         end
     )
 
@@ -201,7 +201,7 @@ function page:initialize(state)
         min = 0,
         max = 1,
         depth = 1,
-        mode = 'free',
+        mode = 'clocked',
         period = state.pages.metamixer.lfo_period,
         phase = 0,
         action = function(scaled, raw)
