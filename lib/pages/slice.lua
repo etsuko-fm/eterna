@@ -116,7 +116,7 @@ function page:render(state)
     if state.pages.slice.lfo:get("enabled") == 1 then
         -- When LFO is disabled, E2 controls LFO rate
         page.footer.button_text.k2.value = "ON"
-        page.footer.button_text.e2.name = "PERIOD"
+        page.footer.button_text.e2.name = "RATE"
         page.footer.button_text.e2.value = misc_util.trim(tostring(state.pages.slice.lfo:get('period')), 5)
     else
         -- When LFO is disabled, E2 controls scan position

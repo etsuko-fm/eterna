@@ -74,7 +74,6 @@ local function adjust_twist(state, d)
     params:set(PARAM_ID_TWIST, new_val, false)
 end
 
-
 local function toggle_lfo(state)
     params:set(PARAM_ID_LFO_ENABLED, 1 - state.pages.panning.lfo:get("enabled"), false)
 end
@@ -84,7 +83,6 @@ local function toggle_shape(state)
     local next_index = (index % #LFO_SHAPES) + 1
     params:set(PARAM_ID_LFO_SHAPE, next_index, false)
 end
-
 
 local function e2(state, d)
     if state.pages.panning.lfo:get("enabled") == 1 then

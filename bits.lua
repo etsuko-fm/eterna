@@ -45,11 +45,8 @@ local state = {
   pages = {
     -- scanning / gaussian graph settings
     metamixer = {
-      scan_val = 0.5,                 -- 0 to 1; allows scanning through softcut voices (think smooth soloing/muting)
-      levels = { 0, 0, 0, 0, 0, 0, }, -- softcut levels; initialized later by the metamixer page
       sigma = 2,                      -- Width of the gaussian curve, adjustable for sharper or broader curves
       lfo = nil,
-      lfo_period = 6,
     },
     panning = {
       lfo = nil,
@@ -138,7 +135,6 @@ local function enable_all_voices()
     softcut.loop(i, 1)
     softcut.play(i, 1)
     softcut.fade_time(i, state.fade_time)
-    softcut.level(i, state.pages.metamixer.levels[i])
   end
 end
 
