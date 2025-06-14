@@ -56,19 +56,30 @@ local controlspec_amp = controlspec.def {
 }
 
 
-local function map_sigma(v)
+local function sigma_to_amp(v)
     return util.explin(SIGMA_MIN, SIGMA_MAX, 0, 1, v)
 end
 
+local function amp_to_sigma(v)
+        return util.linexp(0, 1, SIGMA_MIN, SIGMA_MAX, v)
+
+end
+
+
 local function adjust_sigma(state, d)
-    local k = (10 ^ math.log(state.pages.metamixer.sigma, 10)) / 25
-    state_util.adjust_param(state.pages.metamixer, 'sigma', d, k, state.pages.metamixer.sigma_min,
-        state.pages.metamixer.sigma_max, false)
-    local levels = gaussian.calculate_gaussian_levels(params:get(PARAM_ID_POS),
-        state.pages.metamixer.sigma)
-    for i = 1, 6 do
-        softcut.level(i, levels[i])
-    end
+    -- local k = (10 ^ math.log(state.pages.metamixer.sigma, 10)) / 25
+    -- state_util.adjust_param(state.pages.metamixer, 'sigma', d, k, state.pages.metamixer.sigma_min,
+    --     state.pages.metamixer.sigma_max, false)
+    -- local levels = gaussian.calculate_gaussian_levels(params:get(PARAM_ID_POS),
+    --     state.pages.metamixer.sigma)
+    -- for i = 1, 6 do
+    --     softcut.level(i, levels[i])
+    -- end
+    local incr = d * controlspec_amp.quantum
+    local curr = params:get(PARAM_ID_AMP)
+    local new_val = curr + incr
+    params:set(PARAM_ID_AMP, new_val, false)
+
 end
 
 local function toggle_shape(state)
@@ -121,8 +132,8 @@ local page = Page:create({
 })
 
 function page:render(state)
-    bars_graphic.levels = gaussian.calculate_gaussian_levels(params:get(PARAM_ID_POS),
-        state.pages.metamixer.sigma)
+    local sigma = amp_to_sigma(params:get(PARAM_ID_AMP))
+    bars_graphic.levels = gaussian.calculate_gaussian_levels(params:get(PARAM_ID_POS), sigma)
     screen.clear()
     bars_graphic:render()
 
@@ -177,9 +188,8 @@ local function add_actions(state)
         function() state.pages.metamixer.lfo:set('shape', params:string(PARAM_ID_LFO_SHAPE)) end)
 
     params:set_action(PARAM_ID_AMP, function()
-        local sigma = map_sigma(params:get(PARAM_ID_AMP))
-        local levels = gaussian.calculate_gaussian_levels(params:get(PARAM_ID_POS),
-            state.pages.metamixer.sigma)
+        local sigma = amp_to_sigma(params:get(PARAM_ID_AMP))
+        local levels = gaussian.calculate_gaussian_levels(params:get(PARAM_ID_POS), sigma)
         for i = 1, 6 do
             softcut.level(i, levels[i])
         end
