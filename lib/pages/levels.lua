@@ -18,13 +18,20 @@ local PARAM_ID_LFO_ENABLED = "levels_lfo_enabled"
 local PARAM_ID_LFO_SHAPE = "levels_lfo_shape"
 local PARAM_ID_LFO_RATE = "levels_lfo_rate"
 local PARAM_ID_POS = "levels_pos"
-local PARAM_ID_SIGMA = "levels_sigma"
+local PARAM_ID_AMP = "levels_sigma"
 
 local POSITION_MIN = 0
 local POSITION_MAX = 1
 
+
+-- Sigma - i.e. the Gaussian distribution concept
 local SIGMA_MIN = 0.3
 local SIGMA_MAX = 15
+
+-- User-friendly version of sigma () - maps sigma range to 0-1
+local AMP_MIN = 0
+local AMP_MAX = 1
+
 
 local controlspec_pos = controlspec.def {
     min = POSITION_MIN, -- the minimum value
@@ -37,9 +44,9 @@ local controlspec_pos = controlspec.def {
     wrap = true         -- wrap around on overflow (true) or clamp (false)
 }
 
-local controlspec_sigma = controlspec.def {
-    min = SIGMA_MIN, -- the minimum value
-    max = SIGMA_MAX, -- the maximum value
+local controlspec_amp = controlspec.def {
+    min = AMP_MIN, -- the minimum value
+    max = AMP_MAX, -- the maximum value
     warp = 'lin',    -- a shaping option for the raw value
     step = 0.01,     -- output value quantization
     default = 1.0,   -- default value
@@ -49,7 +56,7 @@ local controlspec_sigma = controlspec.def {
 }
 
 
-local function map_sigma(state, v)
+local function map_sigma(v)
     return util.explin(SIGMA_MIN, SIGMA_MAX, 0, 1, v)
 end
 
@@ -135,15 +142,12 @@ function page:render(state)
         page.footer.button_text.e2.value = misc_util.trim(tostring(params:get(PARAM_ID_POS)), 5)
     end
     page.footer.button_text.k3.value = string.upper(params:string(PARAM_ID_LFO_SHAPE))
-    page.footer.button_text.e3.value = misc_util.trim(tostring(map_sigma(state, state.pages.metamixer.sigma)), 5)
+    page.footer.button_text.e3.value = misc_util.trim(tostring(params:get(PARAM_ID_AMP)), 5)
 
     page.footer:render()
 end
 
-local function add_params(state)
-    params:add_separator("BITS_LEVELS", "LEVELS")
-
-    params:add_binary(PARAM_ID_LFO_ENABLED, "LFO enabled", "toggle", 0)
+local function add_actions(state)
     params:set_action(PARAM_ID_LFO_ENABLED,
         function()
             if state.pages.metamixer.lfo:get("enabled") == 1 then
@@ -155,21 +159,13 @@ local function add_params(state)
         end
     )
 
-    params:add_option(PARAM_ID_LFO_SHAPE, "LFO shape", LFO_SHAPES, 1)
-    params:set_action(PARAM_ID_LFO_SHAPE,
-        function() state.pages.metamixer.lfo:set('shape', params:string(PARAM_ID_LFO_SHAPE)) end)
-    print(state.pages.metamixer.lfo_period)
-    print(lfo_util.lfo_period_value_labels[state.pages.metamixer.lfo_period])
-    local default_rate_index = 20
-    local default_rate = lfo_util.lfo_period_values[default_rate_index]
-    params:add_option(PARAM_ID_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, default_rate)
     params:set_action(PARAM_ID_LFO_RATE,
         function()
             state.pages.metamixer.lfo:set('period',
                 lfo_util.lfo_period_label_values[params:string(PARAM_ID_LFO_RATE)])
         end)
 
-    params:add_control(PARAM_ID_POS, "position", controlspec_pos)
+
     params:set_action(PARAM_ID_POS, function()
         local levels = gaussian.calculate_gaussian_levels(params:get(PARAM_ID_POS),
             state.pages.metamixer.sigma)
@@ -177,9 +173,30 @@ local function add_params(state)
             softcut.level(i, levels[i])
         end
     end)
+    params:set_action(PARAM_ID_LFO_SHAPE,
+        function() state.pages.metamixer.lfo:set('shape', params:string(PARAM_ID_LFO_SHAPE)) end)
 
-    params:add_control(PARAM_ID_SIGMA, "sigma", controlspec_sigma)
-    params:set_action(PARAM_ID_SIGMA, function() end)
+    params:set_action(PARAM_ID_AMP, function()
+        local sigma = map_sigma(params:get(PARAM_ID_AMP))
+        local levels = gaussian.calculate_gaussian_levels(params:get(PARAM_ID_POS),
+            state.pages.metamixer.sigma)
+        for i = 1, 6 do
+            softcut.level(i, levels[i])
+        end
+    end)
+end
+
+
+local function add_params(state)
+    params:add_separator("BITS_LEVELS", "LEVELS")
+    params:add_binary(PARAM_ID_LFO_ENABLED, "LFO enabled", "toggle", 0)
+    params:add_option(PARAM_ID_LFO_SHAPE, "LFO shape", LFO_SHAPES, 1)
+    local default_rate_index = 20
+    local default_rate = lfo_util.lfo_period_values[default_rate_index]
+    params:add_option(PARAM_ID_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, default_rate)
+    params:add_control(PARAM_ID_POS, "position", controlspec_pos)
+    params:add_control(PARAM_ID_AMP, "amp", controlspec_amp)
+    add_actions(state)
 end
 
 function page:initialize(state)

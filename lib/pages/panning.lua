@@ -1,7 +1,6 @@
 local Page = include("bits/lib/Page")
 local Window = include("bits/lib/graphics/Window")
 local PanningGraphic = include("bits/lib/graphics/PanningGraphic")
-local state_util = include("bits/lib/util/state")
 local misc_util = include("bits/lib/util/misc")
 local lfo_util = include("bits/lib/util/lfo")
 
@@ -46,17 +45,18 @@ local controlspec_spread = controlspec.def {
 
 local LFO_SHAPES = { "sine", "up", "down", "random" }
 
-local function calculate_pan_positions(state)
+local function calculate_pan_positions()
     local twist = params:get(PARAM_ID_TWIST)
     local spread = params:get(PARAM_ID_SPREAD)
+    pan_positions = {}
     for i = 0, 5 do
         local angle = (i / 6) * (math.pi * 2) + twist -- Divide the range of radians into 6 equal parts, add offset
 
         -- could remove panning range here
-        state.pages.panning.pan_positions[i + 1] = spread * math.cos(angle)
+        pan_positions[i + 1] = spread * math.cos(angle)
     end
     for i = 1, 6 do
-        softcut.pan(i, state.pages.panning.pan_positions[i])
+        softcut.pan(i, pan_positions[i])
     end
 end
 
@@ -78,7 +78,7 @@ local function toggle_lfo(state)
     params:set(PARAM_ID_LFO_ENABLED, 1 - state.pages.panning.lfo:get("enabled"), false)
 end
 
-local function toggle_shape(state)
+local function toggle_shape()
     local index = params:get(PARAM_ID_LFO_SHAPE)
     local next_index = (index % #LFO_SHAPES) + 1
     params:set(PARAM_ID_LFO_SHAPE, next_index, false)
@@ -105,6 +105,48 @@ local page = Page:create({
     k3_off = toggle_shape,
 })
 
+local function add_actions(state)
+    params:set_action(PARAM_ID_LFO_ENABLED,
+        function()
+            if state.pages.panning.lfo:get("enabled") == 1 then
+                state.pages.panning.lfo:stop()
+            else
+                state.pages.panning.lfo:start()
+            end
+            state.pages.panning.lfo:set('phase', params:get(PARAM_ID_TWIST))
+        end
+    )
+    params:set_action(PARAM_ID_LFO_SHAPE,
+        function() state.pages.panning.lfo:set('shape', params:string(PARAM_ID_LFO_SHAPE)) end
+    )
+    params:set_action(PARAM_ID_TWIST,
+        function()
+            calculate_pan_positions()
+            -- convert 0-1 to radians
+            panning_graphic.twist = params:get(PARAM_ID_TWIST) * math.pi * 2
+        end
+    )
+    params:set_action(PARAM_ID_SPREAD,
+        function()
+            calculate_pan_positions()
+            panning_graphic.spread = params:get(PARAM_ID_SPREAD)
+        end
+    )
+    params:set_action(PARAM_ID_LFO_RATE,
+        function() state.pages.panning.lfo:set('period', lfo_util.lfo_period_label_values[params:string(PARAM_ID_LFO_RATE)]) end)
+
+end
+
+local function add_params(state)
+    params:add_separator("PANNING", page_name)
+    params:add_binary(PARAM_ID_LFO_ENABLED, "LFO enabled", "toggle", 0)
+    params:add_option(PARAM_ID_LFO_SHAPE, "LFO shape", LFO_SHAPES, 1)
+    params:add_option(PARAM_ID_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels)
+    params:add_control(PARAM_ID_TWIST, "twist", controlspec_twist)
+    params:add_control(PARAM_ID_SPREAD, "spread", controlspec_spread)
+    add_actions(state)
+end
+
 function page:render(state)
     window:render()
     local twist = params:get(PARAM_ID_TWIST)
@@ -126,47 +168,6 @@ function page:render(state)
     page.footer.button_text.e3.value = misc_util.trim(tostring(spread), 5)
     page.footer.button_text.k3.value = string.upper(state.pages.panning.lfo:get("shape"))
     page.footer:render()
-end
-
-local function add_params(state)
-    params:add_separator("PANNING", page_name)
-    params:add_binary(PARAM_ID_LFO_ENABLED, "LFO enabled", "toggle", 0)
-    params:set_action(PARAM_ID_LFO_ENABLED,
-        function()
-            if state.pages.panning.lfo:get("enabled") == 1 then
-                state.pages.panning.lfo:stop()
-            else
-                state.pages.panning.lfo:start()
-            end
-            state.pages.panning.lfo:set('phase', params:get(PARAM_ID_TWIST))
-        end
-    )
-
-    params:add_option(PARAM_ID_LFO_SHAPE, "LFO shape", LFO_SHAPES, 1)
-    params:set_action(PARAM_ID_LFO_SHAPE,
-        function() state.pages.panning.lfo:set('shape', params:string(PARAM_ID_LFO_SHAPE)) end)
-
-    params:add_option(PARAM_ID_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels)
-    params:set_action(PARAM_ID_LFO_RATE,
-        function() state.pages.panning.lfo:set('period', lfo_util.lfo_period_label_values[params:string(PARAM_ID_LFO_RATE)]) end)
-
-
-    params:add_control(PARAM_ID_TWIST, "twist", controlspec_twist)
-    params:set_action(PARAM_ID_TWIST,
-        function()
-            calculate_pan_positions(state)
-            -- convert 0-1 to radians
-            panning_graphic.twist = params:get(PARAM_ID_TWIST) * math.pi * 2
-        end
-    )
-
-    params:add_control(PARAM_ID_SPREAD, "spread", controlspec_spread)
-    params:set_action(PARAM_ID_SPREAD,
-        function()
-            calculate_pan_positions(state)
-            panning_graphic.spread = params:get(PARAM_ID_SPREAD)
-        end
-    )
 end
 
 function page:initialize(state)
