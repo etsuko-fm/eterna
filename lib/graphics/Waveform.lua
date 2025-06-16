@@ -28,11 +28,12 @@ function Waveform:render()
     -- draw lines
     local offset = 14
     local line_width = 59
-    screen.move(x_pos, self.y - offset + 1)
-    screen.line_rel(line_width, 0)
-    screen.move(x_pos, self.y + offset)
-    screen.line_rel(line_width, 0)
-
+    -- screen.move(x_pos, self.y - offset + 1)
+    -- screen.line_rel(line_width, 0)
+    -- screen.move(x_pos, self.y + offset)
+    -- screen.line_rel(line_width, 0)
+    screen.rect(x_pos - 2, self.y - offset + 1, line_width + 3, offset * 2)
+    screen.stroke()
     -- draw waveform
     for i, s in ipairs(self.samples) do
         local height = util.round(math.abs(s) * self.vertical_scale)

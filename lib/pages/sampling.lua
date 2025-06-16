@@ -11,6 +11,10 @@ local misc_util = include("bits/lib/util/misc")
 local waveform
 local window
 
+local PARAM_ID_AUDIO_FILE = "sampling_audio_file"
+local debug_mode = true
+
+
 --[[
 Sample select page
 Graphics:
@@ -52,11 +56,24 @@ local function path_to_file_name(file_path)
 end
 
 
+local function load_sample(state, file)
+    -- use specified `file` as a sample and store enabled length of softcut buffer in state
+    state.sample_length = audio_util.load_sample(file, true)
+    state.pages.slice.enabled_section = { 0, state.max_sample_length }
+    if state.sample_length < state.max_sample_length then
+        state.pages.slice.enabled_section = { 0, state.sample_length }
+    end
+
+    softcut.render_buffer(1, 0, state.sample_length, state.pages.sample.waveform_width)
+    update_softcut(state)
+end
+
+
 local function select_sample(state)
     local function callback(file_path)
         if file_path ~= 'cancel' then
             state.pages.sample.selected_sample = file_path
-            state.events.event_switch_sample = true
+            load_sample(state, file_path)
         end
         page_disabled = false -- proceed with rendering page instead of file menu
         print('selected ' .. file_path)
@@ -65,6 +82,7 @@ local function select_sample(state)
     page_disabled = true -- don't render current page
 end
 
+
 local page = Page:create({
     name = page_name,
     e2 = nil,
@@ -72,9 +90,9 @@ local page = Page:create({
     k1_hold_on = nil,
     k1_hold_off = nil,
     k2_on = nil,
-    k2_off = nil,
+    k2_off = select_sample,
     k3_on = nil,
-    k3_off = select_sample,
+    k3_off = nil,
 })
 
 function page:render(state)
@@ -94,8 +112,8 @@ function page:render(state)
     -- show filename and sample length
     screen.font_face(state.default_font)
     screen.level(5)
-    screen.move(34, 46)
-    screen.text(misc_util.trim(state.pages.sample.filename, 16))
+    screen.move(64, 46)
+    screen.text_center(misc_util.trim(state.pages.sample.filename, 24))
     window:render()
     -- screen.update()
     page.footer:render()
@@ -103,10 +121,19 @@ end
 
 local function add_params(state)
     params:add_separator("SAMPLING", page_name)
+    -- file selection
+    params:add_file(PARAM_ID_AUDIO_FILE, 'file')
+    params:set_action(PARAM_ID_AUDIO_FILE, function(file) load_sample(state, file) end)
 end
 
 function page:initialize(state)
     add_params(state)
+
+      -- init softcut
+    local sample1 = "audio/etsuko/sea-minor/sea-minor-chords.wav"
+    local sample2 = "audio/etsuko/neon-light/neon intro.wav"
+    if debug_mode then load_sample(state, _path.dust .. sample2) end
+
     local function on_render(ch, start, i, s)
         -- this is a callback, for every softcut.render_buffer() invocation
         print('buffer contents rendered')
@@ -135,13 +162,14 @@ function page:initialize(state)
     page.footer = Footer:new({
         button_text = {
             k2 = {
-                name = "MODE",
-                value = "SAMPL",
-            },
-            k3 = {
                 name = "LOAD",
                 value = "",
             },
+            k3 = {
+                name = "",
+                value = "",
+            },
+
             e2 = {
                 name = "",
                 value = "",

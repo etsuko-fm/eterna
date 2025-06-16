@@ -15,7 +15,6 @@ local page_panning = include("bits/lib/pages/panning")
 local page_slice = include("bits/lib/pages/slice")
 local page_pitch = include("bits/lib/pages/pitch")
 
-local debug_mode = true
 local fps = 60
 local ready
 
@@ -138,31 +137,12 @@ local function enable_all_voices()
   end
 end
 
-local function switch_sample(file)
-  -- use specified `file` as a sample and store enabled length of softcut buffer in state
-  state.sample_length = audio_util.load_sample(file, true)
-  state.pages.slice.enabled_section = { 0, state.max_sample_length }
-  if state.sample_length < state.max_sample_length then
-    state.pages.slice.enabled_section = { 0, state.sample_length }
-  end
-
-  softcut.render_buffer(1, 0, state.sample_length, state.pages.sample.waveform_width)
-  update_softcut(state)
-end
-
-
----- params
-local function add_params(state)
-  params:add_separator("BITS", "BITS")
-
-  -- file selection
-  params:add_file('audio_file_1', 'file')
-  params:set_action("audio_file_1", function(file) switch_sample(file) end)
-end
 
 function init()
-  add_params(state)
-  -- hardware sensitivity
+  -- Params UX
+  params:add_separator("BITS", "BITS")
+
+  -- Encoder sensitivity
   norns.enc.sens(1, 5)
 
   for i = 2, 3 do
@@ -170,10 +150,6 @@ function init()
     norns.enc.accel(i, false)
   end
 
-  -- init softcut
-  local sample1 = "audio/etsuko/sea-minor/sea-minor-chords.wav"
-  local sample2 = "audio/etsuko/neon-light/neon intro.wav"
-  if debug_mode then switch_sample(_path.dust .. sample2) end
   for _, page in ipairs(pages) do
     page:initialize(state)
   end
