@@ -62,7 +62,6 @@ end
 
 local function amp_to_sigma(v)
         return util.linexp(0, 1, SIGMA_MIN, SIGMA_MAX, v)
-
 end
 
 
@@ -176,7 +175,6 @@ local function add_actions(state)
                 lfo_util.lfo_period_label_values[params:string(PARAM_ID_LFO_RATE)])
         end)
 
-
     params:set_action(PARAM_ID_POS, function()
         local levels = gaussian.calculate_gaussian_levels(params:get(PARAM_ID_POS),
             state.pages.metamixer.sigma)
@@ -195,7 +193,6 @@ local function add_actions(state)
         end
     end)
 end
-
 
 local function add_params(state)
     params:add_separator("BITS_LEVELS", "LEVELS")
