@@ -55,11 +55,6 @@ local controlspec_amp = controlspec.def {
     wrap = false     -- wrap around on overflow (true) or clamp (false)
 }
 
-
-local function sigma_to_amp(v)
-    return util.explin(SIGMA_MIN, SIGMA_MAX, 0, 1, v)
-end
-
 local function amp_to_sigma(v)
         return util.linexp(0, 1, SIGMA_MIN, SIGMA_MAX, v)
 end
@@ -78,7 +73,6 @@ local function adjust_sigma(state, d)
     local curr = params:get(PARAM_ID_AMP)
     local new_val = curr + incr
     params:set(PARAM_ID_AMP, new_val, false)
-
 end
 
 local function toggle_shape(state)

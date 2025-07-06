@@ -16,29 +16,37 @@ local QUANTIZE_DEFAULT = 1
 
 local CENTER_MIN = -3
 local CENTER_MAX = 3
+local CENTER_QUANTUM = 1/120
+local CENTER_QUANTUM_QUANTIZED = 1.0
 
 local SPREAD_MIN = -3
 local SPREAD_MAX = 3
+local SPREAD_MIN_QUANTIZED = -2.5
+local SPREAD_MAX_QUANTIZED = 2.5
+local SPREAD_QUNATUM = 0.01
+local SPREAD_QUNATUM_QUANTIZED = 0.5
+
+
 
 local controlspec_center = controlspec.def {
     min = CENTER_MIN, -- the minimum value
     max = CENTER_MAX, -- the maximum value
     warp = 'lin',       -- a shaping option for the raw value
-    step = 0.01,        -- output value quantization
+    step = 1/120,        -- output value quantization
     default = 0.0,      -- default value
     units = '',         -- displayed on PARAMS UI
-    quantum = 0.01,     -- each delta will change raw value by this much
+    quantum = CENTER_QUANTUM_QUANTIZED,     -- each delta will change raw value by this much
     wrap = false         -- wrap around on overflow (true) or clamp (false)
 }
 
 local controlspec_spread = controlspec.def {
-    min = SPREAD_MIN, -- the minimum value
-    max = SPREAD_MAX, -- the maximum value
+    min = SPREAD_MIN_QUANTIZED, -- the minimum value
+    max = SPREAD_MAX_QUANTIZED, -- the maximum value
     warp = 'lin',       -- a shaping option for the raw value
     step = 0.01,        -- output value quantization
     default = 0.0,      -- default value
     units = '',         -- displayed on PARAMS UI
-    quantum = 0.01,     -- each delta will change raw value by this much
+    quantum = SPREAD_QUNATUM_QUANTIZED,     -- each delta will change raw value by this much
     wrap = false         -- wrap around on overflow (true) or clamp (false)
 }
 
@@ -127,7 +135,6 @@ end
 function action_quantize(v)
     if v == 1 then
         params:set(PARAM_ID_CENTER, math.floor(params:get(PARAM_ID_CENTER) + .5))
-        controlspec_center.quantum = 1.0;
 
         -- think need to cycle through predetermined values:
         -- 0  0  0   0   0   0
@@ -136,14 +143,16 @@ function action_quantize(v)
         -- 0  0  1  -1   2  -2
         -- 0 -1  1  -2   2  -3
         -- 0 -1  2  -2   3  -3
-        controlspec_spread.quantum = .5
-        controlspec_spread.minval = -2.5
-        controlspec_spread.maxval = 2.5
+
+        controlspec_center.quantum = CENTER_QUANTUM_QUANTIZED;
+        controlspec_spread.quantum = SPREAD_QUNATUM_QUANTIZED
+        controlspec_spread.minval = SPREAD_MIN_QUANTIZED
+        controlspec_spread.maxval = SPREAD_MAX_QUANTIZED
 
         params:set(PARAM_ID_SPREAD, math.floor(params:get(PARAM_ID_SPREAD) + .5))
     else
-        controlspec_center.quantum = 0.01;
-        controlspec_spread.quantum = 0.01;
+        controlspec_center.quantum = CENTER_QUANTUM;
+        controlspec_spread.quantum = SPREAD_QUNATUM;
         controlspec_spread.minval = SPREAD_MIN
         controlspec_spread.maxval = SPREAD_MAX
     end
@@ -204,11 +213,15 @@ function page:render(state)
     page.window:render()
     page.footer.button_text.k2.value = params:get(PARAM_ID_DIRECTION)
     page.footer.button_text.k3.value = params:get(PARAM_ID_QUANTIZE) == 1 and "ON" or "OFF"
+
+    -- convert -3/+3 range to -36/+36 rounded to 1 decimal
     page.footer.button_text.e2.value = misc_util.trim(tostring(
         math.floor(params:get(PARAM_ID_CENTER) * 1200 + .5) / 100
     ), 5)
+
+    -- Round value to 2 decimals
     page.footer.button_text.e3.value = misc_util.trim(tostring(
-        math.floor(params:get(PARAM_ID_SPREAD) * 1000 + .5) / 1000
+        math.floor(params:get(PARAM_ID_SPREAD) * 100 + .5) / 100
     ), 5)
 
     page.pitch_graph:render()

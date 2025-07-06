@@ -10,50 +10,127 @@ local page_name = "SLICE"
 local window
 local grid_graphic
 local DEFAULT_PERIOD = 6
-local ROWS = 10
-local COLUMNS = 21
-local MAX_SLICES = ROWS * COLUMNS
+local ROWS = 6
+local COLUMNS = 64
+local MAX_SLICES = COLUMNS
 
+local PARAM_ID_LFO_ENABLED = "slice_lfo_enabled"
+local PARAM_ID_LFO_SHAPE = "slice_lfo_shape"
+local PARAM_ID_LFO_RATE = "slice_lfo_rate"
+local PARAM_ID_POS = "slice_pos"
+local PARAM_ID_LENGTH = "slice_length"
 
-local function update_grid(state)
+local POSITION_MIN = 0
+local POSITION_MAX = 1 -- represents a scan position that in turn sets all 6 playheads
+
+local LENGTH_MIN = 1
+local LENGTH_MAX = COLUMNS
+
+local LFO_SHAPES = { "sine", "up", "down", "random" }
+
+local controlspec_pos = controlspec.def {
+    min = POSITION_MIN, -- the minimum value
+    max = POSITION_MAX, -- the maximum value
+    warp = 'lin',       -- a shaping option for the raw value
+    step = .01,        -- output value quantization
+    default = 0,      -- default value
+    units = '',         -- displayed on PARAMS UI
+    quantum = .01,     -- each delta will change raw value by this much
+    wrap = false         -- wrap around on overflow (true) or clamp (false)
+}
+
+local controlspec_length = controlspec.def {
+    min = LENGTH_MIN, -- the minimum value
+    max = LENGTH_MAX, -- the maximum value
+    warp = 'lin',    -- a shaping option for the raw value
+    step = 1,     -- output value quantization
+    default = 1,   -- default value
+    units = '',      -- displayed on PARAMS UI
+    quantum = 1,  -- each delta will change raw value by this much
+    wrap = false     -- wrap around on overflow (true) or clamp (false)
+}
+local function update_row(idx, start_idx, end_idx)
     -- update grid graphic to reflect update state by user or lfo
-    grid_graphic.start_active = state.pages.slice.seek.start
-    grid_graphic.end_active = state.pages.slice.seek.start + state.pages.slice.seek.width
+    grid_graphic.voices[idx].start_active = start_idx
+    grid_graphic.voices[idx].end_active = end_idx
 end
 
 function update_enabled_section(state)
+    -- determine current length of sample; either the full sample, or the enabled section of a sample that's longer 
+    -- than the allowed length (as set by state.max_sample_length)
     local current_length = math.min(state.sample_length, state.max_sample_length)
-    state.pages.slice.enabled_section[1] = ((state.pages.slice.seek.start - 1) / MAX_SLICES) * current_length
-    state.pages.slice.enabled_section[2] = math.min(
-        state.pages.slice.enabled_section[1] + (state.pages.slice.seek.width / MAX_SLICES * current_length),
-        state.max_sample_length)
+
+    -- this needs to be refactored, this should be done x6
+
+    -- enabled section is per-voice now
+    -- state.pages.slice.enabled_section[1] = ((state.pages.slice.seek.start - 1) / MAX_SLICES) * current_length
+    -- state.pages.slice.enabled_section[2] = math.min(
+    --     state.pages.slice.enabled_section[1] + (state.pages.slice.seek.width / MAX_SLICES * current_length),
+    --     state.max_sample_length)
 
     --todo: not sure if still needed after randomization change
-    local enabled_section_length = state.pages.slice.enabled_section[2] - state.pages.slice.enabled_section[1]
-    if enabled_section_length > state.max_sample_length then
-        state.pages.slice.enabled_section[2] = state.pages.slice.enabled_section[1] + state.max_sample_length
-    end
+    -- local enabled_section_length = state.pages.slice.enabled_section[2] - state.pages.slice.enabled_section[1]
+    -- if enabled_section_length > state.max_sample_length then
+    --     state.pages.slice.enabled_section[2] = state.pages.slice.enabled_section[1] + state.max_sample_length
+    -- end
     update_softcut(state)
 end
 
-local function seek(state, d)
-    local max_start = (MAX_SLICES + 1) - state.pages.slice.seek.width
-    state_util.adjust_param(state.pages.slice.seek, 'start', d, 1, 1, max_start)
-    update_enabled_section(state)
-    reset_softcut_positions(state)
-    update_grid(state)
+local function update_rows()
+    local pixel_pos = 1 + params:get(PARAM_ID_POS) * (COLUMNS-1)
+    for i = 1,6 do
+        update_row(i, pixel_pos, pixel_pos + params:get(PARAM_ID_LENGTH))
+    end
 end
 
-local function adjust_width(state, d)
-    state_util.adjust_param(state.pages.slice.seek, 'width', d, 1, 1, (MAX_SLICES + 1) - state.pages.slice.seek.start)
-    local max_start = (MAX_SLICES + 1) - state.pages.slice.seek.width
-    state.pages.slice.lfo:set('max', max_start)
+local function action_length(v)
+    -- update_enabled_section(state)
+    -- reset_softcut_positions(state)
+    update_rows()
+end
 
-    if d < 0 then
-        reset_softcut_positions(state)
-    end
-    update_enabled_section(state)
-    update_grid(state)
+local function action_pos(v)
+    update_rows()
+end
+
+local function action_lfo_enable(v)
+
+end
+
+local function action_lfo_rate(v)
+end
+
+
+local function action_lfo_shape(v)
+end
+
+
+local function adjust_pos(state, d)
+--     -- upper limit of start of slice depends on the length of the slice
+--     local max_start = (MAX_SLICES + 1) - params:get(PARAM_ID_LENGTH)
+--     local cur_pos = params:get(PARAM_ID_POS)
+--     -- params:set(PARAM_ID_POS, )
+--     state_util.adjust_param(state.pages.slice.seek, 'start', d, 1, 1, max_start)
+--     update_enabled_section(state)
+--     reset_softcut_positions(state)
+--     for i = 1,6 do
+--         update_row(i)
+--     end
+end
+
+local function adjust_length(state, d)
+    -- state_util.adjust_param(state.pages.slice.seek, 'width', d, 1, 1, (MAX_SLICES + 1) - state.pages.slice.seek.start)
+    -- local max_start = (MAX_SLICES + 1) - state.pages.slice.seek.width
+    -- state.pages.slice.lfo:set('max', max_start)
+
+    -- if d < 0 then
+    --     reset_softcut_positions(state)
+    -- end
+    params:set(PARAM_ID_LENGTH, params:get(PARAM_ID_LENGTH) + d * controlspec_length.quantum)
+    -- update_enabled_section(state)
+    -- for i=1,6 do
+    --     update_row(state)
+    -- end
 end
 
 local function toggle_shape(state)
@@ -68,7 +145,8 @@ local function toggle_lfo(state)
     else
         state.pages.slice.lfo:start()
     end
-    state.pages.slice.lfo:set('phase', state.pages.slice.seek.start / 128)
+    -- todo: re-add set phase
+    -- state.pages.slice.lfo:set('phase', state.pages.slice.seek.start / 128)
 end
 
 
@@ -91,7 +169,7 @@ local function e2(state, d)
     if state.pages.slice.lfo:get("enabled") == 1 then
         adjust_lfo_rate(state, d)
     else
-        seek(state, d)
+        params:set(PARAM_ID_POS, params:get(PARAM_ID_POS) + d * controlspec_pos.quantum)
     end
 end
 
@@ -100,7 +178,7 @@ local page = Page:create({
     name = page_name,
     e1 = nil,
     e2 = e2,
-    e3 = adjust_width,
+    e3 = adjust_length,
     k1_hold_on = nil,
     k1_hold_off = nil,
     k2_on = nil,
@@ -119,20 +197,30 @@ function page:render(state)
         page.footer.button_text.e2.name = "RATE"
         page.footer.button_text.e2.value = misc_util.trim(tostring(state.pages.slice.lfo:get('period')), 5)
     else
-        -- When LFO is disabled, E2 controls scan position
+        -- When LFO is disabled, E2 controls position
         page.footer.button_text.k2.value = "OFF"
-        page.footer.button_text.e2.name = "START"
-        page.footer.button_text.e2.value = misc_util.trim(tostring(state.pages.slice.seek.start), 5)
+        page.footer.button_text.e2.name = "POS"
+        page.footer.button_text.e2.value = misc_util.trim(tostring(params:get(PARAM_ID_POS)), 5)
     end
 
     page.footer.button_text.k3.value = string.upper(state.pages.slice.lfo:get("shape"))
-    page.footer.button_text.e3.value = state.pages.slice.seek.width
+    page.footer.button_text.e3.value = params:get(PARAM_ID_LENGTH)
 
     page.footer:render()
 end
 
 local function add_params(state)
     params:add_separator("SLICE", page_name)
+    params:add_binary(PARAM_ID_LFO_ENABLED, "LFO enabled", "toggle", 0)
+    params:add_option(PARAM_ID_LFO_SHAPE, "LFO shape", LFO_SHAPES, 1)
+    local default_rate_index = 20
+    local default_rate = lfo_util.lfo_period_values[default_rate_index]
+    params:add_option(PARAM_ID_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, default_rate)
+    params:add_control(PARAM_ID_POS, "position", controlspec_pos)
+    params:set_action(PARAM_ID_POS, action_pos)
+
+    params:add_control(PARAM_ID_LENGTH, "length", controlspec_length)
+    params:set_action(PARAM_ID_LENGTH, action_length)
 end
 
 function page:initialize(state)
@@ -166,11 +254,11 @@ function page:initialize(state)
                 value = "",
             },
             e2 = {
-                name = "SEEK",
+                name = "POS",
                 value = state.pages.slice.seek.start,
             },
             e3 = {
-                name = "WIDTH",
+                name = "LEN",
                 value = state.pages.slice.seek.width,
             },
         },
@@ -180,18 +268,17 @@ function page:initialize(state)
     -- lfo
     state.pages.slice.lfo = _lfos:add {
         shape = 'up',
-        min = 1,
-        max = 129 - state.pages.slice.seek.width,
+        min = POSITION_MIN,
+        max = POSITION_MAX,
         depth = 1.0, -- 0.0 to 1.0
         mode = 'clocked',
         period = DEFAULT_PERIOD,
         phase = 0,
         ppqn = 24,
         action = function(scaled, raw)
-            -- print(scaled)
-            state.pages.slice.seek.start = math.floor(scaled + 0.5)
-            update_grid(state)
-            update_enabled_section(state)
+            params:set(PARAM_ID_POS, controlspec_pos:map(scaled), false)
+            update_rows()
+            -- update_enabled_section(state)
         end
     }
     state.pages.slice.lfo:set('reset_target', 'mid: rising')

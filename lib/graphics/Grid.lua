@@ -3,14 +3,40 @@ Grid = {
     y = 13,
     rows = 10,
     columns = 21,
-    block_w = 2,
-    block_h = 2,
-    margin_w = 1,
+    block_w = 1,
+    block_h = 3,
+    margin_w = 0,
     margin_h = 1,
     fill = 2,
     active_fill = 15,
-    start_active = 1,
-    end_active = 17,
+    voices = {
+        -- active slice for each of 6 voices
+        {
+            start_active = 1,
+            end_active = 2,
+        },
+        {
+            start_active = 1,
+            end_active = 2,
+        },
+        {
+            start_active = 1,
+            end_active = 2,
+        },
+        {
+            start_active = 1,
+            end_active = 2,
+        },
+            {
+            start_active = 1,
+            end_active = 2,
+        },
+        {
+            start_active = 1,
+            end_active = 2,
+        },
+    },
+    
     hide = false,
 }
 
@@ -22,6 +48,14 @@ function Grid:new(o)
     setmetatable(o, self)
     self.__index = self
 
+    -- initialize; todo: prevent this overwrites anything
+    -- for i = 1,6 do
+    --     o.voices[i] = {
+    --         start_active = 1,
+    --         end_active = 2,
+    --     }
+    -- end
+
     -- return instance
     return o
 end
@@ -30,17 +64,19 @@ function Grid:render()
     if self.hide then return end
     for row = 0, self.rows - 1 do
         for column = 0, self.columns - 1 do
-            local idx = (row * self.columns) + (column + 1)
+            local idx = column + 1
             local x =  self.x + (self.block_w + self.margin_w) * column
             local y =  self.y + (self.block_h + self.margin_h) * row
-            if idx >= self.start_active and idx < self.end_active then
+
+            if idx >= self.voices[row + 1]['start_active'] and idx < self.voices[row+1]['end_active'] then
+                -- brighten active slice 
                 screen.level(self.active_fill)
             else
                 screen.level(self.fill)
             end
             screen.rect(x, y, self.block_w, self.block_h)
             screen.fill()
-        end    
+        end
     end
 end
 

@@ -60,8 +60,36 @@ local state = {
       --  playback position randomizations will be done within this section. [1] and [2] in seconds.
       enabled_section = { nil, nil },
       seek = {
-        start = 1,
-        width = 32,
+        {
+          -- voice 1
+          start = 1,
+          width = 4,
+        },
+        {
+          -- voice 2
+          start = 5,
+          width = 9,
+        },
+        {
+          -- voice 3
+          start = 10,
+          width = 13,
+        },
+        {
+          -- voice 4
+          start = 14,
+          width = 18,
+        },
+        {
+          -- voice 5
+          start = 19,
+          width = 23,
+        },
+        {
+          -- voice 6
+          start = 24,
+          width = 28,
+        },
       },
     },
     pitch = {          -- should maybe rename to playback rate
