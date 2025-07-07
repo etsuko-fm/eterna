@@ -38,7 +38,6 @@ function Toggle:render()
     screen.move(self.x + self.size + 3, self.y + 4)
     screen.font_face(self.font_face)
     screen.text(txt)
-    -- screen.update()
 end
 
 return Toggle

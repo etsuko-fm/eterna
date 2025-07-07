@@ -12,19 +12,21 @@ local audio_util = include("bits/lib/util/audio_util")
 local page_levels = include("bits/lib/pages/levels")
 local page_sampling = include("bits/lib/pages/sampling")
 local page_panning = include("bits/lib/pages/panning")
-local page_slice = include("bits/lib/pages/slice")
+local page_sequencer = include("bits/lib/pages/sequencer")
 local page_pitch = include("bits/lib/pages/pitch")
 
 local fps = 60
 local ready
 
+screen_dirty = true
+local screen_is_updating = false
 PLAYBACK_DIRECTION = {
   FWD = "FWD",
   REV = "REV",
   FWD_REV = "FWD_REV"
 }
 
-local state = {
+state = {
   default_font = 68,
   title_font = 68,
   footer_font = 68,
@@ -49,8 +51,6 @@ local state = {
     },
     panning = {
       lfo = nil,
-      twist = 0,
-      pan_positions = { 0, 0, 0, 0, 0, 0, },
       default_lfo_period = 6,
     },
     slice = {
@@ -100,8 +100,8 @@ local state = {
     },
     sample = {
       waveform_samples = {},
-      waveform_width = 59,
-      scale_waveform = 10,
+      waveform_width = 960, -- >=30 per waveform, so 1/32 should be >= 30
+      scale_waveform = 5,
       filename = "",
       selected_sample = _path.audio .. "etsuko/sea-minor/sea-minor-chords.wav",
     }
@@ -114,22 +114,26 @@ local pages = {
   page_sampling,
   page_panning,
   page_levels,
-  page_slice,
+  page_sequencer,
   page_pitch,
 }
 
-local current_page_index = 4
+local current_page_index = 1
 local current_page = pages[current_page_index]
 
-local function cycle_page_forward()
+local function page_forward()
   -- Increment the current page index, reset to 1 if we exceed the table length
-  current_page_index = (current_page_index % #pages) + 1
+  if current_page_index < #pages then
+    current_page_index = current_page_index + 1
+  end
   current_page = pages[current_page_index]
 end
 
-local function cycle_page_backward()
+local function page_backward()
   -- Decrement the current page index, wrap around to the last page if it goes below 1
-  current_page_index = (current_page_index - 2) % #pages + 1
+  if current_page_index > 1 then
+    current_page_index = current_page_index - 1
+  end
   current_page = pages[current_page_index]
 end
 
@@ -214,9 +218,9 @@ end
 function enc(n, d)
   if n == 1 then
     if d > 0 then
-      cycle_page_forward()
+      page_forward()
     else
-      cycle_page_backward()
+      page_backward()
     end
   end
   if n == 2 and current_page.e2 then
@@ -229,33 +233,15 @@ function enc(n, d)
   end
 end
 
-local event_handlers = {
-  -- maps event names to functions
-  event_switch_sample = function()
-    execute_event(switch_sample, "event_switch_sample", state.pages.sample.selected_sample)
-  end,
-}
-
-function execute_event(handler, request, ...)
-  handler(...)                  -- Execute the handler with additional arguments
-  state.events[request] = false -- Reset the event request
-end
-
 function refresh()
-  if ready then
+  if ready and not screen_is_updating then
+    screen_dirty = false
+    ready = false
+    screen_is_updating = true
     screen.clear()
     current_page:render(state)
     screen.update()
-
-    -- sort of an event based system, allows pages to request main functionality
-    -- usage: state.events['event_update_softcut'] = true
-
-    for event, handler in pairs(event_handlers) do
-      if state.events[event] == true then
-        handler()
-      end
-    end
-    ready = false
+    screen_is_updating = false
   end
 end
 

@@ -82,8 +82,6 @@ function Window:render()
             screen.stroke()
         end
     end
-    -- todo: horizontal separations
-    -- screen.update()
 end
 
 return Window

@@ -1,7 +1,6 @@
 Waveform = {
     x = 0,
     y = 0,
-    w = 128,
     hide = false,
     sample_length = 0, -- seconds
     highlight = true,
@@ -28,10 +27,7 @@ function Waveform:render()
     -- draw lines
     local offset = 14
     local line_width = 59
-    -- screen.move(x_pos, self.y - offset + 1)
-    -- screen.line_rel(line_width, 0)
-    -- screen.move(x_pos, self.y + offset)
-    -- screen.line_rel(line_width, 0)
+
     screen.rect(x_pos - 2, self.y - offset + 1, line_width + 3, offset * 2)
     screen.stroke()
     -- draw waveform
@@ -43,8 +39,6 @@ function Waveform:render()
         screen.stroke()
         x_pos = x_pos + 1
     end
-
-    -- screen.update()
 end
 
 return Waveform
