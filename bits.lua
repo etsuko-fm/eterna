@@ -184,7 +184,7 @@ function init()
 
   enable_all_voices()
 
-  -- init clock
+  -- metro for screen refresh
   c = metro.init(count, 1 / fps)
   c:start()
 end
@@ -192,8 +192,6 @@ end
 function key(n, z)
   if n == 1 and z == 0 and current_page.k1_off then current_page.k1_off(state) end
   if n == 1 and z == 1 and current_page.k1_on then current_page.k1_on(state) end
-  -- engine.hz(0, 440)
-  -- -- engine.vol(0, 1)
 
   if n == 2 and z == 0 and current_page.k2_off then
     current_page.k2_off(state)

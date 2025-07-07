@@ -5,13 +5,13 @@ local GridGraphic = include("bits/lib/graphics/Grid")
 local Footer = include("bits/lib/graphics/Footer")
 local misc_util = include("bits/lib/util/misc")
 local lfo_util = include("bits/lib/util/lfo")
-
+local perlin = include("bits/lib/ext/perlin")
 local page_name = "SLICE"
 local window
 local grid_graphic
 local DEFAULT_PERIOD = 6
 local ROWS = 6
-local COLUMNS = 64
+local COLUMNS = 16
 local MAX_SLICES = COLUMNS
 
 local PARAM_ID_LFO_ENABLED = "slice_lfo_enabled"
@@ -77,9 +77,13 @@ function update_enabled_section(state)
 end
 
 local function update_rows()
-    local pixel_pos = 1 + params:get(PARAM_ID_POS) * (COLUMNS-1)
+    local p = 1 + perlin:noise(params:get(PARAM_ID_POS)) / 2 -- normalize perlin noise from 0 to 1
+    local pixel_pos = math.floor(p * (COLUMNS-1))
+
     for i = 1,6 do
-        update_row(i, pixel_pos, pixel_pos + params:get(PARAM_ID_LENGTH))
+        -- local offset = (i-1) * params:get(PARAM_ID_POS)
+        local p2 = .5 -- 1 + perlin:noise(params:get(PARAM_ID_LENGTH)/COLUMNS, 1/i) / 2
+        update_row(i, pixel_pos, pixel_pos + (p2 * COLUMNS))
     end
 end
 
@@ -224,6 +228,10 @@ local function add_params(state)
 end
 
 function page:initialize(state)
+    local a = perlin:noise(0.1, 1.0)
+    local b = perlin:noise(0.1, 3.0)
+    print('perlin noise a', a)
+    print('perlin noise b', b)
     add_params(state)
     window = Window:new({
         x = 0,
