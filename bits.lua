@@ -118,7 +118,7 @@ local pages = {
   page_pitch,
 }
 
-local current_page_index = 1
+local current_page_index = 4
 local current_page = pages[current_page_index]
 
 local function page_forward()
@@ -163,8 +163,8 @@ local function enable_all_voices()
   for i = 1, 6 do
     softcut.enable(i, 1)
     softcut.buffer(i, 1)
-    softcut.loop(i, 1)
-    softcut.play(i, 1)
+    softcut.loop(i, 0)
+    -- softcut.play(i, 1)
     softcut.fade_time(i, state.fade_time)
   end
 end

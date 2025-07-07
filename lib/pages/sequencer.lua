@@ -5,7 +5,7 @@ local GridGraphic = include("bits/lib/graphics/Grid")
 local Footer = include("bits/lib/graphics/Footer")
 local misc_util = include("bits/lib/util/misc")
 local perlin = include("bits/lib/ext/perlin")
-local page_name = "SLICE"
+local page_name = "SEQUENCER"
 local window
 local grid_graphic
 local DEFAULT_PERIOD = 6
@@ -13,22 +13,49 @@ local ROWS = 6
 local COLUMNS = 16
 local MAX_SLICES = COLUMNS
 
-local PARAM_ID_LFO_ENABLED = "slice_lfo_enabled"
+local PARAM_ID_NAV_X = "sequencer_nav_x"
+local PARAM_ID_NAV_Y = "sequencer_nav_y"
 
 local POSITION_MIN = 0
 local POSITION_MAX = 1 -- represents a scan position that in turn sets all 6 playheads
 
-local controlspec_pos = controlspec.def {
-    min = POSITION_MIN, -- the minimum value
-    max = POSITION_MAX, -- the maximum value
-    warp = 'lin',       -- a shaping option for the raw value
-    step = .01,        -- output value quantization
-    default = 0,      -- default value
-    units = '',         -- displayed on PARAMS UI
-    quantum = .01,     -- each delta will change raw value by this much
-    wrap = false         -- wrap around on overflow (true) or clamp (false)
+local SEQ_PARAM_IDS = {}
+
+local clock_id
+local current_step = 1
+
+local controlspec_nav_x = controlspec.def {
+    min = 1,       -- the minimum value
+    max = COLUMNS, -- the maximum value
+    warp = 'lin',  -- a shaping option for the raw value
+    step = 1,      -- output value quantization
+    default = 1,   -- default value
+    units = '',    -- displayed on PARAMS UI
+    quantum = 1.0, -- each delta will change raw value by this much
+    wrap = false   -- wrap around on overflow (true) or clamp (false)
 }
 
+local controlspec_nav_y = controlspec.def {
+    min = 1,      -- the minimum value
+    max = ROWS,   -- the maximum value
+    warp = 'lin', -- a shaping option for the raw value
+    step = 1,     -- output value quantization
+    default = 0,  -- default value
+    units = '',   -- displayed on PARAMS UI
+    quantum = 1,  -- each delta will change raw value by this much
+    wrap = false  -- wrap around on overflow (true) or clamp (false)
+}
+
+local controlspec_perlin = controlspec.def {
+    min = 0,       -- the minimum value
+    max = 10,      -- the maximum value
+    warp = 'lin',  -- a shaping option for the raw value
+    step = .01,    -- output value quantization
+    default = 0,   -- default value
+    units = '',    -- displayed on PARAMS UI
+    quantum = .01, -- each delta will change raw value by this much
+    wrap = false   -- wrap around on overflow (true) or clamp (false)
+}
 
 local function action_perlin_x(v)
 end
@@ -37,22 +64,61 @@ local function action_perlin_y(v)
 end
 
 local function action_nav_x(v)
+    grid_graphic.cursor.x = v
 end
 
 local function action_nav_y(v)
+    grid_graphic.cursor.y = v
 end
-
-local function action_toggle(v)
-end
-
 
 local function e2(state, d)
+    local new = params:get(PARAM_ID_NAV_X) + controlspec_nav_x.quantum * d
+    params:set(PARAM_ID_NAV_X, new, false)
 end
 
 local function e3(state, d)
+    local new = params:get(PARAM_ID_NAV_Y) + controlspec_nav_y.quantum * d
+    params:set(PARAM_ID_NAV_Y, new, false)
 end
 
 local function toggle_step(state)
+    local x = params:get(PARAM_ID_NAV_X)
+    local y = params:get(PARAM_ID_NAV_Y)
+    local curr = params:get(SEQ_PARAM_IDS[y][x])
+    local new = 1 - curr
+    print('setting from ', curr, ' to ', new)
+    params:set(SEQ_PARAM_IDS[y][x], new)
+    grid_graphic.sequences[y][x] = new
+end
+
+function pulse()
+    -- advance 
+    while true do
+        current_step = util.wrap(current_step + 1,1,16)
+        for y = 1,ROWS do
+            for x = 1,COLUMNS do
+                local on = params:get(SEQ_PARAM_IDS[y][x])
+                if on == 1 then
+                    -- query position, aii from other page
+                    local param_str = "sampling_" .. y .. "start"
+                    local start_pos = params:get(param_str)
+                    softcut.position(1, start_pos)
+                    softcut.play(1, 1)
+                end
+            end
+        end
+        clock.sync(1/4)
+    end
+end
+
+function clock.transport.start()
+    print("restart")
+    clock_id = clock.run(pulse)
+end
+
+function clock.transport.stop()
+    print("cancel")
+    clock.cancel(clock_id)
 end
 
 local function toggle_perlin(state)
@@ -61,45 +127,43 @@ end
 
 local page = Page:create({
     name = page_name,
-    e1 = nil,
     e2 = e2,
     e3 = e3,
-    k1_hold_on = nil,
-    k1_hold_off = nil,
-    k2_on = nil,
     k2_off = toggle_step,
-    k3_on = nil,
     k3_off = toggle_perlin,
 })
 
 function page:render(state)
     window:render()
     grid_graphic:render()
-
-    if state.pages.slice.lfo:get("enabled") == 1 then
-        -- When LFO is disabled, E2 controls LFO rate
-        page.footer.button_text.k2.value = "ON"
-        page.footer.button_text.e2.name = "RATE"
-        page.footer.button_text.e2.value = misc_util.trim(tostring(state.pages.slice.lfo:get('period')), 5)
-    else
-        -- When LFO is disabled, E2 controls position
-        page.footer.button_text.k2.value = "OFF"
-        page.footer.button_text.e2.name = "POS"
-        page.footer.button_text.e2.value = misc_util.trim(tostring(params:get(PARAM_ID_POS)), 5)
-    end
-
-    page.footer.button_text.k3.value = string.upper(state.pages.slice.lfo:get("shape"))
-    page.footer.button_text.e3.value = params:get(PARAM_ID_LENGTH)
-
+    page.footer.button_text.e2.value = params:get(PARAM_ID_NAV_X)
+    page.footer.button_text.e3.value = params:get(PARAM_ID_NAV_Y)
     page.footer:render()
 end
 
-local function add_params(state)
-    params:add_separator("SLICE", page_name)
+local function add_params()
+    params:add_separator("SEQUENCER", page_name)
+    params:add_control(PARAM_ID_NAV_X, "nav_x", controlspec_nav_x)
+    params:set_action(PARAM_ID_NAV_X, action_nav_x)
+
+    params:add_control(PARAM_ID_NAV_Y, "nav_y", controlspec_nav_y)
+    params:set_action(PARAM_ID_NAV_Y, action_nav_y)
+
+    for y = 1, 6 do
+        SEQ_PARAM_IDS[y] = {}
+        for x = 1, 16 do
+            SEQ_PARAM_IDS[y][x] = "sequencer_step_" .. y .. "_" .. x
+            params:add_binary(SEQ_PARAM_IDS[y][x], SEQ_PARAM_IDS[y][x], "toggle", 0)
+            params:hide(SEQ_PARAM_IDS[y][x])
+        end
+    end
+
+    params:hide(PARAM_ID_NAV_X)
+    params:hide(PARAM_ID_NAV_Y)
 end
 
 function page:initialize(state)
-    add_params(state)
+    add_params()
     window = Window:new({
         x = 0,
         y = 0,
@@ -121,25 +185,27 @@ function page:initialize(state)
     page.footer = Footer:new({
         button_text = {
             k2 = {
-                name = "TOGGLE",
+                name = "TOGGL",
                 value = "",
             },
             k3 = {
-                name = "PERLIN",
+                name = "PERLN",
                 value = "",
             },
             e2 = {
                 name = "X",
-                value = state.pages.slice.seek.start,
+                value = "",
             },
             e3 = {
                 name = "Y",
-                value = state.pages.slice.seek.width,
+                value = "",
             },
         },
         font_face = state.footer_font,
     })
-    state.pages.slice.lfo:set('reset_target', 'mid: rising')
+
+    -- start sequencer
+    clock_id = clock.run(pulse)
 end
 
 return page

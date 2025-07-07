@@ -9,34 +9,18 @@ Grid = {
     margin_h = 1,
     fill = 2,
     active_fill = 15,
-    voices = {
-        -- active slice for each of 6 voices
-        {
-            start_active = 1,
-            end_active = 2,
-        },
-        {
-            start_active = 1,
-            end_active = 2,
-        },
-        {
-            start_active = 1,
-            end_active = 2,
-        },
-        {
-            start_active = 1,
-            end_active = 2,
-        },
-            {
-            start_active = 1,
-            end_active = 2,
-        },
-        {
-            start_active = 1,
-            end_active = 2,
-        },
+    cursor = {
+        x=1,
+        y=1,
     },
-    
+    sequences = {
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
+    },
     hide = false,
 }
 
@@ -48,34 +32,41 @@ function Grid:new(o)
     setmetatable(o, self)
     self.__index = self
 
-    -- initialize; todo: prevent this overwrites anything
-    -- for i = 1,6 do
-    --     o.voices[i] = {
-    --         start_active = 1,
-    --         end_active = 2,
-    --     }
-    -- end
-
     -- return instance
     return o
 end
 
 function Grid:render()
     if self.hide then return end
+    local voice
     for row = 0, self.rows - 1 do
+        voice = row + 1
         for column = 0, self.columns - 1 do
             local idx = column + 1
             local x =  self.x + (self.block_w + self.margin_w) * column
             local y =  self.y + (self.block_h + self.margin_h) * row
-
-            if idx >= self.voices[row + 1]['start_active'] and idx < self.voices[row+1]['end_active'] then
-                -- brighten active slice 
+            local step_active = self.sequences[voice][idx] == 1
+            if step_active then
+                -- brighten if active 
                 screen.level(self.active_fill)
             else
                 screen.level(self.fill)
             end
-            screen.rect(x, y, self.block_w, self.block_h)
-            screen.fill()
+
+            if self.cursor.x == idx and self.cursor.y == voice then
+                screen.rect(x, y, self.block_w, self.block_h)
+                screen.fill()
+                if step_active then
+                    screen.level(0)
+                else
+                    screen.level(15)
+                end
+                screen.rect(x+1, y+1, 1, 1)
+                screen.fill()
+            else
+                screen.rect(x, y, self.block_w, self.block_h)
+                screen.fill()
+            end
         end
     end
 end

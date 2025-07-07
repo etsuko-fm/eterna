@@ -236,7 +236,6 @@ function page:initialize(state)
 
     for i = 1, 6 do
         softcut.level(i, levels[i])
-        print(i, "initialized to ", levels[i])
     end
 
     page.footer = Footer:new({

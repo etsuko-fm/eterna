@@ -287,12 +287,9 @@ function page:initialize(state)
 
     local function on_render(ch, start, i, s)
         -- this is a callback, for every softcut.render_buffer() invocation
-        print('buffer contents rendered')
         state.pages.sample.waveform_samples = as_abs_values(s)
         state.interval = i -- represents the interval at which the waveform is sampled for rendering
         state.pages.sample.filename = path_to_file_name(state.pages.sample.selected_sample)
-        print("interval: " .. i)
-        print('max sample val:' .. math.max(table.unpack(state.pages.sample.waveform_samples)))
         update_waveform(state)
         screen_dirty = true
     end
