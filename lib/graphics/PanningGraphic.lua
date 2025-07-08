@@ -1,14 +1,13 @@
 PanningGraphic = {
     -- PanningBars? HorizontalMetaPanner?
-    x = 64,
+    x = 32,
     y = 11,
-    spread = 1, -- 0 to 1
+    pans = {0,0,0,0,0,0,},
     pixel_width=32,
     bar_w = 2,
     bar_h = 4,
     margin_h = 2,
     hide = false,
-    twist = 0, -- controls x position of each bar, in radians
 }
 
 function PanningGraphic:new(o)
@@ -26,21 +25,27 @@ end
 function PanningGraphic:render()
     if self.hide then return end
     local margin = 2
+    local half_bar = self.bar_w/2
+
+    -- indicator should not exceed graph
+    local max_indicator_x = self.pixel_width - half_bar
+
     for i = 0, 5 do
+        local voice = i+1
+        -- draw background rectangle
         screen.level(2)
-        screen.rect(32, self.y + (margin+self.bar_h) * i, 64, self.bar_h)
+        screen.rect(self.x, self.y + (margin+self.bar_h) * i, 64, self.bar_h)
         screen.fill()
 
-        screen.level(15)
-        local anglex = (i / 6) * (math.pi * 2) + self.twist-- Divide full circle into 6 parts, offset with twist; in radians
+        -- pan is -1 to 1
+        local indicator_x = self.pans[voice] * max_indicator_x
 
-        -- cos goes from -1 to 1, bidirectional and center-based hence the /2
-        -- bar should be centered when math.cos(anglex) == 0; therefore -self.bar_w/2
-        -- self.spread*self.pixel_width is half the total width (as cos is +/-1), therefore half the width is subtracted from the total available motion range
-        local x_float =  -self.bar_w/2 + ((self.spread*self.pixel_width - self.bar_w/2) * math.cos(anglex))
-        local x = math.floor(self.x + x_float + .5)
+        local x = math.floor(self.x + (self.pixel_width - half_bar) + indicator_x + .5)
         local y = math.floor(self.y + (self.bar_h + self.margin_h) * i)
+
+        -- draw indicator
         screen.move(x,y)
+        screen.level(15)
         screen.rect(x, y, self.bar_w, self.bar_h)
         screen.fill()
     end
