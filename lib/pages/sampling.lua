@@ -96,7 +96,52 @@ local function path_to_file_name(file_path)
     return string.sub(file_path, split_at + 1)
 end
 
+local function update_waveforms()
+    local w = state.pages.sample.waveform_width -- 59 currently, in px
+    -- now need loop start/end per voice
+    local s = params:get(SLICE_PARAM_IDS[1].loop_start)
+    local e = params:get(SLICE_PARAM_IDS[1].loop_end)
+    local idx_low = math.floor((s/state.sample_length) * #state.pages.sample.waveform_samples)
+    local idx_hi = math.floor((e/state.sample_length) * #state.pages.sample.waveform_samples)
+end
 
+local function update_softcut_ranges()
+    local n_slices = params:get(PARAM_ID_NUM_SLICES)
+    local start = params:get(PARAM_ID_SLICE_START)
+
+    -- edit buffer ranges per softcut voice
+    local slice_start_timestamps = {}
+    local slice_length = (1 / n_slices) * state.sample_length
+
+    for i = 1, n_slices do
+        -- start at 0
+        slice_start_timestamps[i] = (i-1) * slice_length
+    end
+
+    for i = 0, 5 do
+        local voice = i + 1
+
+        -- start >= 1; table indexing starts at 1;
+        --- start + i maps from 1 to 6 when start = 1, 
+        --- or 26-32 when start=26.
+        --- this works fine for n_slices > 6; else, voices need to recycle slices;
+        --- hence the modulo.
+        start_pos = slice_start_timestamps[((start - 1 + i) % n_slices) + 1]
+        -- loop start/end works as buffer range when loop not enabled
+        softcut.loop_start(voice, start_pos)
+
+        -- end point is where the next slice starts
+        local end_pos =  start_pos + (slice_length * .6) -- leave a small gap to prevent overlap
+        softcut.loop_end(voice, end_pos)
+
+        -- save in params, so waveforms can render correctly
+        params:set(SLICE_PARAM_IDS[voice].loop_start, start_pos)
+        params:set(SLICE_PARAM_IDS[voice].loop_end, end_pos)
+    end
+
+    -- let waveforms represent which section of buffer is active
+    update_waveforms()
+end
 local function load_sample(state, file)
     -- use specified `file` as a sample and store enabled length of softcut buffer in state
     state.sample_length = audio_util.load_sample(file, true)
@@ -106,7 +151,8 @@ local function load_sample(state, file)
     end
 
     softcut.render_buffer(1, 0, state.sample_length, state.pages.sample.waveform_width)
-    update_softcut(state)
+    update_softcut_ranges()
+    -- params:bang() -- to retrigger slice calculation
 end
 
 
@@ -151,52 +197,7 @@ local function shuffle()
     print("shuffle!", new_num_slices, new_start)
 end
 
-local function update_waveforms()
-    local w = state.pages.sample.waveform_width -- 59 currently, in px
-    -- now need loop start/end per voice
-    local s = params:get(SLICE_PARAM_IDS[1].loop_start)
-    local e = params:get(SLICE_PARAM_IDS[1].loop_end)
-    local idx_low = math.floor((s/state.sample_length) * #state.pages.sample.waveform_samples)
-    local idx_hi = math.floor((e/state.sample_length) * #state.pages.sample.waveform_samples)
-end
 
-local function update_softcut_ranges()
-    local n_slices = params:get(PARAM_ID_NUM_SLICES)
-    local start = params:get(PARAM_ID_SLICE_START)
-
-    -- edit buffer ranges per softcut voice
-    local slice_start_timestamps = {}
-    local slice_length = (1 / n_slices) * state.sample_length
-
-    for i = 1, n_slices do
-        -- start at 0
-        slice_start_timestamps[i] = (i-1) * slice_length
-    end
-
-    for i = 0, 5 do
-        local voice = i + 1
-
-        -- start >= 1; table indexing starts at 1;
-        --- start + i maps from 1 to 6 when start = 1, 
-        --- or 26-32 when start=26.
-        --- this works fine for n_slices > 6; else, voices need to recycle slices;
-        --- hence the modulo.
-        start_pos = slice_start_timestamps[((start - 1 + i) % n_slices) + 1]
-        -- loop start/end works as buffer range when loop not enabled
-        softcut.loop_start(voice, start_pos)
-
-        -- end point is where the next slice starts
-        local end_pos =  start_pos + slice_length
-        softcut.loop_end(voice, end_pos)
-
-        -- save in params, so waveforms can render correctly
-        params:set(SLICE_PARAM_IDS[voice].loop_start, start_pos)
-        params:set(SLICE_PARAM_IDS[voice].loop_end, end_pos)
-    end
-
-    -- let waveforms represent which section of buffer is active
-    update_waveforms()
-end
 
 local function action_num_slices(v)
     -- update max start based on number of slices

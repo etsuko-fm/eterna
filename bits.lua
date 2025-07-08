@@ -20,11 +20,6 @@ local ready
 
 screen_dirty = true
 local screen_is_updating = false
-PLAYBACK_DIRECTION = {
-  FWD = "FWD",
-  REV = "REV",
-  FWD_REV = "FWD_REV"
-}
 
 state = {
   default_font = 68,
@@ -40,7 +35,7 @@ state = {
   sample_length = nil,       -- full length of the currently loaded sample
 
   -- time controls
-  fade_time = .2,                    -- crossfade when looping playback
+  fade_time = 8/48000,                    -- crossfade when looping playback
   request_update_softcut = false, -- todo: is this still used or replaced it with events?
 
   pages = {
@@ -92,12 +87,6 @@ state = {
         },
       },
     },
-    pitch = {          -- should maybe rename to playback rate
-      rate_center = 0, -- 0 = center, bipolar, relative to current range
-      rate_spread = 1, -- fraction of playback rate
-      quantize = true,
-      direction = PLAYBACK_DIRECTION["FWD_REV"],
-    },
     sample = {
       waveform_samples = {},
       waveform_width = 960, -- >=30 per waveform, so 1/32 should be >= 30
@@ -112,13 +101,13 @@ state = {
 
 local pages = {
   page_sampling,
-  page_panning,
-  page_levels,
   page_sequencer,
+  page_panning,
   page_pitch,
+  page_levels,
 }
 
-local current_page_index = 4
+local current_page_index = 1
 local current_page = pages[current_page_index]
 
 local function page_forward()
@@ -142,29 +131,12 @@ local function count()
   ready = true
 end
 
-function update_softcut(state)
-  -- no need for events, just make it a global function
-  -- resets softcut voice to start of buffer, limits loop length to enabled section
-  -- todo: better name, sync_softcut?
-  for i = 1, 6 do
-    softcut.loop_start(i, state.pages.slice.enabled_section[1])
-    softcut.loop_end(i, state.pages.slice.enabled_section[2])
-  end
-end
-
-function reset_softcut_positions(state)
-  for i = 1, 6 do
-    softcut.position(i, state.pages.slice.enabled_section[1])
-  end
-end
-
 
 local function enable_all_voices()
   for i = 1, 6 do
     softcut.enable(i, 1)
     softcut.buffer(i, 1)
     softcut.loop(i, 0)
-    -- softcut.play(i, 1)
     softcut.fade_time(i, state.fade_time)
   end
 end

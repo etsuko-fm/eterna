@@ -151,6 +151,14 @@ function page:render(state)
     page.footer:render()
 end
 
+local function recalculate_levels()
+    local sigma = amp_to_sigma(params:get(PARAM_ID_AMP))
+    local levels = gaussian.calculate_gaussian_levels(params:get(PARAM_ID_POS), sigma)
+    for i = 1, 6 do
+        softcut.level(i, levels[i])
+    end
+end
+
 local function add_actions(state)
     params:set_action(PARAM_ID_LFO_ENABLED,
         function()
@@ -169,23 +177,11 @@ local function add_actions(state)
                 lfo_util.lfo_period_label_values[params:string(PARAM_ID_LFO_RATE)])
         end)
 
-    params:set_action(PARAM_ID_POS, function()
-        local levels = gaussian.calculate_gaussian_levels(params:get(PARAM_ID_POS),
-            state.pages.metamixer.sigma)
-        for i = 1, 6 do
-            softcut.level(i, levels[i])
-        end
-    end)
+    params:set_action(PARAM_ID_POS, recalculate_levels)
     params:set_action(PARAM_ID_LFO_SHAPE,
         function() state.pages.metamixer.lfo:set('shape', params:string(PARAM_ID_LFO_SHAPE)) end)
 
-    params:set_action(PARAM_ID_AMP, function()
-        local sigma = amp_to_sigma(params:get(PARAM_ID_AMP))
-        local levels = gaussian.calculate_gaussian_levels(params:get(PARAM_ID_POS), sigma)
-        for i = 1, 6 do
-            softcut.level(i, levels[i])
-        end
-    end)
+    params:set_action(PARAM_ID_AMP, recalculate_levels)
 end
 
 local function add_params(state)

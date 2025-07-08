@@ -86,7 +86,6 @@ local function toggle_step(state)
     local y = params:get(PARAM_ID_NAV_Y)
     local curr = params:get(SEQ_PARAM_IDS[y][x])
     local new = 1 - curr
-    print('setting from ', curr, ' to ', new)
     params:set(SEQ_PARAM_IDS[y][x], new)
     grid_graphic.sequences[y][x] = new
 end
@@ -95,16 +94,17 @@ function pulse()
     -- advance 
     while true do
         current_step = util.wrap(current_step + 1,1,16)
+        local x = current_step -- x pos of sequencer, i.e. current step
         for y = 1,ROWS do
-            for x = 1,COLUMNS do
-                local on = params:get(SEQ_PARAM_IDS[y][x])
-                if on == 1 then
-                    -- query position, aii from other page
-                    local param_str = "sampling_" .. y .. "start"
-                    local start_pos = params:get(param_str)
-                    softcut.position(1, start_pos)
-                    softcut.play(1, 1)
-                end
+            local on = params:get(SEQ_PARAM_IDS[y][x])
+            if on == 1 then
+                -- query position, aii from other page
+                local param_str = "sampling_" .. y .. "start"
+                local start_pos = params:get(param_str)
+                softcut.position(y, start_pos)
+                softcut.play(y, 1)
+            else
+                -- softcut.play(y, 0)
             end
         end
         clock.sync(1/4)
@@ -138,6 +138,9 @@ function page:render(state)
     grid_graphic:render()
     page.footer.button_text.e2.value = params:get(PARAM_ID_NAV_X)
     page.footer.button_text.e3.value = params:get(PARAM_ID_NAV_Y)
+    screen.level(15)
+    screen.rect(28 + (current_step * 4) ,24, 3, 1)
+    screen.fill()
     page.footer:render()
 end
 

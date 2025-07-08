@@ -26,6 +26,11 @@ local SPREAD_MAX_QUANTIZED = 2.5
 local SPREAD_QUNATUM = 0.01
 local SPREAD_QUNATUM_QUANTIZED = 0.5
 
+local PLAYBACK_DIRECTION = {
+  FWD = "FWD",
+  REV = "REV",
+  FWD_REV = "FWD_REV"
+}
 
 
 local controlspec_center = controlspec.def {
@@ -79,7 +84,6 @@ local function calculate_rates(state)
             -- reverse playback [TODO: wait, why?]
             rate = -rate
         end
-        -- state.softcut.rates[i + 1] = rate
         softcut.rate(i+1, rate)
         -- graph is linear while rate is exponential 
         page.pitch_graph.voice_pos[i] = -math.log(math.abs(rate), 2)
@@ -87,13 +91,14 @@ local function calculate_rates(state)
 end
 
 local function update_playback_dir(new_val)
+    print("updated with " .. new_val)
     -- update graphics
-    if new_val == PLAYBACK_DIRECTION["FWD"] then
+    if new_val == 1 then
         -- all forward 
         for i = 1, 6 do
             page.pitch_graph.voice_dir[i] = PLAYBACK_DIRECTION["FWD"]
         end
-    elseif new_val == PLAYBACK_DIRECTION["REV"] then
+    elseif new_val == 2 then
         -- all reverse
         for i = 1, 6 do
             page.pitch_graph.voice_dir[i] = PLAYBACK_DIRECTION["REV"]
@@ -111,7 +116,7 @@ local function update_playback_dir(new_val)
     calculate_rates()
 end
 
-local function add_params(state)
+local function add_params()
     params:add_separator("PLAYBACK_RATES", "PLAYBACK RATES")
 
     params:add_binary(PARAM_ID_QUANTIZE, 'quantize', "toggle", QUANTIZE_DEFAULT)
@@ -125,11 +130,7 @@ local function add_params(state)
 
     local p = {"FWD", "REV", "FWD_REV"}
     params:add_option(PARAM_ID_DIRECTION, "direction", p, 1)
-    params:set_action(PARAM_ID_DIRECTION, action_direction)
-end
-
-function action_direction(v)
-    update_playback_dir(v)
+    params:set_action(PARAM_ID_DIRECTION, update_playback_dir)
 end
 
 function action_quantize(v)
@@ -171,16 +172,15 @@ end
 local function cycle_direction()
     local current = params:get(PARAM_ID_DIRECTION)
     local next
-    if current == PLAYBACK_DIRECTION["FWD"] then
-        next = "REV"
-    elseif current == PLAYBACK_DIRECTION["REV"] then
-        next = "FWD_REV"
+    if current == 1 then -- PLAYBACK_DIRECTION["FWD"] then
+        next = 2 --"REV"
+    elseif current == 2 then --PLAYBACK_DIRECTION["REV"] then
+        next = 3 -- "FWD_REV"
     else
-        next = "FWD"
+        next = 1
     end
 
-    params:set(PARAM_ID_DIRECTION, PLAYBACK_DIRECTION[next])
-    update_playback_dir()
+    params:set(PARAM_ID_DIRECTION, next) -- PLAYBACK_DIRECTION[next]
 end
 
 
@@ -229,7 +229,7 @@ function page:render(state)
 end
 
 function page:initialize(state)
-    add_params(state)
+    add_params()
     page.window = Window:new({
         x = 0,
         y = 0,
@@ -245,7 +245,7 @@ function page:initialize(state)
     })
 
     page.pitch_graph = PitchGraph:new()
-    update_playback_dir()
+    update_playback_dir(1)
     page.footer = Footer:new({
         button_text = {
             k2 = {
