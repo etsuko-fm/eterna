@@ -8,6 +8,7 @@ Waveform = {
     vertical_scale = 1,
     fill_selected = 15,
     fill_default = 5,
+    render_samples = 16,
 }
 
 function Waveform:new(o)
@@ -19,7 +20,7 @@ end
 
 function Waveform:render()
     if self.hide then return end
-
+    if #self.samples == 0 then return end
     local x_pos = self.x
 
     -- sample_length refers to the total length in seconds of the sample. 
@@ -31,8 +32,11 @@ function Waveform:render()
     screen.rect(x_pos - 2, self.y - offset + 1, line_width + 3, offset * 2)
     screen.stroke()
     -- draw waveform
-    for i, s in ipairs(self.samples) do
-        local height = util.round(math.abs(s) * self.vertical_scale)
+    local total_samples = #self.samples
+    local iter_size = math.floor(total_samples / self.render_samples)
+
+    for i = 1, #self.samples, iter_size do  -- step size of 2
+        local height = util.round(math.abs(self.samples[i]) * self.vertical_scale)
         screen.move(x_pos, self.y - height)
         screen.level(self.fill_default)
         screen.line_rel(0, 2 * height)

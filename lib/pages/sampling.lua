@@ -5,7 +5,6 @@ local page_name = "SAMPLING"
 local fileselect = require('fileselect')
 local page_disabled = false
 local debug = include("bits/lib/util/debug")
-local state_util = include("bits/lib/util/state")
 local misc_util = include("bits/lib/util/misc")
 
 local waveform
@@ -77,7 +76,6 @@ local function as_abs_values(tbl)
     return tbl
 end
 
-
 local function update_waveform(state)
     waveform.sample_length = state.sample_length
     waveform.samples = state.pages.sample.waveform_samples
@@ -88,7 +86,6 @@ local function update_waveform(state)
         state.pages.sample.scale_waveform = norm_scale / math.max(table.unpack(state.pages.sample.waveform_samples))
     end
 end
-
 
 local function path_to_file_name(file_path)
     -- strips '/foo/bar/audio.wav' to 'audio.wav'
@@ -152,7 +149,6 @@ local function load_sample(state, file)
 
     softcut.render_buffer(1, 0, state.sample_length, state.pages.sample.waveform_width)
     update_softcut_ranges()
-    -- params:bang() -- to retrigger slice calculation
 end
 
 
@@ -239,7 +235,7 @@ function page:render(state)
 
     update_waveform(state)
     waveform.vertical_scale = state.pages.sample.scale_waveform
-    -- waveform:render()
+    waveform:render()
 
     -- slices
     page.footer.button_text.e2.value = params:get(PARAM_ID_NUM_SLICES)
@@ -332,7 +328,7 @@ function page:initialize(state)
     })
 
     waveform = Waveform:new({
-        x = (128 - state.pages.sample.waveform_width) / 2,
+        x = 64,
         y = 25,
         highlight = false,
         sample_length = state.sample_length,
