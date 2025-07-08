@@ -18,6 +18,9 @@ PitchGraph = {
     voice_dir = {},
 }
 
+-- only awareness of playback direction is "forward" or "non-forward" (i.e. reverse)
+local FWD = "FWD"
+
 local pixels_per_octave = 4
 
 function PitchGraph:new(o)
@@ -64,7 +67,7 @@ function PitchGraph:render()
         screen.fill()
 
         -- 3 is some random extra margin
-        if self.voice_dir[n+1] == PLAYBACK_DIRECTION["FWD"] then
+        if self.voice_dir[n+1] == FWD then
             -- forward arrow
             screen.move(x + 1, self.y + (self.block_h + self.margin_h) * self.lines + 3)
             screen.line_rel(3,2)

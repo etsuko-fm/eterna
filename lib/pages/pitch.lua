@@ -3,7 +3,6 @@ local Window = include("bits/lib/graphics/Window")
 local PitchGraph = include("bits/lib/graphics/PitchGraph")
 local page_name = "Playback"
 local debug = include("bits/lib/util/debug")
-local state_util = include("bits/lib/util/state")
 local misc_util = include("bits/lib/util/misc")
 local page
 
@@ -12,11 +11,16 @@ local PARAM_ID_QUANTIZE = "pitch_quantize"
 local PARAM_ID_CENTER = "pitch_center"
 local PARAM_ID_SPREAD = "pitch_spread"
 
+-- voice directions
+function get_voice_dir_param_id(i)
+  return "pitch_v" .. i .. "_dir"
+end
+
 local QUANTIZE_DEFAULT = 1
 
 local CENTER_MIN = -3
 local CENTER_MAX = 3
-local CENTER_QUANTUM = 1/120
+local CENTER_QUANTUM = 1 / 120
 local CENTER_QUANTUM_QUANTIZED = 1.0
 
 local SPREAD_MIN = -3
@@ -26,45 +30,44 @@ local SPREAD_MAX_QUANTIZED = 2.5
 local SPREAD_QUNATUM = 0.01
 local SPREAD_QUNATUM_QUANTIZED = 0.5
 
-local PLAYBACK_DIRECTION = {
-  FWD = "FWD",
-  REV = "REV",
-  FWD_REV = "FWD_REV"
-}
+local FWD = "FWD"
+local REV = "REV"
+local FWD_REV = "FWD+REV"
 
+local playback_table = { FWD, REV, FWD_REV }
 
 local controlspec_center = controlspec.def {
-    min = CENTER_MIN, -- the minimum value
-    max = CENTER_MAX, -- the maximum value
-    warp = 'lin',       -- a shaping option for the raw value
-    step = 1/120,        -- output value quantization
-    default = 0.0,      -- default value
-    units = '',         -- displayed on PARAMS UI
-    quantum = CENTER_QUANTUM_QUANTIZED,     -- each delta will change raw value by this much
-    wrap = false         -- wrap around on overflow (true) or clamp (false)
+    min = CENTER_MIN,                   -- the minimum value
+    max = CENTER_MAX,                   -- the maximum value
+    warp = 'lin',                       -- a shaping option for the raw value
+    step = 1 / 120,                     -- output value quantization
+    default = 0.0,                      -- default value
+    units = '',                         -- displayed on PARAMS UI
+    quantum = CENTER_QUANTUM_QUANTIZED, -- each delta will change raw value by this much
+    wrap = false                        -- wrap around on overflow (true) or clamp (false)
 }
 
 local controlspec_spread = controlspec.def {
-    min = SPREAD_MIN_QUANTIZED, -- the minimum value
-    max = SPREAD_MAX_QUANTIZED, -- the maximum value
-    warp = 'lin',       -- a shaping option for the raw value
-    step = 0.01,        -- output value quantization
-    default = 0.0,      -- default value
-    units = '',         -- displayed on PARAMS UI
-    quantum = SPREAD_QUNATUM_QUANTIZED,     -- each delta will change raw value by this much
-    wrap = false         -- wrap around on overflow (true) or clamp (false)
+    min = SPREAD_MIN_QUANTIZED,         -- the minimum value
+    max = SPREAD_MAX_QUANTIZED,         -- the maximum value
+    warp = 'lin',                       -- a shaping option for the raw value
+    step = 0.01,                        -- output value quantization
+    default = 0.0,                      -- default value
+    units = '',                         -- displayed on PARAMS UI
+    quantum = SPREAD_QUNATUM_QUANTIZED, -- each delta will change raw value by this much
+    wrap = false                        -- wrap around on overflow (true) or clamp (false)
 }
 
-local function calculate_rates(state)
+local function calculate_rates()
     -- recalculate softcut playback rates, taking into account quantize, spread, center, direction
     for i = 0, 5 do
         -- map 6 values as equally spread angles on a (virtual) circle, by using radians (fraction * 2PI)
         local radians = i / 6 * math.pi * 2
 
-        -- this extra factor increases the range; values beyond 2PI are effectively treated as `% 2PI` by sin(), 
+        -- this extra factor increases the range; values beyond 2PI are effectively treated as `% 2PI` by sin(),
         -- because sin() is a periodic function with a period of 2PI
         -- this extension affects the way the playback rates are spread over the six voices
-        local extend = 2.67  -- manually tuned, 2.7 is also nice
+        local extend = 2.67 -- manually tuned, 2.7 is also nice
 
         -- here pitch is not a meaningful value yet; it's _some_ ratio of the normal playback pitch, with 0 = original pitch
         local pitch = math.sin(radians * extend) * params:get(PARAM_ID_SPREAD)
@@ -80,36 +83,39 @@ local function calculate_rates(state)
 
         local rate = util.clamp(2 ^ pitch, 1 / 8, 8)
 
-        if page.pitch_graph.voice_dir[i] == PLAYBACK_DIRECTION["REV"] then
-            -- reverse playback [TODO: wait, why?]
+        local voice = i + 1
+        if params:get(get_voice_dir_param_id(voice)) == 2 then -- todo: lookuptable 2>rev, 1>fwd
             rate = -rate
         end
-        softcut.rate(i+1, rate)
+        softcut.rate(voice, rate)
         -- graph is linear while rate is exponential 
         page.pitch_graph.voice_pos[i] = -math.log(math.abs(rate), 2)
     end
 end
 
 local function update_playback_dir(new_val)
-    print("updated with " .. new_val)
     -- update graphics
-    if new_val == 1 then
-        -- all forward 
-        for i = 1, 6 do
-            page.pitch_graph.voice_dir[i] = PLAYBACK_DIRECTION["FWD"]
+    if playback_table[new_val] == FWD then
+        -- all forward
+        for voice = 1, 6 do
+            page.pitch_graph.voice_dir[voice] = FWD
+            params:set(get_voice_dir_param_id(voice), 1)
         end
-    elseif new_val == 2 then
+    elseif playback_table[new_val] == REV then
         -- all reverse
-        for i = 1, 6 do
-            page.pitch_graph.voice_dir[i] = PLAYBACK_DIRECTION["REV"]
+        for voice = 1, 6 do
+            page.pitch_graph.voice_dir[voice] = REV
+            params:set(get_voice_dir_param_id(voice), 2)
         end
     else
         -- alternate forward/reverse
-        for i = 1, 5, 2 do
-            page.pitch_graph.voice_dir[i] = PLAYBACK_DIRECTION["FWD"]
+        for voice = 1, 5, 2 do
+            page.pitch_graph.voice_dir[voice] = FWD
+            params:set(get_voice_dir_param_id(voice), 1)
         end
-        for i = 2, 6, 2 do
-            page.pitch_graph.voice_dir[i] = PLAYBACK_DIRECTION["REV"]
+        for voice = 2, 6, 2 do
+            page.pitch_graph.voice_dir[voice] = REV
+            params:set(get_voice_dir_param_id(voice), 2)
         end
     end
     -- update softcut
@@ -123,14 +129,21 @@ local function add_params()
     params:set_action(PARAM_ID_QUANTIZE, action_quantize)
 
     params:add_control(PARAM_ID_CENTER, "center", controlspec_center)
-    params:set_action(PARAM_ID_CENTER, action_center)
+    params:set_action(PARAM_ID_CENTER, calculate_rates)
 
     params:add_control(PARAM_ID_SPREAD, "spread", controlspec_spread)
-    params:set_action(PARAM_ID_SPREAD, action_spread)
+    params:set_action(PARAM_ID_SPREAD, calculate_rates)
 
-    local p = {"FWD", "REV", "FWD_REV"}
-    params:add_option(PARAM_ID_DIRECTION, "direction", p, 1)
+    params:add_option(PARAM_ID_DIRECTION, "direction", playback_table, 1)
     params:set_action(PARAM_ID_DIRECTION, update_playback_dir)
+
+    -- voice directions (fwd/rev/both)
+    for voice = 1, 6 do
+        local param_id = get_voice_dir_param_id(voice)
+        params:add_option(param_id, param_id, playback_table, 1)
+        params:hide(param_id)
+    end
+
 end
 
 function action_quantize(v)
@@ -160,27 +173,9 @@ function action_quantize(v)
     calculate_rates()
 end
 
-function action_center(v)
-    calculate_rates()
-end
-
-function action_spread(v)
-    calculate_rates()
-end
-
-
 local function cycle_direction()
-    local current = params:get(PARAM_ID_DIRECTION)
-    local next
-    if current == 1 then -- PLAYBACK_DIRECTION["FWD"] then
-        next = 2 --"REV"
-    elseif current == 2 then --PLAYBACK_DIRECTION["REV"] then
-        next = 3 -- "FWD_REV"
-    else
-        next = 1
-    end
-
-    params:set(PARAM_ID_DIRECTION, next) -- PLAYBACK_DIRECTION[next]
+    local new = util.wrap(params:get(PARAM_ID_DIRECTION) + 1, 1, 3)
+    params:set(PARAM_ID_DIRECTION, new)
 end
 
 
@@ -211,7 +206,7 @@ page = Page:create({
 
 function page:render(state)
     page.window:render()
-    page.footer.button_text.k2.value = params:get(PARAM_ID_DIRECTION)
+    page.footer.button_text.k2.value = playback_table[params:get(PARAM_ID_DIRECTION)]
     page.footer.button_text.k3.value = params:get(PARAM_ID_QUANTIZE) == 1 and "ON" or "OFF"
 
     -- convert -3/+3 range to -36/+36 rounded to 1 decimal

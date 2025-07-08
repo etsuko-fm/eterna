@@ -95,13 +95,20 @@ function pulse()
     while true do
         current_step = util.wrap(current_step + 1,1,16)
         local x = current_step -- x pos of sequencer, i.e. current step
-        for y = 1,ROWS do
+        for y = 1, ROWS do
             local on = params:get(SEQ_PARAM_IDS[y][x])
             if on == 1 then
-                -- query position, aii from other page
-                local param_str = "sampling_" .. y .. "start"
-                local start_pos = params:get(param_str)
-                softcut.position(y, start_pos)
+
+                if params:get(get_voice_dir_param_id(y)) == 1 then
+                    -- play forward
+                    -- query position, todo: param id is defined on sampling page
+                    local param_str_start = "sampling_" .. y .. "start"
+                    softcut.position(y, params:get(param_str_start))
+                else
+                    -- play reverse, start at end
+                    local param_str_end = "sampling_" .. y .. "end"
+                    softcut.position(y, params:get(param_str_end))
+                end
                 softcut.play(y, 1)
             else
                 -- softcut.play(y, 0)

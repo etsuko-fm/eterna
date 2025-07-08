@@ -59,16 +59,7 @@ local function amp_to_sigma(v)
         return util.linexp(0, 1, SIGMA_MIN, SIGMA_MAX, v)
 end
 
-
 local function adjust_sigma(state, d)
-    -- local k = (10 ^ math.log(state.pages.metamixer.sigma, 10)) / 25
-    -- state_util.adjust_param(state.pages.metamixer, 'sigma', d, k, state.pages.metamixer.sigma_min,
-    --     state.pages.metamixer.sigma_max, false)
-    -- local levels = gaussian.calculate_gaussian_levels(params:get(PARAM_ID_POS),
-    --     state.pages.metamixer.sigma)
-    -- for i = 1, 6 do
-    --     softcut.level(i, levels[i])
-    -- end
     local incr = d * controlspec_amp.quantum
     local curr = params:get(PARAM_ID_AMP)
     local new_val = curr + incr
@@ -96,7 +87,6 @@ local function adjust_lfo_rate(state, d)
     lfo_util.adjust_lfo_rate_quant(d, state.pages.metamixer.lfo)
 end
 
-
 local function e2(state, d)
     if state.pages.metamixer.lfo:get("enabled") == 1 then
         adjust_lfo_rate(state, d)
@@ -104,7 +94,6 @@ local function e2(state, d)
         adjust_position(state, d)
     end
 end
-
 
 local function e3(state, d)
     adjust_sigma(state, d)
@@ -224,14 +213,13 @@ function page:initialize(state)
 
     -- initialize softcut levels according to mixer levels
     adjust_sigma(state, 0)
-    local levels = gaussian.calculate_gaussian_levels(params:get(PARAM_ID_POS),
-        state.pages.metamixer.sigma)
 
-    bars_graphic.levels = gaussian.calculate_gaussian_levels(params:get(PARAM_ID_POS),
-        state.pages.metamixer.sigma)
+    local sigma = amp_to_sigma(params:get(PARAM_ID_AMP))
+    local levels = gaussian.calculate_gaussian_levels(params:get(PARAM_ID_POS), sigma)
+    bars_graphic.levels = levels
 
-    for i = 1, 6 do
-        softcut.level(i, levels[i])
+    for voice = 1, 6 do
+        softcut.level(voice, levels[voice])
     end
 
     page.footer = Footer:new({
