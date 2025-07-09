@@ -190,8 +190,8 @@ local page = Page:create({
     name = page_name,
     e2 = e2,
     e3 = e3,
-    k2_off = toggle_step,
-    k3_off = toggle_perlin,
+    k2_off = toggle_perlin,
+    k3_off = toggle_step,
 })
 
 
