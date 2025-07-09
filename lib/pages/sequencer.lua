@@ -10,6 +10,19 @@ local ROWS = 6
 local COLUMNS = 16
 
 local PARAM_ID_PERLIN_X = "sequencer_perlin_x"
+local PARAM_ID_PERLIN_Y = "sequencer_perlin_y"
+local PARAM_ID_PERLIN_Z = "sequencer_perlin_z"
+local PARAM_ID_PERLIN_ZOOM = "sequencer_perlin_zoom"
+
+local DIM_X = "X"
+local DIM_Y = "Y"
+local DIM_Z = "Z"
+local ZOOM = "ZOOM"
+local DIMENSIONS = {DIM_X, DIM_Y, DIM_Z, ZOOM}
+local PARAM_ID_DIMENSIONS = {PARAM_ID_PERLIN_X, PARAM_ID_PERLIN_Y, PARAM_ID_PERLIN_Z, PARAM_ID_PERLIN_ZOOM}
+
+local current_dimension = 1
+
 local PARAM_ID_PERLIN_DENSITY = "sequencer_perlin_density"
 
 local PARAM_ID_SEQUENCE_SPEED = "sequencer_speed"
@@ -39,12 +52,12 @@ local sequence_speed = convert_sequence_speed[DEFAULT_SEQUENCE_SPEED_IDX]
 
 local controlspec_perlin = controlspec.def {
     min = 0,       -- the minimum value
-    max = 10,      -- the maximum value
+    max = 9999,      -- the maximum value
     warp = 'lin',  -- a shaping option for the raw value
     step = .01,    -- output value quantization
     default = 0,   -- default value
     units = '',    -- displayed on PARAMS UI
-    quantum = .01, -- each delta will change raw value by this much
+    quantum = .05, -- each delta will change raw value by this much
     wrap = false   -- wrap around on overflow (true) or clamp (false)
 }
 
@@ -61,37 +74,29 @@ local controlspec_perlin_density = controlspec.def {
 
 local function generate_perlin_seq()
     -- need as many values as there are rows and columns
-    local step = 1/3
-    local seed =  params:get(PARAM_ID_PERLIN_X)
+    local zoom = params:get(PARAM_ID_PERLIN_ZOOM)
     local density = params:get(PARAM_ID_PERLIN_DENSITY)
-    for y=1, ROWS do
-        for x=1,COLUMNS do
-            -- result[y][x] = perlin:noise(x*step + seedx, y*step + seedy)
-            local v = (1 + perlin:noise(x*step +seed, y*step + seed))/2
-            params:set(SEQ_PARAM_IDS[y][x], math.floor(v+density))
+    local x_seed = params:get(PARAM_ID_PERLIN_X)
+    local y_seed = params:get(PARAM_ID_PERLIN_Y)
+    local z_seed = params:get(PARAM_ID_PERLIN_Z)
+    for voice=1, ROWS do
+        for step=1,COLUMNS do
+            local perlin_x = step * zoom + x_seed
+            local perlin_y = voice * zoom + y_seed
+            local perlin_z = z_seed
+            local n = perlin:noise(perlin_x, perlin_y, perlin_z) -- -1 to 1
+            local v = (1 + n)/2 -- 0 to 1
+            -- adding density before rounding down gives control over number of active sequence stepps
+            params:set(SEQ_PARAM_IDS[voice][step], math.floor(v+density))
         end
     end
 end
 
-local function action_perlin_x(v)
-    generate_perlin_seq()
-end
-
-local function action_perlin_density(v)
-    generate_perlin_seq()
-end
-
-local function action_nav_x(v)
-    grid_graphic.cursor.x = v
-end
-
-local function action_nav_y(v)
-    grid_graphic.cursor.y = v
-end
-
 local function e2(d)
-    local new = params:get(PARAM_ID_PERLIN_X) + controlspec_perlin.quantum * d
-    params:set(PARAM_ID_PERLIN_X, new, false)
+    -- works for x, y, and z
+    local p = PARAM_ID_DIMENSIONS[current_dimension]
+    local new = params:get(p) + controlspec_perlin.quantum * d
+    params:set(p, new, false)
 end
 
 local function e3(d)
@@ -147,13 +152,17 @@ local function toggle_perlin()
     generate_perlin_seq()
 end
 
+local function cycle_dimension()
+    current_dimension = util.wrap(current_dimension+1, 1, #DIMENSIONS)
+end
+
 
 local page = Page:create({
     name = page_name,
     e2 = e2,
     e3 = e3,
     k2_off = toggle_perlin,
-    k3_off = nil,
+    k3_off = cycle_dimension,
 })
 
 local function action_sequence_speed(v)
@@ -181,10 +190,10 @@ function page:render()
     for voice = 1,6 do
         softcut.query_position(voice)
     end
-    page.footer.button_text.k3.name = ""
-    page.footer.button_text.e2.name = "SCROL"
+    page.footer.button_text.k3.value = DIMENSIONS[current_dimension]
+    page.footer.button_text.e2.name = DIMENSIONS[current_dimension]
     page.footer.button_text.e3.name = "DENS"
-    page.footer.button_text.e2.value = params:get(PARAM_ID_PERLIN_X)
+    page.footer.button_text.e2.value = params:get(PARAM_ID_DIMENSIONS[current_dimension])
     page.footer.button_text.e3.value = params:get(PARAM_ID_PERLIN_DENSITY)
 
 
@@ -199,10 +208,20 @@ local function add_params()
     params:add_separator("SEQUENCER", page_name)
 
     params:add_control(PARAM_ID_PERLIN_X, "perlin x", controlspec_perlin)
-    params:set_action(PARAM_ID_PERLIN_X, action_perlin_x)
+    params:set_action(PARAM_ID_PERLIN_X, generate_perlin_seq)
+
+    params:add_control(PARAM_ID_PERLIN_Y, "perlin y", controlspec_perlin)
+    params:set_action(PARAM_ID_PERLIN_Y, generate_perlin_seq)
+
+    params:add_control(PARAM_ID_PERLIN_Z, "perlin z", controlspec_perlin)
+    params:set_action(PARAM_ID_PERLIN_Z, generate_perlin_seq)
+
+    params:add_control(PARAM_ID_PERLIN_ZOOM, "perlin zoom", controlspec_perlin)
+    params:set_action(PARAM_ID_PERLIN_ZOOM, generate_perlin_seq)
+    params:set(PARAM_ID_PERLIN_ZOOM, 1/3, true)
 
     params:add_control(PARAM_ID_PERLIN_DENSITY, "perlin density", controlspec_perlin_density)
-    params:set_action(PARAM_ID_PERLIN_DENSITY, action_perlin_density)
+    params:set_action(PARAM_ID_PERLIN_DENSITY, generate_perlin_seq)
 
     params:add_option(PARAM_ID_SEQUENCE_SPEED, "sequence speed", sequence_speeds, DEFAULT_SEQUENCE_SPEED_IDX)
     params:set_action(PARAM_ID_SEQUENCE_SPEED, action_sequence_speed)
@@ -269,7 +288,7 @@ function page:initialize()
                 value = "",
             },
             k3 = {
-                name = "",
+                name = "TRAVL",
                 value = "",
             },
             e2 = {
@@ -277,7 +296,7 @@ function page:initialize()
                 value = "",
             },
             e3 = {
-                name = "DENSITY",
+                name = "DENS",
                 value = "",
             },
         },
