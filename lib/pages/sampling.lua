@@ -188,6 +188,7 @@ local function constrain_max_start(num_slices)
         controlspec_start.max = num_slices - num_voices
     else
         controlspec_start.max = 1
+        -- todo: if num slices is already larger 
     end
 end
 
@@ -196,16 +197,8 @@ local function shuffle()
     local new_num_slices = math.random(SLICES_MIN, SLICES_MAX)
     local new_start = 1
     constrain_max_start(new_num_slices)
-
-    if new_num_slices > 6 then
-        controlspec_start.max = new_num_slices - 6 -- 6 = num voices
-        new_start = math.random(START_MIN, controlspec_start.max)
-    else
-        controlspec_start.max = 1
-    end
     params:set(PARAM_ID_NUM_SLICES, new_num_slices)
     params:set(PARAM_ID_SLICE_START, new_start)
-    print("shuffle!", new_num_slices, new_start)
 end
 
 

@@ -85,7 +85,6 @@ local function generate_perlin_seq()
         for x=1,COLUMNS do
             -- result[y][x] = perlin:noise(x*step + seedx, y*step + seedy)
             local v = (1 + perlin:noise(x*step +seed, y*step + seed))/2
-            -- print(v)
             params:set(SEQ_PARAM_IDS[y][x], math.floor(v+density))
         end
     end
@@ -212,12 +211,13 @@ function page:render(state)
     grid_graphic:render()
 
     for voice = 1,6 do
-        softcut.query_position(voice)
-        if is_playing[voice] == true then
+        if is_playing[voice] then
             track_indicator(voice)
         end
     end
-
+    for voice = 1,6 do
+        softcut.query_position(voice)
+    end
     if current_edit_mode == MANUAL then
         page.footer.button_text.k3.name = "MANUA"
         page.footer.button_text.e2.name = "STEP"
@@ -268,19 +268,25 @@ end
 local function report_softcut(voice, pos)
     -- if playhead moved since last report, assume track reached endpoint
     is_playing[voice] = voice_pos[voice] ~= nil and voice_pos[voice] ~= pos
+
     voice_pos[voice] = pos
     local voice_dir = params:get(get_voice_dir_param_id(voice))
 
+    -- todo : should be able to use SLICE_PARAM_IDS from sampling page, saves string concat
     local slice_start = params:get(get_slice_start_param_id(voice))
     local slice_end = params:get(get_slice_end_param_id(voice))
     local slice_length = slice_end - slice_start
 
+    local normalized_pos = pos - slice_start
     if voice_dir == 1 then -- forward, todo: use table
-        voice_pos_percentage[voice] = pos / slice_length
+        voice_pos_percentage[voice] = normalized_pos / slice_length
     else -- backwards
-        -- e.g. slice length = 5.0 sec, position = 1.0 sec, but going backwards;
-        --- so position is 5.0 - 1.0 = 4.0 for the sake of calculating a percentage
-        voice_pos_percentage[voice] = (slice_end - pos) / slice_length
+        -- e.g. slice length = 5.0 sec
+        --- position = 32.0 - 37.0 seec
+        --- position = 36.0 sec, but going backwards;
+        --- so position is 36.0 - 32.0 = 4.0 (normalized_pos);
+        --- then slice_length - normalized_pos (5.0-4.0) = 1.0 gives the relative position
+        voice_pos_percentage[voice] = (slice_length - normalized_pos) / slice_length
     end
 end
 
