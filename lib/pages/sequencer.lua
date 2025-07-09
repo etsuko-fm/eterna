@@ -1,6 +1,5 @@
 local Page = include("bits/lib/Page")
 local Window = include("bits/lib/graphics/Window")
-local state_util = include("bits/lib/util/state")
 local GridGraphic = include("bits/lib/graphics/Grid")
 local Footer = include("bits/lib/graphics/Footer")
 local misc_util = include("bits/lib/util/misc")
@@ -8,10 +7,8 @@ local perlin = include("bits/lib/ext/perlin")
 local page_name = "SEQUENCER"
 local window
 local grid_graphic
-local DEFAULT_PERIOD = 6
 local ROWS = 6
 local COLUMNS = 16
-local MAX_SLICES = COLUMNS
 
 local PARAM_ID_NAV_X = "sequencer_nav_x"
 local PARAM_ID_NAV_Y = "sequencer_nav_y"
@@ -106,7 +103,7 @@ local function action_nav_y(v)
     grid_graphic.cursor.y = v
 end
 
-local function e2(state, d)
+local function e2(d)
     if current_edit_mode == MANUAL then
         local new = params:get(PARAM_ID_NAV_X) + controlspec_nav_x.quantum * d
         params:set(PARAM_ID_NAV_X, new, false)
@@ -116,7 +113,7 @@ local function e2(state, d)
     end
 end
 
-local function e3(state, d)
+local function e3(d)
     if current_edit_mode == MANUAL then
         local new = params:get(PARAM_ID_NAV_Y) + controlspec_nav_y.quantum * d
         params:set(PARAM_ID_NAV_Y, new, false)
@@ -126,7 +123,7 @@ local function e3(state, d)
     end
 end
 
-local function toggle_step(state)
+local function toggle_step()
     local x = params:get(PARAM_ID_NAV_X)
     local y = params:get(PARAM_ID_NAV_Y)
     local curr = params:get(SEQ_PARAM_IDS[y][x])
@@ -179,7 +176,7 @@ function clock.transport.stop()
     clock.cancel(clock_id)
 end
 
-local function toggle_perlin(state)
+local function toggle_perlin()
     if current_edit_mode == MANUAL then
         current_edit_mode = PERLIN
         generate_perlin_seq()
@@ -205,7 +202,7 @@ local function track_indicator(voice)
     screen.fill()
 end
 
-function page:render(state)
+function page:render()
     window:render()
     update_grid_state() -- typically not needed, only when pset is loaded
     grid_graphic:render()
@@ -290,7 +287,7 @@ local function report_softcut(voice, pos)
     end
 end
 
-function page:initialize(state)
+function page:initialize()
     add_params()
     window = Window:new({
         x = 0,
@@ -298,7 +295,7 @@ function page:initialize(state)
         w = 128,
         h = 64,
         title = "SEQUENCER",
-        font_face = state.title_font,
+        font_face = TITLE_FONT,
         brightness = 15,
         border = false,
         selected = true,
@@ -329,7 +326,7 @@ function page:initialize(state)
                 value = "",
             },
         },
-        font_face = state.footer_font,
+        font_face = FOOTER_FONT,
     })
 
     -- start sequencer

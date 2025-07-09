@@ -3,7 +3,6 @@ local page_name = "ScanLfo"
 local Window = include("bits/lib/graphics/Window")
 local LevelsGraphic = include("bits/lib/graphics/LevelsGraphic")
 local gaussian = include("bits/lib/util/gaussian")
-local state_util = include("bits/lib/util/state")
 local misc_util = include("bits/lib/util/misc")
 local lfo_util = include("bits/lib/util/lfo")
 local bars_graphic
@@ -23,7 +22,7 @@ local PARAM_ID_AMP = "levels_sigma"
 local POSITION_MIN = 0
 local POSITION_MAX = 1
 
-
+local levels_lfo
 -- Sigma - i.e. the Gaussian distribution concept
 local SIGMA_MIN = 0.3
 local SIGMA_MAX = 15
@@ -59,44 +58,44 @@ local function amp_to_sigma(v)
         return util.linexp(0, 1, SIGMA_MIN, SIGMA_MAX, v)
 end
 
-local function adjust_sigma(state, d)
+local function adjust_sigma(d)
     local incr = d * controlspec_amp.quantum
     local curr = params:get(PARAM_ID_AMP)
     local new_val = curr + incr
     params:set(PARAM_ID_AMP, new_val, false)
 end
 
-local function toggle_shape(state)
+local function toggle_shape()
     local index = params:get(PARAM_ID_LFO_SHAPE)
     local next_index = (index % #LFO_SHAPES) + 1
     params:set(PARAM_ID_LFO_SHAPE, next_index, false) -- todo: is there a way to scroll through the params values?
 end
 
-local function toggle_lfo(state)
-    params:set(PARAM_ID_LFO_ENABLED, 1 - state.pages.metamixer.lfo:get("enabled"), false)
+local function toggle_lfo()
+    params:set(PARAM_ID_LFO_ENABLED, 1 - levels_lfo:get("enabled"), false)
 end
 
-local function adjust_position(state, d)
+local function adjust_position(d)
     local incr = d * controlspec_pos.quantum
     local curr = params:get(PARAM_ID_POS)
     local new_val = curr + incr
     params:set(PARAM_ID_POS, new_val, false)
 end
 
-local function adjust_lfo_rate(state, d)
-    lfo_util.adjust_lfo_rate_quant(d, state.pages.metamixer.lfo)
+local function adjust_lfo_rate(d)
+    lfo_util.adjust_lfo_rate_quant(d, levels_lfo)
 end
 
-local function e2(state, d)
-    if state.pages.metamixer.lfo:get("enabled") == 1 then
-        adjust_lfo_rate(state, d)
+local function e2(d)
+    if levels_lfo:get("enabled") == 1 then
+        adjust_lfo_rate(d)
     else
-        adjust_position(state, d)
+        adjust_position(d)
     end
 end
 
-local function e3(state, d)
-    adjust_sigma(state, d)
+local function e3(d)
+    adjust_sigma(d)
 end
 
 
@@ -113,20 +112,20 @@ local page = Page:create({
     k3_off = toggle_shape,
 })
 
-function page:render(state)
+function page:render()
     local sigma = amp_to_sigma(params:get(PARAM_ID_AMP))
     bars_graphic.levels = gaussian.calculate_gaussian_levels(params:get(PARAM_ID_POS), sigma)
     screen.clear()
     bars_graphic:render()
 
     window:render()
-    if state.pages.metamixer.lfo:get("enabled") == 1 then
+    if levels_lfo:get("enabled") == 1 then
         -- When LFO is disabled, E2 controls LFO rate
         page.footer.button_text.k2.value = "ON"
         page.footer.button_text.e2.name = "RATE"
 
         -- convert period to label representation
-        local period = state.pages.metamixer.lfo:get('period')
+        local period = levels_lfo:get('period')
         page.footer.button_text.e2.value = lfo_util.lfo_period_value_labels[period]
     else
         -- When LFO is disabled, E2 controls scan position
@@ -148,32 +147,32 @@ local function recalculate_levels()
     end
 end
 
-local function add_actions(state)
+local function add_actions()
     params:set_action(PARAM_ID_LFO_ENABLED,
         function()
-            if state.pages.metamixer.lfo:get("enabled") == 1 then
-                state.pages.metamixer.lfo:stop()
+            if levels_lfo:get("enabled") == 1 then
+                levels_lfo:stop()
             else
-                state.pages.metamixer.lfo:start()
+                levels_lfo:start()
             end
-            state.pages.metamixer.lfo:set('phase', params:get(PARAM_ID_POS))
+            levels_lfo:set('phase', params:get(PARAM_ID_POS))
         end
     )
 
     params:set_action(PARAM_ID_LFO_RATE,
         function()
-            state.pages.metamixer.lfo:set('period',
+            levels_lfo:set('period',
                 lfo_util.lfo_period_label_values[params:string(PARAM_ID_LFO_RATE)])
         end)
 
     params:set_action(PARAM_ID_POS, recalculate_levels)
     params:set_action(PARAM_ID_LFO_SHAPE,
-        function() state.pages.metamixer.lfo:set('shape', params:string(PARAM_ID_LFO_SHAPE)) end)
+        function() levels_lfo:set('shape', params:string(PARAM_ID_LFO_SHAPE)) end)
 
     params:set_action(PARAM_ID_AMP, recalculate_levels)
 end
 
-local function add_params(state)
+local function add_params()
     params:add_separator("BITS_LEVELS", "LEVELS")
     params:add_binary(PARAM_ID_LFO_ENABLED, "LFO enabled", "toggle", 0)
     params:add_option(PARAM_ID_LFO_SHAPE, "LFO shape", LFO_SHAPES, 1)
@@ -182,18 +181,18 @@ local function add_params(state)
     params:add_option(PARAM_ID_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, default_rate)
     params:add_control(PARAM_ID_POS, "position", controlspec_pos)
     params:add_control(PARAM_ID_AMP, "amp", controlspec_amp)
-    add_actions(state)
+    add_actions()
 end
 
-function page:initialize(state)
-    add_params(state)
+function page:initialize()
+    add_params()
     window = Window:new({
         x = 0,
         y = 0,
         w = 128,
         h = 64,
         title = "LEVELS",
-        font_face = state.title_font,
+        font_face = TITLE_FONT,
         brightness = 15,
         border = false,
         selected = true,
@@ -212,7 +211,7 @@ function page:initialize(state)
     })
 
     -- initialize softcut levels according to mixer levels
-    adjust_sigma(state, 0)
+    adjust_sigma(0)
 
     local sigma = amp_to_sigma(params:get(PARAM_ID_AMP))
     local levels = gaussian.calculate_gaussian_levels(params:get(PARAM_ID_POS), sigma)
@@ -241,24 +240,24 @@ function page:initialize(state)
                 value = "",
             },
         },
-        font_face = state.footer_font,
+        font_face = FOOTER_FONT,
     })
 
     -- lfo
-    state.pages.metamixer.lfo = _lfos:add {
+    levels_lfo = _lfos:add {
         shape = 'up',
         min = 0,
         max = 1,
         depth = 1,
         mode = 'clocked',
-        period = state.pages.metamixer.lfo_period,
+        period = 8,
         phase = 0,
         action = function(scaled, raw)
             bars_graphic.scan_val = scaled
             params:set(PARAM_ID_POS, controlspec_pos:map(scaled), false)
         end
     }
-    state.pages.metamixer.lfo:set('reset_target', 'mid: rising')
+    levels_lfo:set('reset_target', 'mid: rising')
 end
 
 return page

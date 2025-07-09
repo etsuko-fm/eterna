@@ -180,16 +180,16 @@ local function cycle_direction()
 end
 
 
-local function toggle_quantize(state)
+local function toggle_quantize()
     params:set(PARAM_ID_QUANTIZE, 1 - params:get(PARAM_ID_QUANTIZE))
 end
 
-local function adjust_center(state, d)
+local function adjust_center(d)
     params:set(PARAM_ID_CENTER, params:get(PARAM_ID_CENTER) + d * controlspec_center.quantum, false)
     page.pitch_graph.center = params:get(PARAM_ID_CENTER) * -2 -- why *-2?
 end
 
-local function adjust_spread(state, d)
+local function adjust_spread(d)
     params:set(PARAM_ID_SPREAD, params:get(PARAM_ID_SPREAD) + d * controlspec_spread.quantum)
 end
 
@@ -205,7 +205,7 @@ page = Page:create({
     k3_off = toggle_quantize,
 })
 
-function page:render(state)
+function page:render()
     page.window:render()
     page.footer.button_text.k2.value = playback_table[params:get(PARAM_ID_DIRECTION)]
     page.footer.button_text.k3.value = params:get(PARAM_ID_QUANTIZE) == 1 and "ON" or "OFF"
@@ -224,7 +224,7 @@ function page:render(state)
     page.footer:render()
 end
 
-function page:initialize(state)
+function page:initialize()
     add_params()
     page.window = Window:new({
         x = 0,
@@ -232,7 +232,7 @@ function page:initialize(state)
         w = 128,
         h = 64,
         title = "PLAYBACK RATES",
-        font_face = state.title_font,
+        font_face = TITLE_FONT,
         brightness = 15,
         border = false,
         selected = true,
@@ -261,7 +261,7 @@ function page:initialize(state)
                 value = "",
             },
         },
-        font_face = state.footer_font
+        font_face = FOOTER_FONT
     })
 end
 

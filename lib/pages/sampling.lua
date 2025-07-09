@@ -157,11 +157,6 @@ end
 local function load_sample(state, file)
     -- use specified `file` as a sample and store enabled length of softcut buffer in state
     state.sample_length = audio_util.load_sample(file, true)
-    state.pages.slice.enabled_section = { 0, state.max_sample_length }
-    if state.sample_length < state.max_sample_length then
-        state.pages.slice.enabled_section = { 0, state.sample_length }
-    end
-
     softcut.render_buffer(1, 0, state.sample_length, state.pages.sample.waveform_width)
     update_softcut_ranges()
 end
@@ -213,12 +208,12 @@ local function action_slice_start(v)
     update_softcut_ranges()
 end
 
-local function adjust_num_slices(state, d)
+local function adjust_num_slices(d)
     local p = PARAM_ID_NUM_SLICES
     params:set(p, params:get(p) + d * controlspec_slices.quantum)
 end
 
-local function adjust_slice_start(state, d)
+local function adjust_slice_start(d)
     local p = PARAM_ID_SLICE_START
     params:set(p, params:get(p) + d * controlspec_start.quantum)
 end
@@ -233,7 +228,7 @@ local page = Page:create({
     k3_off = shuffle,
 })
 
-function page:render(state)
+function page:render()
     if page_disabled then
         fileselect:redraw()
         return
@@ -263,16 +258,11 @@ function page:render(state)
     page.footer.button_text.e2.value = params:get(PARAM_ID_NUM_SLICES)
     page.footer.button_text.e3.value = params:get(PARAM_ID_SLICE_START)
 
-    -- show filename and sample length
-    screen.font_face(state.default_font)
-    screen.level(5)
-    screen.move(64, 46)
-    -- screen.text_center(misc_util.trim(state.pages.sample.filename, 24))
     window:render()
     page.footer:render()
 end
 
-local function add_params(state)
+local function add_params()
     params:add_separator("SAMPLING", page_name)
     -- file selection
     params:add_file(PARAM_ID_AUDIO_FILE, 'file')
@@ -296,8 +286,8 @@ local function add_params(state)
     end
 end
 
-function page:initialize(state)
-    add_params(state)
+function page:initialize()
+    add_params()
 
     -- add waveforms
     for i = 1,6 do
@@ -331,7 +321,7 @@ function page:initialize(state)
         w = 128,
         h = 64,
         title = "SAMPLING",
-        font_face = state.title_font,
+        font_face = TITLE_FONT,
         brightness = 15,
         border = false,
         selected = true,
@@ -358,7 +348,7 @@ function page:initialize(state)
                 value = "",
             },
         },
-        font_face = state.footer_font
+        font_face = FOOTER_FONT,
     })
 
     -- setup callback

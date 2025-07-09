@@ -20,17 +20,10 @@ local ready
 
 screen_dirty = true
 local screen_is_updating = false
-
+DEFAULT_FONT = 68
+TITLE_FONT = 68
+FOOTER_FONT = 68
 state = {
-  default_font = 68,
-  title_font = 68,
-  footer_font = 68,
-  -- softcut
-  softcut = {
-    rates = {},    -- playback rates, 1 per voice, 1.0 = normal speed
-    muted = false, -- softcut mute
-  },
-
   max_sample_length = 128.0, -- in seconds, longer samples are truncated
   sample_length = nil,       -- full length of the currently loaded sample
 
@@ -39,18 +32,6 @@ state = {
   request_update_softcut = false, -- todo: is this still used or replaced it with events?
 
   pages = {
-    -- scanning / gaussian graph settings
-    metamixer = {
-      lfo = nil,
-    },
-    panning = {
-      lfo = nil,
-      default_lfo_period = 6,
-    },
-    slice = {
-      lfo = nil,
-      playback_positions = {},
-    },
     sample = {
       waveform_samples = {},
       waveform_width = 960, -- >=27 per waveform, so 1/32 should be >= 30
@@ -117,7 +98,7 @@ function init()
   end
 
   for _, page in ipairs(pages) do
-    page:initialize(state)
+    page:initialize()
   end
 
   enable_all_voices()
@@ -128,23 +109,23 @@ function init()
 end
 
 function key(n, z)
-  if n == 1 and z == 0 and current_page.k1_off then current_page.k1_off(state) end
-  if n == 1 and z == 1 and current_page.k1_on then current_page.k1_on(state) end
+  if n == 1 and z == 0 and current_page.k1_off then current_page.k1_off() end
+  if n == 1 and z == 1 and current_page.k1_on then current_page.k1_on() end
 
   if n == 2 and z == 0 and current_page.k2_off then
-    current_page.k2_off(state)
+    current_page.k2_off()
     current_page.footer.active_knob = "k2"
   end
   if n == 2 and z == 1 and current_page.k2_on then
-    current_page.k2_on(state)
+    current_page.k2_on()
     current_page.footer.active_knob = "k2"
   end
   if n == 3 and z == 0 and current_page.k3_off then
-    current_page.k3_off(state)
+    current_page.k3_off()
     current_page.footer.active_knob = "k3"
   end
   if n == 3 and z == 1 and current_page.k3_on then
-    current_page.k3_on(state)
+    current_page.k3_on()
     current_page.footer.active_knob = "k3"
   end
 end
@@ -158,11 +139,11 @@ function enc(n, d)
     end
   end
   if n == 2 and current_page.e2 then
-    current_page.e2(state, d)
+    current_page.e2(d)
     current_page.footer.active_knob = "e2"
   end
   if n == 3 and current_page.e3 then
-    current_page.e3(state, d)
+    current_page.e3(d)
     current_page.footer.active_knob = "e3"
   end
 end
@@ -173,7 +154,7 @@ function refresh()
     ready = false
     screen_is_updating = true
     screen.clear()
-    current_page:render(state)
+    current_page:render()
     screen.update()
     screen_is_updating = false
   end
