@@ -18,15 +18,15 @@ end
 
 local QUANTIZE_DEFAULT = 1
 
-local CENTER_MIN = -3
-local CENTER_MAX = 3
+local CENTER_MIN = -2
+local CENTER_MAX = 2
 local CENTER_QUANTUM = 1 / 120
 local CENTER_QUANTUM_QUANTIZED = 1.0
 
-local SPREAD_MIN = -3
-local SPREAD_MAX = 3
-local SPREAD_MIN_QUANTIZED = -2.5
-local SPREAD_MAX_QUANTIZED = 2.5
+local SPREAD_MIN = -1
+local SPREAD_MAX = 1
+local SPREAD_MIN_QUANTIZED = -2
+local SPREAD_MAX_QUANTIZED = 2
 local SPREAD_QUNATUM = 0.01
 local SPREAD_QUNATUM_QUANTIZED = 0.5
 
@@ -73,7 +73,6 @@ local function calculate_rates()
         local pitch = math.sin(radians * extend) * params:get(PARAM_ID_SPREAD)
 
         -- double to increase range, we'll use half the range for reverse playback (-4 < pitch < 0) and half for forward (0 < pitch < 4)
-        pitch = pitch * 2
         pitch = pitch + params:get(PARAM_ID_CENTER)
 
         if params:get(PARAM_ID_QUANTIZE) == 1 then
@@ -81,7 +80,9 @@ local function calculate_rates()
             pitch = math.floor(pitch + 0.5)
         end
 
-        local rate = util.clamp(2 ^ pitch, 1 / 8, 8)
+        -- these correspond to the octaves;
+        -- 1 = normal, 1/2 = -12, -1/4 = -24, -1/8 = -36
+        local rate = util.clamp(2 ^ pitch, 1 / 4, 4)
 
         local voice = i + 1
         if params:get(get_voice_dir_param_id(voice)) == 2 then -- todo: lookuptable 2>rev, 1>fwd

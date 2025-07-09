@@ -1,7 +1,7 @@
 PitchGraph = {
     x = 38,
     y = 12,
-    lines = 13,
+    lines = 13, -- number of horizontal background lines per pitch slider
     voices = 6,
     block_w = 5,
     block_h = 1,
@@ -21,7 +21,7 @@ PitchGraph = {
 -- only awareness of playback direction is "forward" or "non-forward" (i.e. reverse)
 local FWD = "FWD"
 
-local pixels_per_octave = 4
+local pixels_per_octave = 6
 
 function PitchGraph:new(o)
     -- create state if not provided
@@ -41,7 +41,6 @@ end
 
 function PitchGraph:render()
     if self.hide then return end
-    local center_line = math.floor(self.lines / 2)
 
     -- draw reference lines
     for line = 0, self.lines - 1 do
@@ -57,13 +56,15 @@ function PitchGraph:render()
         end
     end
 
-
+    local center_y = self.y - 1 + math.floor(self.lines/2) * (self.block_h + self.margin_h)
     for n = 0, self.voices - 1 do
         screen.level(self.active_fill)
         local x = self.x + (self.block_w + self.margin_w) * n
 
-        -- center line acts as middle of graph; voice_pos adds/subtracts value * pixels/octave
-        screen.rect(x, self.y -1 + math.floor(self.lines/2)*(self.block_h + self.margin_h) + self.voice_pos[n] * pixels_per_octave, self.block_w, 3)
+        local relative_y = self.voice_pos[n] * pixels_per_octave
+        local y = center_y + relative_y
+
+        screen.rect(x, y, self.block_w, 3)
         screen.fill()
 
         -- 3 is some random extra margin
