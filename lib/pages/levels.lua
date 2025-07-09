@@ -68,7 +68,7 @@ end
 local function toggle_shape()
     local index = params:get(PARAM_ID_LFO_SHAPE)
     local next_index = (index % #LFO_SHAPES) + 1
-    params:set(PARAM_ID_LFO_SHAPE, next_index, false) -- todo: is there a way to scroll through the params values?
+    params:set(PARAM_ID_LFO_SHAPE, next_index, false)
 end
 
 local function toggle_lfo()

@@ -70,9 +70,35 @@ for i = 1,4 do
     rect_x_positions[i] = (128 / 4) * (i-1)
 end
 
+local buttons = {
+    {
+        name = "k2",
+        type = "knob",
+        x_margin = 5,
+        y_margin = knob_y,
+    },
+    {
+        name = "k3",
+        type = "knob",
+        x_margin = 5,
+        y_margin = knob_y,
+    },
+    {
+        name = "e2",
+        type = "enc",
+        x_margin = 5,
+        y_margin = enc_y,
+    },
+    {
+        name = "e3",
+        type = "enc",
+        x_margin = 5,
+        y_margin = enc_y,
+    }
+}
+
 function Footer:render()
     if self.hide then return end
-    local text_trim_width = 21
     screen.line_width(1)
 
     -- draw 8 blocks
@@ -85,34 +111,6 @@ function Footer:render()
 
     local fill = self.foreground_fill
 
-    -- todo: make a nice for loop
-    -- todo: don't need to redefine every frame
-    local buttons = {
-        {
-            name = "k2",
-            type = "knob",
-            x_margin = 5,
-            y_margin = knob_y,
-        },
-        {
-            name = "k3",
-            type = "knob",
-            x_margin = 5,
-            y_margin = knob_y,
-        },
-        {
-            name = "e2",
-            type = "enc",
-            x_margin = 5,
-            y_margin = enc_y,
-        },
-        {
-            name = "e3",
-            type = "enc",
-            x_margin = 5,
-            y_margin = enc_y,
-        }
-    }
     local active_button_switched = false
     for i, btn in ipairs(buttons) do
 

@@ -29,7 +29,6 @@ state = {
 
   -- time controls
   fade_time = 8/48000,                    -- crossfade when looping playback
-  request_update_softcut = false, -- todo: is this still used or replaced it with events?
 
   pages = {
     sample = {

@@ -168,7 +168,7 @@ function pulse()
 
                 if params:get(get_voice_dir_param_id(y)) == 1 then
                     -- play forward
-                    -- query position, todo: param id is defined on sampling page
+                    -- query position
                     softcut.position(y, params:get(get_slice_start_param_id(y)))
                 else
                     -- play reverse, start at end

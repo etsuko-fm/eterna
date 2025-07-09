@@ -28,15 +28,6 @@ local function gcd(a, b)
     return a
 end
 
-
-local function rate_to_period(rate)
-    -- period = 4 means 4 cycles per BPM
-    -- rate   = 4 cycles per bpm = 1/4
-    -- period >> rate: 4 becomes 1/4 >> 1 / period
-    -- 1/x is its own inverse
-    return 1 / rate
-end
-
 local function decimal_to_fraction(x)
     local precision = 1e-6
     local denominator = 1
