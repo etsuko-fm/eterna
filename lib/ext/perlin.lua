@@ -1,3 +1,4 @@
+-- source: https://gist.github.com/kymckay/25758d37f8e3872e1636d90ad41fe2ed
 --[[
     Implemented as described here:
     http://flafla2.github.io/2014/08/09/perlinnoise.html

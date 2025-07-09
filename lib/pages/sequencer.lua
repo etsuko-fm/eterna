@@ -2,7 +2,6 @@ local Page = include("bits/lib/Page")
 local Window = include("bits/lib/graphics/Window")
 local GridGraphic = include("bits/lib/graphics/Grid")
 local Footer = include("bits/lib/graphics/Footer")
-local misc_util = include("bits/lib/util/misc")
 local perlin = include("bits/lib/ext/perlin")
 local page_name = "SEQUENCER"
 local window
@@ -10,18 +9,10 @@ local grid_graphic
 local ROWS = 6
 local COLUMNS = 16
 
-local PARAM_ID_NAV_X = "sequencer_nav_x"
-local PARAM_ID_NAV_Y = "sequencer_nav_y"
-
 local PARAM_ID_PERLIN_X = "sequencer_perlin_x"
 local PARAM_ID_PERLIN_DENSITY = "sequencer_perlin_density"
 
 local PARAM_ID_SEQUENCE_SPEED = "sequencer_speed"
-
-local MANUAL = "MANUAL"
-local PERLIN = "PERLIN"
-local current_edit_mode = MANUAL
-
 local SEQ_PARAM_IDS = {}
 
 local clock_id
@@ -45,28 +36,6 @@ local convert_sequence_speed = {
     32,
 }
 local sequence_speed = convert_sequence_speed[DEFAULT_SEQUENCE_SPEED_IDX]
-
-local controlspec_nav_x = controlspec.def {
-    min = 1,       -- the minimum value
-    max = COLUMNS, -- the maximum value
-    warp = 'lin',  -- a shaping option for the raw value
-    step = 1,      -- output value quantization
-    default = 1,   -- default value
-    units = '',    -- displayed on PARAMS UI
-    quantum = 1.0, -- each delta will change raw value by this much
-    wrap = false   -- wrap around on overflow (true) or clamp (false)
-}
-
-local controlspec_nav_y = controlspec.def {
-    min = 1,      -- the minimum value
-    max = ROWS,   -- the maximum value
-    warp = 'lin', -- a shaping option for the raw value
-    step = 1,     -- output value quantization
-    default = 0,  -- default value
-    units = '',   -- displayed on PARAMS UI
-    quantum = 1,  -- each delta will change raw value by this much
-    wrap = false  -- wrap around on overflow (true) or clamp (false)
-}
 
 local controlspec_perlin = controlspec.def {
     min = 0,       -- the minimum value
@@ -121,32 +90,13 @@ local function action_nav_y(v)
 end
 
 local function e2(d)
-    if current_edit_mode == MANUAL then
-        local new = params:get(PARAM_ID_NAV_X) + controlspec_nav_x.quantum * d
-        params:set(PARAM_ID_NAV_X, new, false)
-    else
-        local new = params:get(PARAM_ID_PERLIN_X) + controlspec_perlin.quantum * d
-        params:set(PARAM_ID_PERLIN_X, new, false)
-    end
+    local new = params:get(PARAM_ID_PERLIN_X) + controlspec_perlin.quantum * d
+    params:set(PARAM_ID_PERLIN_X, new, false)
 end
 
 local function e3(d)
-    if current_edit_mode == MANUAL then
-        local new = params:get(PARAM_ID_NAV_Y) + controlspec_nav_y.quantum * d
-        params:set(PARAM_ID_NAV_Y, new, false)
-    else
-        local new = params:get(PARAM_ID_PERLIN_DENSITY) + controlspec_perlin_density.quantum * d
-        params:set(PARAM_ID_PERLIN_DENSITY, new, false)
-    end
-end
-
-local function toggle_step()
-    local x = params:get(PARAM_ID_NAV_X)
-    local y = params:get(PARAM_ID_NAV_Y)
-    local curr = params:get(SEQ_PARAM_IDS[y][x])
-    local new = 1 - curr
-    params:set(SEQ_PARAM_IDS[y][x], new)
-    grid_graphic.sequences[y][x] = new
+    local new = params:get(PARAM_ID_PERLIN_DENSITY) + controlspec_perlin_density.quantum * d
+    params:set(PARAM_ID_PERLIN_DENSITY, new, false)
 end
 
 local function update_grid_state()
@@ -194,12 +144,7 @@ function clock.transport.stop()
 end
 
 local function toggle_perlin()
-    if current_edit_mode == MANUAL then
-        current_edit_mode = PERLIN
-        generate_perlin_seq()
-    else
-        current_edit_mode = MANUAL
-    end
+    generate_perlin_seq()
 end
 
 
@@ -208,7 +153,7 @@ local page = Page:create({
     e2 = e2,
     e3 = e3,
     k2_off = toggle_perlin,
-    k3_off = toggle_step,
+    k3_off = nil,
 })
 
 local function action_sequence_speed(v)
@@ -236,21 +181,12 @@ function page:render()
     for voice = 1,6 do
         softcut.query_position(voice)
     end
-    if current_edit_mode == MANUAL then
-        page.footer.button_text.k2.name = "GEN"
-        page.footer.button_text.k3.name = "TOGGL"
-        page.footer.button_text.e2.name = "STEP"
-        page.footer.button_text.e3.name = "VOICE"
-        page.footer.button_text.e2.value = params:get(PARAM_ID_NAV_X)
-        page.footer.button_text.e3.value = params:get(PARAM_ID_NAV_Y)
-    else
-        page.footer.button_text.k2.name = "MANUA"
-        page.footer.button_text.k3.name = ""
-        page.footer.button_text.e2.name = "SCROL"
-        page.footer.button_text.e3.name = "DENS"
-        page.footer.button_text.e2.value = params:get(PARAM_ID_PERLIN_X)
-        page.footer.button_text.e3.value = params:get(PARAM_ID_PERLIN_DENSITY)
-    end
+    page.footer.button_text.k3.name = ""
+    page.footer.button_text.e2.name = "SCROL"
+    page.footer.button_text.e3.name = "DENS"
+    page.footer.button_text.e2.value = params:get(PARAM_ID_PERLIN_X)
+    page.footer.button_text.e3.value = params:get(PARAM_ID_PERLIN_DENSITY)
+
 
     -- todo: move to graphic class
     screen.level(15)
@@ -261,11 +197,6 @@ end
 
 local function add_params()
     params:add_separator("SEQUENCER", page_name)
-    params:add_control(PARAM_ID_NAV_X, "nav_x", controlspec_nav_x)
-    params:set_action(PARAM_ID_NAV_X, action_nav_x)
-
-    params:add_control(PARAM_ID_NAV_Y, "nav_y", controlspec_nav_y)
-    params:set_action(PARAM_ID_NAV_Y, action_nav_y)
 
     params:add_control(PARAM_ID_PERLIN_X, "perlin x", controlspec_perlin)
     params:set_action(PARAM_ID_PERLIN_X, action_perlin_x)
@@ -284,9 +215,6 @@ local function add_params()
             params:hide(SEQ_PARAM_IDS[y][x])
         end
     end
-
-    params:hide(PARAM_ID_NAV_X)
-    params:hide(PARAM_ID_NAV_Y)
 end
 
 local function report_softcut(voice, pos)
@@ -341,7 +269,7 @@ function page:initialize()
                 value = "",
             },
             k3 = {
-                name = "TOGGL",
+                name = "",
                 value = "",
             },
             e2 = {
