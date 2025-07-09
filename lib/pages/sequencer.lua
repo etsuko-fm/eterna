@@ -16,6 +16,8 @@ local PARAM_ID_NAV_Y = "sequencer_nav_y"
 local PARAM_ID_PERLIN_X = "sequencer_perlin_x"
 local PARAM_ID_PERLIN_DENSITY = "sequencer_perlin_density"
 
+local PARAM_ID_SEQUENCE_SPEED = "sequencer_speed"
+
 local MANUAL = "MANUAL"
 local PERLIN = "PERLIN"
 local current_edit_mode = MANUAL
@@ -27,6 +29,22 @@ local current_step = 1
 local is_playing = {false,false,false,false,false,false} -- whether a softcut voice is playing
 local voice_pos = {} -- playhead positions of softcut voices
 local voice_pos_percentage = {}
+
+local sequence_speeds = {"1/32", "1/16", "1/8", "1/4", "1/2", "1", "2", "4", "8"}
+local DEFAULT_SEQUENCE_SPEED_IDX = 2
+local convert_sequence_speed = {
+     -- all fractions of 1/4th notes
+    1/8,
+    1/4,
+    1/2,
+    1,
+    2,
+    4,
+    8,
+    16,
+    32,
+}
+local sequence_speed = convert_sequence_speed[DEFAULT_SEQUENCE_SPEED_IDX]
 
 local controlspec_nav_x = controlspec.def {
     min = 1,       -- the minimum value
@@ -71,7 +89,6 @@ local controlspec_perlin_density = controlspec.def {
     quantum = .01, -- each delta will change raw value by this much
     wrap = false   -- wrap around on overflow (true) or clamp (false)
 }
-
 
 local function generate_perlin_seq()
     -- need as many values as there are rows and columns
@@ -162,7 +179,7 @@ function pulse()
                 -- softcut.play(y, 0)
             end
         end
-        clock.sync(1/4)
+        clock.sync(sequence_speed)
     end
 end
 
@@ -194,6 +211,10 @@ local page = Page:create({
     k3_off = toggle_step,
 })
 
+local function action_sequence_speed(v)
+    -- convert table index of human-readable options to value for clock.sync
+    sequence_speed = convert_sequence_speed[v]
+end
 
 local function track_indicator(voice)
     local brightness = 1 + math.floor((1 - voice_pos_percentage[voice]) * 14)
@@ -216,21 +237,24 @@ function page:render()
         softcut.query_position(voice)
     end
     if current_edit_mode == MANUAL then
-        page.footer.button_text.k3.name = "MANUA"
+        page.footer.button_text.k2.name = "GEN"
+        page.footer.button_text.k3.name = "TOGGL"
         page.footer.button_text.e2.name = "STEP"
         page.footer.button_text.e3.name = "VOICE"
         page.footer.button_text.e2.value = params:get(PARAM_ID_NAV_X)
         page.footer.button_text.e3.value = params:get(PARAM_ID_NAV_Y)
     else
-        page.footer.button_text.k3.name = "GEN"
+        page.footer.button_text.k2.name = "MANUA"
+        page.footer.button_text.k3.name = ""
         page.footer.button_text.e2.name = "SCROL"
         page.footer.button_text.e3.name = "DENS"
         page.footer.button_text.e2.value = params:get(PARAM_ID_PERLIN_X)
         page.footer.button_text.e3.value = params:get(PARAM_ID_PERLIN_DENSITY)
     end
 
+    -- todo: move to graphic class
     screen.level(15)
-    screen.rect(28 + (current_step * 4) ,24, 3, 1)
+    screen.rect(28 + (current_step * 4), 27, 3, 1)
     screen.fill()
     page.footer:render()
 end
@@ -248,6 +272,9 @@ local function add_params()
 
     params:add_control(PARAM_ID_PERLIN_DENSITY, "perlin density", controlspec_perlin_density)
     params:set_action(PARAM_ID_PERLIN_DENSITY, action_perlin_density)
+
+    params:add_option(PARAM_ID_SEQUENCE_SPEED, "sequence speed", sequence_speeds, DEFAULT_SEQUENCE_SPEED_IDX)
+    params:set_action(PARAM_ID_SEQUENCE_SPEED, action_sequence_speed)
 
     for y = 1, 6 do
         SEQ_PARAM_IDS[y] = {}
@@ -310,11 +337,11 @@ function page:initialize()
     page.footer = Footer:new({
         button_text = {
             k2 = {
-                name = "TOGGL",
+                name = "GEN",
                 value = "",
             },
             k3 = {
-                name = "PERLN",
+                name = "TOGGL",
                 value = "",
             },
             e2 = {
