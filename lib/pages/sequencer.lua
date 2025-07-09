@@ -16,13 +16,20 @@ local MAX_SLICES = COLUMNS
 local PARAM_ID_NAV_X = "sequencer_nav_x"
 local PARAM_ID_NAV_Y = "sequencer_nav_y"
 
-local POSITION_MIN = 0
-local POSITION_MAX = 1 -- represents a scan position that in turn sets all 6 playheads
+local PARAM_ID_PERLIN_X = "sequencer_perlin_x"
+local PARAM_ID_PERLIN_DENSITY = "sequencer_perlin_density"
+
+local MANUAL = "MANUAL"
+local PERLIN = "PERLIN"
+local current_edit_mode = MANUAL
 
 local SEQ_PARAM_IDS = {}
 
 local clock_id
 local current_step = 1
+local is_playing = {false,false,false,false,false,false} -- whether a softcut voice is playing
+local voice_pos = {} -- playhead positions of softcut voices
+local voice_pos_percentage = {}
 
 local controlspec_nav_x = controlspec.def {
     min = 1,       -- the minimum value
@@ -57,10 +64,39 @@ local controlspec_perlin = controlspec.def {
     wrap = false   -- wrap around on overflow (true) or clamp (false)
 }
 
-local function action_perlin_x(v)
+local controlspec_perlin_density = controlspec.def {
+    min = 0,       -- the minimum value
+    max = 1,      -- the maximum value
+    warp = 'lin',  -- a shaping option for the raw value
+    step = .01,    -- output value quantization
+    default = 0.4,   -- default value
+    units = '',    -- displayed on PARAMS UI
+    quantum = .01, -- each delta will change raw value by this much
+    wrap = false   -- wrap around on overflow (true) or clamp (false)
+}
+
+
+local function generate_perlin_seq()
+    -- need as many values as there are rows and columns
+    local step = 1/3
+    local seed =  params:get(PARAM_ID_PERLIN_X)
+    local density = params:get(PARAM_ID_PERLIN_DENSITY)
+    for y=1, ROWS do
+        for x=1,COLUMNS do
+            -- result[y][x] = perlin:noise(x*step + seedx, y*step + seedy)
+            local v = (1 + perlin:noise(x*step +seed, y*step + seed))/2
+            -- print(v)
+            params:set(SEQ_PARAM_IDS[y][x], math.floor(v+density))
+        end
+    end
 end
 
-local function action_perlin_y(v)
+local function action_perlin_x(v)
+    generate_perlin_seq()
+end
+
+local function action_perlin_density(v)
+    generate_perlin_seq()
 end
 
 local function action_nav_x(v)
@@ -72,13 +108,23 @@ local function action_nav_y(v)
 end
 
 local function e2(state, d)
-    local new = params:get(PARAM_ID_NAV_X) + controlspec_nav_x.quantum * d
-    params:set(PARAM_ID_NAV_X, new, false)
+    if current_edit_mode == MANUAL then
+        local new = params:get(PARAM_ID_NAV_X) + controlspec_nav_x.quantum * d
+        params:set(PARAM_ID_NAV_X, new, false)
+    else
+        local new = params:get(PARAM_ID_PERLIN_X) + controlspec_perlin.quantum * d
+        params:set(PARAM_ID_PERLIN_X, new, false)
+    end
 end
 
 local function e3(state, d)
-    local new = params:get(PARAM_ID_NAV_Y) + controlspec_nav_y.quantum * d
-    params:set(PARAM_ID_NAV_Y, new, false)
+    if current_edit_mode == MANUAL then
+        local new = params:get(PARAM_ID_NAV_Y) + controlspec_nav_y.quantum * d
+        params:set(PARAM_ID_NAV_Y, new, false)
+    else
+        local new = params:get(PARAM_ID_PERLIN_DENSITY) + controlspec_perlin_density.quantum * d
+        params:set(PARAM_ID_PERLIN_DENSITY, new, false)
+    end
 end
 
 local function toggle_step(state)
@@ -88,6 +134,14 @@ local function toggle_step(state)
     local new = 1 - curr
     params:set(SEQ_PARAM_IDS[y][x], new)
     grid_graphic.sequences[y][x] = new
+end
+
+local function update_grid_state()
+    for y=1,ROWS do
+        for x=1,COLUMNS do
+            grid_graphic.sequences[y][x] = params:get(SEQ_PARAM_IDS[y][x])
+        end
+    end
 end
 
 function pulse()
@@ -102,12 +156,10 @@ function pulse()
                 if params:get(get_voice_dir_param_id(y)) == 1 then
                     -- play forward
                     -- query position, todo: param id is defined on sampling page
-                    local param_str_start = "sampling_" .. y .. "start"
-                    softcut.position(y, params:get(param_str_start))
+                    softcut.position(y, params:get(get_slice_start_param_id(y)))
                 else
                     -- play reverse, start at end
-                    local param_str_end = "sampling_" .. y .. "end"
-                    softcut.position(y, params:get(param_str_end))
+                    softcut.position(y, params:get(get_slice_end_param_id(y)))
                 end
                 softcut.play(y, 1)
             else
@@ -129,6 +181,12 @@ function clock.transport.stop()
 end
 
 local function toggle_perlin(state)
+    if current_edit_mode == MANUAL then
+        current_edit_mode = PERLIN
+        generate_perlin_seq()
+    else
+        current_edit_mode = MANUAL
+    end
 end
 
 
@@ -140,11 +198,40 @@ local page = Page:create({
     k3_off = toggle_perlin,
 })
 
+
+local function track_indicator(voice)
+    local brightness = 1 + math.floor((1 - voice_pos_percentage[voice]) * 14)
+    screen.level(brightness)
+    screen.rect(96, 16 + (4*(voice-1)), 1,3)
+    screen.fill()
+end
+
 function page:render(state)
     window:render()
+    update_grid_state() -- typically not needed, only when pset is loaded
     grid_graphic:render()
-    page.footer.button_text.e2.value = params:get(PARAM_ID_NAV_X)
-    page.footer.button_text.e3.value = params:get(PARAM_ID_NAV_Y)
+
+    for voice = 1,6 do
+        softcut.query_position(voice)
+        if is_playing[voice] == true then
+            track_indicator(voice)
+        end
+    end
+
+    if current_edit_mode == MANUAL then
+        page.footer.button_text.k3.name = "MANUA"
+        page.footer.button_text.e2.name = "STEP"
+        page.footer.button_text.e3.name = "VOICE"
+        page.footer.button_text.e2.value = params:get(PARAM_ID_NAV_X)
+        page.footer.button_text.e3.value = params:get(PARAM_ID_NAV_Y)
+    else
+        page.footer.button_text.k3.name = "GEN"
+        page.footer.button_text.e2.name = "SCROL"
+        page.footer.button_text.e3.name = "DENS"
+        page.footer.button_text.e2.value = params:get(PARAM_ID_PERLIN_X)
+        page.footer.button_text.e3.value = params:get(PARAM_ID_PERLIN_DENSITY)
+    end
+
     screen.level(15)
     screen.rect(28 + (current_step * 4) ,24, 3, 1)
     screen.fill()
@@ -159,6 +246,12 @@ local function add_params()
     params:add_control(PARAM_ID_NAV_Y, "nav_y", controlspec_nav_y)
     params:set_action(PARAM_ID_NAV_Y, action_nav_y)
 
+    params:add_control(PARAM_ID_PERLIN_X, "perlin x", controlspec_perlin)
+    params:set_action(PARAM_ID_PERLIN_X, action_perlin_x)
+
+    params:add_control(PARAM_ID_PERLIN_DENSITY, "perlin density", controlspec_perlin_density)
+    params:set_action(PARAM_ID_PERLIN_DENSITY, action_perlin_density)
+
     for y = 1, 6 do
         SEQ_PARAM_IDS[y] = {}
         for x = 1, 16 do
@@ -170,6 +263,25 @@ local function add_params()
 
     params:hide(PARAM_ID_NAV_X)
     params:hide(PARAM_ID_NAV_Y)
+end
+
+local function report_softcut(voice, pos)
+    -- if playhead moved since last report, assume track reached endpoint
+    is_playing[voice] = voice_pos[voice] ~= nil and voice_pos[voice] ~= pos
+    voice_pos[voice] = pos
+    local voice_dir = params:get(get_voice_dir_param_id(voice))
+
+    local slice_start = params:get(get_slice_start_param_id(voice))
+    local slice_end = params:get(get_slice_end_param_id(voice))
+    local slice_length = slice_end - slice_start
+
+    if voice_dir == 1 then -- forward, todo: use table
+        voice_pos_percentage[voice] = pos / slice_length
+    else -- backwards
+        -- e.g. slice length = 5.0 sec, position = 1.0 sec, but going backwards;
+        --- so position is 5.0 - 1.0 = 4.0 for the sake of calculating a percentage
+        voice_pos_percentage[voice] = (slice_end - pos) / slice_length
+    end
 end
 
 function page:initialize(state)
@@ -207,7 +319,7 @@ function page:initialize(state)
                 value = "",
             },
             e3 = {
-                name = "Y",
+                name = "DENSITY",
                 value = "",
             },
         },
@@ -216,6 +328,9 @@ function page:initialize(state)
 
     -- start sequencer
     clock_id = clock.run(pulse)
+
+    -- for softcut updates
+    softcut.event_position(report_softcut)
 end
 
 return page

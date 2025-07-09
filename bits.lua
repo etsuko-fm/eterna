@@ -53,7 +53,7 @@ state = {
     },
     sample = {
       waveform_samples = {},
-      waveform_width = 960, -- >=30 per waveform, so 1/32 should be >= 30
+      waveform_width = 960, -- >=27 per waveform, so 1/32 should be >= 30
       scale_waveform = 5,
       filename = "",
       selected_sample = _path.audio .. "etsuko/sea-minor/sea-minor-chords.wav",

@@ -2,7 +2,6 @@ Waveform = {
     x = 0,
     y = 0,
     hide = false,
-    sample_length = 0, -- seconds
     highlight = true,
     samples = {},
     vertical_scale = 1,
@@ -23,25 +22,28 @@ function Waveform:render()
     if #self.samples == 0 then return end
     local x_pos = self.x
 
-    -- sample_length refers to the total length in seconds of the sample. 
-
     -- draw lines
-    local offset = 14
-    local line_width = 59
+    -- local offset = 8
+    -- local line_width = self.render_samples
 
-    screen.rect(x_pos - 2, self.y - offset + 1, line_width + 3, offset * 2)
-    screen.stroke()
+    -- screen.rect(x_pos - 2, self.y - offset + 1, line_width + 3, offset * 2 - 1)
+    -- screen.stroke()
     -- draw waveform
     local total_samples = #self.samples
     local iter_size = math.floor(total_samples / self.render_samples)
-
-    for i = 1, #self.samples, iter_size do  -- step size of 2
-        local height = util.round(math.abs(self.samples[i]) * self.vertical_scale)
-        screen.move(x_pos, self.y - height)
-        screen.level(self.fill_default)
-        screen.line_rel(0, 2 * height)
-        screen.stroke()
-        x_pos = x_pos + 1
+    -- if it needs to go to 1, you might need to interpolate the table so # samples fits.. 
+    local c = 0
+    for i = 1, #self.samples, iter_size do
+        if c < self.render_samples then
+            -- sometimes iter step is .8 because not enough samples..?
+            local height = math.max(1, util.round(math.abs(self.samples[i]) * self.vertical_scale))
+            screen.move(x_pos, self.y - height)
+            screen.level(self.fill_default)
+            screen.line_rel(0, 2 * height)
+            screen.stroke()
+            x_pos = x_pos + 1
+            c = c + 1
+        end
     end
 end
 

@@ -7,7 +7,7 @@ local page_disabled = false
 local debug = include("bits/lib/util/debug")
 local misc_util = include("bits/lib/util/misc")
 
-local waveform
+local waveforms = {}
 local window
 
 local PARAM_ID_AUDIO_FILE = "sampling_audio_file"
@@ -16,10 +16,18 @@ local PARAM_ID_SLICE_START = "sampling_slice_start"
 
 local SLICE_PARAM_IDS = {}
 
-for i = 1,6 do
-    SLICE_PARAM_IDS[i] = {
-        loop_start = "sampling_" .. i .. "start",
-        loop_end = "sampling_" .. i .. "end",
+-- slice locations; also used for other pages, hence global
+function get_slice_start_param_id(voice)
+  return "sampling_" .. voice .. "_start"
+end
+function get_slice_end_param_id(voice)
+  return "sampling_" .. voice .. "_end"
+end
+
+for voice = 1,6 do
+    SLICE_PARAM_IDS[voice] = {
+        loop_start = get_slice_start_param_id(voice),
+        loop_end = get_slice_end_param_id(voice),
     }
 end
 
@@ -76,30 +84,37 @@ local function as_abs_values(tbl)
     return tbl
 end
 
-local function update_waveform(state)
-    waveform.sample_length = state.sample_length
-    waveform.samples = state.pages.sample.waveform_samples
-
-    if state.pages.sample.waveform_samples[1] then
-        -- adjust scale so scale at peak == 1, is norm_scale; lower amp is higher scaling
-        local norm_scale = 12
-        state.pages.sample.scale_waveform = norm_scale / math.max(table.unpack(state.pages.sample.waveform_samples))
-    end
-end
-
 local function path_to_file_name(file_path)
     -- strips '/foo/bar/audio.wav' to 'audio.wav'
     local split_at = string.match(file_path, "^.*()/")
     return string.sub(file_path, split_at + 1)
 end
 
+function table.slice(tbl, first, last)
+    local result = {}
+    for i = first, last do
+        result[#result + 1] = tbl[i]
+    end
+    return result
+end
+
 local function update_waveforms()
-    local w = state.pages.sample.waveform_width -- 59 currently, in px
+    -- if not waveforms_updated then return end 
+    -- local w = state.pages.sample.waveform_width -- in px
     -- now need loop start/end per voice
-    local s = params:get(SLICE_PARAM_IDS[1].loop_start)
-    local e = params:get(SLICE_PARAM_IDS[1].loop_end)
-    local idx_low = math.floor((s/state.sample_length) * #state.pages.sample.waveform_samples)
-    local idx_hi = math.floor((e/state.sample_length) * #state.pages.sample.waveform_samples)
+    local norm_scale = 6
+    if state.pages.sample.waveform_samples[1] then
+        -- adjust scale so scale at peak == 1, is norm_scale; lower amp is higher scaling
+        state.pages.sample.scale_waveform = norm_scale / math.max(table.unpack(state.pages.sample.waveform_samples))
+    end
+    for i=1, 6 do
+        local s = params:get(SLICE_PARAM_IDS[i].loop_start)
+        local e = params:get(SLICE_PARAM_IDS[i].loop_end)
+        local idx_low = math.floor((s/state.sample_length) * #state.pages.sample.waveform_samples)
+        local idx_hi = math.floor((e/state.sample_length) * #state.pages.sample.waveform_samples)
+        waveforms[i].samples = table.slice(state.pages.sample.waveform_samples, idx_low, idx_hi)
+        waveforms[i].vertical_scale = state.pages.sample.scale_waveform
+    end
 end
 
 local function update_softcut_ranges()
@@ -128,7 +143,7 @@ local function update_softcut_ranges()
         softcut.loop_start(voice, start_pos)
 
         -- end point is where the next slice starts
-        local end_pos =  start_pos + (slice_length * .6) -- leave a small gap to prevent overlap
+        local end_pos =  start_pos + (slice_length * .999) -- leave a small gap to prevent overlap
         softcut.loop_end(voice, end_pos)
 
         -- save in params, so waveforms can render correctly
@@ -199,12 +214,10 @@ local function action_num_slices(v)
     -- update max start based on number of slices
     constrain_max_start(v)
     update_softcut_ranges()
-    screen_dirty = true
 end
 
 local function action_slice_start(v)
     update_softcut_ranges()
-    screen_dirty = true
 end
 
 local function adjust_num_slices(state, d)
@@ -232,10 +245,26 @@ function page:render(state)
         fileselect:redraw()
         return
     end -- for rendering the fileselect interface
+    -- update_waveforms()
+    for i=1,6 do
+        waveforms[i]:render()
+    end
 
-    update_waveform(state)
-    waveform.vertical_scale = state.pages.sample.scale_waveform
-    waveform:render()
+    -- screen.level(10)
+    -- screen.rect(33,10,31,13)
+    -- screen.stroke()
+    -- screen.rect(64,10,31,13)
+    -- screen.stroke()
+
+    -- screen.rect(33,23,31,13)
+    -- screen.stroke()
+    -- screen.rect(64,23,31,13)
+    -- screen.stroke()
+
+    -- screen.rect(33,35,31,13)
+    -- screen.stroke()
+    -- screen.rect(64,35,31,13)
+    -- screen.stroke()
 
     -- slices
     page.footer.button_text.e2.value = params:get(PARAM_ID_NUM_SLICES)
@@ -245,7 +274,7 @@ function page:render(state)
     screen.font_face(state.default_font)
     screen.level(5)
     screen.move(64, 46)
-    screen.text_center(misc_util.trim(state.pages.sample.filename, 24))
+    -- screen.text_center(misc_util.trim(state.pages.sample.filename, 24))
     window:render()
     page.footer:render()
 end
@@ -277,6 +306,19 @@ end
 function page:initialize(state)
     add_params(state)
 
+    -- add waveforms
+    for i = 1,6 do
+        waveforms[i] = Waveform:new({
+            x = 35 + 32 * math.floor((i-1)/3),
+            y = 16 + ((i - 1) % 3) * 13,
+            highlight = false,
+            sample_length = state.sample_length,
+            vertical_scale = state.pages.sample.scale_waveform,
+            samples = {},
+            render_samples=27,
+        })
+    end
+
     -- init softcut
     local sample1 = "audio/etsuko/sea-minor/sea-minor-chords.wav"
     local sample2 = "audio/etsuko/neon-light/neon intro.wav"
@@ -287,8 +329,7 @@ function page:initialize(state)
         state.pages.sample.waveform_samples = as_abs_values(s)
         state.interval = i -- represents the interval at which the waveform is sampled for rendering
         state.pages.sample.filename = path_to_file_name(state.pages.sample.selected_sample)
-        update_waveform(state)
-        screen_dirty = true
+        update_waveforms()
     end
 
     window = Window:new({
@@ -316,7 +357,7 @@ function page:initialize(state)
                 value = "",
             },
             e2 = {
-                name = "SLICE",
+                name = "SLCS",
                 value = "",
             },
             e3 = {
@@ -325,15 +366,6 @@ function page:initialize(state)
             },
         },
         font_face = state.footer_font
-    })
-
-    waveform = Waveform:new({
-        x = 64,
-        y = 25,
-        highlight = false,
-        sample_length = state.sample_length,
-        vertical_scale = state.pages.sample.scale_waveform,
-        samples = state.pages.sample.waveform_samples,
     })
 
     -- setup callback

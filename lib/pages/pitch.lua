@@ -11,7 +11,7 @@ local PARAM_ID_QUANTIZE = "pitch_quantize"
 local PARAM_ID_CENTER = "pitch_center"
 local PARAM_ID_SPREAD = "pitch_spread"
 
--- voice directions
+-- voice directions; also used for other pages, hence global
 function get_voice_dir_param_id(i)
   return "pitch_v" .. i .. "_dir"
 end

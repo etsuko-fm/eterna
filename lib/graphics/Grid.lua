@@ -1,6 +1,6 @@
 Grid = {
     x = 32,
-    y = 13,
+    y = 16,
     rows = 10,
     columns = 21,
     block_w = 3,
