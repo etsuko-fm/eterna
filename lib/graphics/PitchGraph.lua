@@ -67,17 +67,24 @@ function PitchGraph:render()
         screen.rect(x, y, self.block_w, 3)
         screen.fill()
 
-        -- 3 is some random extra margin
+        -- 1 is some random extra margin
         if self.voice_dir[n+1] == FWD then
             -- forward arrow
-            screen.move(x + 1, self.y + (self.block_h + self.margin_h) * self.lines + 3)
-            screen.line_rel(3,2)
-            screen.line_rel(-3,2)
+            screen.move(x + 2, self.y + (self.block_h + self.margin_h) * self.lines + 1)
+            screen.line_rel(0,5)
+            screen.move_rel(1,-4)
+            screen.line_rel(0,3)
+            screen.move_rel(1,-2)
+            screen.line_rel(0,1)
         else
             -- backwards arrow
-            screen.move(x + 4, self.y + (self.block_h + self.margin_h) * self.lines + 3)
-            screen.line_rel(-3,2)
-            screen.line_rel(3,2)
+            screen.move(x + 2, self.y + (self.block_h + self.margin_h) * self.lines + 3)
+            screen.line_rel(0,1)
+            screen.move_rel(1,-2)
+            screen.line_rel(0,3)
+            screen.move_rel(1,-4)
+            screen.line_rel(0,5)
+            screen.move_rel(1,0)
         end
         screen.stroke()
     end
