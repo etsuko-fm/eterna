@@ -1,6 +1,8 @@
 local Page = include("bits/lib/Page")
 local Window = include("bits/lib/graphics/Window")
 local Waveform = include("bits/lib/graphics/Waveform")
+local misc_util = include("bits/lib/util/misc")
+
 local page_name = "SAMPLING"
 local fileselect = require('fileselect')
 local page_disabled = false
@@ -9,7 +11,7 @@ local waveform
 local waveform_samples
 local window
 local waveform_width = 63
-local scale_waveform = 5
+local waveform_h = 10
 
 local filename = ""
 local selected_sample = "audio/etsuko/neon-light/neon intro.wav"
@@ -104,10 +106,10 @@ function table.slice(tbl, first, last)
 end
 
 local function update_waveform()
-    local norm_scale = 12
+    local scale_waveform = 1
     if waveform_samples[1] then
-        -- adjust scale so scale at peak == 1, is norm_scale; lower amp is higher scaling
-        scale_waveform = norm_scale / math.max(table.unpack(waveform_samples))
+        -- adjust scale so scale at peak == 1, is waveform_h; lower amp is higher scaling
+        scale_waveform = waveform_h / math.max(table.unpack(waveform_samples))
     end
 
     waveform.samples = waveform_samples
@@ -118,6 +120,14 @@ local function get_slice_length()
     -- returns slice length in seconds
     local n_slices = params:get(PARAM_ID_NUM_SLICES)
     return (1 / n_slices) * sample_length
+end
+
+local function remove_extension(filename)
+  return filename:match("^(.*)%.[^%.]+$") or filename
+end
+
+local function to_sample_name(path)
+    return misc_util.trim(string.upper(remove_extension(path_to_file_name(path))), 28)
 end
 
 local function update_softcut_ranges()
@@ -165,7 +175,7 @@ end
 local function select_sample()
     local function callback(file_path)
         if file_path ~= 'cancel' then
-            selected_sample = file_path
+            filename = to_sample_name(file_path)
             load_sample(state, file_path)
         end
         page_disabled = false -- proceed with rendering page instead of file menu
@@ -262,6 +272,16 @@ function page:render()
         screen.fill()
     end
 
+    -- render sample title bar
+    -- screen.level(2)
+    -- screen.rect(x, 10, 64, 6)
+    -- screen.fill()
+    -- screen.level(15)
+    -- screen.move(x + 32, 15)
+    -- screen.text_center(filename)
+
+    window.title = filename
+
     window:render()
     page.footer:render()
 end
@@ -293,13 +313,15 @@ end
 function page:initialize()
     add_params()
 
+    filename = to_sample_name(selected_sample)
+
     -- add waveform
     waveform = Waveform:new({
         x = 33,
-        y = 26,
+        y = 28,
         highlight = false,
         sample_length = sample_length,
-        vertical_scale = scale_waveform,
+        vertical_scale = 1,
         samples = {},
         render_samples=waveform_width,
     })
@@ -311,7 +333,6 @@ function page:initialize()
         -- this is a callback, for every softcut.render_buffer() invocation
         waveform_samples = as_abs_values(s)
         state.interval = i -- represents the interval at which the waveform is sampled for rendering
-        filename = path_to_file_name(selected_sample)
         update_waveform()
     end
 
