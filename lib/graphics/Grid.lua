@@ -9,10 +9,6 @@ Grid = {
     margin_h = 1,
     fill = 2,
     active_fill = 15,
-    cursor = {
-        x=1,
-        y=1,
-    },
     sequences = {
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
@@ -53,20 +49,9 @@ function Grid:render()
                 screen.level(self.fill)
             end
 
-            if self.cursor.x == idx and self.cursor.y == voice then
-                screen.rect(x, y, self.block_w, self.block_h)
-                screen.fill()
-                if step_active then
-                    screen.level(0)
-                else
-                    screen.level(15)
-                end
-                screen.rect(x+1, y+1, 1, 1)
-                screen.fill()
-            else
-                screen.rect(x, y, self.block_w, self.block_h)
-                screen.fill()
-            end
+            screen.rect(x, y, self.block_w, self.block_h)
+            screen.fill()
+
         end
     end
 end
