@@ -4,11 +4,16 @@ local Waveform = include("bits/lib/graphics/Waveform")
 local page_name = "SAMPLING"
 local fileselect = require('fileselect')
 local page_disabled = false
-local debug = include("bits/lib/util/debug")
-local misc_util = include("bits/lib/util/misc")
 
 local waveform
+local waveform_samples
 local window
+local waveform_width = 63
+local scale_waveform = 5
+
+local filename = ""
+local selected_sample = "audio/etsuko/neon-light/neon intro.wav"
+local sample_length
 
 local PARAM_ID_AUDIO_FILE = "sampling_audio_file"
 local PARAM_ID_NUM_SLICES = "sampling_num_slices"
@@ -98,31 +103,21 @@ function table.slice(tbl, first, last)
     return result
 end
 
-local function update_slices()
-    -- update slice graphic
-    for i=1, 6 do
-        local s = params:get(SLICE_PARAM_IDS[i].loop_start)
-        local e = params:get(SLICE_PARAM_IDS[i].loop_end)
-        local ratio_lo = s/state.sample_length
-        local ratio_hi = e/state.sample_length
-    end
-end
-
 local function update_waveform()
     local norm_scale = 12
-    if state.pages.sample.waveform_samples[1] then
+    if waveform_samples[1] then
         -- adjust scale so scale at peak == 1, is norm_scale; lower amp is higher scaling
-        state.pages.sample.scale_waveform = norm_scale / math.max(table.unpack(state.pages.sample.waveform_samples))
+        scale_waveform = norm_scale / math.max(table.unpack(waveform_samples))
     end
 
-    waveform.samples = state.pages.sample.waveform_samples
-    waveform.vertical_scale = state.pages.sample.scale_waveform
+    waveform.samples = waveform_samples
+    waveform.vertical_scale = scale_waveform
 end
 
 local function get_slice_length()
     -- returns slice length in seconds
     local n_slices = params:get(PARAM_ID_NUM_SLICES)
-    return (1 / n_slices) * state.sample_length
+    return (1 / n_slices) * sample_length
 end
 
 local function update_softcut_ranges()
@@ -158,14 +153,11 @@ local function update_softcut_ranges()
         params:set(SLICE_PARAM_IDS[voice].loop_start, start_pos)
         params:set(SLICE_PARAM_IDS[voice].loop_end, end_pos)
     end
-
-    -- let waveforms represent which section of buffer is active
-    update_slices()
 end
 local function load_sample(state, file)
     -- use specified `file` as a sample and store enabled length of softcut buffer in state
-    state.sample_length = audio_util.load_sample(file, true)
-    softcut.render_buffer(1, 0, state.sample_length, state.pages.sample.waveform_width)
+    sample_length = audio_util.load_sample(file, true)
+    softcut.render_buffer(1, 0, sample_length, waveform_width)
     update_softcut_ranges()
 end
 
@@ -173,7 +165,7 @@ end
 local function select_sample()
     local function callback(file_path)
         if file_path ~= 'cancel' then
-            state.pages.sample.selected_sample = file_path
+            selected_sample = file_path
             load_sample(state, file_path)
         end
         page_disabled = false -- proceed with rendering page instead of file menu
@@ -197,13 +189,12 @@ end
 local function shuffle()
     -- randomizes number of slices and slice start
     local new_num_slices = math.random(SLICES_MIN, SLICES_MAX)
-    local new_start = 1
+    local new_start = math.random(1, math.max(1,new_num_slices - 6))
     -- constrain_max_start(new_num_slices)
     params:set(PARAM_ID_NUM_SLICES, new_num_slices)
     params:set(PARAM_ID_SLICE_START, new_start)
+    update_softcut_ranges()
 end
-
-
 
 local function action_num_slices(v)
     -- update max start based on number of slices
@@ -307,21 +298,20 @@ function page:initialize()
         x = 33,
         y = 26,
         highlight = false,
-        sample_length = state.sample_length,
-        vertical_scale = state.pages.sample.scale_waveform,
+        sample_length = sample_length,
+        vertical_scale = scale_waveform,
         samples = {},
-        render_samples=63,
+        render_samples=waveform_width,
     })
 
     -- init softcut
-    local sample = "audio/etsuko/neon-light/neon intro.wav"
-    if debug_mode then load_sample(state, _path.dust .. sample) end
+    if debug_mode then load_sample(state, _path.dust .. selected_sample) end
 
     local function on_render(ch, start, i, s)
         -- this is a callback, for every softcut.render_buffer() invocation
-        state.pages.sample.waveform_samples = as_abs_values(s)
+        waveform_samples = as_abs_values(s)
         state.interval = i -- represents the interval at which the waveform is sampled for rendering
-        state.pages.sample.filename = path_to_file_name(state.pages.sample.selected_sample)
+        filename = path_to_file_name(selected_sample)
         update_waveform()
     end
 
@@ -363,7 +353,7 @@ function page:initialize()
 
     -- setup callback
     softcut.event_render(on_render)
-    softcut.render_buffer(1, 0, state.sample_length, state.pages.sample.waveform_width)
+    softcut.render_buffer(1, 0, sample_length, waveform_width)
 end
 
 return page
