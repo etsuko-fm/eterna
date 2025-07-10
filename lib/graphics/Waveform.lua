@@ -37,9 +37,12 @@ function Waveform:render()
         if c < self.render_samples then
             -- sometimes iter step is .8 because not enough samples..?
             local height = math.max(1, util.round(math.abs(self.samples[i]) * self.vertical_scale))
+            local brightness = math.max(1, util.round(math.abs(self.samples[i]) * self.vertical_scale))
             screen.move(x_pos, self.y - height)
-            screen.level(self.fill_default)
-            screen.line_rel(0, 2 * height)
+            -- screen.level(self.fill_default)
+            screen.level(brightness)
+            -- screen.line_rel(0, 2 * height)
+            screen.line_rel(0,4)
             screen.stroke()
             x_pos = x_pos + 1
             c = c + 1
