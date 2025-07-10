@@ -25,7 +25,8 @@ local current_dimension = 1
 
 local PARAM_ID_PERLIN_DENSITY = "sequencer_perlin_density"
 
-local PARAM_ID_SEQUENCE_SPEED = "sequencer_speed"
+-- todo: add in bits.lua? otherwise dependent on order of pages loaded
+PARAM_ID_SEQUENCE_SPEED = "sequencer_speed"
 local SEQ_PARAM_IDS = {}
 
 local clock_id

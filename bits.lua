@@ -9,17 +9,17 @@ _lfos = require 'lfo'
 MusicUtil = require "musicutil"
 
 local audio_util = include("bits/lib/util/audio_util")
-local page_levels = include("bits/lib/pages/levels")
+
 local page_sampling = include("bits/lib/pages/sampling")
-local page_panning = include("bits/lib/pages/panning")
 local page_sequencer = include("bits/lib/pages/sequencer")
+local page_control = include("bits/lib/pages/control")
+local page_panning = include("bits/lib/pages/panning")
 local page_pitch = include("bits/lib/pages/pitch")
+local page_levels = include("bits/lib/pages/levels")
 
 local fps = 60
 local ready
 
-screen_dirty = true
-local screen_is_updating = false
 DEFAULT_FONT = 68
 TITLE_FONT = 68
 FOOTER_FONT = 68
@@ -44,12 +44,13 @@ state = {
 local pages = {
   page_sampling,
   page_sequencer,
+  page_control,
   page_panning,
   page_pitch,
   page_levels,
 }
 
-local current_page_index = 1
+local current_page_index = 3
 local current_page = pages[current_page_index]
 
 local function page_forward()
@@ -148,14 +149,11 @@ function enc(n, d)
 end
 
 function refresh()
-  if ready and not screen_is_updating then
-    screen_dirty = false
+  if ready then
     ready = false
-    screen_is_updating = true
     screen.clear()
     current_page:render()
     screen.update()
-    screen_is_updating = false
   end
 end
 
