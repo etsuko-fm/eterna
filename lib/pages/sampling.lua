@@ -7,7 +7,7 @@ local page_disabled = false
 local debug = include("bits/lib/util/debug")
 local misc_util = include("bits/lib/util/misc")
 
-local waveforms = {}
+local waveform
 local window
 
 local PARAM_ID_AUDIO_FILE = "sampling_audio_file"
@@ -98,23 +98,31 @@ function table.slice(tbl, first, last)
     return result
 end
 
-local function update_waveforms()
-    -- if not waveforms_updated then return end 
-    -- local w = state.pages.sample.waveform_width -- in px
-    -- now need loop start/end per voice
-    local norm_scale = 6
+local function update_slices()
+    -- update slice graphic
+    for i=1, 6 do
+        local s = params:get(SLICE_PARAM_IDS[i].loop_start)
+        local e = params:get(SLICE_PARAM_IDS[i].loop_end)
+        local ratio_lo = s/state.sample_length
+        local ratio_hi = e/state.sample_length
+    end
+end
+
+local function update_waveform()
+    local norm_scale = 12
     if state.pages.sample.waveform_samples[1] then
         -- adjust scale so scale at peak == 1, is norm_scale; lower amp is higher scaling
         state.pages.sample.scale_waveform = norm_scale / math.max(table.unpack(state.pages.sample.waveform_samples))
     end
-    for i=1, 6 do
-        local s = params:get(SLICE_PARAM_IDS[i].loop_start)
-        local e = params:get(SLICE_PARAM_IDS[i].loop_end)
-        local idx_low = math.floor((s/state.sample_length) * #state.pages.sample.waveform_samples)
-        local idx_hi = math.floor((e/state.sample_length) * #state.pages.sample.waveform_samples)
-        waveforms[i].samples = table.slice(state.pages.sample.waveform_samples, idx_low, idx_hi)
-        waveforms[i].vertical_scale = state.pages.sample.scale_waveform
-    end
+
+    waveform.samples = state.pages.sample.waveform_samples
+    waveform.vertical_scale = state.pages.sample.scale_waveform
+end
+
+local function get_slice_length()
+    -- returns slice length in seconds
+    local n_slices = params:get(PARAM_ID_NUM_SLICES)
+    return (1 / n_slices) * state.sample_length
 end
 
 local function update_softcut_ranges()
@@ -123,7 +131,7 @@ local function update_softcut_ranges()
 
     -- edit buffer ranges per softcut voice
     local slice_start_timestamps = {}
-    local slice_length = (1 / n_slices) * state.sample_length
+    local slice_length = get_slice_length()
 
     for i = 1, n_slices do
         -- start at 0
@@ -152,7 +160,7 @@ local function update_softcut_ranges()
     end
 
     -- let waveforms represent which section of buffer is active
-    update_waveforms()
+    update_slices()
 end
 local function load_sample(state, file)
     -- use specified `file` as a sample and store enabled length of softcut buffer in state
@@ -162,7 +170,7 @@ local function load_sample(state, file)
 end
 
 
-local function select_sample(state)
+local function select_sample()
     local function callback(file_path)
         if file_path ~= 'cancel' then
             state.pages.sample.selected_sample = file_path
@@ -180,10 +188,9 @@ local function constrain_max_start(num_slices)
     -- when num slices > 6, its max is the (number of slices - 6)
     local num_voices = 6
     if num_slices > num_voices then
-        controlspec_start.max = num_slices - num_voices
+        controlspec_start.maxval = 1 + num_slices - num_voices
     else
-        controlspec_start.max = 1
-        -- todo: if num slices is already larger 
+        controlspec_start.maxval = 1
     end
 end
 
@@ -191,7 +198,7 @@ local function shuffle()
     -- randomizes number of slices and slice start
     local new_num_slices = math.random(SLICES_MIN, SLICES_MAX)
     local new_start = 1
-    constrain_max_start(new_num_slices)
+    -- constrain_max_start(new_num_slices)
     params:set(PARAM_ID_NUM_SLICES, new_num_slices)
     params:set(PARAM_ID_SLICE_START, new_start)
 end
@@ -215,7 +222,8 @@ end
 
 local function adjust_slice_start(d)
     local p = PARAM_ID_SLICE_START
-    params:set(p, params:get(p) + d * controlspec_start.quantum)
+    local new = params:get(p) + d * controlspec_start.quantum
+    params:set(p, new)
 end
 
 local page = Page:create({
@@ -233,30 +241,35 @@ function page:render()
         fileselect:redraw()
         return
     end -- for rendering the fileselect interface
-    -- update_waveforms()
-    for i=1,6 do
-        waveforms[i]:render()
-    end
 
-    -- screen.level(10)
-    -- screen.rect(33,10,31,13)
-    -- screen.stroke()
-    -- screen.rect(64,10,31,13)
-    -- screen.stroke()
-
-    -- screen.rect(33,23,31,13)
-    -- screen.stroke()
-    -- screen.rect(64,23,31,13)
-    -- screen.stroke()
-
-    -- screen.rect(33,35,31,13)
-    -- screen.stroke()
-    -- screen.rect(64,35,31,13)
-    -- screen.stroke()
+    waveform:render()
 
     -- slices
     page.footer.button_text.e2.value = params:get(PARAM_ID_NUM_SLICES)
     page.footer.button_text.e3.value = params:get(PARAM_ID_SLICE_START)
+
+    -- render slices
+    local num_slices = params:get(PARAM_ID_NUM_SLICES)
+    local slice_start = params:get(PARAM_ID_SLICE_START)
+    local slice_len = 1/num_slices
+    local w = 64
+    local x = 32
+    local y = 40
+    screen.move(33, y)
+    screen.level(2)
+    local line_len = slice_len * w + .5
+    for n=0, num_slices - 1 do
+        if n + 1 >= slice_start and n + 1 < slice_start + 6 then
+            screen.level(15)
+        else
+            screen.level(2)
+        end
+        -- draw a line under the waveform for each available slice
+        local startx = x + (w * slice_len * n)
+        local rect_w = w * slice_len - 1
+        screen.rect(startx, y,  rect_w, 3)
+        screen.fill()
+    end
 
     window:render()
     page.footer:render()
@@ -289,30 +302,27 @@ end
 function page:initialize()
     add_params()
 
-    -- add waveforms
-    for i = 1,6 do
-        waveforms[i] = Waveform:new({
-            x = 35 + 32 * math.floor((i-1)/3),
-            y = 16 + ((i - 1) % 3) * 13,
-            highlight = false,
-            sample_length = state.sample_length,
-            vertical_scale = state.pages.sample.scale_waveform,
-            samples = {},
-            render_samples=27,
-        })
-    end
+    -- add waveform
+    waveform = Waveform:new({
+        x = 33,
+        y = 26,
+        highlight = false,
+        sample_length = state.sample_length,
+        vertical_scale = state.pages.sample.scale_waveform,
+        samples = {},
+        render_samples=63,
+    })
 
     -- init softcut
-    local sample1 = "audio/etsuko/sea-minor/sea-minor-chords.wav"
-    local sample2 = "audio/etsuko/neon-light/neon intro.wav"
-    if debug_mode then load_sample(state, _path.dust .. sample2) end
+    local sample = "audio/etsuko/neon-light/neon intro.wav"
+    if debug_mode then load_sample(state, _path.dust .. sample) end
 
     local function on_render(ch, start, i, s)
         -- this is a callback, for every softcut.render_buffer() invocation
         state.pages.sample.waveform_samples = as_abs_values(s)
         state.interval = i -- represents the interval at which the waveform is sampled for rendering
         state.pages.sample.filename = path_to_file_name(state.pages.sample.selected_sample)
-        update_waveforms()
+        update_waveform()
     end
 
     window = Window:new({
