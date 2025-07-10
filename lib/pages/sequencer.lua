@@ -12,14 +12,13 @@ local COLUMNS = 16
 local PARAM_ID_PERLIN_X = "sequencer_perlin_x"
 local PARAM_ID_PERLIN_Y = "sequencer_perlin_y"
 local PARAM_ID_PERLIN_Z = "sequencer_perlin_z"
-local PARAM_ID_PERLIN_ZOOM = "sequencer_perlin_zoom"
 
+local PERLIN_ZOOM = 4/3 -- empirically tuned
 local DIM_X = "X"
 local DIM_Y = "Y"
 local DIM_Z = "Z"
-local ZOOM = "ZOOM"
-local DIMENSIONS = {DIM_X, DIM_Y, DIM_Z, ZOOM}
-local PARAM_ID_DIMENSIONS = {PARAM_ID_PERLIN_X, PARAM_ID_PERLIN_Y, PARAM_ID_PERLIN_Z, PARAM_ID_PERLIN_ZOOM}
+local DIMENSIONS = {DIM_X, DIM_Y, DIM_Z}
+local PARAM_ID_DIMENSIONS = {PARAM_ID_PERLIN_X, PARAM_ID_PERLIN_Y, PARAM_ID_PERLIN_Z}
 
 local current_dimension = 1
 
@@ -59,7 +58,7 @@ local controlspec_perlin = controlspec.def {
     default = 0,   -- default value
     units = '',    -- displayed on PARAMS UI
     quantum = .05, -- each delta will change raw value by this much
-    wrap = false   -- wrap around on overflow (true) or clamp (false)
+    wrap = true   -- wrap around on overflow (true) or clamp (false)
 }
 
 local controlspec_perlin_density = controlspec.def {
@@ -75,15 +74,15 @@ local controlspec_perlin_density = controlspec.def {
 
 local function generate_perlin_seq()
     -- need as many values as there are rows and columns
-    local zoom = params:get(PARAM_ID_PERLIN_ZOOM)
     local density = params:get(PARAM_ID_PERLIN_DENSITY)
     local x_seed = params:get(PARAM_ID_PERLIN_X)
     local y_seed = params:get(PARAM_ID_PERLIN_Y)
     local z_seed = params:get(PARAM_ID_PERLIN_Z)
+
     for voice=1, ROWS do
         for step=1,COLUMNS do
-            local perlin_x = step * zoom + x_seed
-            local perlin_y = voice * zoom + y_seed
+            local perlin_x = step * PERLIN_ZOOM + x_seed
+            local perlin_y = voice * PERLIN_ZOOM + y_seed
             local perlin_z = z_seed
             local n = perlin:noise(perlin_x, perlin_y, perlin_z) -- -1 to 1
             local v = (1 + n)/2 -- 0 to 1
@@ -216,10 +215,6 @@ local function add_params()
 
     params:add_control(PARAM_ID_PERLIN_Z, "perlin z", controlspec_perlin)
     params:set_action(PARAM_ID_PERLIN_Z, generate_perlin_seq)
-
-    params:add_control(PARAM_ID_PERLIN_ZOOM, "perlin zoom", controlspec_perlin)
-    params:set_action(PARAM_ID_PERLIN_ZOOM, generate_perlin_seq)
-    params:set(PARAM_ID_PERLIN_ZOOM, 1/3, true)
 
     params:add_control(PARAM_ID_PERLIN_DENSITY, "perlin density", controlspec_perlin_density)
     params:set_action(PARAM_ID_PERLIN_DENSITY, generate_perlin_seq)
