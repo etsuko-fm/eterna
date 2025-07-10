@@ -11,6 +11,7 @@ MusicUtil = require "musicutil"
 local audio_util = include("bits/lib/util/audio_util")
 
 local page_sampling = include("bits/lib/pages/sampling")
+local page_rings = include("bits/lib/pages/rings")
 local page_sequencer = include("bits/lib/pages/sequencer")
 local page_control = include("bits/lib/pages/control")
 local page_panning = include("bits/lib/pages/panning")
@@ -43,6 +44,7 @@ state = {
 
 local pages = {
   page_sampling,
+  page_rings,
   page_sequencer,
   page_control,
   page_panning,
@@ -50,7 +52,7 @@ local pages = {
   page_levels,
 }
 
-local current_page_index = 3
+local current_page_index = 2
 local current_page = pages[current_page_index]
 
 local function page_forward()
