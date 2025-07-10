@@ -25,10 +25,10 @@ function page:render()
 
     local y = 22
     local bpm_y = y + 2
+    local bar_h = 4
 
-    screen.rect(32, bpm_y, 63, 3)
+    screen.rect(32, bpm_y, 63, bar_h)
     screen.fill()
-    local bar_h = 3
 
     for i=0,15 do
         if i == 4 then
@@ -36,7 +36,7 @@ function page:render()
         else
             screen.level(default_level)
         end
-        screen.rect(32 + i * (bar_h + 1), y+8, 3, bar_h)
+        screen.rect(32 + i * 4, y+8, 3, bar_h)
         screen.fill()
     end
     screen.level(default_level)
