@@ -111,3 +111,10 @@ params:add_option(ID_PITCH_QUANTIZE, 'quantize', QUANTIZE_TABLE, QUANTIZE_DEFAUL
 params:add_control(ID_PITCH_CENTER, "center", controlspec_center)
 params:add_control(ID_PITCH_SPREAD, "spread", controlspec_spread)
 params:add_option(ID_PITCH_DIRECTION, "direction", PLAYBACK_TABLE, 1)
+
+-- voice directions (fwd/rev/both)
+for voice = 1, 6 do
+    local param_id = get_voice_dir_param_id(voice)
+    params:add_option(param_id, param_id, PLAYBACK_TABLE, 1)
+    params:hide(param_id)
+end

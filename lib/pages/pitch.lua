@@ -76,13 +76,6 @@ local function add_params()
     params:set_action(ID_PITCH_CENTER, calculate_rates)
     params:set_action(ID_PITCH_SPREAD, calculate_rates)
     params:set_action(ID_PITCH_DIRECTION, update_playback_dir)
-
-    -- voice directions (fwd/rev/both)
-    for voice = 1, 6 do
-        local param_id = get_voice_dir_param_id(voice)
-        params:add_option(param_id, param_id, PLAYBACK_TABLE, 1)
-        params:hide(param_id)
-    end
 end
 
 function action_quantize(v)

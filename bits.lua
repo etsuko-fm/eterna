@@ -28,7 +28,7 @@ state = {
   max_sample_length = 128.0, -- in seconds, longer samples are truncated
 
   -- time controls
-  fade_time = 8/48000,                    -- crossfade when looping playback
+  fade_time = 64/48000,                    -- crossfade when looping playback
 }
 
 local pages = {
@@ -64,7 +64,6 @@ local function count()
   ready = true
 end
 
-
 local function enable_all_voices()
   for i = 1, 6 do
     softcut.enable(i, 1)
@@ -73,7 +72,6 @@ local function enable_all_voices()
     softcut.fade_time(i, state.fade_time)
   end
 end
-
 
 function init()
   -- Params UX

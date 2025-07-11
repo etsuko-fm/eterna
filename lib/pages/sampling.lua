@@ -175,7 +175,7 @@ local function update_softcut_ranges()
         -- save in params, so waveforms can render correctly
         params:set(SLICE_PARAM_IDS[voice].loop_start, start_pos)
         params:set(SLICE_PARAM_IDS[voice].loop_end, end_pos)
-        -- voice_position_to_start(voice) todo: fix, order of initalization bug
+        voice_position_to_start(voice) --todo: fix, order of initalization bug
     end
     -- reflect changes in graphic
     update_slice_graphic()
@@ -216,7 +216,6 @@ local function shuffle()
     -- randomizes number of slices and slice start
     local new_num_slices = math.random(SLICES_MIN, SLICES_MAX)
     local new_start = math.random(1, math.max(1, new_num_slices - 6))
-    -- constrain_max_start(new_num_slices)
     params:set(PARAM_ID_NUM_SLICES, new_num_slices)
     params:set(PARAM_ID_SLICE_START, new_start)
 end
