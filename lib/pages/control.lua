@@ -1,8 +1,10 @@
 local Page = include("bits/lib/Page")
 local Window = include("bits/lib/graphics/Window")
+local ControlGraphic = include("bits/lib/graphics/ControlGraphic")
 
 local page_name = "SEQUENCE CONTROL"
 local window
+local control_graphic
 
 
 local page = Page:create({
@@ -19,46 +21,7 @@ end
 
 function page:render()
     window:render()
-    local default_level = 3
-    local bright_level = 15
-    screen.level(default_level)
-
-
-    local y = 30
-    local bpm_y = y + 2
-    local bar_h = 4
-
-    screen.rect(32, bpm_y, 63, bar_h)
-    screen.fill()
-
-    for i=0,15 do
-        if i == 4 then
-            screen.level(bright_level)
-        else
-            screen.level(default_level)
-        end
-        screen.rect(32 + i * 4, y+8, 3, bar_h)
-        screen.fill()
-    end
-    screen.level(default_level)
-    for i=0,3 do
-        screen.rect(32+i*7, y-4, 6, bar_h)
-        screen.fill()
-    end
-    for i=5,8 do
-        screen.rect(33+i*7, y-4, 6, bar_h)
-        screen.fill()
-    end
-    screen.level(bright_level)
-    screen.rect(32 + 4*7, y-4, 7, bar_h)
-    screen.fill()
-
-    screen.level(15)
-    screen.move(95,y - 6)
-    screen.font_size(12)
-    screen.font_face(40) -- 7 is ok; 40 is nice @ size 12
-    screen.text_right("128.0") 
-
+    control_graphic:render()
     page.footer:render()
 end
 
@@ -78,6 +41,7 @@ function page:initialize()
         vertical_separations = 0,
     })
     -- graphics
+    control_graphic = ControlGraphic:new()
     page.footer = Footer:new({
         button_text = {
             k2 = {
