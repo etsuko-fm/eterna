@@ -50,7 +50,7 @@ local text_y_row_2 = base_y_row2 + 6
 
 local knob_y = 2
 local enc_y = 2
-local hor_txt_offset = 9
+local hor_txt_offset = 8
 
 function Footer:new(o)
     -- create state if not provided
@@ -74,25 +74,25 @@ local buttons = {
     {
         name = "k2",
         type = "knob",
-        x_margin = 5,
+        x_margin = 2,
         y_margin = knob_y,
     },
     {
         name = "k3",
         type = "knob",
-        x_margin = 5,
+        x_margin = 2,
         y_margin = knob_y,
     },
     {
         name = "e2",
         type = "enc",
-        x_margin = 5,
+        x_margin = 4,
         y_margin = enc_y,
     },
     {
         name = "e3",
         type = "enc",
-        x_margin = 5,
+        x_margin = 4,
         y_margin = enc_y,
     }
 }
@@ -104,8 +104,8 @@ function Footer:render()
     -- draw 8 blocks
     screen.level(self.background_fill)
     for i = 1, 4 do
-        screen.rect(rect_x_positions[i], base_y_row1, btn_width, btn_height)
-        screen.rect(rect_x_positions[i], base_y_row2, btn_width, btn_height)
+        screen.rect(rect_x_positions[i], base_y_row1-1, btn_width, 1)
+        -- screen.rect(rect_x_positions[i], base_y_row2-1, btn_width, 1) -- btn_height
     end
     screen.fill()
 
@@ -130,10 +130,10 @@ function Footer:render()
 
         if btn.type == "knob" then
             -- draw knob icon
-            screen.move(rect_x_positions[i] + 4, graphics_y + btn.y_margin)
-            screen.line(rect_x_positions[i] + 6, graphics_y + btn.y_margin)
-            screen.move(rect_x_positions[i] + 3, graphics_y + btn.y_margin + 1)
-            screen.line(rect_x_positions[i] + 7, graphics_y + btn.y_margin + 1)
+            screen.move(rect_x_positions[i] + btn.x_margin + 1, graphics_y + btn.y_margin)
+            screen.line(rect_x_positions[i] + btn.x_margin + 3, graphics_y + btn.y_margin)
+            screen.move(rect_x_positions[i] + btn.x_margin, graphics_y + btn.y_margin + 1)
+            screen.line(rect_x_positions[i] + btn.x_margin + 4, graphics_y + btn.y_margin + 1)
             screen.stroke()
         else
             -- draw encoder icon
@@ -149,7 +149,7 @@ function Footer:render()
         screen.move(rect_x_positions[i] + hor_txt_offset, text_y_row_1)
         screen.font_face(self.font_face)
         screen.text(self.button_text[btn.name].name)
-        screen.move(rect_x_positions[i] + 3, text_y_row_2)
+        screen.move(rect_x_positions[i] + hor_txt_offset, text_y_row_2)
         screen.text(self.button_text[btn.name].value)
     end
 
