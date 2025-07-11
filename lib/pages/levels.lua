@@ -147,41 +147,44 @@ local function recalculate_levels()
     end
 end
 
-local function add_actions()
-    params:set_action(PARAM_ID_LFO_ENABLED,
-        function()
-            if levels_lfo:get("enabled") == 1 then
-                levels_lfo:stop()
-            else
-                levels_lfo:start()
-            end
-            levels_lfo:set('phase', params:get(PARAM_ID_POS))
-        end
-    )
 
-    params:set_action(PARAM_ID_LFO_RATE,
-        function()
-            levels_lfo:set('period',
-                lfo_util.lfo_period_label_values[params:string(PARAM_ID_LFO_RATE)])
-        end)
-
-    params:set_action(PARAM_ID_POS, recalculate_levels)
-    params:set_action(PARAM_ID_LFO_SHAPE,
-        function() levels_lfo:set('shape', params:string(PARAM_ID_LFO_SHAPE)) end)
-
-    params:set_action(PARAM_ID_AMP, recalculate_levels)
+local function action_enable_lfo(v)
+    if levels_lfo:get("enabled") == 1 then
+        levels_lfo:stop()
+    else
+        levels_lfo:start()
+    end
+    levels_lfo:set('phase', params:get(PARAM_ID_POS))
 end
+
+local function action_lfo_shape(v)
+    levels_lfo:set('shape', params:string(PARAM_ID_LFO_SHAPE))
+end
+
+local function action_lfo_rate(v)
+    levels_lfo:set('period', lfo_util.lfo_period_label_values[params:string(PARAM_ID_LFO_RATE)])
+end
+
 
 local function add_params()
     params:add_separator("BITS_LEVELS", "LEVELS")
     params:add_binary(PARAM_ID_LFO_ENABLED, "LFO enabled", "toggle", 0)
+    params:set_action(PARAM_ID_LFO_ENABLED, action_enable_lfo)
+
     params:add_option(PARAM_ID_LFO_SHAPE, "LFO shape", LFO_SHAPES, 1)
+    params:set_action(PARAM_ID_LFO_SHAPE, action_lfo_shape)
+
     local default_rate_index = 20
     local default_rate = lfo_util.lfo_period_values[default_rate_index]
+
     params:add_option(PARAM_ID_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, default_rate)
+    params:set_action(PARAM_ID_LFO_RATE, action_lfo_rate)
+
     params:add_control(PARAM_ID_POS, "position", controlspec_pos)
+    params:set_action(PARAM_ID_POS, recalculate_levels)
+
     params:add_control(PARAM_ID_AMP, "amp", controlspec_amp)
-    add_actions()
+    params:set_action(PARAM_ID_AMP, recalculate_levels)
 end
 
 function page:initialize()
