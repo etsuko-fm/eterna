@@ -29,11 +29,14 @@ local transport_on = true
 local holding_step = false
 
 -- todo: add in bits.lua? otherwise dependent on order of pages loaded
-PARAM_ID_SEQUENCE_SPEED = "sequencer_speed"
+
 local SEQ_PARAM_IDS = {}
 
-local clock_id
+local main_seq_clock_id
+local q_report_clock_id
 local current_step = 1
+local current_quarter = 1 -- keeps track of quarter notes, regardless of sequence speed
+
 local voice_pos = {} -- playhead positions of softcut voices
 
 local controlspec_perlin = controlspec.def {
@@ -116,7 +119,7 @@ local page = Page:create({
 })
 
 function set_sequence_speed(v)
-    page.sequence_speed = v
+    page.sequence_speed = v -- should be a float value, fraction of 1 beat
 end
 
 function voice_position_to_start(voice)
@@ -130,7 +133,7 @@ function voice_position_to_start(voice)
     end
 end
 
-function pulse()
+local function main_sequencer_callback()
     -- advance
     while true do
         if not holding_step then
@@ -149,6 +152,13 @@ function pulse()
     end
 end
 
+local function quarter_note_callback()
+    while true do
+        current_quarter = util.wrap(current_quarter + 1, 1, 4)
+        clock.sync(1) -- 1 quarter note
+    end
+end
+
 function toggle_transport()
     if transport_on then
         clock.transport.stop()
@@ -156,6 +166,8 @@ function toggle_transport()
             -- stop softcut voices
             softcut.play(voice, 0)
         end
+        current_step = 1
+        current_q_report = 1
     else
         clock.transport.start()
     end
@@ -167,6 +179,10 @@ end
 
 function report_hold()
     return holding_step
+end
+
+function report_current_quarter_note()
+    return current_quarter
 end
 
 function report_current_step()
@@ -185,13 +201,15 @@ end
 function clock.transport.start()
     print("start transport")
     transport_on = true
-    clock_id = clock.run(pulse)
+    main_seq_clock_id = clock.run(main_sequencer_callback)
+    q_report_clock_id = clock.run(quarter_note_callback)
 end
 
 function clock.transport.stop()
     print("stop transport")
     transport_on = false
-    clock.cancel(clock_id)
+    clock.cancel(main_seq_clock_id)
+    clock.cancel(q_report_clock_id)
 end
 
 function page:render()
@@ -228,6 +246,7 @@ local function add_params()
     params:add_control(PARAM_ID_PERLIN_DENSITY, "perlin density", controlspec_perlin_density)
     params:set_action(PARAM_ID_PERLIN_DENSITY, generate_perlin_seq)
 
+    -- add 96 params for sequence step status
     for y = 1, 6 do
         SEQ_PARAM_IDS[y] = {}
         for x = 1, 16 do
@@ -308,8 +327,8 @@ function page:initialize()
     })
 
     -- start sequencer
-    clock_id = clock.run(pulse)
-
+    main_seq_clock_id = clock.run(main_sequencer_callback)
+    q_report_clock_id = clock.run(quarter_note_callback)
     -- for softcut updates
     softcut.event_position(report_softcut)
 end

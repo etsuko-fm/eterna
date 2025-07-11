@@ -2,15 +2,23 @@ local Page = include("bits/lib/Page")
 local Window = include("bits/lib/graphics/Window")
 local ControlGraphic = include("bits/lib/graphics/ControlGraphic")
 local sequence_util = include("bits/lib/util/sequence")
+local misc_util = include("bits/lib/util/misc")
 
 local page_name = "SEQUENCE CONTROL"
 local window
 local control_graphic
 
-local function adjust_bpm()
+local PARAM_ID_SEQUENCE_SPEED = "sequencer_speed"
+
+local function adjust_bpm(d)
+    params:set("clock_tempo", clock.get_tempo() + d)
 end
 
-local function adjust_step_size()
+local function adjust_step_size(d)
+    local p = PARAM_ID_SEQUENCE_SPEED
+    local v = params:get(p)
+    local new = util.wrap(v + d, 1, #sequence_util.sequence_speeds)
+    params:set(p, new)
 end
 
 local page = Page:create({
@@ -23,23 +31,26 @@ local page = Page:create({
 
 local function action_sequence_speed(v)
     -- convert table index of human-readable options to value for clock.sync
-    page.sequence_speed = sequence_util.convert_sequence_speed[v]
+    -- calls global function defined on sequencer page
+    set_sequence_speed(sequence_util.convert_sequence_speed[v])
 end
 
 local function add_params()
     params:add_separator("SEQUENCE_CONTROL", page_name)
-
     params:add_option(PARAM_ID_SEQUENCE_SPEED, "sequence speed", sequence_util.sequence_speeds, sequence_util.default_speed_idx)
     params:set_action(PARAM_ID_SEQUENCE_SPEED, action_sequence_speed)
-
 end
 
 function page:render()
     window:render()
-    page.footer.button_text.e2.value = clock.get_tempo()
+    local tempo_trimmed = misc_util.trim(tostring(clock.get_tempo()), 5)
+    page.footer.button_text.e2.value = tempo_trimmed
     page.footer.button_text.k2.value = report_transport() and "ON" or "OFF"
-    control_graphic.bpm = clock.get_tempo()
+    page.footer.button_text.k3.value = report_hold() and "ON" or "OFF"
+    page.footer.button_text.e3.value = sequence_util.sequence_speeds[params:get(PARAM_ID_SEQUENCE_SPEED)]
+    control_graphic.bpm = tempo_trimmed
     control_graphic.current_step = report_current_step()
+    control_graphic.current_quarter = report_current_quarter_note()
     control_graphic:render()
     page.footer:render()
 end
