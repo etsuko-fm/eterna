@@ -307,7 +307,7 @@ function page:initialize()
     page.footer = Footer:new({
         button_text = {
             k2 = {
-                name = "GEN",
+                name = "EVOLV",
                 value = "",
             },
             k3 = {
