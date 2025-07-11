@@ -44,6 +44,7 @@ local debug_mode = true
 
 local SLICES_MIN = 1
 local SLICES_MAX = 32
+local SLICES_DEFAULT = 6
 
 local START_MIN = 1
 local START_MAX = 32 -- dynamic, todo: deal with that
@@ -53,7 +54,7 @@ local controlspec_slices = controlspec.def {
     max = SLICES_MAX, -- the maximum value
     warp = 'lin',     -- a shaping option for the raw value
     step = 1,         -- output value quantization
-    default = 6,      -- default value
+    default = SLICES_DEFAULT,      -- default value
     units = '',       -- displayed on PARAMS UI
     quantum = 1,      -- each delta will change raw value by this much
     wrap = false      -- wrap around on overflow (true) or clamp (false)
@@ -283,6 +284,7 @@ local function add_params()
     -- starting slice
     params:add_control(PARAM_ID_SLICE_START, "start", controlspec_start)
     params:set_action(PARAM_ID_SLICE_START, action_slice_start)
+    constrain_max_start(SLICES_DEFAULT)
 
     for i = 1, 6 do
         -- ranges per slice

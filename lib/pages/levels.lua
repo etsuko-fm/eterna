@@ -11,75 +11,34 @@ local window
 local graph_x = 36 -- (128 - graph_width) / 2
 local graph_y = 40
 
-local LFO_SHAPES = { "sine", "up", "down", "random" }
-
-local PARAM_ID_LFO_ENABLED = "levels_lfo_enabled"
-local PARAM_ID_LFO_SHAPE = "levels_lfo_shape"
-local PARAM_ID_LFO_RATE = "levels_lfo_rate"
-local PARAM_ID_POS = "levels_pos"
-local PARAM_ID_AMP = "levels_sigma"
-
-local POSITION_MIN = 0
-local POSITION_MAX = 1
-
 local levels_lfo
--- Sigma - i.e. the Gaussian distribution concept
-local SIGMA_MIN = 0.3
-local SIGMA_MAX = 15
-
--- User-friendly version of sigma () - maps sigma range to 0-1
-local AMP_MIN = 0
-local AMP_MAX = 1
-
-
-local controlspec_pos = controlspec.def {
-    min = POSITION_MIN, -- the minimum value
-    max = POSITION_MAX, -- the maximum value
-    warp = 'lin',       -- a shaping option for the raw value
-    step = 0.01,        -- output value quantization
-    default = 0.42,      -- default value
-    units = '',         -- displayed on PARAMS UI
-    quantum = 0.01,     -- each delta will change raw value by this much
-    wrap = true         -- wrap around on overflow (true) or clamp (false)
-}
-
-local controlspec_amp = controlspec.def {
-    min = AMP_MIN, -- the minimum value
-    max = AMP_MAX, -- the maximum value
-    warp = 'lin',    -- a shaping option for the raw value
-    step = 0.01,     -- output value quantization
-    default = 0.6,   -- default value
-    units = '',      -- displayed on PARAMS UI
-    quantum = 0.01,  -- each delta will change raw value by this much
-    wrap = false     -- wrap around on overflow (true) or clamp (false)
-}
 
 local function amp_to_sigma(v)
-        return util.linexp(0, 1, SIGMA_MIN, SIGMA_MAX, v)
+    return util.linexp(0, 1, LEVELS_SIGMA_MIN, LEVELS_SIGMA_MAX, v)
 end
 
 local function adjust_sigma(d)
     local incr = d * controlspec_amp.quantum
-    local curr = params:get(PARAM_ID_AMP)
+    local curr = params:get(ID_LEVELS_AMP)
     local new_val = curr + incr
-    params:set(PARAM_ID_AMP, new_val, false)
+    params:set(ID_LEVELS_AMP, new_val, false)
 end
 
 local function toggle_shape()
-    local index = params:get(PARAM_ID_LFO_SHAPE)
-    local next_index = (index % #LFO_SHAPES) + 1
-    params:set(PARAM_ID_LFO_SHAPE, next_index, false)
+    local index = params:get(ID_LEVELS_LFO_SHAPE)
+    local next_index = (index % #LEVELS_LFO_SHAPES) + 1
+    params:set(ID_LEVELS_LFO_SHAPE, next_index, false)
 end
 
 local function toggle_lfo()
-    params:set(PARAM_ID_LFO_ENABLED, 1 - levels_lfo:get("enabled"), false)
+    params:set(ID_LEVELS_LFO_ENABLED, 1 - levels_lfo:get("enabled"), false)
 end
 
 local function adjust_position(d)
     local incr = d * controlspec_pos.quantum
-    local curr = params:get(PARAM_ID_POS)
+    local curr = params:get(ID_LEVELS_POS)
     local new_val = curr + incr
-    params:set(PARAM_ID_POS, new_val, false)
+    params:set(ID_LEVELS_POS, new_val, false)
 end
 
 local function adjust_lfo_rate(d)
@@ -113,8 +72,8 @@ local page = Page:create({
 })
 
 function page:render()
-    local sigma = amp_to_sigma(params:get(PARAM_ID_AMP))
-    bars_graphic.levels = gaussian.calculate_gaussian_levels(params:get(PARAM_ID_POS), sigma)
+    local sigma = amp_to_sigma(params:get(ID_LEVELS_AMP))
+    bars_graphic.levels = gaussian.calculate_gaussian_levels(params:get(ID_LEVELS_POS), sigma)
     screen.clear()
     bars_graphic:render()
 
@@ -131,17 +90,17 @@ function page:render()
         -- When LFO is disabled, E2 controls scan position
         page.footer.button_text.k2.value = "OFF"
         page.footer.button_text.e2.name = "POS"
-        page.footer.button_text.e2.value = misc_util.trim(tostring(params:get(PARAM_ID_POS)), 5)
+        page.footer.button_text.e2.value = misc_util.trim(tostring(params:get(ID_LEVELS_POS)), 5)
     end
-    page.footer.button_text.k3.value = string.upper(params:string(PARAM_ID_LFO_SHAPE))
-    page.footer.button_text.e3.value = misc_util.trim(tostring(params:get(PARAM_ID_AMP)), 5)
+    page.footer.button_text.k3.value = string.upper(params:string(ID_LEVELS_LFO_SHAPE))
+    page.footer.button_text.e3.value = misc_util.trim(tostring(params:get(ID_LEVELS_AMP)), 5)
 
     page.footer:render()
 end
 
 local function recalculate_levels()
-    local sigma = amp_to_sigma(params:get(PARAM_ID_AMP))
-    local levels = gaussian.calculate_gaussian_levels(params:get(PARAM_ID_POS), sigma)
+    local sigma = amp_to_sigma(params:get(ID_LEVELS_AMP))
+    local levels = gaussian.calculate_gaussian_levels(params:get(ID_LEVELS_POS), sigma)
     for i = 1, 6 do
         softcut.level(i, levels[i])
     end
@@ -154,37 +113,28 @@ local function action_enable_lfo(v)
     else
         levels_lfo:start()
     end
-    levels_lfo:set('phase', params:get(PARAM_ID_POS))
+    levels_lfo:set('phase', params:get(ID_LEVELS_POS))
 end
 
 local function action_lfo_shape(v)
-    levels_lfo:set('shape', params:string(PARAM_ID_LFO_SHAPE))
+    levels_lfo:set('shape', params:string(ID_LEVELS_LFO_SHAPE))
 end
 
 local function action_lfo_rate(v)
-    levels_lfo:set('period', lfo_util.lfo_period_label_values[params:string(PARAM_ID_LFO_RATE)])
+    levels_lfo:set('period', lfo_util.lfo_period_label_values[params:string(ID_LEVELS_LFO_RATE)])
 end
 
 
 local function add_params()
-    params:add_separator("BITS_LEVELS", "LEVELS")
-    params:add_binary(PARAM_ID_LFO_ENABLED, "LFO enabled", "toggle", 0)
-    params:set_action(PARAM_ID_LFO_ENABLED, action_enable_lfo)
+    params:set_action(ID_LEVELS_LFO_ENABLED, action_enable_lfo)
 
-    params:add_option(PARAM_ID_LFO_SHAPE, "LFO shape", LFO_SHAPES, 1)
-    params:set_action(PARAM_ID_LFO_SHAPE, action_lfo_shape)
+    params:set_action(ID_LEVELS_LFO_SHAPE, action_lfo_shape)
 
-    local default_rate_index = 20
-    local default_rate = lfo_util.lfo_period_values[default_rate_index]
+    params:set_action(ID_LEVELS_LFO_RATE, action_lfo_rate)
 
-    params:add_option(PARAM_ID_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, default_rate)
-    params:set_action(PARAM_ID_LFO_RATE, action_lfo_rate)
+    params:set_action(ID_LEVELS_POS, recalculate_levels)
 
-    params:add_control(PARAM_ID_POS, "position", controlspec_pos)
-    params:set_action(PARAM_ID_POS, recalculate_levels)
-
-    params:add_control(PARAM_ID_AMP, "amp", controlspec_amp)
-    params:set_action(PARAM_ID_AMP, recalculate_levels)
+    params:set_action(ID_LEVELS_AMP, recalculate_levels)
 end
 
 function page:initialize()
@@ -216,8 +166,8 @@ function page:initialize()
     -- initialize softcut levels according to mixer levels
     adjust_sigma(0)
 
-    local sigma = amp_to_sigma(params:get(PARAM_ID_AMP))
-    local levels = gaussian.calculate_gaussian_levels(params:get(PARAM_ID_POS), sigma)
+    local sigma = amp_to_sigma(params:get(ID_LEVELS_AMP))
+    local levels = gaussian.calculate_gaussian_levels(params:get(ID_LEVELS_POS), sigma)
     bars_graphic.levels = levels
 
     for voice = 1, 6 do
@@ -257,7 +207,7 @@ function page:initialize()
         phase = 0,
         action = function(scaled, raw)
             bars_graphic.scan_val = scaled
-            params:set(PARAM_ID_POS, controlspec_pos:map(scaled), false)
+            params:set(ID_LEVELS_POS, controlspec_pos:map(scaled), false)
         end
     }
     levels_lfo:set('reset_target', 'mid: rising')

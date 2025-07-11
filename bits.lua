@@ -10,6 +10,7 @@ MusicUtil = require "musicutil"
 
 local audio_util = include("bits/lib/util/audio_util")
 
+local global_state = include("bits/lib/state")
 local page_sampling = include("bits/lib/pages/sampling")
 local page_sequencer = include("bits/lib/pages/sequencer")
 local page_control = include("bits/lib/pages/control")

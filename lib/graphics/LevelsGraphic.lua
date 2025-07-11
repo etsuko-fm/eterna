@@ -1,3 +1,5 @@
+local misc_util = include("bits/lib/util/misc")
+
 LevelsGraphic = {
     x = 0,
     y = 0,
@@ -28,10 +30,11 @@ function LevelsGraphic:render()
     if self.hide then return end
 
     for i = 0, 5 do
+        local voice = i + 1
         if self.render_text then
             screen.level(self.brightness)
             screen.move(i * self.bar_width + self.bar_spacing, 10)
-            screen.text(string.format("%.2f", self.levels[i + 1]))
+            screen.text(string.format("%.2f", self.levels[voice]))
         end
         screen.level(self.bg_bar_brightness)
         screen.rect(
@@ -46,7 +49,7 @@ function LevelsGraphic:render()
             self.x + (i * (self.w - self.bar_width) / (self.num_bars - 1)),
             self.y,
             self.bar_width,
-            -self.h * self.levels[i + 1]
+            misc_util.round(-self.h * self.levels[voice])
         )
         screen.fill()
     end

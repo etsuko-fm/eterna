@@ -1,5 +1,5 @@
-local function round(num, numDecimalPlaces)
-    local mult = 10^(numDecimalPlaces or 0)
+local function round(num, num_decimal_places)
+    local mult = 10^(num_decimal_places or 0)
     return math.floor(num * mult + 0.5) / mult
 end
 
