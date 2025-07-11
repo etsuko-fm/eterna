@@ -162,7 +162,9 @@ local function update_softcut_ranges()
         -- save in params, so waveforms can render correctly
         params:set(SLICE_PARAM_IDS[voice].loop_start, start_pos)
         params:set(SLICE_PARAM_IDS[voice].loop_end, end_pos)
+        -- voice_position_to_start(voice) todo: fix, order of initalization bug
     end
+
 end
 local function load_sample(state, file)
     -- use specified `file` as a sample and store enabled length of softcut buffer in state
@@ -271,14 +273,6 @@ function page:render()
         screen.rect(startx, y,  rect_w, 3)
         screen.fill()
     end
-
-    -- render sample title bar
-    -- screen.level(2)
-    -- screen.rect(x, 10, 64, 6)
-    -- screen.fill()
-    -- screen.level(15)
-    -- screen.move(x + 32, 15)
-    -- screen.text_center(filename)
 
     window.title = filename
 

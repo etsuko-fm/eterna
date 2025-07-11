@@ -3,6 +3,7 @@ local Window = include("bits/lib/graphics/Window")
 local GridGraphic = include("bits/lib/graphics/Grid")
 local Footer = include("bits/lib/graphics/Footer")
 local perlin = include("bits/lib/ext/perlin")
+local sequence_util = include("bits/lib/util/sequence")
 local page_name = "SEQUENCER"
 local window
 local grid_graphic
@@ -12,17 +13,20 @@ local COLUMNS = 16
 local PARAM_ID_PERLIN_X = "sequencer_perlin_x"
 local PARAM_ID_PERLIN_Y = "sequencer_perlin_y"
 local PARAM_ID_PERLIN_Z = "sequencer_perlin_z"
+local PERLIN_ZOOM = 4 / 3 -- empirically tuned
 
-local PERLIN_ZOOM = 4/3 -- empirically tuned
 local DIM_X = "X"
 local DIM_Y = "Y"
 local DIM_Z = "Z"
-local DIMENSIONS = {DIM_X, DIM_Y, DIM_Z}
-local PARAM_ID_DIMENSIONS = {PARAM_ID_PERLIN_X, PARAM_ID_PERLIN_Y, PARAM_ID_PERLIN_Z}
+local DIMENSIONS = { DIM_X, DIM_Y, DIM_Z }
+local PARAM_ID_DIMENSIONS = { PARAM_ID_PERLIN_X, PARAM_ID_PERLIN_Y, PARAM_ID_PERLIN_Z }
 
 local current_dimension = 1
 
 local PARAM_ID_PERLIN_DENSITY = "sequencer_perlin_density"
+
+local transport_on = true
+local holding_step = false
 
 -- todo: add in bits.lua? otherwise dependent on order of pages loaded
 PARAM_ID_SEQUENCE_SPEED = "sequencer_speed"
@@ -30,42 +34,25 @@ local SEQ_PARAM_IDS = {}
 
 local clock_id
 local current_step = 1
-local is_playing = {false,false,false,false,false,false} -- whether a softcut voice is playing
 local voice_pos = {} -- playhead positions of softcut voices
-
-local sequence_speeds = {"1/32", "1/16", "1/8", "1/4", "1/2", "1", "2", "4", "8"}
-local DEFAULT_SEQUENCE_SPEED_IDX = 2
-local convert_sequence_speed = {
-     -- all fractions of 1/4th notes
-    1/8,
-    1/4,
-    1/2,
-    1,
-    2,
-    4,
-    8,
-    16,
-    32,
-}
-local sequence_speed = convert_sequence_speed[DEFAULT_SEQUENCE_SPEED_IDX]
 
 local controlspec_perlin = controlspec.def {
     min = 0,       -- the minimum value
-    max = 9999,      -- the maximum value
+    max = 9999,    -- the maximum value
     warp = 'lin',  -- a shaping option for the raw value
     step = .01,    -- output value quantization
     default = 0,   -- default value
     units = '',    -- displayed on PARAMS UI
     quantum = .05, -- each delta will change raw value by this much
-    wrap = true   -- wrap around on overflow (true) or clamp (false)
+    wrap = true    -- wrap around on overflow (true) or clamp (false)
 }
 
 local controlspec_perlin_density = controlspec.def {
     min = 0,       -- the minimum value
-    max = 1,      -- the maximum value
+    max = 1,       -- the maximum value
     warp = 'lin',  -- a shaping option for the raw value
     step = .01,    -- output value quantization
-    default = 0.4,   -- default value
+    default = 0.4, -- default value
     units = '',    -- displayed on PARAMS UI
     quantum = .01, -- each delta will change raw value by this much
     wrap = false   -- wrap around on overflow (true) or clamp (false)
@@ -78,15 +65,15 @@ local function generate_perlin_seq()
     local y_seed = params:get(PARAM_ID_PERLIN_Y)
     local z_seed = params:get(PARAM_ID_PERLIN_Z)
 
-    for voice=1, ROWS do
-        for step=1,COLUMNS do
+    for voice = 1, ROWS do
+        for step = 1, COLUMNS do
             local perlin_x = step * PERLIN_ZOOM + x_seed
             local perlin_y = voice * PERLIN_ZOOM + y_seed
             local perlin_z = z_seed
             local n = perlin:noise(perlin_x, perlin_y, perlin_z) -- -1 to 1
-            local v = (1 + n)/2 -- 0 to 1
+            local v = (1 + n) / 2                                -- 0 to 1
             -- adding density before rounding down gives control over number of active sequence stepps
-            params:set(SEQ_PARAM_IDS[voice][step], math.floor(v+density))
+            params:set(SEQ_PARAM_IDS[voice][step], math.floor(v + density))
         end
     end
 end
@@ -104,46 +91,11 @@ local function e3(d)
 end
 
 local function update_grid_state()
-    for y=1,ROWS do
-        for x=1,COLUMNS do
+    for y = 1, ROWS do
+        for x = 1, COLUMNS do
             grid_graphic.sequences[y][x] = params:get(SEQ_PARAM_IDS[y][x])
         end
     end
-end
-
-function pulse()
-    -- advance 
-    while true do
-        current_step = util.wrap(current_step + 1,1,16)
-        grid_graphic.current_step = current_step
-        local x = current_step -- x pos of sequencer, i.e. current step
-        for y = 1, ROWS do
-            local on = params:get(SEQ_PARAM_IDS[y][x])
-            if on == 1 then
-
-                if params:get(get_voice_dir_param_id(y)) == 1 then
-                    -- play forward
-                    -- query position
-                    softcut.position(y, params:get(get_slice_start_param_id(y)))
-                else
-                    -- play reverse, start at end
-                    softcut.position(y, params:get(get_slice_end_param_id(y)))
-                end
-                softcut.play(y, 1)
-            end
-        end
-        clock.sync(sequence_speed)
-    end
-end
-
-function clock.transport.start()
-    print("restart")
-    clock_id = clock.run(pulse)
-end
-
-function clock.transport.stop()
-    print("cancel")
-    clock.cancel(clock_id)
 end
 
 local function toggle_perlin()
@@ -151,7 +103,7 @@ local function toggle_perlin()
 end
 
 local function cycle_dimension()
-    current_dimension = util.wrap(current_dimension+1, 1, #DIMENSIONS)
+    current_dimension = util.wrap(current_dimension + 1, 1, #DIMENSIONS)
 end
 
 
@@ -163,9 +115,83 @@ local page = Page:create({
     k3_off = cycle_dimension,
 })
 
-local function action_sequence_speed(v)
-    -- convert table index of human-readable options to value for clock.sync
-    sequence_speed = convert_sequence_speed[v]
+function set_sequence_speed(v)
+    page.sequence_speed = v
+end
+
+function voice_position_to_start(voice)
+    if params:get(get_voice_dir_param_id(voice)) == 1 then
+        -- play forward
+        -- query position
+        softcut.position(voice, params:get(get_slice_start_param_id(voice)))
+    else
+        -- play reverse, start at end
+        softcut.position(voice, params:get(get_slice_end_param_id(voice)))
+    end
+end
+
+function pulse()
+    -- advance
+    while true do
+        if not holding_step then
+            current_step = util.wrap(current_step + 1, 1, 16)
+        end
+        grid_graphic.current_step = current_step
+        local x = current_step -- x pos of sequencer, i.e. current step
+        for y = 1, ROWS do
+            local on = params:get(SEQ_PARAM_IDS[y][x])
+            if on == 1 then
+                voice_position_to_start(y)
+                softcut.play(y, 1)
+            end
+        end
+        clock.sync(page.sequence_speed)
+    end
+end
+
+function toggle_transport()
+    if transport_on then
+        clock.transport.stop()
+        for voice = 1, 6 do
+            -- stop softcut voices
+            softcut.play(voice, 0)
+        end
+    else
+        clock.transport.start()
+    end
+end
+
+function report_transport()
+    return transport_on
+end
+
+function report_hold()
+    return holding_step
+end
+
+function report_current_step()
+    return current_step
+end
+function toggle_hold_step()
+    if holding_step then
+        holding_step = false
+        print('releasing')
+    else
+        holding_step = true
+        print('holding')
+    end
+end
+
+function clock.transport.start()
+    print("start transport")
+    transport_on = true
+    clock_id = clock.run(pulse)
+end
+
+function clock.transport.stop()
+    print("stop transport")
+    transport_on = false
+    clock.cancel(clock_id)
 end
 
 function page:render()
@@ -173,7 +199,7 @@ function page:render()
     update_grid_state() -- typically not needed, only when pset is loaded
     grid_graphic:render()
 
-    for voice = 1,6 do
+    for voice = 1, 6 do
         softcut.query_position(voice)
     end
     page.footer.button_text.k3.value = DIMENSIONS[current_dimension]
@@ -202,9 +228,6 @@ local function add_params()
     params:add_control(PARAM_ID_PERLIN_DENSITY, "perlin density", controlspec_perlin_density)
     params:set_action(PARAM_ID_PERLIN_DENSITY, generate_perlin_seq)
 
-    params:add_option(PARAM_ID_SEQUENCE_SPEED, "sequence speed", sequence_speeds, DEFAULT_SEQUENCE_SPEED_IDX)
-    params:set_action(PARAM_ID_SEQUENCE_SPEED, action_sequence_speed)
-
     for y = 1, 6 do
         SEQ_PARAM_IDS[y] = {}
         for x = 1, 16 do
@@ -230,7 +253,7 @@ local function report_softcut(voice, pos)
     local normalized_pos = pos - slice_start
     if voice_dir == 1 then -- forward, todo: use table
         grid_graphic.voice_pos_percentage[voice] = normalized_pos / slice_length
-    else -- backwards
+    else                   -- backwards
         -- e.g. slice length = 5.0 sec
         --- position = 32.0 - 37.0 seec
         --- position = 36.0 sec, but going backwards;
@@ -241,6 +264,8 @@ local function report_softcut(voice, pos)
 end
 
 function page:initialize()
+    -- allows value to be modified by other pages
+    page.sequence_speed = sequence_util.convert_sequence_speed[sequence_util.default_speed_idx]
     add_params()
     window = Window:new({
         x = 0,
