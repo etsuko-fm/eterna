@@ -96,35 +96,39 @@ local page = Page:create({
     k3_off = toggle_shape,
 })
 
-local function add_actions()
-    params:set_action(PARAM_ID_LFO_ENABLED,
-        function()
-            if panning_lfo:get("enabled") == 1 then
-                panning_lfo:stop()
-            else
-                panning_lfo:start()
-            end
-            panning_lfo:set('phase', params:get(PARAM_ID_TWIST))
-        end
-    )
-    params:set_action(PARAM_ID_LFO_SHAPE,
-        function() panning_lfo:set('shape', params:string(PARAM_ID_LFO_SHAPE)) end
-    )
-    params:set_action(PARAM_ID_TWIST, calculate_pan_positions)
-    params:set_action(PARAM_ID_SPREAD, calculate_pan_positions)
-    params:set_action(PARAM_ID_LFO_RATE,
-        function() panning_lfo:set('period', lfo_util.lfo_period_label_values[params:string(PARAM_ID_LFO_RATE)]) end)
+local function action_enable_lfo(v)
+    if panning_lfo:get("enabled") == 1 then
+        panning_lfo:stop()
+    else
+        panning_lfo:start()
+    end
+    panning_lfo:set('phase', params:get(PARAM_ID_TWIST))
+end
 
+local function action_lfo_shape(v)
+    panning_lfo:set('shape', params:string(PARAM_ID_LFO_SHAPE))
+end
+
+local function action_lfo_rate(v)
+    panning_lfo:set('period', lfo_util.lfo_period_label_values[params:string(PARAM_ID_LFO_RATE)])
 end
 
 local function add_params()
     params:add_separator("PANNING", page_name)
     params:add_binary(PARAM_ID_LFO_ENABLED, "LFO enabled", "toggle", 0)
+    params:set_action(PARAM_ID_LFO_ENABLED, action_enable_lfo)
+
     params:add_option(PARAM_ID_LFO_SHAPE, "LFO shape", LFO_SHAPES, 1)
+    params:set_action(PARAM_ID_LFO_SHAPE, action_lfo_shape)
+
     params:add_option(PARAM_ID_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels)
+    params:set_action(PARAM_ID_LFO_RATE, action_lfo_rate)
+
     params:add_control(PARAM_ID_TWIST, "twist", controlspec_twist)
+    params:set_action(PARAM_ID_TWIST, calculate_pan_positions)
+
     params:add_control(PARAM_ID_SPREAD, "spread", controlspec_spread)
-    add_actions()
+    params:set_action(PARAM_ID_SPREAD, calculate_pan_positions)
 end
 
 function page:render()
