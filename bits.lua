@@ -78,6 +78,8 @@ function init()
   -- Params UX
   params:add_separator("BITS", "BITS")
 
+  -- Add params that are used across multiple pages
+
   -- Encoder sensitivity
   norns.enc.sens(1, 5)
 

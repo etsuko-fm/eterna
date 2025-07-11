@@ -15,15 +15,13 @@ function get_voice_dir_param_id(i)
   return "pitch_v" .. i .. "_dir"
 end
 
-local QUANTIZE_DEFAULT = 1
-
 local CENTER_MIN = -2
 local CENTER_MAX = 2
 local CENTER_QUANTUM = 1 / 120
 local CENTER_QUANTUM_QUANTIZED = 1.0
 
-local SPREAD_MIN = -1
-local SPREAD_MAX = 1
+local SPREAD_MIN = -2
+local SPREAD_MAX = 2
 local SPREAD_MIN_QUANTIZED = -2
 local SPREAD_MAX_QUANTIZED = 2
 local SPREAD_QUNATUM = 0.01
@@ -32,8 +30,12 @@ local SPREAD_QUNATUM_QUANTIZED = 0.5
 local FWD = "FWD"
 local REV = "REV"
 local FWD_REV = "FWD+REV"
+local PLAYBACK_TABLE = { FWD, REV, FWD_REV }
 
-local playback_table = { FWD, REV, FWD_REV }
+local OFF = "OFF"
+local OCTAVES = "OCTAV"
+local QUANTIZE_TABLE = { OFF, OCTAVES }
+local QUANTIZE_DEFAULT = 2 -- octave quantization by default
 
 local controlspec_center = controlspec.def {
     min = CENTER_MIN,                   -- the minimum value
@@ -58,6 +60,7 @@ local controlspec_spread = controlspec.def {
 }
 
 local function calculate_rates()
+    local quantize = QUANTIZE_TABLE[params:get(PARAM_ID_QUANTIZE)]
     -- recalculate softcut playback rates, taking into account quantize, spread, center, direction
     for i = 0, 5 do
         -- map 6 values as equally spread angles on a (virtual) circle, by using radians (fraction * 2PI)
@@ -66,22 +69,22 @@ local function calculate_rates()
         -- this extra factor increases the range; values beyond 2PI are effectively treated as `% 2PI` by sin(),
         -- because sin() is a periodic function with a period of 2PI
         -- this extension affects the way the playback rates are spread over the six voices
-        local extend = 2.67 -- manually tuned, 2.7 is also nice
+        local extend = 2 --2.67 -- manually tuned, 2.7 is also nice
 
-        -- here pitch is not a meaningful value yet; it's _some_ ratio of the normal playback pitch, with 0 = original pitch
+        -- here pitch is still a linear value, representing steps on the slider
         local pitch = math.sin(radians * extend) * params:get(PARAM_ID_SPREAD)
 
         -- double to increase range, we'll use half the range for reverse playback (-4 < pitch < 0) and half for forward (0 < pitch < 4)
         pitch = pitch + params:get(PARAM_ID_CENTER)
 
-        if params:get(PARAM_ID_QUANTIZE) == 1 then
+        if quantize ~= OFF then
             -- quantize to integers between -2 and 2,because 2^[-2|-1|0|1|2] gives quantized rates from 0.25 to 4
             pitch = math.floor(pitch + 0.5)
         end
 
         -- these correspond to the octaves;
         -- 1 = normal, 1/2 = -12, -1/4 = -24, -1/8 = -36
-        local rate = util.clamp(2 ^ pitch, 1 / 4, 4)
+        local rate = util.clamp(2 ^ pitch, .25, 4)
 
         local voice = i + 1
         if params:get(get_voice_dir_param_id(voice)) == 2 then -- todo: lookuptable 2>rev, 1>fwd
@@ -95,13 +98,13 @@ end
 
 local function update_playback_dir(new_val)
     -- update graphics
-    if playback_table[new_val] == FWD then
+    if PLAYBACK_TABLE[new_val] == FWD then
         -- all forward
         for voice = 1, 6 do
             page.pitch_graph.voice_dir[voice] = FWD
             params:set(get_voice_dir_param_id(voice), 1)
         end
-    elseif playback_table[new_val] == REV then
+    elseif PLAYBACK_TABLE[new_val] == REV then
         -- all reverse
         for voice = 1, 6 do
             page.pitch_graph.voice_dir[voice] = REV
@@ -125,7 +128,7 @@ end
 local function add_params()
     params:add_separator("PLAYBACK_RATES", "PLAYBACK RATES")
 
-    params:add_binary(PARAM_ID_QUANTIZE, 'quantize', "toggle", QUANTIZE_DEFAULT)
+    params:add_option(PARAM_ID_QUANTIZE, 'quantize', QUANTIZE_TABLE, QUANTIZE_DEFAULT)
     params:set_action(PARAM_ID_QUANTIZE, action_quantize)
 
     params:add_control(PARAM_ID_CENTER, "center", controlspec_center)
@@ -134,35 +137,25 @@ local function add_params()
     params:add_control(PARAM_ID_SPREAD, "spread", controlspec_spread)
     params:set_action(PARAM_ID_SPREAD, calculate_rates)
 
-    params:add_option(PARAM_ID_DIRECTION, "direction", playback_table, 1)
+    params:add_option(PARAM_ID_DIRECTION, "direction", PLAYBACK_TABLE, 1)
     params:set_action(PARAM_ID_DIRECTION, update_playback_dir)
 
     -- voice directions (fwd/rev/both)
     for voice = 1, 6 do
         local param_id = get_voice_dir_param_id(voice)
-        params:add_option(param_id, param_id, playback_table, 1)
+        params:add_option(param_id, param_id, PLAYBACK_TABLE, 1)
         params:hide(param_id)
     end
 
 end
 
 function action_quantize(v)
-    if v == 1 then
+    if QUANTIZE_TABLE[v] == OCTAVES then
         params:set(PARAM_ID_CENTER, math.floor(params:get(PARAM_ID_CENTER) + .5))
-
-        -- think need to cycle through predetermined values:
-        -- 0  0  0   0   0   0
-        -- 0  0  0   0   1  -1
-        -- 0  0  1  -1   1  -1
-        -- 0  0  1  -1   2  -2
-        -- 0 -1  1  -2   2  -3
-        -- 0 -1  2  -2   3  -3
-
         controlspec_center.quantum = CENTER_QUANTUM_QUANTIZED;
         controlspec_spread.quantum = SPREAD_QUNATUM_QUANTIZED
         controlspec_spread.minval = SPREAD_MIN_QUANTIZED
         controlspec_spread.maxval = SPREAD_MAX_QUANTIZED
-
         params:set(PARAM_ID_SPREAD, math.floor(params:get(PARAM_ID_SPREAD) + .5))
     else
         controlspec_center.quantum = CENTER_QUANTUM;
@@ -180,7 +173,9 @@ end
 
 
 local function toggle_quantize()
-    params:set(PARAM_ID_QUANTIZE, 1 - params:get(PARAM_ID_QUANTIZE))
+    local old = params:get(PARAM_ID_QUANTIZE)
+    local new = util.wrap(old + 1, 1, #QUANTIZE_TABLE)
+    params:set(PARAM_ID_QUANTIZE, new)
 end
 
 local function adjust_center(d)
@@ -206,8 +201,8 @@ page = Page:create({
 
 function page:render()
     page.window:render()
-    page.footer.button_text.k2.value = playback_table[params:get(PARAM_ID_DIRECTION)]
-    page.footer.button_text.k3.value = params:get(PARAM_ID_QUANTIZE) == 1 and "ON" or "OFF"
+    page.footer.button_text.k2.value = PLAYBACK_TABLE[params:get(PARAM_ID_DIRECTION)]
+    page.footer.button_text.k3.value = QUANTIZE_TABLE[params:get(PARAM_ID_QUANTIZE)]
 
     -- convert -3/+3 range to -36/+36 rounded to 1 decimal
     page.footer.button_text.e2.value = misc_util.trim(tostring(

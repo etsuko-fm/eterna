@@ -41,7 +41,7 @@ local voice_pos = {} -- playhead positions of softcut voices
 
 local controlspec_perlin = controlspec.def {
     min = 0,       -- the minimum value
-    max = 9999,    -- the maximum value
+    max = 100,    -- the maximum value
     warp = 'lin',  -- a shaping option for the raw value
     step = .01,    -- output value quantization
     default = 0,   -- default value
