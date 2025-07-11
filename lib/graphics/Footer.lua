@@ -100,7 +100,7 @@ local buttons = {
 function Footer:render()
     if self.hide then return end
     screen.line_width(1)
-
+    screen.font_size(8)
     -- draw 8 blocks
     screen.level(self.background_fill)
     for i = 1, 4 do

@@ -29,7 +29,7 @@ end
 
 function Window:render()
     if self.hide then return end
-
+    screen.font_size(8)
     -- top bar
     screen.line_width(1)
     if self.selected then

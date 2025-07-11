@@ -32,7 +32,6 @@ local clock_id
 local current_step = 1
 local is_playing = {false,false,false,false,false,false} -- whether a softcut voice is playing
 local voice_pos = {} -- playhead positions of softcut voices
-local voice_pos_percentage = {}
 
 local sequence_speeds = {"1/32", "1/16", "1/8", "1/4", "1/2", "1", "2", "4", "8"}
 local DEFAULT_SEQUENCE_SPEED_IDX = 2
@@ -116,6 +115,7 @@ function pulse()
     -- advance 
     while true do
         current_step = util.wrap(current_step + 1,1,16)
+        grid_graphic.current_step = current_step
         local x = current_step -- x pos of sequencer, i.e. current step
         for y = 1, ROWS do
             local on = params:get(SEQ_PARAM_IDS[y][x])
@@ -130,8 +130,6 @@ function pulse()
                     softcut.position(y, params:get(get_slice_end_param_id(y)))
                 end
                 softcut.play(y, 1)
-            else
-                -- softcut.play(y, 0)
             end
         end
         clock.sync(sequence_speed)
@@ -170,23 +168,11 @@ local function action_sequence_speed(v)
     sequence_speed = convert_sequence_speed[v]
 end
 
-local function track_indicator(voice)
-    local brightness = 1 + math.floor((1 - voice_pos_percentage[voice]) * 14)
-    screen.level(brightness)
-    screen.rect(96, 16 + (4*(voice-1)), 1,3)
-    screen.fill()
-end
-
 function page:render()
     window:render()
     update_grid_state() -- typically not needed, only when pset is loaded
     grid_graphic:render()
 
-    for voice = 1,6 do
-        if is_playing[voice] then
-            track_indicator(voice)
-        end
-    end
     for voice = 1,6 do
         softcut.query_position(voice)
     end
@@ -196,11 +182,8 @@ function page:render()
     page.footer.button_text.e2.value = params:get(PARAM_ID_DIMENSIONS[current_dimension])
     page.footer.button_text.e3.value = params:get(PARAM_ID_PERLIN_DENSITY)
 
+    -- todo: move to Grid class
 
-    -- todo: move to graphic class
-    screen.level(15)
-    screen.rect(28 + (current_step * 4), 27, 3, 1)
-    screen.fill()
     page.footer:render()
 end
 
@@ -234,7 +217,7 @@ end
 
 local function report_softcut(voice, pos)
     -- if playhead moved since last report, assume track reached endpoint
-    is_playing[voice] = voice_pos[voice] ~= nil and voice_pos[voice] ~= pos
+    grid_graphic.is_playing[voice] = voice_pos[voice] ~= nil and voice_pos[voice] ~= pos
 
     voice_pos[voice] = pos
     local voice_dir = params:get(get_voice_dir_param_id(voice))
@@ -246,14 +229,14 @@ local function report_softcut(voice, pos)
 
     local normalized_pos = pos - slice_start
     if voice_dir == 1 then -- forward, todo: use table
-        voice_pos_percentage[voice] = normalized_pos / slice_length
+        grid_graphic.voice_pos_percentage[voice] = normalized_pos / slice_length
     else -- backwards
         -- e.g. slice length = 5.0 sec
         --- position = 32.0 - 37.0 seec
         --- position = 36.0 sec, but going backwards;
         --- so position is 36.0 - 32.0 = 4.0 (normalized_pos);
         --- then slice_length - normalized_pos (5.0-4.0) = 1.0 gives the relative position
-        voice_pos_percentage[voice] = (slice_length - normalized_pos) / slice_length
+        grid_graphic.voice_pos_percentage[voice] = (slice_length - normalized_pos) / slice_length
     end
 end
 

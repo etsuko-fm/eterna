@@ -23,7 +23,8 @@ function page:render()
     local bright_level = 15
     screen.level(default_level)
 
-    local y = 22
+
+    local y = 30
     local bpm_y = y + 2
     local bar_h = 4
 
@@ -51,6 +52,12 @@ function page:render()
     screen.level(bright_level)
     screen.rect(32 + 4*7, y-4, 7, bar_h)
     screen.fill()
+
+    screen.level(15)
+    screen.move(95,y - 6)
+    screen.font_size(12)
+    screen.font_face(40) -- 7 is ok; 40 is nice @ size 12
+    screen.text_right("128.0") 
 
     page.footer:render()
 end
