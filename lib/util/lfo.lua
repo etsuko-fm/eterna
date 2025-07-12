@@ -1,14 +1,11 @@
 local lfo_period_values = {
-    1 / 32, 1 / 16, 1 / 8, 1 / 4, 1 / 2,
-    1,
-    2,
-    3,
-    4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-    22, 24, 26, 28, 30, 32, 33, 34, 36, 38, 40, 48, 50,
-    52, 56, 60, 64, 68, 72, 75, 76, 80, 84, 88, 92, 96,
-    100, 104, 108, 112, 116, 120, 124, 125, 128, 132, 136, 140, 144, 148, 150, 152,
-    156, 160, 164, 168, 172, 175, 176, 180, 184, 188, 192, 196, 200, 204, 208,
-    212, 216, 220, 224, 225, 228, 232, 236, 240, 244, 248, 250, 252, 256
+    1 / 4, 1 / 2,
+    1, 2, 4, 8, 12, 16, 20,
+    24,28,32,36,40,44, 48,
+    52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96,
+    100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 148, 152,
+    156, 160, 164, 168, 172, 176, 180, 184, 188, 192, 196, 200, 204, 208,
+    212, 216, 220, 224, 228, 232, 236, 240, 244, 248, 252, 256
 }
 
 -- labels only, e.g. for paramset options
@@ -54,7 +51,10 @@ local function fraction_to_label(v)
 end
 
 for i, v in ipairs(lfo_period_values) do
-    local label = fraction_to_label(v)
+    -- period represents _beats_; convert to fraction of 4/4 bar (1 > 1/4)
+    local fraction = v / 4
+    -- format fraction (0.25) to a string ("1/4")
+    local label = fraction_to_label(fraction)
     lfo_period_label_values[label] = v
     lfo_period_labels[i] = label
     lfo_period_value_labels[v] = label

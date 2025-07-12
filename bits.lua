@@ -40,7 +40,7 @@ local pages = {
   page_levels,
 }
 
-local current_page_index = 3
+local current_page_index = 2
 local current_page = pages[current_page_index]
 
 local function page_forward()

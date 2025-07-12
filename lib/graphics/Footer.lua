@@ -46,7 +46,7 @@ local graphics_ver_spacing = 2
 local graphics_y = base_y_row1 + graphics_ver_spacing
 
 local text_y_row_1 = base_y_row1 + 6
-local text_y_row_2 = base_y_row2 + 6
+local text_y_row_2 = base_y_row2 + 7
 
 local knob_y = 2
 local enc_y = 2
@@ -104,8 +104,13 @@ function Footer:render()
     -- draw 8 blocks
     screen.level(self.background_fill)
     for i = 1, 4 do
+        if i == 2 then
+            btn_width = 128/4 - 2
+        else
+            btn_width = 128/4 - 1
+        end
         screen.rect(rect_x_positions[i], base_y_row1-1, btn_width, 1)
-        -- screen.rect(rect_x_positions[i], base_y_row2-1, btn_width, 1) -- btn_height
+        screen.rect(rect_x_positions[i], base_y_row2, btn_width, 1) -- btn_height
     end
     screen.fill()
 

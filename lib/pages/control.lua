@@ -17,7 +17,7 @@ end
 local function adjust_step_size(d)
     local p = PARAM_ID_SEQUENCE_SPEED
     local v = params:get(p)
-    local new = util.wrap(v + d, 1, #sequence_util.sequence_speeds)
+    local new = util.clamp(v + d, 1, #sequence_util.sequence_speeds)
     params:set(p, new)
 end
 

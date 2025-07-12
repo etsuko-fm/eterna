@@ -10,20 +10,22 @@ local grid_graphic
 local ROWS = 6
 local COLUMNS = 16
 
-local PARAM_ID_PERLIN_X = "sequencer_perlin_x"
-local PARAM_ID_PERLIN_Y = "sequencer_perlin_y"
-local PARAM_ID_PERLIN_Z = "sequencer_perlin_z"
-local PERLIN_ZOOM = 4 / 3 -- empirically tuned
+local ID_SEQ_PERLIN_X = "sequencer_perlin_x"
+local ID_SEQ_PERLIN_Y = "sequencer_perlin_y"
+local ID_SEQ_PERLIN_Z = "sequencer_perlin_z"
+local ID_SEQ_EVOLVE = "sequencer_evolve"
+local PERLIN_ZOOM = 4/3 ---4 / 3 -- empirically tuned
 
 local DIM_X = "X"
 local DIM_Y = "Y"
 local DIM_Z = "Z"
-local DIMENSIONS = { DIM_X, DIM_Y, DIM_Z }
-local PARAM_ID_DIMENSIONS = { PARAM_ID_PERLIN_X, PARAM_ID_PERLIN_Y, PARAM_ID_PERLIN_Z }
-
+local SEQ_DIMENSIONS = { DIM_X, DIM_Y, DIM_Z }
+local ID_SEQ_DIMENSIONS = { ID_SEQ_PERLIN_X, ID_SEQ_PERLIN_Y, ID_SEQ_PERLIN_Z }
+local SEQ_EVOLVE_TABLE = {"OFF", "SLOW", "MED", "FAST"}
+local SEQ_EVOLVE_RATES = {1024*12, 1024*8, 1024*4}
 local current_dimension = 1
 
-local PARAM_ID_PERLIN_DENSITY = "sequencer_perlin_density"
+local ID_SEQ_PERLIN_DENSITY = "sequencer_perlin_density"
 
 local transport_on = true
 local holding_step = false
@@ -35,9 +37,19 @@ local SEQ_PARAM_IDS = {}
 local main_seq_clock_id
 local q_report_clock_id
 local current_step = 1
+local current_global_step -- holds values of 1 to MAX_STEPS, even if sequence length is shorter
+
+local MAX_STEPS = 64 -- 4 bars of 16 steps before repeating
+
+ -- step_divider divides MAX_STEPS.
+ --- If set to 4, it means 1 step = 1 step (1/16 note)
+ --- If set to 1, it means 1 step = 64 steps (4 bars) 
+local step_divider = 4
+
 local current_quarter = 1 -- keeps track of quarter notes, regardless of sequence speed
 
 local voice_pos = {} -- playhead positions of softcut voices
+local perlin_lfo
 
 local controlspec_perlin = controlspec.def {
     min = 0,       -- the minimum value
@@ -46,7 +58,7 @@ local controlspec_perlin = controlspec.def {
     step = .01,    -- output value quantization
     default = 0,   -- default value
     units = '',    -- displayed on PARAMS UI
-    quantum = .05, -- each delta will change raw value by this much
+    quantum = .1, -- each delta will change raw value by this much
     wrap = true    -- wrap around on overflow (true) or clamp (false)
 }
 
@@ -54,19 +66,20 @@ local controlspec_perlin_density = controlspec.def {
     min = 0,       -- the minimum value
     max = 1,       -- the maximum value
     warp = 'lin',  -- a shaping option for the raw value
-    step = .01,    -- output value quantization
-    default = 0.4, -- default value
+    step = .001,    -- output value quantization
+    default = 0.35, -- default value
     units = '',    -- displayed on PARAMS UI
     quantum = .01, -- each delta will change raw value by this much
     wrap = false   -- wrap around on overflow (true) or clamp (false)
 }
 
 local function generate_perlin_seq()
+    -- print("regen - ", math.random())
     -- need as many values as there are rows and columns
-    local density = params:get(PARAM_ID_PERLIN_DENSITY)
-    local x_seed = params:get(PARAM_ID_PERLIN_X)
-    local y_seed = params:get(PARAM_ID_PERLIN_Y)
-    local z_seed = params:get(PARAM_ID_PERLIN_Z)
+    local density = params:get(ID_SEQ_PERLIN_DENSITY)
+    local x_seed = params:get(ID_SEQ_PERLIN_X)
+    local y_seed = params:get(ID_SEQ_PERLIN_Y)
+    local z_seed = params:get(ID_SEQ_PERLIN_Z)
 
     for voice = 1, ROWS do
         for step = 1, COLUMNS do
@@ -83,14 +96,14 @@ end
 
 local function e2(d)
     -- works for x, y, and z
-    local p = PARAM_ID_DIMENSIONS[current_dimension]
+    local p = ID_SEQ_DIMENSIONS[current_dimension]
     local new = params:get(p) + controlspec_perlin.quantum * d
     params:set(p, new, false)
 end
 
 local function e3(d)
-    local new = params:get(PARAM_ID_PERLIN_DENSITY) + controlspec_perlin_density.quantum * d
-    params:set(PARAM_ID_PERLIN_DENSITY, new, false)
+    local new = params:get(ID_SEQ_PERLIN_DENSITY) + controlspec_perlin_density.quantum * d
+    params:set(ID_SEQ_PERLIN_DENSITY, new, false)
 end
 
 local function update_grid_state()
@@ -101,12 +114,14 @@ local function update_grid_state()
     end
 end
 
-local function toggle_perlin()
-    generate_perlin_seq()
+local function toggle_evolve()
+    local p = ID_SEQ_EVOLVE
+    local new = util.wrap(params:get(p) + 1, 1, #SEQ_EVOLVE_TABLE)
+    params:set(p, new)
 end
 
 local function cycle_dimension()
-    current_dimension = util.wrap(current_dimension + 1, 1, #DIMENSIONS)
+    current_dimension = util.wrap(current_dimension + 1, 1, #SEQ_DIMENSIONS)
 end
 
 
@@ -114,7 +129,7 @@ local page = Page:create({
     name = page_name,
     e2 = e2,
     e3 = e3,
-    k2_off = toggle_perlin,
+    k2_off = toggle_evolve,
     k3_off = cycle_dimension,
 })
 
@@ -137,7 +152,8 @@ local function main_sequencer_callback()
     -- advance
     while true do
         if not holding_step then
-            current_step = util.wrap(current_step + 1, 1, 16)
+            current_global_step = util.wrap(current_step + 1, 1, MAX_STEPS)
+            current_step = current_global_step % step_divider
         end
         grid_graphic.current_step = current_step
         local x = current_step -- x pos of sequencer, i.e. current step
@@ -220,31 +236,45 @@ function page:render()
     for voice = 1, 6 do
         softcut.query_position(voice)
     end
-    page.footer.button_text.k3.value = DIMENSIONS[current_dimension]
-    page.footer.button_text.e2.name = DIMENSIONS[current_dimension]
+    page.footer.button_text.k2.value = SEQ_EVOLVE_TABLE[params:get(ID_SEQ_EVOLVE)]
+    page.footer.button_text.k3.value = SEQ_DIMENSIONS[current_dimension]
+    page.footer.button_text.e2.name = SEQ_DIMENSIONS[current_dimension]
     page.footer.button_text.e3.name = "DENS"
-    page.footer.button_text.e2.value = params:get(PARAM_ID_DIMENSIONS[current_dimension])
-    page.footer.button_text.e3.value = params:get(PARAM_ID_PERLIN_DENSITY)
-
-    -- todo: move to Grid class
+    page.footer.button_text.e2.value = params:get(ID_SEQ_DIMENSIONS[current_dimension])
+    page.footer.button_text.e3.value = params:get(ID_SEQ_PERLIN_DENSITY)
 
     page.footer:render()
+end
+
+local function action_evolve(v)
+    -- min one to disregard 
+    if v > 1 then
+        perlin_lfo:set('period', SEQ_EVOLVE_RATES[v-1])
+        if perlin_lfo:get("enabled") == 0 then
+            perlin_lfo:start()
+        end
+    elseif perlin_lfo:get("enabled") == 1 then
+        perlin_lfo:stop()
+    end
 end
 
 local function add_params()
     params:add_separator("SEQUENCER", page_name)
 
-    params:add_control(PARAM_ID_PERLIN_X, "perlin x", controlspec_perlin)
-    params:set_action(PARAM_ID_PERLIN_X, generate_perlin_seq)
+    params:add_control(ID_SEQ_PERLIN_X, "perlin x", controlspec_perlin)
+    params:set_action(ID_SEQ_PERLIN_X, generate_perlin_seq)
 
-    params:add_control(PARAM_ID_PERLIN_Y, "perlin y", controlspec_perlin)
-    params:set_action(PARAM_ID_PERLIN_Y, generate_perlin_seq)
+    params:add_control(ID_SEQ_PERLIN_Y, "perlin y", controlspec_perlin)
+    params:set_action(ID_SEQ_PERLIN_Y, generate_perlin_seq)
 
-    params:add_control(PARAM_ID_PERLIN_Z, "perlin z", controlspec_perlin)
-    params:set_action(PARAM_ID_PERLIN_Z, generate_perlin_seq)
+    params:add_control(ID_SEQ_PERLIN_Z, "perlin z", controlspec_perlin)
+    params:set_action(ID_SEQ_PERLIN_Z, generate_perlin_seq)
 
-    params:add_control(PARAM_ID_PERLIN_DENSITY, "perlin density", controlspec_perlin_density)
-    params:set_action(PARAM_ID_PERLIN_DENSITY, generate_perlin_seq)
+    params:add_control(ID_SEQ_PERLIN_DENSITY, "perlin density", controlspec_perlin_density)
+    params:set_action(ID_SEQ_PERLIN_DENSITY, generate_perlin_seq)
+
+    params:add_option(ID_SEQ_EVOLVE, "perlin evolve", SEQ_EVOLVE_TABLE, 1)
+    params:set_action(ID_SEQ_EVOLVE, action_evolve)
 
     -- add 96 params for sequence step status
     for y = 1, 6 do
@@ -331,6 +361,20 @@ function page:initialize()
     q_report_clock_id = clock.run(quarter_note_callback)
     -- for softcut updates
     softcut.event_position(report_softcut)
+
+    perlin_lfo = _lfos:add {
+        shape = 'tri',
+        min = 0,
+        max = 1,
+        depth = 1,
+        mode = 'clocked',
+        period = SEQ_EVOLVE_RATES[1],
+        phase = 0,
+        action = function(scaled, raw)
+            params:set(ID_SEQ_PERLIN_Z, controlspec_perlin:map(scaled))
+        end
+    }
+
 end
 
 return page

@@ -16,7 +16,7 @@ ID_PITCH_SPREAD = "pitch_spread"
 
 FWD = "FWD"
 REV = "REV"
-FWD_REV = "FWD+REV"
+FWD_REV = "BI"
 PLAYBACK_TABLE = { FWD, REV, FWD_REV }
 
 OFF = "OFF"

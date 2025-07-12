@@ -81,7 +81,7 @@ function PitchGraph:render()
             screen.line_rel(0,1)
         else
             -- backwards arrow
-            screen.move(x + 2, self.y + (self.block_h + self.margin_h) * self.lines + 3)
+            screen.move(x + 2, arrow_y + 2)
             screen.line_rel(0,1)
             screen.move_rel(1,-2)
             screen.line_rel(0,3)
