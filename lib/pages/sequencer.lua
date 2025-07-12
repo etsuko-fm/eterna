@@ -26,6 +26,7 @@ local SEQ_EVOLVE_RATES = {1024*12, 1024*8, 1024*4}
 local current_dimension = 1
 
 local ID_SEQ_PERLIN_DENSITY = "sequencer_perlin_density"
+local MAX_STEPS = sequence_util.max_steps
 
 local transport_on = true
 local holding_step = false
@@ -35,18 +36,11 @@ local holding_step = false
 local SEQ_PARAM_IDS = {}
 
 local main_seq_clock_id
-local q_report_clock_id
 local current_step = 1
-local current_global_step -- holds values of 1 to MAX_STEPS, even if sequence length is shorter
+local current_global_step = 1 -- holds values of 1 to MAX_STEPS, even if sequence length is shorter
 
-local MAX_STEPS = 64 -- 4 bars of 16 steps before repeating
-
- -- step_divider divides MAX_STEPS.
- --- If set to 4, it means 1 step = 1 step (1/16 note)
- --- If set to 1, it means 1 step = 64 steps (4 bars) 
-local step_divider = 4
-
-local current_quarter = 1 -- keeps track of quarter notes, regardless of sequence speed
+local sequence_steps = 16
+local step_divider = 1 -- 1 means 1 step = 1 1/16th note
 
 local voice_pos = {} -- playhead positions of softcut voices
 local perlin_lfo
@@ -133,8 +127,8 @@ local page = Page:create({
     k3_off = cycle_dimension,
 })
 
-function set_sequence_speed(v)
-    page.sequence_speed = v -- should be a float value, fraction of 1 beat
+function set_step_divider(v)
+    step_divider = v
 end
 
 function voice_position_to_start(voice)
@@ -152,8 +146,16 @@ local function main_sequencer_callback()
     -- advance
     while true do
         if not holding_step then
-            current_global_step = util.wrap(current_step + 1, 1, MAX_STEPS)
-            current_step = current_global_step % step_divider
+            current_global_step = util.wrap(current_global_step + 1, 1, MAX_STEPS)
+            -- num of sequence steps is static, always 16
+            -- if 1/16:
+            --- current_step = current_global_step % 16
+            --- if 1/8:
+            --- current_step = (current_global_step / 2) % 16
+            --- if 1/4:
+            --- current_step = (current_global_step / 4) % 16
+            --- etc, so to support 1 bar per step, you need 16*16 = 256 global steps; or 1024 to support 4 bars per step
+            current_step = util.wrap(math.ceil(current_global_step / step_divider), 1, sequence_steps)
         end
         grid_graphic.current_step = current_step
         local x = current_step -- x pos of sequencer, i.e. current step
@@ -164,26 +166,13 @@ local function main_sequencer_callback()
                 softcut.play(y, 1)
             end
         end
-        clock.sync(page.sequence_speed)
-    end
-end
-
-local function quarter_note_callback()
-    while true do
-        current_quarter = util.wrap(current_quarter + 1, 1, 4)
-        clock.sync(1) -- 1 quarter note
+        clock.sync(1/4)
     end
 end
 
 function toggle_transport()
     if transport_on then
         clock.transport.stop()
-        for voice = 1, 6 do
-            -- stop softcut voices
-            softcut.play(voice, 0)
-        end
-        current_step = 1
-        current_q_report = 1
     else
         clock.transport.start()
     end
@@ -197,8 +186,8 @@ function report_hold()
     return holding_step
 end
 
-function report_current_quarter_note()
-    return current_quarter
+function report_current_global_step()
+    return current_global_step
 end
 
 function report_current_step()
@@ -218,14 +207,17 @@ function clock.transport.start()
     print("start transport")
     transport_on = true
     main_seq_clock_id = clock.run(main_sequencer_callback)
-    q_report_clock_id = clock.run(quarter_note_callback)
 end
 
 function clock.transport.stop()
     print("stop transport")
     transport_on = false
     clock.cancel(main_seq_clock_id)
-    clock.cancel(q_report_clock_id)
+    for voice = 1, 6 do
+        -- stop softcut voices
+        softcut.play(voice, 0)
+    end
+    current_step = 1
 end
 
 function page:render()
@@ -358,7 +350,6 @@ function page:initialize()
 
     -- start sequencer
     main_seq_clock_id = clock.run(main_sequencer_callback)
-    q_report_clock_id = clock.run(quarter_note_callback)
     -- for softcut updates
     softcut.event_position(report_softcut)
 

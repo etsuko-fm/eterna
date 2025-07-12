@@ -61,7 +61,16 @@ function ControlGraphic:render()
         else
             screen.level(faint_level)
         end
-        screen.rect(x + i * 4, seq_y, 3, seq_h)
+        local step_h = seq_h
+        local step_y = seq_y
+        if i % 4 == 0 then 
+            h = seq_h + 1
+            step_y = seq_y - 1
+        else
+            h = seq_h
+            step_y = seq_y
+        end
+        screen.rect(x + i * 4, step_y, 3, h)
         screen.fill()
     end
 

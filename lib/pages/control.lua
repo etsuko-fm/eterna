@@ -32,7 +32,7 @@ local page = Page:create({
 local function action_sequence_speed(v)
     -- convert table index of human-readable options to value for clock.sync
     -- calls global function defined on sequencer page
-    set_sequence_speed(sequence_util.convert_sequence_speed[v])
+    set_step_divider(sequence_util.convert_sequence_speed[v])
 end
 
 local function add_params()
@@ -50,7 +50,7 @@ function page:render()
     page.footer.button_text.e3.value = sequence_util.sequence_speeds[params:get(PARAM_ID_SEQUENCE_SPEED)]
     control_graphic.bpm = tempo_trimmed
     control_graphic.current_step = report_current_step()
-    control_graphic.current_quarter = report_current_quarter_note()
+    control_graphic.current_quarter = util.wrap(math.ceil(report_current_global_step()/4), 1, 4)
     control_graphic:render()
     page.footer:render()
 end

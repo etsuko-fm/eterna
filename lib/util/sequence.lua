@@ -1,12 +1,11 @@
 
-local sequence_speeds = {"1/16", "1/8", "1/4", "1/2", "1", "2", "4"}
+local sequence_speeds = {"1/16", "1/8", "1/4", "1/2", "1"}
 local default_speed_idx = 2
+local max_steps = 256
 
 -- table with indexes matching to the sequence_speeds table above
 local convert_sequence_speed = {
-     -- all fractions of 1/4th notes
-    1/4,
-    1/2,
+     -- x, when 256/x == number of 1/16th notes that composes 1 step for a given sequence speed
     1,
     2,
     4,
@@ -18,4 +17,5 @@ return {
     sequence_speeds = sequence_speeds,
     default_speed_idx=default_speed_idx,
     convert_sequence_speed=convert_sequence_speed,
+    max_steps=max_steps,
 }
