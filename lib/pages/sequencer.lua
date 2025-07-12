@@ -14,6 +14,8 @@ local ID_SEQ_PERLIN_X = "sequencer_perlin_x"
 local ID_SEQ_PERLIN_Y = "sequencer_perlin_y"
 local ID_SEQ_PERLIN_Z = "sequencer_perlin_z"
 local ID_SEQ_EVOLVE = "sequencer_evolve"
+local ID_SEQ_PERLIN_DENSITY = "sequencer_perlin_density"
+
 local PERLIN_ZOOM = 4/3 ---4 / 3 -- empirically tuned
 
 local DIM_X = "X"
@@ -25,11 +27,11 @@ local SEQ_EVOLVE_TABLE = {"OFF", "SLOW", "MED", "FAST"}
 local SEQ_EVOLVE_RATES = {1024*12, 1024*8, 1024*4}
 local current_dimension = 1
 
-local ID_SEQ_PERLIN_DENSITY = "sequencer_perlin_density"
 local MAX_STEPS = sequence_util.max_steps
 
 local transport_on = true
 local holding_step = false
+
 
 -- todo: add in bits.lua? otherwise dependent on order of pages loaded
 
@@ -41,6 +43,8 @@ local current_global_step = 1 -- holds values of 1 to MAX_STEPS, even if sequenc
 
 local sequence_steps = 16
 local step_divider = 1 -- 1 means 1 step = 1 1/16th note
+local cue_step_divider = nil
+local step_divider_switch = false -- toggles on while moving to a new step division
 
 local voice_pos = {} -- playhead positions of softcut voices
 local perlin_lfo
@@ -127,8 +131,8 @@ local page = Page:create({
     k3_off = cycle_dimension,
 })
 
-function set_step_divider(v)
-    step_divider = v
+function set_cue_step_divider(v)
+    cue_step_divider = v
 end
 
 function voice_position_to_start(voice)
@@ -141,21 +145,39 @@ function voice_position_to_start(voice)
         softcut.position(voice, params:get(get_slice_end_param_id(voice)))
     end
 end
-
+local hold_step = nil
 local function main_sequencer_callback()
     -- advance
     while true do
+        if cue_step_divider then
+            print("step division cued to "..cue_step_divider)
+            print(current_global_step)
+            -- wait until the current_global_step aligns with the new step_size
+            if current_global_step % cue_step_divider == 0 then
+                -- align the current global step with the new step divider, to prevent jumping
+                current_global_step = current_step * cue_step_divider
+                step_divider = cue_step_divider
+                cue_step_divider = nil
+                print("switched!")
+            end
+        end
+        current_global_step = util.wrap(current_global_step + 1, 1, MAX_STEPS)
+
         if not holding_step then
-            current_global_step = util.wrap(current_global_step + 1, 1, MAX_STEPS)
-            -- num of sequence steps is static, always 16
-            -- if 1/16:
-            --- current_step = current_global_step % 16
-            --- if 1/8:
-            --- current_step = (current_global_step / 2) % 16
-            --- if 1/4:
-            --- current_step = (current_global_step / 4) % 16
-            --- etc, so to support 1 bar per step, you need 16*16 = 256 global steps; or 1024 to support 4 bars per step
+            if hold_step then
+                -- means resumed this frame
+                -- current_global_step ticked on meanwhile; but we don't want to jump frames
+                -- except for any offset introduced
+                print("resumed at "..current_global_step)
+                current_global_step = current_step * step_divider + (current_step - hold_step )
+                hold_step = nil
+            end
             current_step = util.wrap(math.ceil(current_global_step / step_divider), 1, sequence_steps)
+        else
+            if hold_step == nil then
+                print("Frozen at "..current_step)
+                hold_step = current_step
+            end
         end
         grid_graphic.current_step = current_step
         local x = current_step -- x pos of sequencer, i.e. current step
