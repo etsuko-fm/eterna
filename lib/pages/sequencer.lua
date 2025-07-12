@@ -49,6 +49,11 @@ local step_divider_switch = false -- toggles on while moving to a new step divis
 local voice_pos = {} -- playhead positions of softcut voices
 local perlin_lfo
 
+-- softcut VCA system concept:
+-- set_master_volume(voice, x)
+-- use level_slew_time to create envelopes
+
+
 local controlspec_perlin = controlspec.def {
     min = 0,       -- the minimum value
     max = 100,    -- the maximum value
@@ -84,10 +89,12 @@ local function generate_perlin_seq()
             local perlin_x = step * PERLIN_ZOOM + x_seed
             local perlin_y = voice * PERLIN_ZOOM + y_seed
             local perlin_z = z_seed
-            local n = perlin:noise(perlin_x, perlin_y, perlin_z) -- -1 to 1
-            local v = (1 + n) / 2                                -- 0 to 1
+            local v = perlin:noise(perlin_x, perlin_y, perlin_z) -- -1 to 1
             -- adding density before rounding down gives control over number of active sequence stepps
-            params:set(SEQ_PARAM_IDS[voice][step], math.floor(v + density))
+            if math.abs(v) < density then
+                v = 0.0
+            end
+            params:set(SEQ_PARAM_IDS[voice][step], v)
         end
     end
 end
@@ -183,10 +190,14 @@ local function main_sequencer_callback()
         local x = current_step -- x pos of sequencer, i.e. current step
         for y = 1, ROWS do
             -- todo: implement a check if it already fired for this step
-            local on = params:get(SEQ_PARAM_IDS[y][x])
-            if on == 1 then
+            local on = params:get(SEQ_PARAM_IDS[y][x]) > 0.0
+            if on then
                 voice_position_to_start(y)
+                softcut.level_slew_time(y,0)
+                softcut.level(y, 1)
                 softcut.play(y, 1)
+                softcut.level_slew_time(y,1)
+                softcut.level(y, 0)
             end
         end
         clock.sync(1/4)
@@ -297,7 +308,8 @@ local function add_params()
         SEQ_PARAM_IDS[y] = {}
         for x = 1, 16 do
             SEQ_PARAM_IDS[y][x] = "sequencer_step_" .. y .. "_" .. x
-            params:add_binary(SEQ_PARAM_IDS[y][x], SEQ_PARAM_IDS[y][x], "toggle", 0)
+            -- params:add_binary(SEQ_PARAM_IDS[y][x], SEQ_PARAM_IDS[y][x], "toggle", 0)
+            params:add_number(SEQ_PARAM_IDS[y][x], SEQ_PARAM_IDS[y][x], -1, 1,0)
             params:hide(SEQ_PARAM_IDS[y][x])
         end
     end

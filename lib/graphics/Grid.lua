@@ -1,3 +1,5 @@
+local misc_util = include("bits/lib/util/misc")
+
 Grid = {
     x = 32,
     y = 16,
@@ -43,6 +45,32 @@ local indicator_h = 3
 local indicator_vmargin = indicator_h + 1
 local faint_fill = 1
 
+local function draw_env_up(fill,x,y)
+    screen.level(fill)
+
+    screen.rect(x,y+2,1,1)
+    screen.fill()
+
+    screen.rect(x+1,y+1,1,2)
+    screen.fill()
+
+    screen.rect(x+2,y,1,3)
+    screen.fill()
+end
+
+local function draw_env_down(fill,x,y)
+    screen.level(fill)
+
+    screen.rect(x+2,y+2,1,1)
+    screen.fill()
+
+    screen.rect(x+1,y+1,1,2)
+    screen.fill()
+
+    screen.rect(x,y,1,3)
+    screen.fill()
+end
+
 function Grid:draw_track_indicator(voice)
     if self.voice_pos_percentage[voice] == nil then return end
     local zero_idx = voice - 1
@@ -75,9 +103,9 @@ function Grid:render()
             local idx = column + 1
             local x = self.x + (self.block_w + self.margin_w) * column
             local y = self.y + (self.block_h + self.margin_h) * row
-            local step_active = self.sequences[voice][idx] == 1
+            local step_active = self.sequences[voice][idx] ~= 0.0
 
-            -- draw sequene step indicator
+            -- draw sequence step indicator
             if self.current_step == idx then
                 screen.level(6)
             else
@@ -92,14 +120,19 @@ function Grid:render()
                 if self.current_step == idx then
                     -- sequencer is at this step, flash block brightly
                     screen.level(self.flash_fill)
-                    screen.rect(x + 1, y + 1, 2, 2)
-                    screen.stroke()
-                    screen.rect(x + 1, y + 1, 1, 1)
-                    screen.fill()
-                else
-                    screen.level(self.active_fill)
                     screen.rect(x, y, self.block_w, self.block_h)
                     screen.fill()
+                else
+                    -- local h = misc_util.round(self.block_h * self.sequences[voice][idx])
+                    local v = self.sequences[voice][idx]
+                    local l = misc_util.round(self.active_fill * math.abs(v))
+                    if v < 0 then
+                        draw_env_up(l, x,y)
+                    else
+                        draw_env_down(l, x,y)
+                    end
+                    -- screen.rect(x, y, self.block_w, h)
+                    -- screen.fill()
                 end
             else
                 screen.rect(x, y, self.block_w, self.block_h)
