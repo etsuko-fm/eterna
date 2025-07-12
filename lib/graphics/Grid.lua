@@ -49,14 +49,12 @@ function Grid:draw_track_indicator(voice)
 
     -- brightness is reversely proportional to position of playhead in slice selection
     --- e.g. later in slice, is fainter brightness
-    local rev_pos = 1 - self.voice_pos_percentage[voice]
 
     -- sometimes position comes to -0.0003, which troubles math.floor; hence +2 to have min brightness of 1
-    local brightness
+    local brightness = faint_fill
     if self.is_playing[voice] then
+        local rev_pos = 1 - self.voice_pos_percentage[voice]
         brightness = math.floor(2 + rev_pos * 15)
-    else
-        brightness = faint_fill
     end
 
     screen.level(brightness)

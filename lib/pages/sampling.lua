@@ -15,7 +15,7 @@ local waveform_width = 63
 local waveform_h = 10
 
 local filename = ""
-local selected_sample -- = "audio/etsuko/neon-light/neon intro.wav"
+selected_sample = nil -- = "audio/etsuko/neon-light/neon intro.wav"
 local sample_length
 
 local PARAM_ID_AUDIO_FILE = "sampling_audio_file"
@@ -23,6 +23,8 @@ local PARAM_ID_NUM_SLICES = "sampling_num_slices"
 local PARAM_ID_SLICE_START = "sampling_slice_start"
 
 local SLICE_PARAM_IDS = {}
+
+local slice_lfo
 
 -- slice locations; also used for other pages, hence global
 function get_slice_start_param_id(voice)
@@ -373,6 +375,21 @@ function page:initialize()
         },
         font_face = FOOTER_FONT,
     })
+    -- lfo
+    slices_lfo = _lfos:add {
+        shape = 'up',
+        min = 0,
+        max = 1,
+        depth = 1,
+        mode = 'clocked',
+        period = 8,
+        phase = 0,
+        action = function(scaled, raw)
+            params:set(PARAM_ID_SLICE_START, controlspec_start:map(scaled))
+        end
+    }
+    slices_lfo:set('reset_target', 'mid: rising')
+    -- slices_lfo:start()
 end
 
 return page

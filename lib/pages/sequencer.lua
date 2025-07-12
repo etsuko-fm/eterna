@@ -182,6 +182,7 @@ local function main_sequencer_callback()
         grid_graphic.current_step = current_step
         local x = current_step -- x pos of sequencer, i.e. current step
         for y = 1, ROWS do
+            -- todo: implement a check if it already fired for this step
             local on = params:get(SEQ_PARAM_IDS[y][x])
             if on == 1 then
                 voice_position_to_start(y)
@@ -246,9 +247,10 @@ function page:render()
     window:render()
     update_grid_state() -- typically not needed, only when pset is loaded
     grid_graphic:render()
-
-    for voice = 1, 6 do
-        softcut.query_position(voice)
+    if selected_sample then
+        for voice = 1, 6 do
+            softcut.query_position(voice)
+        end
     end
     page.footer.button_text.k2.value = SEQ_EVOLVE_TABLE[params:get(ID_SEQ_EVOLVE)]
     page.footer.button_text.k3.value = SEQ_DIMENSIONS[current_dimension]
