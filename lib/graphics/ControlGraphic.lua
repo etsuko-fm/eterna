@@ -37,6 +37,26 @@ local seq_h = 3
 local seq_y = y
 local rep_x = x+10
 local rep_y = y-15
+local play_btn_w = 5
+local play_btn_h = 8
+local pause_button_rect_w = 2
+
+local function draw_play_button()
+    screen.level(bright_level)
+    screen.move(x,y-14)
+    screen.line_rel(play_btn_w,play_btn_h/2)
+    screen.line_rel(-play_btn_w, play_btn_h/2)
+    screen.line_rel(0,-play_btn_h)
+    screen.fill()
+end
+
+local function draw_pause_button()
+    screen.level(bright_level)
+    screen.rect(x,y-14, pause_button_rect_w, 8)
+    screen.fill()
+    screen.rect(x+4,y-14, pause_button_rect_w, 8)
+    screen.fill()
+end
 
 function ControlGraphic:render()
     if self.hide then return end
@@ -63,7 +83,7 @@ function ControlGraphic:render()
         end
         local step_h = seq_h
         local step_y = seq_y
-        if i % 4 == 0 then 
+        if i % 4 == 0 then
             h = seq_h + 1
             step_y = seq_y - 1
         else
@@ -82,11 +102,11 @@ function ControlGraphic:render()
     screen.text_right(self.bpm)
 
     -- play/pause
-    screen.level(bright_level)
-    screen.rect(x,y-14,3,8)
-    screen.fill()
-    screen.rect(x+5,y-14,3,8)
-    screen.fill()
+    if self.is_playing then
+        draw_pause_button()
+    else
+        draw_play_button()
+    end
 end
 
 return ControlGraphic

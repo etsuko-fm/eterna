@@ -44,11 +44,13 @@ end
 function page:render()
     window:render()
     local tempo_trimmed = misc_util.trim(tostring(clock.get_tempo()), 5)
+    local is_playing = report_transport()
     page.footer.button_text.e2.value = tempo_trimmed
-    page.footer.button_text.k2.value = report_transport() and "ON" or "OFF"
+    page.footer.button_text.k2.value = is_playing and "ON" or "OFF"
     page.footer.button_text.k3.value = report_hold() and "ON" or "OFF"
     page.footer.button_text.e3.value = sequence_util.sequence_speeds[params:get(PARAM_ID_SEQUENCE_SPEED)]
     control_graphic.bpm = tempo_trimmed
+    control_graphic.is_playing = is_playing
     control_graphic.current_step = report_current_step()
     control_graphic.current_quarter = util.wrap(math.ceil(report_current_global_step()/4), 1, 4)
     control_graphic:render()

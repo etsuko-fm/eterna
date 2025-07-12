@@ -8,7 +8,7 @@ ID_LEVELS_LFO_RATE = "levels_lfo_rate"
 ID_LEVELS_POS = "levels_pos"
 ID_LEVELS_AMP = "levels_sigma"
 
--- Params for PITCH
+-- Params for PITCH (consider: rename to PBR)
 ID_PITCH_DIRECTION = "pitch_direction"
 ID_PITCH_QUANTIZE = "pitch_quantize"
 ID_PITCH_CENTER = "pitch_center"
@@ -32,6 +32,7 @@ end
 local LEVELS_LFO_DEFAULT_RATE_INDEX = 20
 local LEVELS_LFO_DEFAULT_RATE = lfo_util.lfo_period_values[LEVELS_LFO_DEFAULT_RATE_INDEX]
 
+params:add_separator("BITS", "BITS")
 params:add_separator("BITS_LEVELS", "LEVELS")
 params:add_binary(ID_LEVELS_LFO_ENABLED, "LFO enabled", "toggle", 0)
 params:add_option(ID_LEVELS_LFO_SHAPE, "LFO shape", LEVELS_LFO_SHAPES, 1)
@@ -39,7 +40,7 @@ params:add_option(ID_LEVELS_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, LE
 params:add_control(ID_LEVELS_POS, "position", controlspec_pos)
 params:add_control(ID_LEVELS_AMP, "amp", controlspec_amp)
 
-params:add_separator("PITCH", "PITCH")
+params:add_separator("PLAYBACK_RATES", "PLAYBACK RATES")
 params:add_option(ID_PITCH_QUANTIZE, 'quantize', QUANTIZE_TABLE, QUANTIZE_DEFAULT)
 params:add_control(ID_PITCH_CENTER, "center", controlspec_center)
 params:add_control(ID_PITCH_SPREAD, "spread", controlspec_spread)

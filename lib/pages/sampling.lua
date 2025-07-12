@@ -15,7 +15,7 @@ local waveform_width = 63
 local waveform_h = 10
 
 local filename = ""
-local selected_sample = "audio/etsuko/neon-light/neon intro.wav"
+local selected_sample -- = "audio/etsuko/neon-light/neon intro.wav"
 local sample_length
 
 local PARAM_ID_AUDIO_FILE = "sampling_audio_file"
@@ -184,6 +184,7 @@ end
 local function load_sample(state, file)
     -- use specified `file` as a sample and store enabled length of softcut buffer in state
     sample_length = audio_util.load_sample(file, true)
+    selected_sample = file
     softcut.render_buffer(1, 0, sample_length, waveform_width)
     update_softcut_ranges()
 end
@@ -195,7 +196,6 @@ local function select_sample()
             load_sample(state, file_path)
         end
         page_disabled = false -- proceed with rendering page instead of file menu
-        print('selected ' .. file_path)
     end
     fileselect.enter(_path.audio, callback, "audio")
     page_disabled = true -- don't render current page
@@ -214,10 +214,12 @@ end
 
 local function shuffle()
     -- randomizes number of slices and slice start
-    local new_num_slices = math.random(SLICES_MIN, SLICES_MAX)
-    local new_start = math.random(1, math.max(1, new_num_slices - 6))
-    params:set(PARAM_ID_NUM_SLICES, new_num_slices)
-    params:set(PARAM_ID_SLICE_START, new_start)
+    if selected_sample then 
+        local new_num_slices = math.random(SLICES_MIN, SLICES_MAX)
+        local new_start = math.random(1, math.max(1, new_num_slices - 6))
+        params:set(PARAM_ID_NUM_SLICES, new_num_slices)
+        params:set(PARAM_ID_SLICE_START, new_start)
+    end
 end
 
 
@@ -232,14 +234,18 @@ local function action_slice_start(v)
 end
 
 local function adjust_num_slices(d)
-    local p = PARAM_ID_NUM_SLICES
-    params:set(p, params:get(p) + d * controlspec_slices.quantum)
+    if selected_sample then
+        local p = PARAM_ID_NUM_SLICES
+        params:set(p, params:get(p) + d * controlspec_slices.quantum)    
+    end
 end
 
 local function adjust_slice_start(d)
-    local p = PARAM_ID_SLICE_START
-    local new = params:get(p) + d * controlspec_start.quantum
-    params:set(p, new)
+    if selected_sample then
+        local p = PARAM_ID_SLICE_START
+        local new = params:get(p) + d * controlspec_start.quantum
+        params:set(p, new)
+    end
 end
 
 local page = Page:create({
@@ -258,13 +264,19 @@ function page:render()
         return
     end -- for rendering the fileselect interface
 
-    waveform_graphic:render()
-    slice_graphic:render()
-
-    page.footer.button_text.e2.value = params:get(PARAM_ID_NUM_SLICES)
-    page.footer.button_text.e3.value = params:get(PARAM_ID_SLICE_START)
-
-    window.title = filename
+    if selected_sample then
+        window.title = filename
+        waveform_graphic:render()
+        slice_graphic:render()
+        page.footer.button_text.e2.value = params:get(PARAM_ID_NUM_SLICES)
+        page.footer.button_text.e3.value = params:get(PARAM_ID_SLICE_START)
+    else
+        screen.level(3)
+        screen.font_face(DEFAULT_FONT)
+        window.title = "SAMPLING"
+        screen.move(64,32)
+        screen.text_center("PRESS K2 TO LOAD SAMPLE")
+    end
 
     window:render()
     page.footer:render()
@@ -298,8 +310,6 @@ end
 function page:initialize()
     add_params()
 
-    filename = to_sample_name(selected_sample)
-
     -- add waveform
     waveform_graphic = Waveform:new({
         x = 33,
@@ -311,15 +321,21 @@ function page:initialize()
         render_samples = waveform_width,
     })
 
-    slice_graphic = SliceGraphic:new()
-    -- init softcut
-    if debug_mode then load_sample(state, _path.dust .. selected_sample) end
+    slice_graphic = SliceGraphic:new() 
 
     local function on_render(ch, start, i, s)
         -- this is a callback, for every softcut.render_buffer() invocation
         waveform_samples = as_abs_values(s)
         state.interval = i -- represents the interval at which the waveform is sampled for rendering
         update_waveform()
+    end
+    -- setup callback
+    softcut.event_render(on_render)
+
+    if selected_sample then
+        filename = to_sample_name(selected_sample)
+        if debug_mode then load_sample(state, _path.dust .. selected_sample) end
+        softcut.render_buffer(1, 0, sample_length, waveform_width)    
     end
 
     window = Window:new({
@@ -357,10 +373,6 @@ function page:initialize()
         },
         font_face = FOOTER_FONT,
     })
-
-    -- setup callback
-    softcut.event_render(on_render)
-    softcut.render_buffer(1, 0, sample_length, waveform_width)
 end
 
 return page

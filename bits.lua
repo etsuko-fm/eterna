@@ -40,7 +40,7 @@ local pages = {
   page_levels,
 }
 
-local current_page_index = 2
+local current_page_index = 3
 local current_page = pages[current_page_index]
 
 local function page_forward()
@@ -74,11 +74,6 @@ local function enable_all_voices()
 end
 
 function init()
-  -- Params UX
-  params:add_separator("BITS", "BITS")
-
-  -- Add params that are used across multiple pages
-
   -- Encoder sensitivity
   norns.enc.sens(1, 5)
 
