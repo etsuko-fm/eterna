@@ -47,6 +47,7 @@ local cue_step_divider = nil
 local step_divider_switch = false -- toggles on while moving to a new step division
 
 local voice_pos = {} -- playhead positions of softcut voices
+local voice_pos_percentage = {}
 local perlin_lfo
 
 -- softcut VCA system concept:
@@ -152,6 +153,19 @@ function voice_position_to_start(voice)
         softcut.position(voice, params:get(get_slice_end_param_id(voice)))
     end
 end
+
+function voice_position_to_phase(voice, phase)
+    -- get slice length
+    local slice_start = params:get(get_slice_start_param_id(voice))
+    local slice_end = params:get(get_slice_end_param_id(voice))
+    local slice_length = slice_end - slice_start
+
+    -- move softcut position to provided phase
+    local rel_pos = phase * slice_length
+    local abs_pos = slice_start + rel_pos
+    softcut.position(voice, abs_pos)
+end
+
 local hold_step = nil
 local function main_sequencer_callback()
     -- advance
@@ -190,14 +204,10 @@ local function main_sequencer_callback()
         local x = current_step -- x pos of sequencer, i.e. current step
         for y = 1, ROWS do
             -- todo: implement a check if it already fired for this step
-            local on = params:get(SEQ_PARAM_IDS[y][x]) > 0.0
+            local on = math.abs(params:get(SEQ_PARAM_IDS[y][x])) > 0.0
             if on then
                 voice_position_to_start(y)
-                softcut.level_slew_time(y,0)
-                softcut.level(y, 1)
                 softcut.play(y, 1)
-                softcut.level_slew_time(y,1)
-                softcut.level(y, 0)
             end
         end
         clock.sync(1/4)
@@ -329,15 +339,16 @@ local function report_softcut(voice, pos)
 
     local normalized_pos = pos - slice_start
     if voice_dir == 1 then -- forward, todo: use table
-        grid_graphic.voice_pos_percentage[voice] = normalized_pos / slice_length
+        voice_pos_percentage[voice] = normalized_pos / slice_length
     else                   -- backwards
         -- e.g. slice length = 5.0 sec
         --- position = 32.0 - 37.0 seec
         --- position = 36.0 sec, but going backwards;
         --- so position is 36.0 - 32.0 = 4.0 (normalized_pos);
         --- then slice_length - normalized_pos (5.0-4.0) = 1.0 gives the relative position
-        grid_graphic.voice_pos_percentage[voice] = (slice_length - normalized_pos) / slice_length
+        voice_pos_percentage[voice] = (slice_length - normalized_pos) / slice_length
     end
+    grid_graphic.voice_pos_percentage[voice] = voice_pos_percentage[voice]
 end
 
 function page:initialize()
