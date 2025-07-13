@@ -78,7 +78,7 @@ local function remove_extension(filename)
 end
 
 local function to_sample_name(path)
-    return misc_util.trim(string.upper(remove_extension(path_to_file_name(path))), 28)
+    return misc_util.trim(string.upper(remove_extension(path_to_file_name(path))), 26)
 end
 
 local function update_slice_graphic()
@@ -144,9 +144,12 @@ local function select_sample()
             load_sample(state, file_path)
         end
         page_disabled = false -- proceed with rendering page instead of file menu
+        page_indicator_disabled = false
     end
     fileselect.enter(_path.audio, callback, "audio")
     page_disabled = true -- don't render current page
+    page_indicator_disabled = true
+
 end
 
 local function constrain_max_start(num_slices)

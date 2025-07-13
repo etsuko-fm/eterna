@@ -21,14 +21,14 @@ local page_levels = include("bits/lib/pages/levels")
 local fps = 60
 local ready
 
+page_indicator_disabled = false
+
 DEFAULT_FONT = 68
 TITLE_FONT = 68
 FOOTER_FONT = 68
 state = {
-  max_sample_length = 128.0, -- in seconds, longer samples are truncated
-
   -- time controls
-  fade_time = 256/48000,                    -- crossfade when looping playback
+  fade_time = 256 / 48000, -- crossfade when looping playback
 }
 
 local pages = {
@@ -65,15 +65,15 @@ local function count()
 end
 
 local function enable_all_voices()
-  local filterbank = {100,200,400,800,1600,3200}
+  local filterbank = { 100, 200, 400, 800, 1600, 3200 }
   for i = 1, 6 do
     softcut.enable(i, 1)
     softcut.buffer(i, 1)
     softcut.fade_time(i, state.fade_time)
     softcut.post_filter_fc(i, filterbank[i])
     softcut.post_filter_rq(i, .3)
-    softcut.level_slew_time(i, 1/fps)
-    softcut.pan_slew_time(i, 1/fps)
+    softcut.level_slew_time(i, 1 / fps)
+    softcut.pan_slew_time(i, 1 / fps)
   end
 end
 
@@ -137,11 +137,34 @@ function enc(n, d)
   end
 end
 
+local function draw_page_indicator()
+  screen.level(11)
+  local h
+  local y
+  for i = 0, #pages - 1 do
+    if pages[i + 1] == current_page then
+      h = 3
+      y = 2
+      screen.level(0)
+    else
+      screen.level(6)
+      h = 3
+      y = 2
+      -- y = 2
+    end
+    screen.rect(2 + i * 2, y, 1, h)
+    screen.fill()
+  end
+end
+
 function refresh()
   if ready then
     ready = false
     screen.clear()
     current_page:render()
+    if not page_indicator_disabled then
+      draw_page_indicator()
+    end
     screen.update()
   end
 end
