@@ -18,61 +18,8 @@ local filename = ""
 selected_sample = nil -- = "audio/etsuko/neon-light/neon intro.wav"
 local sample_length
 
-local PARAM_ID_AUDIO_FILE = "sampling_audio_file"
-local PARAM_ID_NUM_SLICES = "sampling_num_slices"
-local PARAM_ID_SLICE_START = "sampling_slice_start"
-
-local SLICE_PARAM_IDS = {}
-
 local slice_lfo
-
--- slice locations; also used for other pages, hence global
-function get_slice_start_param_id(voice)
-    return "sampling_" .. voice .. "_start"
-end
-
-function get_slice_end_param_id(voice)
-    return "sampling_" .. voice .. "_end"
-end
-
-for voice = 1, 6 do
-    SLICE_PARAM_IDS[voice] = {
-        loop_start = get_slice_start_param_id(voice),
-        loop_end = get_slice_end_param_id(voice),
-    }
-end
-
 local debug_mode = true
-
-local SLICES_MIN = 1
-local SLICES_MAX = 32
-local SLICES_DEFAULT = 6
-
-local START_MIN = 1
-local START_MAX = 32 -- dynamic, todo: deal with that
-
-local controlspec_slices = controlspec.def {
-    min = SLICES_MIN, -- the minimum value
-    max = SLICES_MAX, -- the maximum value
-    warp = 'lin',     -- a shaping option for the raw value
-    step = 1,         -- output value quantization
-    default = SLICES_DEFAULT,      -- default value
-    units = '',       -- displayed on PARAMS UI
-    quantum = 1,      -- each delta will change raw value by this much
-    wrap = false      -- wrap around on overflow (true) or clamp (false)
-}
-
-local controlspec_start = controlspec.def {
-    min = START_MIN, -- the minimum value
-    max = START_MAX, -- the maximum value
-    warp = 'lin',    -- a shaping option for the raw value
-    step = 1,        -- output value quantization
-    default = 1,     -- default value
-    units = '',      -- displayed on PARAMS UI
-    quantum = 1,     -- each delta will change raw value by this much
-    wrap = false     -- wrap around on overflow (true) or clamp (false)
-}
-
 
 --[[
 Sample select page
@@ -86,7 +33,6 @@ Interactions:
  E2: select global loop position
  E3: select global loop length
 ]]
-
 
 local function as_abs_values(tbl)
     -- used for waveform rendering
@@ -123,7 +69,7 @@ end
 
 local function get_slice_length()
     -- returns slice length in seconds
-    local n_slices = params:get(PARAM_ID_NUM_SLICES)
+    local n_slices = params:get(ID_SAMPLING_NUM_SLICES)
     return (1 / n_slices) * sample_length
 end
 
@@ -136,8 +82,8 @@ local function to_sample_name(path)
 end
 
 local function update_slice_graphic()
-    local num_slices = params:get(PARAM_ID_NUM_SLICES)
-    local slice_start = params:get(PARAM_ID_SLICE_START)
+    local num_slices = params:get(ID_SAMPLING_NUM_SLICES)
+    local slice_start = params:get(ID_SAMPLING_SLICE_START)
     local slice_len = 1 / num_slices
 
     slice_graphic.num_slices = num_slices
@@ -146,8 +92,8 @@ local function update_slice_graphic()
 end
 
 local function update_softcut_ranges()
-    local n_slices = params:get(PARAM_ID_NUM_SLICES)
-    local start = params:get(PARAM_ID_SLICE_START)
+    local n_slices = params:get(ID_SAMPLING_NUM_SLICES)
+    local start = params:get(ID_SAMPLING_SLICE_START)
 
     -- edit buffer ranges per softcut voice
     local slice_start_timestamps = {}
@@ -219,11 +165,10 @@ local function shuffle()
     if selected_sample then 
         local new_num_slices = math.random(SLICES_MIN, SLICES_MAX)
         local new_start = math.random(1, math.max(1, new_num_slices - 6))
-        params:set(PARAM_ID_NUM_SLICES, new_num_slices)
-        params:set(PARAM_ID_SLICE_START, new_start)
+        params:set(ID_SAMPLING_NUM_SLICES, new_num_slices)
+        params:set(ID_SAMPLING_SLICE_START, new_start)
     end
 end
-
 
 local function action_num_slices(v)
     -- update max start based on number of slices
@@ -237,14 +182,14 @@ end
 
 local function adjust_num_slices(d)
     if selected_sample then
-        local p = PARAM_ID_NUM_SLICES
+        local p = ID_SAMPLING_NUM_SLICES
         params:set(p, params:get(p) + d * controlspec_slices.quantum)    
     end
 end
 
 local function adjust_slice_start(d)
     if selected_sample then
-        local p = PARAM_ID_SLICE_START
+        local p = ID_SAMPLING_SLICE_START
         local new = params:get(p) + d * controlspec_start.quantum
         params:set(p, new)
     end
@@ -270,8 +215,8 @@ function page:render()
         window.title = filename
         waveform_graphic:render()
         slice_graphic:render()
-        page.footer.button_text.e2.value = params:get(PARAM_ID_NUM_SLICES)
-        page.footer.button_text.e3.value = params:get(PARAM_ID_SLICE_START)
+        page.footer.button_text.e2.value = params:get(ID_SAMPLING_NUM_SLICES)
+        page.footer.button_text.e3.value = params:get(ID_SAMPLING_SLICE_START)
     else
         screen.level(3)
         screen.font_face(DEFAULT_FONT)
@@ -285,28 +230,15 @@ function page:render()
 end
 
 local function add_params()
-    params:add_separator("SAMPLING", page_name)
     -- file selection
-    params:add_file(PARAM_ID_AUDIO_FILE, 'file')
-    params:set_action(PARAM_ID_AUDIO_FILE, function(file) load_sample(state, file) end)
+    params:set_action(ID_SAMPLING_AUDIO_FILE, function(file) load_sample(state, file) end)
 
     -- number of slices
-    params:add_control(PARAM_ID_NUM_SLICES, "slices", controlspec_slices)
-    params:set_action(PARAM_ID_NUM_SLICES, action_num_slices)
+    params:set_action(ID_SAMPLING_NUM_SLICES, action_num_slices)
 
     -- starting slice
-    params:add_control(PARAM_ID_SLICE_START, "start", controlspec_start)
-    params:set_action(PARAM_ID_SLICE_START, action_slice_start)
+    params:set_action(ID_SAMPLING_SLICE_START, action_slice_start)
     constrain_max_start(SLICES_DEFAULT)
-
-    for i = 1, 6 do
-        -- ranges per slice
-        params:add_number(SLICE_PARAM_IDS[i].loop_start, SLICE_PARAM_IDS[i].loop_start, 0)
-        params:add_number(SLICE_PARAM_IDS[i].loop_end, SLICE_PARAM_IDS[i].loop_end, 0)
-
-        params:hide(SLICE_PARAM_IDS[i].loop_start)
-        params:hide(SLICE_PARAM_IDS[i].loop_end)
-    end
 end
 
 function page:initialize()
@@ -385,7 +317,7 @@ function page:initialize()
         period = 8,
         phase = 0,
         action = function(scaled, raw)
-            params:set(PARAM_ID_SLICE_START, controlspec_start:map(scaled))
+            params:set(ID_SAMPLING_SLICE_START, controlspec_start:map(scaled))
         end
     }
     slices_lfo:set('reset_target', 'mid: rising')

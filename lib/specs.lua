@@ -115,3 +115,33 @@ controlspec_spread = controlspec.def {
     quantum = 0.01,   -- each delta will change raw value by this much
     wrap = false      -- wrap around on overflow (true) or clamp (false)
 }
+
+-- SAMPLING
+SLICES_MIN = 1
+SLICES_MAX = 32
+SLICES_DEFAULT = 6
+
+controlspec_slices = controlspec.def {
+    min = SLICES_MIN, -- the minimum value
+    max = SLICES_MAX, -- the maximum value
+    warp = 'lin',     -- a shaping option for the raw value
+    step = 1,         -- output value quantization
+    default = SLICES_DEFAULT,      -- default value
+    units = '',       -- displayed on PARAMS UI
+    quantum = 1,      -- each delta will change raw value by this much
+    wrap = false      -- wrap around on overflow (true) or clamp (false)
+}
+
+local START_MIN = 1
+local START_MAX = 32 -- dynamic, todo: deal with that
+
+controlspec_start = controlspec.def {
+    min = START_MIN, -- the minimum value
+    max = START_MAX, -- the maximum value
+    warp = 'lin',    -- a shaping option for the raw value
+    step = 1,        -- output value quantization
+    default = 1,     -- default value
+    units = '',      -- displayed on PARAMS UI
+    quantum = 1,     -- each delta will change raw value by this much
+    wrap = false     -- wrap around on overflow (true) or clamp (false)
+}

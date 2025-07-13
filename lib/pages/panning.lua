@@ -6,9 +6,7 @@ local lfo_util = include("bits/lib/util/lfo")
 
 local page_name = "PANNING"
 local window
-
 local panning_graphic
-
 local panning_lfo
 
 local function calculate_pan_positions()

@@ -3,6 +3,7 @@ local Window = include("bits/lib/graphics/Window")
 local PitchGraph = include("bits/lib/graphics/PitchGraph")
 local page_name = "Playback"
 local misc_util = include("bits/lib/util/misc")
+
 local page
 
 local function calculate_rates()

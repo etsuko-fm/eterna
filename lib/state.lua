@@ -95,7 +95,9 @@ for y = 1, 6 do
 end
 
 
--- panning
+---
+--- PANNING
+---
 ID_PANNING_LFO_ENABLED = "panning_lfo_enabled"
 ID_PANNING_LFO_SHAPE = "panning_lfo_shape"
 ID_PANNING_LFO_RATE = "panning_lfo_rate"
@@ -110,5 +112,42 @@ params:add_option(ID_PANNING_LFO_SHAPE, "LFO shape", PANNING_LFO_SHAPES, 1)
 params:add_option(ID_PANNING_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels)
 params:add_control(ID_PANNING_TWIST, "twist", controlspec_twist)
 params:add_control(ID_PANNING_SPREAD, "spread", controlspec_spread)
+
+---
+--- SAMPLING
+---
+ID_SAMPLING_AUDIO_FILE = "sampling_audio_file"
+ID_SAMPLING_NUM_SLICES = "sampling_num_slices"
+ID_SAMPLING_SLICE_START = "sampling_slice_start"
+
+SLICE_PARAM_IDS = {}
+
+function get_slice_start_param_id(voice)
+    return "sampling_" .. voice .. "_start"
+end
+function get_slice_end_param_id(voice)
+    return "sampling_" .. voice .. "_end"
+end
+
+for voice = 1, 6 do
+    SLICE_PARAM_IDS[voice] = {
+        loop_start = get_slice_start_param_id(voice),
+        loop_end = get_slice_end_param_id(voice),
+    }
+end
+
+params:add_separator("SAMPLING", "SAMPLING")
+params:add_file(ID_SAMPLING_AUDIO_FILE, 'file')
+params:add_control(ID_SAMPLING_NUM_SLICES, "slices", controlspec_slices)
+params:add_control(ID_SAMPLING_SLICE_START, "start", controlspec_start)
+
+for voice = 1, 6 do
+    -- ranges per slice
+    params:add_number(SLICE_PARAM_IDS[voice].loop_start, SLICE_PARAM_IDS[voice].loop_start, 0)
+    params:add_number(SLICE_PARAM_IDS[voice].loop_end, SLICE_PARAM_IDS[voice].loop_end, 0)
+
+    params:hide(SLICE_PARAM_IDS[voice].loop_start)
+    params:hide(SLICE_PARAM_IDS[voice].loop_end)
+end
 
 params:bang()

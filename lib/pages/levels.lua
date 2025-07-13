@@ -5,12 +5,12 @@ local LevelsGraphic = include("bits/lib/graphics/LevelsGraphic")
 local gaussian = include("bits/lib/util/gaussian")
 local misc_util = include("bits/lib/util/misc")
 local lfo_util = include("bits/lib/util/lfo")
-local bars_graphic
-local window
 
+local bars_graphic
 local graph_x = 36 -- (128 - graph_width) / 2
 local graph_y = 40
 
+local window
 local levels_lfo
 
 local function amp_to_sigma(v)
@@ -56,7 +56,6 @@ end
 local function e3(d)
     adjust_sigma(d)
 end
-
 
 local page = Page:create({
     name = page_name,
@@ -106,7 +105,6 @@ local function recalculate_levels()
     end
 end
 
-
 local function action_enable_lfo(v)
     if levels_lfo:get("enabled") == 1 then
         levels_lfo:stop()
@@ -124,16 +122,11 @@ local function action_lfo_rate(v)
     levels_lfo:set('period', lfo_util.lfo_period_label_values[params:string(ID_LEVELS_LFO_RATE)])
 end
 
-
 local function add_params()
     params:set_action(ID_LEVELS_LFO_ENABLED, action_enable_lfo)
-
     params:set_action(ID_LEVELS_LFO_SHAPE, action_lfo_shape)
-
     params:set_action(ID_LEVELS_LFO_RATE, action_lfo_rate)
-
     params:set_action(ID_LEVELS_POS, recalculate_levels)
-
     params:set_action(ID_LEVELS_AMP, recalculate_levels)
 end
 
