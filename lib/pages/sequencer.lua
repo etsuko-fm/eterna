@@ -13,7 +13,7 @@ local COLUMNS = 16
 local PERLIN_ZOOM = 4/3 ---4 / 3 -- empirically tuned
 
 local ID_SEQ_DIMENSIONS = { ID_SEQ_PERLIN_X, ID_SEQ_PERLIN_Y, ID_SEQ_PERLIN_Z }
-local SEQ_EVOLVE_RATES = {1024*12, 1024*8, 1024*4}
+local SEQ_EVOLVE_RATES = {1024*12, 1024*8, 1024*4} -- in quarter notes, but fuzzy concept due to how perlin computes
 local current_dimension = 1
 
 local LOOP_TABLE_TO_SOFTCUT = {1, 0}

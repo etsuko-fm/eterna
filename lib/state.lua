@@ -15,6 +15,9 @@ ID_LEVELS_LFO_RATE = "levels_lfo_rate"
 ID_LEVELS_POS = "levels_pos"
 ID_LEVELS_AMP = "levels_sigma"
 
+local LEVELS_LFO_DEFAULT_RATE_INDEX = 20
+local LEVELS_LFO_DEFAULT_RATE = lfo_util.lfo_period_values[LEVELS_LFO_DEFAULT_RATE_INDEX]
+
 params:add_separator("BITS_LEVELS", "LEVELS")
 params:add_binary(ID_LEVELS_LFO_ENABLED, "LFO enabled", "toggle", 0)
 params:add_option(ID_LEVELS_LFO_SHAPE, "LFO shape", LEVELS_LFO_SHAPES, 1)
@@ -44,10 +47,6 @@ QUANTIZE_DEFAULT = 2 -- octave quantization by default
 function get_voice_dir_param_id(i)
   return "pitch_v" .. i .. "_dir"
 end
-
-local LEVELS_LFO_DEFAULT_RATE_INDEX = 20
-local LEVELS_LFO_DEFAULT_RATE = lfo_util.lfo_period_values[LEVELS_LFO_DEFAULT_RATE_INDEX]
-
 
 params:add_separator("PLAYBACK_RATES", "PLAYBACK RATES")
 params:add_option(ID_PITCH_QUANTIZE, 'quantize', QUANTIZE_TABLE, QUANTIZE_DEFAULT)
@@ -94,5 +93,22 @@ for y = 1, 6 do
         params:hide(SEQ_PARAM_IDS[y][x])
     end
 end
+
+
+-- panning
+ID_PANNING_LFO_ENABLED = "panning_lfo_enabled"
+ID_PANNING_LFO_SHAPE = "panning_lfo_shape"
+ID_PANNING_LFO_RATE = "panning_lfo_rate"
+ID_PANNING_TWIST = "panning_twist"
+ID_PANNING_SPREAD = "panning_spread"
+-- todo: add tri?
+PANNING_LFO_SHAPES = { "sine", "up", "down", "random" }
+
+params:add_separator("PANNING", "PANNING")
+params:add_binary(ID_PANNING_LFO_ENABLED, "LFO enabled", "toggle", 0)
+params:add_option(ID_PANNING_LFO_SHAPE, "LFO shape", PANNING_LFO_SHAPES, 1)
+params:add_option(ID_PANNING_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels)
+params:add_control(ID_PANNING_TWIST, "twist", controlspec_twist)
+params:add_control(ID_PANNING_SPREAD, "spread", controlspec_spread)
 
 params:bang()
