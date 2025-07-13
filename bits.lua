@@ -28,7 +28,7 @@ state = {
   max_sample_length = 128.0, -- in seconds, longer samples are truncated
 
   -- time controls
-  fade_time = 64/48000,                    -- crossfade when looping playback
+  fade_time = 256/48000,                    -- crossfade when looping playback
 }
 
 local pages = {
@@ -65,11 +65,16 @@ local function count()
 end
 
 local function enable_all_voices()
+  local filterbank = {100,200,400,800,1600,3200}
   for i = 1, 6 do
     softcut.enable(i, 1)
     softcut.buffer(i, 1)
     softcut.loop(i, 0)
     softcut.fade_time(i, state.fade_time)
+    softcut.post_filter_fc(i, filterbank[i])
+    softcut.post_filter_rq(i, .3)
+    softcut.level_slew_time(i, 1/fps)
+    softcut.pan_slew_time(i, 1/fps)
   end
 end
 

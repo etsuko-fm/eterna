@@ -102,7 +102,7 @@ local function recalculate_levels()
     local sigma = amp_to_sigma(params:get(ID_LEVELS_AMP))
     local levels = gaussian.calculate_gaussian_levels(params:get(ID_LEVELS_POS), sigma)
     for i = 1, 6 do
-        -- softcut.level(i, levels[i]) -- temp disabled to test envs
+        softcut.level(i, levels[i])
     end
 end
 

@@ -15,13 +15,13 @@ local ID_SEQ_PERLIN_Y = "sequencer_perlin_y"
 local ID_SEQ_PERLIN_Z = "sequencer_perlin_z"
 local ID_SEQ_EVOLVE = "sequencer_evolve"
 local ID_SEQ_PERLIN_DENSITY = "sequencer_perlin_density"
+local ID_SEQ__MOMENTARY = "sequencer_momentary"
 
 local PERLIN_ZOOM = 4/3 ---4 / 3 -- empirically tuned
 
 local DIM_X = "X"
-local DIM_Y = "Y"
-local DIM_Z = "Z"
-local SEQ_DIMENSIONS = { DIM_X, DIM_Y, DIM_Z }
+
+local SEQ_DIMENSIONS = { DIM_X }
 local ID_SEQ_DIMENSIONS = { ID_SEQ_PERLIN_X, ID_SEQ_PERLIN_Y, ID_SEQ_PERLIN_Z }
 local SEQ_EVOLVE_TABLE = {"OFF", "SLOW", "MED", "FAST"}
 local SEQ_EVOLVE_RATES = {1024*12, 1024*8, 1024*4}
@@ -126,17 +126,15 @@ local function toggle_evolve()
     params:set(p, new)
 end
 
-local function cycle_dimension()
-    current_dimension = util.wrap(current_dimension + 1, 1, #SEQ_DIMENSIONS)
+local function toggle_momentary()
 end
-
 
 local page = Page:create({
     name = page_name,
     e2 = e2,
     e3 = e3,
     k2_off = toggle_evolve,
-    k3_off = cycle_dimension,
+    k3_off = toggle_momentary,
 })
 
 function set_cue_step_divider(v)
@@ -204,10 +202,21 @@ local function main_sequencer_callback()
         local x = current_step -- x pos of sequencer, i.e. current step
         for y = 1, ROWS do
             -- todo: implement a check if it already fired for this step
-            local on = math.abs(params:get(SEQ_PARAM_IDS[y][x])) > 0.0
+            local perlin_val = params:get(SEQ_PARAM_IDS[y][x])
+            local a = math.abs(perlin_val)
+            local on = a > 0.0
+
             if on then
-                voice_position_to_start(y)
+                voice_position_to_phase(y, a)
                 softcut.play(y, 1)
+                -- if perlin_val < 0 then
+                --     softcut.post_filter_bp(y, a)
+                --     softcut.post_filter_br(y, 0)
+                -- else
+                --     softcut.post_filter_bp(y, 0)
+                --     softcut.post_filter_br(y, a)
+                -- end
+                softcut.post_filter_dry(y, 1-a)
             end
         end
         clock.sync(1/4)
@@ -274,7 +283,7 @@ function page:render()
         end
     end
     page.footer.button_text.k2.value = SEQ_EVOLVE_TABLE[params:get(ID_SEQ_EVOLVE)]
-    page.footer.button_text.k3.value = SEQ_DIMENSIONS[current_dimension]
+    page.footer.button_text.k3.value = "MOMEN"--SEQ_DIMENSIONS[current_dimension]
     page.footer.button_text.e2.name = SEQ_DIMENSIONS[current_dimension]
     page.footer.button_text.e3.name = "DENS"
     page.footer.button_text.e2.value = params:get(ID_SEQ_DIMENSIONS[current_dimension])
@@ -380,7 +389,7 @@ function page:initialize()
                 value = "",
             },
             k3 = {
-                name = "TRAVL",
+                name = "STYLE",
                 value = "",
             },
             e2 = {

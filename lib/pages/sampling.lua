@@ -177,7 +177,7 @@ local function update_softcut_ranges()
         -- save in params, so waveforms can render correctly
         params:set(SLICE_PARAM_IDS[voice].loop_start, start_pos)
         params:set(SLICE_PARAM_IDS[voice].loop_end, end_pos)
-        voice_position_to_start(voice) --todo: fix, order of initalization bug
+        -- voice_position_to_start(voice) --todo: fix, order of initalization bug
     end
     -- reflect changes in graphic
     update_slice_graphic()
