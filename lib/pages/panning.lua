@@ -22,12 +22,12 @@ local function calculate_pan_positions()
 end
 
 local function adjust_spread(d)
-    local new_val = params:get(ID_PANNING_SPREAD) + d * controlspec_spread.quantum
+    local new_val = params:get(ID_PANNING_SPREAD) + d * controlspec_pan_spread.quantum
     params:set(ID_PANNING_SPREAD, new_val, false)
 end
 
 local function adjust_twist(d)
-    local new_val = params:get(ID_PANNING_TWIST) + d * controlspec_twist.quantum
+    local new_val = params:get(ID_PANNING_TWIST) + d * controlspec_pan_twist.quantum
     params:set(ID_PANNING_TWIST, new_val, false)
 end
 
@@ -154,7 +154,7 @@ function page:initialize()
         period = 8,
         phase = 0,
         action = function(scaled, raw)
-            params:set(ID_PANNING_TWIST, controlspec_twist:map(scaled), false)
+            params:set(ID_PANNING_TWIST, controlspec_pan_twist:map(scaled), false)
         end
     }
     panning_lfo:set('reset_target', 'mid: rising')

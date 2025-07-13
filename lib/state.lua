@@ -50,8 +50,8 @@ end
 
 params:add_separator("PLAYBACK_RATES", "PLAYBACK RATES")
 params:add_option(ID_PITCH_QUANTIZE, 'quantize', QUANTIZE_TABLE, QUANTIZE_DEFAULT)
-params:add_control(ID_PITCH_CENTER, "center", controlspec_center)
-params:add_control(ID_PITCH_SPREAD, "spread", controlspec_spread)
+params:add_control(ID_PITCH_CENTER, "center", controlspec_pbr_center)
+params:add_control(ID_PITCH_SPREAD, "spread", controlspec_pbr_spread)
 params:add_option(ID_PITCH_DIRECTION, "direction", PLAYBACK_TABLE, 1)
 
 -- voice directions (fwd/rev/both)
@@ -110,8 +110,8 @@ params:add_separator("PANNING", "PANNING")
 params:add_binary(ID_PANNING_LFO_ENABLED, "LFO enabled", "toggle", 0)
 params:add_option(ID_PANNING_LFO_SHAPE, "LFO shape", PANNING_LFO_SHAPES, 1)
 params:add_option(ID_PANNING_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels)
-params:add_control(ID_PANNING_TWIST, "twist", controlspec_twist)
-params:add_control(ID_PANNING_SPREAD, "spread", controlspec_spread)
+params:add_control(ID_PANNING_TWIST, "twist", controlspec_pan_twist)
+params:add_control(ID_PANNING_SPREAD, "spread", controlspec_pan_spread)
 
 ---
 --- SAMPLING

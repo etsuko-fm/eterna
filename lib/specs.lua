@@ -44,7 +44,7 @@ PITCH_SPREAD_MAX_QNT = 2
 PITCH_SPREAD_QUANTUM = 0.01
 PITCH_SPREAD_QUANTUM_QNT = 0.5
 
-controlspec_center = controlspec.def {
+controlspec_pbr_center = controlspec.def {
     min = PITCH_CENTER_MIN,             -- the minimum value
     max = PITCH_CENTER_MAX,             -- the maximum value
     warp = 'lin',                       -- a shaping option for the raw value
@@ -55,7 +55,7 @@ controlspec_center = controlspec.def {
     wrap = false                        -- wrap around on overflow (true) or clamp (false)
 }
 
-controlspec_spread = controlspec.def {
+controlspec_pbr_spread = controlspec.def {
     min = PITCH_SPREAD_MIN_QNT,         -- the minimum value
     max = PITCH_SPREAD_MAX_QNT,         -- the maximum value
     warp = 'lin',                       -- a shaping option for the raw value
@@ -88,12 +88,12 @@ controlspec_perlin_density = controlspec.def {
     wrap = false    -- wrap around on overflow (true) or clamp (false)
 }
 
-local TWIST_MIN = 0
-local TWIST_MAX = 1
+local PAN_TWIST_MIN = 0
+local PAN_TWIST_MAX = 1
 
-controlspec_twist = controlspec.def {
-    min = TWIST_MIN, -- the minimum value
-    max = TWIST_MAX, -- the maximum value
+controlspec_pan_twist = controlspec.def {
+    min = PAN_TWIST_MIN, -- the minimum value
+    max = PAN_TWIST_MAX, -- the maximum value
     warp = 'lin',    -- a shaping option for the raw value
     step = 0.005,    -- output value quantization
     default = 0.0,   -- default value
@@ -102,12 +102,12 @@ controlspec_twist = controlspec.def {
     wrap = true      -- wrap around on overflow (true) or clamp (false)
 }
 
-local SPREAD_MIN = 0
-local SPREAD_MAX = 1
+local PAN_SPREAD_MIN = 0
+local PAN_SPREAD_MAX = 1
 
-controlspec_spread = controlspec.def {
-    min = SPREAD_MIN, -- the minimum value
-    max = SPREAD_MAX, -- the maximum value
+controlspec_pan_spread = controlspec.def {
+    min = PAN_SPREAD_MIN, -- the minimum value
+    max = PAN_SPREAD_MAX, -- the maximum value
     warp = 'lin',     -- a shaping option for the raw value
     step = 0.01,      -- output value quantization
     default = 0.2,    -- default value

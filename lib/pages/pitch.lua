@@ -82,16 +82,16 @@ end
 function action_quantize(v)
     if QUANTIZE_TABLE[v] == OCTAVES then
         params:set(ID_PITCH_CENTER, math.floor(params:get(ID_PITCH_CENTER) + .5))
-        controlspec_center.quantum = PITCH_CENTER_QUANTUM_QNT;
-        controlspec_spread.quantum = PITCH_SPREAD_QUANTUM_QNT
-        controlspec_spread.minval = PITCH_SPREAD_MIN_QNT
-        controlspec_spread.maxval = PITCH_SPREAD_MAX_QNT
+        controlspec_pbr_center.quantum = PITCH_CENTER_QUANTUM_QNT;
+        controlspec_pbr_spread.quantum = PITCH_SPREAD_QUANTUM_QNT
+        controlspec_pbr_spread.minval = PITCH_SPREAD_MIN_QNT
+        controlspec_pbr_spread.maxval = PITCH_SPREAD_MAX_QNT
         params:set(ID_PITCH_SPREAD, math.floor(params:get(ID_PITCH_SPREAD) + .5))
     else
-        controlspec_center.quantum = PITCH_CENTER_QUANTUM;
-        controlspec_spread.quantum = PITCH_SPREAD_QUANTUM;
-        controlspec_spread.minval = PITCH_SPREAD_MIN
-        controlspec_spread.maxval = PITCH_SPREAD_MAX
+        controlspec_pbr_center.quantum = PITCH_CENTER_QUANTUM;
+        controlspec_pbr_spread.quantum = PITCH_SPREAD_QUANTUM;
+        controlspec_pbr_spread.minval = PITCH_SPREAD_MIN
+        controlspec_pbr_spread.maxval = PITCH_SPREAD_MAX
     end
     calculate_rates()
 end
@@ -109,12 +109,12 @@ local function toggle_quantize()
 end
 
 local function adjust_center(d)
-    params:set(ID_PITCH_CENTER, params:get(ID_PITCH_CENTER) + d * controlspec_center.quantum, false)
+    params:set(ID_PITCH_CENTER, params:get(ID_PITCH_CENTER) + d * controlspec_pbr_center.quantum, false)
     page.pitch_graph.center = params:get(ID_PITCH_CENTER) * -2 -- why *-2?
 end
 
 local function adjust_spread(d)
-    params:set(ID_PITCH_SPREAD, params:get(ID_PITCH_SPREAD) + d * controlspec_spread.quantum)
+    params:set(ID_PITCH_SPREAD, params:get(ID_PITCH_SPREAD) + d * controlspec_pbr_spread.quantum)
 end
 
 page = Page:create({

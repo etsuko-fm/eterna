@@ -129,9 +129,9 @@ local function update_softcut_ranges()
     update_slice_graphic()
 end
 
-local function load_sample(state, file)
+local function load_sample(file)
     -- use specified `file` as a sample and store enabled length of softcut buffer in state
-    sample_length = audio_util.load_sample(file, true)
+    sample_length = audio_util.load_sample(file, false)
     selected_sample = file
     softcut.render_buffer(1, 0, sample_length, waveform_width)
     update_softcut_ranges()
@@ -141,15 +141,14 @@ local function select_sample()
     local function callback(file_path)
         if file_path ~= 'cancel' then
             filename = to_sample_name(file_path)
-            load_sample(state, file_path)
+            load_sample(file_path)
         end
         page_disabled = false -- proceed with rendering page instead of file menu
         page_indicator_disabled = false
     end
     fileselect.enter(_path.audio, callback, "audio")
     page_disabled = true -- don't render current page
-    page_indicator_disabled = true
-
+    page_indicator_disabled = true -- hide page indicator
 end
 
 local function constrain_max_start(num_slices)
@@ -234,7 +233,7 @@ end
 
 local function add_params()
     -- file selection
-    params:set_action(ID_SAMPLING_AUDIO_FILE, function(file) load_sample(state, file) end)
+    params:set_action(ID_SAMPLING_AUDIO_FILE, function(file) load_sample(file) end)
 
     -- number of slices
     params:set_action(ID_SAMPLING_NUM_SLICES, action_num_slices)
@@ -271,7 +270,7 @@ function page:initialize()
 
     if selected_sample then
         filename = to_sample_name(selected_sample)
-        if debug_mode then load_sample(state, _path.dust .. selected_sample) end
+        if debug_mode then load_sample(_path.dust .. selected_sample) end
         softcut.render_buffer(1, 0, sample_length, waveform_width)    
     end
 
