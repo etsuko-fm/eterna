@@ -66,3 +66,25 @@ controlspec_spread = controlspec.def {
     quantum = PITCH_SPREAD_QUANTUM_QNT, -- each delta will change raw value by this much
     wrap = false                        -- wrap around on overflow (true) or clamp (false)
 }
+
+controlspec_perlin = controlspec.def {
+    min = 0,       -- the minimum value
+    max = 100,    -- the maximum value
+    warp = 'lin',  -- a shaping option for the raw value
+    step = .01,    -- output value quantization
+    default = 0,   -- default value
+    units = '',    -- displayed on PARAMS UI
+    quantum = .1, -- each delta will change raw value by this much
+    wrap = true    -- wrap around on overflow (true) or clamp (false)
+}
+
+controlspec_perlin_density = controlspec.def {
+    min = 0,       -- the minimum value
+    max = 1,       -- the maximum value
+    warp = 'lin',  -- a shaping option for the raw value
+    step = .001,    -- output value quantization
+    default = 0.35, -- default value
+    units = '',    -- displayed on PARAMS UI
+    quantum = .01, -- each delta will change raw value by this much
+    wrap = false   -- wrap around on overflow (true) or clamp (false)
+}

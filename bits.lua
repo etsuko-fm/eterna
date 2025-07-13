@@ -69,7 +69,6 @@ local function enable_all_voices()
   for i = 1, 6 do
     softcut.enable(i, 1)
     softcut.buffer(i, 1)
-    softcut.loop(i, 0)
     softcut.fade_time(i, state.fade_time)
     softcut.post_filter_fc(i, filterbank[i])
     softcut.post_filter_rq(i, .3)

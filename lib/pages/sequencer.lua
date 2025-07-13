@@ -10,22 +10,14 @@ local grid_graphic
 local ROWS = 6
 local COLUMNS = 16
 
-local ID_SEQ_PERLIN_X = "sequencer_perlin_x"
-local ID_SEQ_PERLIN_Y = "sequencer_perlin_y"
-local ID_SEQ_PERLIN_Z = "sequencer_perlin_z"
-local ID_SEQ_EVOLVE = "sequencer_evolve"
-local ID_SEQ_PERLIN_DENSITY = "sequencer_perlin_density"
-local ID_SEQ__MOMENTARY = "sequencer_momentary"
-
 local PERLIN_ZOOM = 4/3 ---4 / 3 -- empirically tuned
 
-local DIM_X = "X"
-
-local SEQ_DIMENSIONS = { DIM_X }
 local ID_SEQ_DIMENSIONS = { ID_SEQ_PERLIN_X, ID_SEQ_PERLIN_Y, ID_SEQ_PERLIN_Z }
-local SEQ_EVOLVE_TABLE = {"OFF", "SLOW", "MED", "FAST"}
 local SEQ_EVOLVE_RATES = {1024*12, 1024*8, 1024*4}
 local current_dimension = 1
+
+local LOOP_TABLE_TO_SOFTCUT = {1, 0}
+
 
 local MAX_STEPS = sequence_util.max_steps
 
@@ -35,7 +27,6 @@ local holding_step = false
 
 -- todo: add in bits.lua? otherwise dependent on order of pages loaded
 
-local SEQ_PARAM_IDS = {}
 
 local main_seq_clock_id
 local current_step = 1
@@ -44,7 +35,6 @@ local current_global_step = 1 -- holds values of 1 to MAX_STEPS, even if sequenc
 local sequence_steps = 16
 local step_divider = 1 -- 1 means 1 step = 1 1/16th note
 local cue_step_divider = nil
-local step_divider_switch = false -- toggles on while moving to a new step division
 
 local voice_pos = {} -- playhead positions of softcut voices
 local voice_pos_percentage = {}
@@ -53,29 +43,6 @@ local perlin_lfo
 -- softcut VCA system concept:
 -- set_master_volume(voice, x)
 -- use level_slew_time to create envelopes
-
-
-local controlspec_perlin = controlspec.def {
-    min = 0,       -- the minimum value
-    max = 100,    -- the maximum value
-    warp = 'lin',  -- a shaping option for the raw value
-    step = .01,    -- output value quantization
-    default = 0,   -- default value
-    units = '',    -- displayed on PARAMS UI
-    quantum = .1, -- each delta will change raw value by this much
-    wrap = true    -- wrap around on overflow (true) or clamp (false)
-}
-
-local controlspec_perlin_density = controlspec.def {
-    min = 0,       -- the minimum value
-    max = 1,       -- the maximum value
-    warp = 'lin',  -- a shaping option for the raw value
-    step = .001,    -- output value quantization
-    default = 0.35, -- default value
-    units = '',    -- displayed on PARAMS UI
-    quantum = .01, -- each delta will change raw value by this much
-    wrap = false   -- wrap around on overflow (true) or clamp (false)
-}
 
 local function generate_perlin_seq()
     -- print("regen - ", math.random())
@@ -91,9 +58,11 @@ local function generate_perlin_seq()
             local perlin_y = voice * PERLIN_ZOOM + y_seed
             local perlin_z = z_seed
             local v = perlin:noise(perlin_x, perlin_y, perlin_z) -- -1 to 1
-            -- adding density before rounding down gives control over number of active sequence stepps
-            if math.abs(v) < density then
-                v = 0.0
+            if math.abs(v) > density then
+                -- if value is .81/-.81 and density is .8, value is filtered out; 
+                -- generalized, then 20% of the values is filtered out. 
+                -- so higher density, is more values in sequence.
+                v = 0.0 -- 0.0 is only value not interpreted as an active step
             end
             params:set(SEQ_PARAM_IDS[voice][step], v)
         end
@@ -126,7 +95,10 @@ local function toggle_evolve()
     params:set(p, new)
 end
 
-local function toggle_momentary()
+local function toggle_playback_style()
+    local p = ID_SEQ_PB_STYLE
+    local new = util.wrap(params:get(p) + 1, 1, #LOOP_TABLE)
+    params:set(p, new)
 end
 
 local page = Page:create({
@@ -134,7 +106,7 @@ local page = Page:create({
     e2 = e2,
     e3 = e3,
     k2_off = toggle_evolve,
-    k3_off = toggle_momentary,
+    k3_off = toggle_playback_style,
 })
 
 function set_cue_step_divider(v)
@@ -206,7 +178,7 @@ local function main_sequencer_callback()
             local a = math.abs(perlin_val)
             local on = a > 0.0
 
-            if on then
+            if on and current_global_step % step_divider == 0 then
                 voice_position_to_phase(y, a)
                 softcut.play(y, 1)
                 -- if perlin_val < 0 then
@@ -216,7 +188,7 @@ local function main_sequencer_callback()
                 --     softcut.post_filter_bp(y, 0)
                 --     softcut.post_filter_br(y, a)
                 -- end
-                softcut.post_filter_dry(y, 1-a)
+                -- softcut.post_filter_dry(y, 1-a)
             end
         end
         clock.sync(1/4)
@@ -283,10 +255,9 @@ function page:render()
         end
     end
     page.footer.button_text.k2.value = SEQ_EVOLVE_TABLE[params:get(ID_SEQ_EVOLVE)]
-    page.footer.button_text.k3.value = "MOMEN"--SEQ_DIMENSIONS[current_dimension]
-    page.footer.button_text.e2.name = SEQ_DIMENSIONS[current_dimension]
+    page.footer.button_text.k3.value = LOOP_TABLE[params:get(ID_SEQ_PB_STYLE)]
     page.footer.button_text.e3.name = "DENS"
-    page.footer.button_text.e2.value = params:get(ID_SEQ_DIMENSIONS[current_dimension])
+    page.footer.button_text.e2.value = params:get(ID_SEQ_PERLIN_X)
     page.footer.button_text.e3.value = params:get(ID_SEQ_PERLIN_DENSITY)
 
     page.footer:render()
@@ -304,34 +275,19 @@ local function action_evolve(v)
     end
 end
 
-local function add_params()
-    params:add_separator("SEQUENCER", page_name)
-
-    params:add_control(ID_SEQ_PERLIN_X, "perlin x", controlspec_perlin)
-    params:set_action(ID_SEQ_PERLIN_X, generate_perlin_seq)
-
-    params:add_control(ID_SEQ_PERLIN_Y, "perlin y", controlspec_perlin)
-    params:set_action(ID_SEQ_PERLIN_Y, generate_perlin_seq)
-
-    params:add_control(ID_SEQ_PERLIN_Z, "perlin z", controlspec_perlin)
-    params:set_action(ID_SEQ_PERLIN_Z, generate_perlin_seq)
-
-    params:add_control(ID_SEQ_PERLIN_DENSITY, "perlin density", controlspec_perlin_density)
-    params:set_action(ID_SEQ_PERLIN_DENSITY, generate_perlin_seq)
-
-    params:add_option(ID_SEQ_EVOLVE, "perlin evolve", SEQ_EVOLVE_TABLE, 1)
-    params:set_action(ID_SEQ_EVOLVE, action_evolve)
-
-    -- add 96 params for sequence step status
-    for y = 1, 6 do
-        SEQ_PARAM_IDS[y] = {}
-        for x = 1, 16 do
-            SEQ_PARAM_IDS[y][x] = "sequencer_step_" .. y .. "_" .. x
-            -- params:add_binary(SEQ_PARAM_IDS[y][x], SEQ_PARAM_IDS[y][x], "toggle", 0)
-            params:add_number(SEQ_PARAM_IDS[y][x], SEQ_PARAM_IDS[y][x], -1, 1,0)
-            params:hide(SEQ_PARAM_IDS[y][x])
-        end
+local function action_playback_style(v)
+    for voice=1,6 do
+        softcut.loop(voice, LOOP_TABLE_TO_SOFTCUT[v])
     end
+end
+
+local function add_params()
+    params:set_action(ID_SEQ_PERLIN_X, generate_perlin_seq)
+    params:set_action(ID_SEQ_PERLIN_Y, generate_perlin_seq)
+    params:set_action(ID_SEQ_PERLIN_Z, generate_perlin_seq)
+    params:set_action(ID_SEQ_PERLIN_DENSITY, generate_perlin_seq)
+    params:set_action(ID_SEQ_EVOLVE, action_evolve)
+    params:set_action(ID_SEQ_PB_STYLE, action_playback_style)
 end
 
 local function report_softcut(voice, pos)
@@ -393,7 +349,7 @@ function page:initialize()
                 value = "",
             },
             e2 = {
-                name = "X",
+                name = "SEED",
                 value = "",
             },
             e3 = {
