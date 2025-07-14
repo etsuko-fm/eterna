@@ -21,7 +21,7 @@ local page_levels = include("bits/lib/pages/levels")
 local fps = 60
 local ready
 
-engine.name = 'Stack'
+engine.name = 'Heap'
 
 page_indicator_disabled = false
 
@@ -95,6 +95,7 @@ end
 
 local function enable_filterbank()
   route_softcut_to_sc()
+  engine.res(0.4)
   engine.v1(1)
   engine.v2(1)
   engine.v3(1)
@@ -103,7 +104,6 @@ local function enable_filterbank()
   engine.v6(1)
   engine.v7(1)
   engine.v8(1)
-  engine.v9(1)
 end
 
 local function disable_filterbank()
@@ -116,7 +116,6 @@ local function disable_filterbank()
   engine.v6(0)
   engine.v7(0)
   engine.v8(0)
-  engine.v9(0)
 end
 
 function init()
