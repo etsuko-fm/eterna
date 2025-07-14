@@ -180,7 +180,7 @@ local function main_sequencer_callback()
                     voice_position_to_phase(y, a)
                     softcut.play(y, 1)
                 end
-            elseif params:get(ID_SEQ_PB_STYLE == SEQ_GATE) then
+            elseif LOOP_TABLE[params:get(ID_SEQ_PB_STYLE)] == SEQ_GATE then
                 softcut.play(y, 0)
             end
         end
