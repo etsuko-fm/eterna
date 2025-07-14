@@ -16,7 +16,7 @@ local ID_SEQ_DIMENSIONS = { ID_SEQ_PERLIN_X, ID_SEQ_PERLIN_Y, ID_SEQ_PERLIN_Z }
 local SEQ_EVOLVE_RATES = {1024*12, 1024*8, 1024*4} -- in quarter notes, but fuzzy concept due to how perlin computes
 local current_dimension = 1
 
-local LOOP_TABLE_TO_SOFTCUT = {1, 0}
+local LOOP_TABLE_TO_SOFTCUT = {1, 0, 0}
 
 
 local MAX_STEPS = sequence_util.max_steps
@@ -141,15 +141,12 @@ local function main_sequencer_callback()
     -- advance
     while true do
         if cue_step_divider then
-            print("step division cued to "..cue_step_divider)
-            print(current_global_step)
             -- wait until the current_global_step aligns with the new step_size
             if current_global_step % cue_step_divider == 0 then
                 -- align the current global step with the new step divider, to prevent jumping
                 current_global_step = current_step * cue_step_divider
                 step_divider = cue_step_divider
                 cue_step_divider = nil
-                print("switched!")
             end
         end
         current_global_step = util.wrap(current_global_step + 1, 1, MAX_STEPS)
@@ -178,17 +175,13 @@ local function main_sequencer_callback()
             local a = math.abs(perlin_val)
             local on = a > 0.0
 
-            if on and current_global_step % step_divider == 0 then
-                voice_position_to_phase(y, a)
-                softcut.play(y, 1)
-                -- if perlin_val < 0 then
-                --     softcut.post_filter_bp(y, a)
-                --     softcut.post_filter_br(y, 0)
-                -- else
-                --     softcut.post_filter_bp(y, 0)
-                --     softcut.post_filter_br(y, a)
-                -- end
-                -- softcut.post_filter_dry(y, 1-a)
+            if on then
+                if current_global_step % step_divider == 0 then
+                    voice_position_to_phase(y, a)
+                    softcut.play(y, 1)
+                end
+            elseif params:get(ID_SEQ_PB_STYLE == SEQ_GATE) then
+                softcut.play(y, 0)
             end
         end
         clock.sync(1/4)

@@ -8,11 +8,12 @@ local page_name = "SAMPLING"
 local fileselect = require('fileselect')
 local page_disabled = false
 
-local waveform_graphic
-local waveform_samples
+local waveform_graphics = {}
+local waveform_samples = {}
 local window
 local waveform_width = 63
-local waveform_h = 10
+local waveform_h = 6
+local is_stereo
 
 local filename = ""
 selected_sample = nil -- = "audio/etsuko/neon-light/neon intro.wav"
@@ -56,15 +57,15 @@ function table.slice(tbl, first, last)
     return result
 end
 
-local function update_waveform()
+local function update_waveform(ch)
     local scale_waveform = 1
-    if waveform_samples[1] then
+    if waveform_samples[ch][1] then
         -- adjust scale so scale at peak == 1, is waveform_h; lower amp is higher scaling
-        scale_waveform = waveform_h / math.max(table.unpack(waveform_samples))
+        scale_waveform = waveform_h / math.max(table.unpack(waveform_samples[ch]))
     end
 
-    waveform_graphic.samples = waveform_samples
-    waveform_graphic.vertical_scale = scale_waveform
+    waveform_graphics[ch].samples = waveform_samples[ch]
+    waveform_graphics[ch].vertical_scale = scale_waveform
 end
 
 local function get_slice_length()
@@ -78,7 +79,8 @@ local function remove_extension(filename)
 end
 
 local function to_sample_name(path)
-    return misc_util.trim(string.upper(remove_extension(path_to_file_name(path))), 26)
+    local s = string.upper(remove_extension(path_to_file_name(path)))
+    return util.trim_string_to_width(s, 108)
 end
 
 local function update_slice_graphic()
@@ -131,9 +133,28 @@ end
 
 local function load_sample(file)
     -- use specified `file` as a sample and store enabled length of softcut buffer in state
-    sample_length = audio_util.load_sample(file, false)
+    sample_length, is_stereo = audio_util.load_sample(file, false)
     selected_sample = file
     softcut.render_buffer(1, 0, sample_length, waveform_width)
+    if is_stereo then
+        softcut.render_buffer(2, 0, sample_length, waveform_width)
+    end
+    if is_stereo then
+        waveform_h = 5
+        waveform_graphics[1].y = 20
+        for voice = 1,3 do
+            softcut.buffer(voice, 1)
+        end
+        for voice = 4,6 do
+            softcut.buffer(voice, 2)
+        end
+    else
+        waveform_h = 10
+        waveform_graphics[1].y = 26
+        for voice=1,6 do
+            softcut.buffer(voice, 1)
+        end
+    end
     update_softcut_ranges()
 end
 
@@ -142,6 +163,9 @@ local function select_sample()
         if file_path ~= 'cancel' then
             filename = to_sample_name(file_path)
             load_sample(file_path)
+            for voice = 1,6 do
+                softcut.play(voice, 1)
+            end
         end
         page_disabled = false -- proceed with rendering page instead of file menu
         page_indicator_disabled = false
@@ -215,7 +239,10 @@ function page:render()
 
     if selected_sample then
         window.title = filename
-        waveform_graphic:render()
+        waveform_graphics[1]:render()
+        if is_stereo then
+            waveform_graphics[2]:render()
+        end
         slice_graphic:render()
         page.footer.button_text.e2.value = params:get(ID_SAMPLING_NUM_SLICES)
         page.footer.button_text.e3.value = params:get(ID_SAMPLING_SLICE_START)
@@ -247,9 +274,19 @@ function page:initialize()
     add_params()
 
     -- add waveform
-    waveform_graphic = Waveform:new({
+    waveform_graphics[1] = Waveform:new({
         x = 33,
-        y = 28,
+        y = 20,
+        highlight = false,
+        sample_length = sample_length,
+        vertical_scale = 1,
+        samples = {},
+        render_samples = waveform_width,
+    })
+
+    waveform_graphics[2] = Waveform:new({
+        x = 33,
+        y = 32,
         highlight = false,
         sample_length = sample_length,
         vertical_scale = 1,
@@ -261,9 +298,9 @@ function page:initialize()
 
     local function on_render(ch, start, i, s)
         -- this is a callback, for every softcut.render_buffer() invocation
-        waveform_samples = as_abs_values(s)
+        waveform_samples[ch] = as_abs_values(s)
         state.interval = i -- represents the interval at which the waveform is sampled for rendering
-        update_waveform()
+        update_waveform(ch)
     end
     -- setup callback
     softcut.event_render(on_render)

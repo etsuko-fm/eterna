@@ -69,16 +69,21 @@ ID_SEQ_PERLIN_Y = "sequencer_perlin_y"
 ID_SEQ_PERLIN_Z = "sequencer_perlin_z"
 ID_SEQ_EVOLVE = "sequencer_evolve"
 ID_SEQ_PERLIN_DENSITY = "sequencer_perlin_density"
-ID_SEQ_PB_STYLE = "sequencer_momentary"
+ID_SEQ_PB_STYLE = "sequencer_pb_style"
 
 SEQ_EVOLVE_TABLE = {"OFF", "SLOW", "MED", "FAST"}
-LOOP_TABLE = {"STREA", "MOMEN"}
+SEQ_STREAM = "STREA"
+SEQ_MOMENTARY = "MOMEN"
+SEQ_GATE = "GATE"
+LOOP_TABLE = {SEQ_STREAM, SEQ_MOMENTARY, SEQ_GATE}
 SEQ_PARAM_IDS = {}
 
 params:add_separator("SEQUENCER", "SEQUENCER")
 params:add_control(ID_SEQ_PERLIN_X, "perlin x", controlspec_perlin)
 params:add_control(ID_SEQ_PERLIN_Y, "perlin y", controlspec_perlin)
+params:hide(ID_SEQ_PERLIN_Y)
 params:add_control(ID_SEQ_PERLIN_Z, "perlin z", controlspec_perlin)
+params:hide(ID_SEQ_PERLIN_Z)
 params:add_control(ID_SEQ_PERLIN_DENSITY, "sequence density", controlspec_perlin_density)
 params:add_option(ID_SEQ_EVOLVE, "evolve", SEQ_EVOLVE_TABLE, 1)
 params:add_option(ID_SEQ_PB_STYLE, "playback style", LOOP_TABLE, 1)

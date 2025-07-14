@@ -1,6 +1,6 @@
 
 local sequence_speeds = {"1/16", "1/8", "1/4", "1/2", "1/1"}
-local default_speed_idx = 2
+local default_speed_idx = 1
 local max_steps = 256
 
 -- table with indexes matching to the sequence_speeds table above

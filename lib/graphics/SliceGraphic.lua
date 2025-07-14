@@ -40,7 +40,7 @@ function SliceGraphic:render()
         -- draw a line under the waveform for each available slice
         local startx = x + (w * slice_len * n)
         local rect_w = w * slice_len - 1
-        screen.rect(startx, y,  rect_w, 3)
+        screen.rect(startx, y,  rect_w, 1)
         screen.fill()
     end
 

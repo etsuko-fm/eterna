@@ -30,14 +30,15 @@ function load_sample(file, mono, max_length)
 
     start_src = 0 -- file read position
     start_dst = 0 -- buffer write position
-
+    local stereo = false
     if mono or (audio_util.num_channels(file) == 1) then
         softcut.buffer_read_mono(file, start_src, start_dst, dur, 1, 1)
     else
         softcut.buffer_read_stereo(file, start_src, start_dst, dur)
+        stereo = true
     end
 
-    return dur
+    return dur, stereo
 end
 
 audio_util = {

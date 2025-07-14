@@ -136,7 +136,7 @@ function page:render()
 
     -- convert -3/+3 range to -36/+36 rounded to 1 decimal
     page.footer.button_text.e2.value = misc_util.trim(tostring(
-        math.floor(params:get(ID_PITCH_CENTER) * 1200 + .5) / 100
+        params:get(ID_PITCH_CENTER)
     ), 5)
 
     -- Round value to 2 decimals

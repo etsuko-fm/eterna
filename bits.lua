@@ -21,6 +21,8 @@ local page_levels = include("bits/lib/pages/levels")
 local fps = 60
 local ready
 
+engine.name = 'Stack'
+
 page_indicator_disabled = false
 
 DEFAULT_FONT = 68
@@ -60,8 +62,7 @@ local function page_backward()
 end
 
 local function count()
-  -- relates to fps and flickerless rerndering
-  ready = true
+  ready = true -- used for fps
 end
 
 local function enable_all_voices()
@@ -77,6 +78,47 @@ local function enable_all_voices()
   end
 end
 
+local function route_softcut_to_sc()
+  audio.level_eng_cut(0)
+  os.execute("jack_connect softcut:output_1 SuperCollider:in_1;")
+  os.execute("jack_connect softcut:output_2 SuperCollider:in_2;")
+  os.execute("jack_disconnect softcut:output_1 crone:input_3;")
+  os.execute("jack_disconnect softcut:output_2 crone:input_4;")
+end
+
+local function reset_routing()
+  os.execute("jack_disconnect softcut:output_1 SuperCollider:in_1;")
+  os.execute("jack_disconnect softcut:output_2 SuperCollider:in_2;")
+  os.execute("jack_connect softcut:output_1 crone:input_3;")
+  os.execute("jack_connect softcut:output_2 crone:input_4;")
+end
+
+local function enable_filterbank()
+  route_softcut_to_sc()
+  engine.v1(1)
+  engine.v2(1)
+  engine.v3(1)
+  engine.v4(1)
+  engine.v5(1)
+  engine.v6(1)
+  engine.v7(1)
+  engine.v8(1)
+  engine.v9(1)
+end
+
+local function disable_filterbank()
+  reset_routing()
+  engine.v1(0)
+  engine.v2(0)
+  engine.v3(0)
+  engine.v4(0)
+  engine.v5(0)
+  engine.v6(0)
+  engine.v7(0)
+  engine.v8(0)
+  engine.v9(0)
+end
+
 function init()
   -- Encoder sensitivity
   norns.enc.sens(1, 5)
@@ -89,6 +131,7 @@ function init()
   for _, page in ipairs(pages) do
     page:initialize()
   end
+  enable_filterbank()
 
   enable_all_voices()
 
@@ -184,4 +227,10 @@ function on()
   for i = 1, 6 do
     softcut.play(i, 1)
   end
+end
+
+
+function cleanup()
+  reset_routing()
+  metro.free_all()
 end
