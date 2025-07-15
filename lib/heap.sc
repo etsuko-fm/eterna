@@ -12,32 +12,27 @@ Engine_Heap : CroneEngine {
       var dry, dryL, dryR, outputL, outputR;
       var inputL = SoundIn.ar(0);
       var inputR = SoundIn.ar(1);
+      var safeFreq = freq.clip(50.0, 100.0)
+      var safeRes = res.clip(0.1, 2.0)
 	
     	var filtersL = Mix.ar([
-    		BPF.ar(inputL, freq, Lag.kr(res), Lag.kr(v1)).tanh,
-    		BPF.ar(inputL, freq*2, Lag.kr(res), Lag.kr(v2)).tanh,
-    		BPF.ar(inputL, freq*4, Lag.kr(res), Lag.kr(v3)).tanh,
-    		BPF.ar(inputL, freq*8, Lag.kr(res), Lag.kr(v4)).tanh,
-    		BPF.ar(inputL, freq*16, Lag.kr(res), Lag.kr(v5)).tanh,
-    		BPF.ar(inputL, freq*32, Lag.kr(res), Lag.kr(v6)).tanh,
-    		BPF.ar(inputL, freq*64, Lag.kr(res), Lag.kr(v7)).tanh,
-    		BPF.ar(inputL, freq*128, Lag.kr(res), Lag.kr(v8)).tanh
+    		BPF.ar(inputL, safeFreq*2, Lag.kr(res), Lag.kr(v1)).tanh,
+    		BPF.ar(inputL, safeFreq*8, Lag.kr(res), Lag.kr(v2)).tanh,
+    		BPF.ar(inputL, safeFreq*32, Lag.kr(res), Lag.kr(v3)).tanh,
+    		BPF.ar(inputL, safeFreq*128, Lag.kr(res), Lag.kr(v4)).tanh,
       ]);
     	
     	var filtersR = Mix.ar([
-    		BPF.ar(inputR, freq, Lag.kr(res), Lag.kr(v1)).tanh,
-    		BPF.ar(inputR, freq*2, Lag.kr(res), Lag.kr(v2)).tanh,
-    		BPF.ar(inputR, freq*4, Lag.kr(res), Lag.kr(v3)).tanh,
-    		BPF.ar(inputR, freq*8, Lag.kr(res), Lag.kr(v4)).tanh,
-    		BPF.ar(inputR, freq*16, Lag.kr(res), Lag.kr(v5)).tanh,
-    		BPF.ar(inputR, freq*32, Lag.kr(res), Lag.kr(v6)).tanh,
-    		BPF.ar(inputR, freq*64, Lag.kr(res), Lag.kr(v7)).tanh,
-    		BPF.ar(inputR, freq*128, Lag.kr(res), Lag.kr(v8)).tanh
+    		BPF.ar(inputR, safeFreq, Lag.kr(res), Lag.kr(v1)).tanh,
+    		BPF.ar(inputR, safeFreq*2, Lag.kr(res), Lag.kr(v2)).tanh,
+    		BPF.ar(inputR, safeFreq*4, Lag.kr(res), Lag.kr(v3)).tanh,
+    		BPF.ar(inputR, safeFreq*8, Lag.kr(res), Lag.kr(v4)).tanh,
+    		BPF.ar(inputR, safeFreq*16, Lag.kr(res), Lag.kr(v5)).tanh,
       ]);
 
       dry = 1.0 - wet;
-      filtersL = (filtersL * wet).tanh;
-      filtersR =( filtersR * wet).tanh;
+      filtersL = filtersL * wet;
+      filtersR = filtersR * wet;
       dryL = inputL * dry;
       dryR = inputR * dry;
       outputL = ((filtersL + dryL) * gain).tanh;
