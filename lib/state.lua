@@ -159,7 +159,7 @@ end
 --- FILTERBANK
 ---
 
-params:add_number("filter_freq", "filter freq", 50.0, 100.0, 63.0)
-params:add_number("filter_gain", "filter gain", 0.0, 5.0, 1.0)
-params:add_number("filter_res", "filter res", 0.1, 2.0, 0.2)
+params:add_number("filter_freq", "filter freq", 25.0, 200.0, 63.0)
+params:add_number("filter_gain", "filter gain", 0.05, 5.0, 1.0)
+params:add_number("filter_res", "filter res", 0.1, 2.0, 1.4)
 params:add_number("filter_wet", "filter wet", 0.0, 1.0, 1.0)
