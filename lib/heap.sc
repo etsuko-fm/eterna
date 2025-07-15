@@ -7,36 +7,60 @@ Engine_Heap : CroneEngine {
   
   alloc {
     synth = {
-      arg out, v1 = 0, v2 = 0, v3 = 0, v4 = 0, v5 = 0, v6 = 0, v7 = 1, v8 = 0, res = 0.2;
-      
+      arg out, v1 = 0, v2 = 0, v3 = 0, v4 = 0, v5 = 0, v6 = 0, v7 = 0, v8 = 0, wet=1.0, freq=63.0, res = 0.2, gain=1.0;
+
+      var dry, dryL, dryR, outputL, outputR;
       var inputL = SoundIn.ar(0);
       var inputR = SoundIn.ar(1);
 	
     	var filtersL = Mix.ar([
-    		BPF.ar(inputL, 63, Lag.kr(res), Lag.kr(v1)),
-    		BPF.ar(inputL, 126, Lag.kr(res), Lag.kr(v2)),
-    		BPF.ar(inputL, 252, Lag.kr(res), Lag.kr(v3)),
-    		BPF.ar(inputL, 504, Lag.kr(res), Lag.kr(v4)),
-    		BPF.ar(inputL, 1008, Lag.kr(res), Lag.kr(v5)),
-    		BPF.ar(inputL, 2016, Lag.kr(res), Lag.kr(v6)),
-    		BPF.ar(inputL, 4032, Lag.kr(res), Lag.kr(v7)),
-    		BPF.ar(inputL, 8064, Lag.kr(res), Lag.kr(v8))
+    		BPF.ar(inputL, freq, Lag.kr(res), Lag.kr(v1)).tanh,
+    		BPF.ar(inputL, freq*2, Lag.kr(res), Lag.kr(v2)).tanh,
+    		BPF.ar(inputL, freq*4, Lag.kr(res), Lag.kr(v3)).tanh,
+    		BPF.ar(inputL, freq*8, Lag.kr(res), Lag.kr(v4)).tanh,
+    		BPF.ar(inputL, freq*16, Lag.kr(res), Lag.kr(v5)).tanh,
+    		BPF.ar(inputL, freq*32, Lag.kr(res), Lag.kr(v6)).tanh,
+    		BPF.ar(inputL, freq*64, Lag.kr(res), Lag.kr(v7)).tanh,
+    		BPF.ar(inputL, freq*128, Lag.kr(res), Lag.kr(v8)).tanh
       ]);
     	
     	var filtersR = Mix.ar([
-    		BPF.ar(inputR, 63, Lag.kr(res), Lag.kr(v1)),
-    		BPF.ar(inputR, 126, Lag.kr(res), Lag.kr(v2)),
-    		BPF.ar(inputR, 252, Lag.kr(res), Lag.kr(v3)),
-    		BPF.ar(inputR, 504, Lag.kr(res), Lag.kr(v4)),
-    		BPF.ar(inputR, 1008, Lag.kr(res), Lag.kr(v5)),
-    		BPF.ar(inputR, 2016, Lag.kr(res), Lag.kr(v6)),
-    		BPF.ar(inputR, 4032, Lag.kr(res), Lag.kr(v7)),
-    		BPF.ar(inputR, 8064, Lag.kr(res), Lag.kr(v8)),
+    		BPF.ar(inputR, freq, Lag.kr(res), Lag.kr(v1)).tanh,
+    		BPF.ar(inputR, freq*2, Lag.kr(res), Lag.kr(v2)).tanh,
+    		BPF.ar(inputR, freq*4, Lag.kr(res), Lag.kr(v3)).tanh,
+    		BPF.ar(inputR, freq*8, Lag.kr(res), Lag.kr(v4)).tanh,
+    		BPF.ar(inputR, freq*16, Lag.kr(res), Lag.kr(v5)).tanh,
+    		BPF.ar(inputR, freq*32, Lag.kr(res), Lag.kr(v6)).tanh,
+    		BPF.ar(inputR, freq*64, Lag.kr(res), Lag.kr(v7)).tanh,
+    		BPF.ar(inputR, freq*128, Lag.kr(res), Lag.kr(v8)).tanh
       ]);
-      
-      Out.ar(out, [filtersL, filtersR]);
+
+      dry = 1.0 - wet;
+      filtersL = (filtersL * wet).tanh;
+      filtersR =( filtersR * wet).tanh;
+      dryL = inputL * dry;
+      dryR = inputR * dry;
+      outputL = ((filtersL + dryL) * gain).tanh;
+      outputR = ((filtersR + dryR) * gain).tanh;
+
+      Out.ar(out, [outputL, outputR]);
     }.play(args: [\out, context.out_b], target: context.xg);
-  
+
+    this.addCommand("freq", "f", { arg msg;
+      synth.set(\freq, msg[1]);
+    });
+
+    this.addCommand("res", "f", { arg msg;
+      synth.set(\res, msg[1]);
+    });
+    this.addCommand("wet", "f", { arg msg;
+      synth.set(\wet, msg[1]);
+    });
+
+    this.addCommand("gain", "f", { arg msg;
+      synth.set(\gain, msg[1]);
+    });
+
     this.addCommand("v1", "f", { arg msg;
       synth.set(\v1, msg[1]);
     });

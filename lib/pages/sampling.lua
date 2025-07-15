@@ -71,7 +71,11 @@ end
 local function get_slice_length()
     -- returns slice length in seconds
     local n_slices = params:get(ID_SAMPLING_NUM_SLICES)
-    return (1 / n_slices) * sample_length
+    if n_slices and sample_length then
+        return (1 / n_slices) * sample_length
+    else
+        return nil
+    end
 end
 
 local function remove_extension(filename)
@@ -100,6 +104,7 @@ local function update_softcut_ranges()
     -- edit buffer ranges per softcut voice
     local slice_start_timestamps = {}
     local slice_length = get_slice_length()
+    if not slice_length then return end
 
     for i = 1, n_slices do
         -- start at 0
@@ -133,6 +138,8 @@ end
 
 local function load_sample(file)
     -- use specified `file` as a sample and store enabled length of softcut buffer in state
+    print("file: ", file)
+    if not file or file == "-" then return end
     sample_length, is_stereo = audio_util.load_sample(file, false)
     selected_sample = file
     softcut.render_buffer(1, 0, sample_length, waveform_width)
@@ -268,6 +275,7 @@ local function add_params()
     -- starting slice
     params:set_action(ID_SAMPLING_SLICE_START, action_slice_start)
     constrain_max_start(SLICES_DEFAULT)
+    params:bang()
 end
 
 function page:initialize()

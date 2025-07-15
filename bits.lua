@@ -95,16 +95,21 @@ end
 
 local function enable_filterbank()
   route_softcut_to_sc()
-  engine.res(0.4)
-  engine.v1(1)
+  engine.res(0.2)
+  -- engine.v1(1)
   engine.v2(1)
-  engine.v3(1)
+  -- engine.v3(1)
   engine.v4(1)
-  engine.v5(1)
+  -- engine.v5(1)
   engine.v6(1)
-  engine.v7(1)
+  -- engine.v7(1)
   engine.v8(1)
 end
+
+params:set_action("filter_wet", function(v) engine.wet(v) end)
+params:set_action("filter_freq", function(v) engine.freq(v) end)
+params:set_action("filter_gain", function(v) engine.gain(v) end)
+params:set_action("filter_res", function(v) engine.res(v) end)
 
 local function disable_filterbank()
   reset_routing()
@@ -130,8 +135,8 @@ function init()
   for _, page in ipairs(pages) do
     page:initialize()
   end
+  params:bang()
   enable_filterbank()
-
   enable_all_voices()
 
   -- metro for screen refresh

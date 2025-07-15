@@ -39,6 +39,7 @@ local function add_params()
     params:add_separator("SEQUENCE_CONTROL", page_name)
     params:add_option(PARAM_ID_SEQUENCE_SPEED, "sequence speed", sequence_util.sequence_speeds, sequence_util.default_speed_idx)
     params:set_action(PARAM_ID_SEQUENCE_SPEED, action_sequence_speed)
+    
 end
 
 function page:render()

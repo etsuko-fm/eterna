@@ -142,7 +142,7 @@ for voice = 1, 6 do
 end
 
 params:add_separator("SAMPLING", "SAMPLING")
-params:add_file(ID_SAMPLING_AUDIO_FILE, 'file')
+params:add_file(ID_SAMPLING_AUDIO_FILE, 'sample', nil)
 params:add_control(ID_SAMPLING_NUM_SLICES, "slices", controlspec_slices)
 params:add_control(ID_SAMPLING_SLICE_START, "start", controlspec_start)
 
@@ -155,4 +155,11 @@ for voice = 1, 6 do
     params:hide(SLICE_PARAM_IDS[voice].loop_end)
 end
 
-params:bang()
+---
+--- FILTERBANK
+---
+
+params:add_number("filter_freq", "filter freq", 50.0, 100.0, 63.0)
+params:add_number("filter_gain", "filter gain", 0.0, 5.0, 1.0)
+params:add_number("filter_res", "filter res", 0.01, 2.9, 0.2)
+params:add_number("filter_wet", "filter wet", 0.0, 1.0, 1.0)
