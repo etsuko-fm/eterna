@@ -80,17 +80,22 @@ end
 
 local function route_softcut_to_sc()
   audio.level_eng_cut(0)
-  os.execute("jack_connect softcut:output_1 SuperCollider:in_1;")
-  os.execute("jack_connect softcut:output_2 SuperCollider:in_2;")
-  os.execute("jack_disconnect softcut:output_1 crone:input_3;")
-  os.execute("jack_disconnect softcut:output_2 crone:input_4;")
+  -- connect softcut output to supercollider input
+  _norns.audio_connect("softcut:output_1", "SuperCollider:in_1")
+  _norns.audio_connect("softcut:output_2", "SuperCollider:in_2")
+
+  --- supercollider is now responsible for passing on softcut playback; 
+  --- disconnect softcut from crone
+  _norns.audio_disconnect("softcut:output_1", "crone:input_3")
+  _norns.audio_disconnect("softcut:output_2", "crone:input_4")
 end
 
 local function reset_routing()
-  os.execute("jack_disconnect softcut:output_1 SuperCollider:in_1;")
-  os.execute("jack_disconnect softcut:output_2 SuperCollider:in_2;")
-  os.execute("jack_connect softcut:output_1 crone:input_3;")
-  os.execute("jack_connect softcut:output_2 crone:input_4;")
+  -- reverse of route_softcut_to_sc
+  _norns.audio_disconnect("softcut:output_1", "SuperCollider:in_1")
+  _norns.audio_disconnect("softcut:output_2", "SuperCollider:in_2")
+  _norns.audio_connect("softcut:output_1", "crone:input_3")
+  _norns.audio_connect("softcut:output_2", "crone:input_4")
 end
 
 local function enable_filterbank()
