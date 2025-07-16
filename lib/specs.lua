@@ -7,14 +7,14 @@ local LEVELS_POSITION_MIN = 0
 local LEVELS_POSITION_MAX = 1
 
 controlspec_pos = controlspec.def {
-    min = LEVELS_POSITION_MIN, -- the minimum value
-    max = LEVELS_POSITION_MAX, -- the maximum value
-    warp = 'lin',              -- a shaping option for the raw value
-    step = 0.01,               -- output value quantization
-    default = 0.42,            -- default value
-    units = '',                -- displayed on PARAMS UI
-    quantum = 0.01,            -- each delta will change raw value by this much
-    wrap = true                -- wrap around on overflow (true) or clamp (false)
+    min = LEVELS_POSITION_MIN,
+    max = LEVELS_POSITION_MAX,
+    warp = 'lin',
+    step = 0.01,
+    default = 0.42,
+    units = '',
+    quantum = 0.01,
+    wrap = true
 }
 
 -- Amp maps the arbitrary sigma range from 0 to 1
@@ -22,14 +22,14 @@ local LEVELS_AMP_MIN = 0
 local LEVELS_AMP_MAX = 1
 
 controlspec_amp = controlspec.def {
-    min = LEVELS_AMP_MIN, -- the minimum value
-    max = LEVELS_AMP_MAX, -- the maximum value
-    warp = 'lin',         -- a shaping option for the raw value
-    step = 0.01,          -- output value quantization
-    default = 0.6,        -- default value
-    units = '',           -- displayed on PARAMS UI
-    quantum = 0.01,       -- each delta will change raw value by this much
-    wrap = false          -- wrap around on overflow (true) or clamp (false)
+    min = LEVELS_AMP_MIN,
+    max = LEVELS_AMP_MAX,
+    warp = 'lin',
+    step = 0.01,
+    default = 0.45,
+    units = '',
+    quantum = 0.01,
+    wrap = false
 }
 
 PITCH_CENTER_MIN = -2
@@ -45,75 +45,75 @@ PITCH_SPREAD_QUANTUM = 0.01
 PITCH_SPREAD_QUANTUM_QNT = 0.5
 
 controlspec_pbr_center = controlspec.def {
-    min = PITCH_CENTER_MIN,             -- the minimum value
-    max = PITCH_CENTER_MAX,             -- the maximum value
-    warp = 'lin',                       -- a shaping option for the raw value
-    step = 1 / 120,                     -- output value quantization
-    default = 0.0,                      -- default value
-    units = '',                         -- displayed on PARAMS UI
-    quantum = PITCH_CENTER_QUANTUM_QNT, -- each delta will change raw value by this much
-    wrap = false                        -- wrap around on overflow (true) or clamp (false)
+    min = PITCH_CENTER_MIN,
+    max = PITCH_CENTER_MAX,
+    warp = 'lin',
+    step = 1 / 120,
+    default = -1.0,
+    units = '',
+    quantum = PITCH_CENTER_QUANTUM_QNT,
+    wrap = false
 }
 
 controlspec_pbr_spread = controlspec.def {
-    min = PITCH_SPREAD_MIN_QNT,         -- the minimum value
-    max = PITCH_SPREAD_MAX_QNT,         -- the maximum value
-    warp = 'lin',                       -- a shaping option for the raw value
-    step = 0.01,                        -- output value quantization
-    default = 0.0,                      -- default value
-    units = '',                         -- displayed on PARAMS UI
-    quantum = PITCH_SPREAD_QUANTUM_QNT, -- each delta will change raw value by this much
-    wrap = false                        -- wrap around on overflow (true) or clamp (false)
+    min = PITCH_SPREAD_MIN_QNT,
+    max = PITCH_SPREAD_MAX_QNT,
+    warp = 'lin',
+    step = 0.01,
+    default = 1.0,
+    units = '',
+    quantum = PITCH_SPREAD_QUANTUM_QNT,
+    wrap = false
 }
 
 controlspec_perlin = controlspec.def {
-    min = 0,      -- the minimum value
-    max = 100,    -- the maximum value
-    warp = 'lin', -- a shaping option for the raw value
-    step = .01,   -- output value quantization
-    default = 0,  -- default value
-    units = '',   -- displayed on PARAMS UI
-    quantum = .1, -- each delta will change raw value by this much
-    wrap = true   -- wrap around on overflow (true) or clamp (false)
+    min = 0,
+    max = 100,
+    warp = 'lin',
+    step = .01,
+    default = math.random(4) * 25.0,
+    units = '',
+    quantum = .1,
+    wrap = true
 }
 
 controlspec_perlin_density = controlspec.def {
-    min = 0,        -- the minimum value
-    max = 1,        -- the maximum value
-    warp = 'lin',   -- a shaping option for the raw value
-    step = .001,    -- output value quantization
-    default = 0.35, -- default value
-    units = '',     -- displayed on PARAMS UI
-    quantum = .01,  -- each delta will change raw value by this much
-    wrap = false    -- wrap around on overflow (true) or clamp (false)
+    min = 0,
+    max = 1,
+    warp = 'lin',
+    step = .001,
+    default = 0.5, -- default value
+    units = '',
+    quantum = .01,
+    wrap = false
 }
 
 local PAN_TWIST_MIN = 0
 local PAN_TWIST_MAX = 1
 
 controlspec_pan_twist = controlspec.def {
-    min = PAN_TWIST_MIN, -- the minimum value
-    max = PAN_TWIST_MAX, -- the maximum value
-    warp = 'lin',    -- a shaping option for the raw value
-    step = 0.005,    -- output value quantization
-    default = 0.0,   -- default value
-    units = '',      -- displayed on PARAMS UI
-    quantum = 0.005, -- each delta will change raw value by this much
-    wrap = true      -- wrap around on overflow (true) or clamp (false)
+    min = PAN_TWIST_MIN,
+    max = PAN_TWIST_MAX,
+    warp = 'lin',
+    step = 0.005,
+    default = 0.0,
+    units = '',
+    quantum = 0.005,
+    wrap = true
 }
 
 local PAN_SPREAD_MIN = 0
 local PAN_SPREAD_MAX = 1
 
 controlspec_pan_spread = controlspec.def {
-    min = PAN_SPREAD_MIN, -- the minimum value
-    max = PAN_SPREAD_MAX, -- the maximum value
-    warp = 'lin',     -- a shaping option for the raw value
-    step = 0.01,      -- output value quantization
-    default = 0.2,    -- default value
-    units = '',       -- displayed on PARAMS UI
-    quantum = 0.01,   -- each delta will change raw value by this much
-    wrap = false      -- wrap around on overflow (true) or clamp (false)
+    min = PAN_SPREAD_MIN,
+    max = PAN_SPREAD_MAX,
+    warp = 'lin',
+    step = 0.01,
+    default = 0.8,
+    units = '',
+    quantum = 0.01,
+    wrap = false
 }
 
 -- SAMPLING
@@ -122,26 +122,26 @@ SLICES_MAX = 32
 SLICES_DEFAULT = 6
 
 controlspec_slices = controlspec.def {
-    min = SLICES_MIN, -- the minimum value
-    max = SLICES_MAX, -- the maximum value
-    warp = 'lin',     -- a shaping option for the raw value
-    step = 1,         -- output value quantization
-    default = SLICES_DEFAULT,      -- default value
-    units = '',       -- displayed on PARAMS UI
-    quantum = 1,      -- each delta will change raw value by this much
-    wrap = false      -- wrap around on overflow (true) or clamp (false)
+    min = SLICES_MIN,
+    max = SLICES_MAX,
+    warp = 'lin',
+    step = 1,
+    default = SLICES_DEFAULT,
+    units = '',
+    quantum = 1,
+    wrap = false
 }
 
 local START_MIN = 1
 local START_MAX = 32 -- dynamic, todo: deal with that
 
 controlspec_start = controlspec.def {
-    min = START_MIN, -- the minimum value
-    max = START_MAX, -- the maximum value
-    warp = 'lin',    -- a shaping option for the raw value
-    step = 1,        -- output value quantization
-    default = 1,     -- default value
-    units = '',      -- displayed on PARAMS UI
-    quantum = 1,     -- each delta will change raw value by this much
-    wrap = false     -- wrap around on overflow (true) or clamp (false)
+    min = START_MIN,
+    max = START_MAX,
+    warp = 'lin',
+    step = 1,
+    default = 1,
+    units = '',
+    quantum = 1,
+    wrap = false
 }

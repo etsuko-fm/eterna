@@ -58,10 +58,11 @@ local page = Page:create({
 })
 
 local function action_enable_lfo(v)
-    if panning_lfo:get("enabled") == 1 then
-        panning_lfo:stop()
-    else
+    -- todo: should read v for enbaled or disabled
+    if v == 1 then
         panning_lfo:start()
+    else
+        panning_lfo:stop()
     end
     panning_lfo:set('phase', params:get(ID_PANNING_TWIST))
 end

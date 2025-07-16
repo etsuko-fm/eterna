@@ -16,7 +16,6 @@ ID_LEVELS_POS = "levels_pos"
 ID_LEVELS_AMP = "levels_sigma"
 
 local LEVELS_LFO_DEFAULT_RATE_INDEX = 20
-local LEVELS_LFO_DEFAULT_RATE = lfo_util.lfo_period_values[LEVELS_LFO_DEFAULT_RATE_INDEX]
 
 params:add_separator("BITS_LEVELS", "LEVELS")
 params:add_binary(ID_LEVELS_LFO_ENABLED, "LFO enabled", "toggle", 0)
@@ -75,7 +74,7 @@ SEQ_EVOLVE_TABLE = {"OFF", "SLOW", "MED", "FAST"}
 SEQ_STREAM = "STREA"
 SEQ_MOMENTARY = "MOMEN"
 SEQ_GATE = "GATE"
-LOOP_TABLE = {SEQ_STREAM, SEQ_MOMENTARY, SEQ_GATE}
+LOOP_TABLE = {SEQ_STREAM, SEQ_GATE}
 SEQ_PARAM_IDS = {}
 
 params:add_separator("SEQUENCER", "SEQUENCER")
@@ -85,7 +84,7 @@ params:hide(ID_SEQ_PERLIN_Y)
 params:add_control(ID_SEQ_PERLIN_Z, "perlin z", controlspec_perlin)
 params:hide(ID_SEQ_PERLIN_Z)
 params:add_control(ID_SEQ_PERLIN_DENSITY, "sequence density", controlspec_perlin_density)
-params:add_option(ID_SEQ_EVOLVE, "evolve", SEQ_EVOLVE_TABLE, 1)
+params:add_option(ID_SEQ_EVOLVE, "evolve", SEQ_EVOLVE_TABLE, 2)
 params:add_option(ID_SEQ_PB_STYLE, "playback style", LOOP_TABLE, 1)
 
 -- add 96 params for sequence step status
@@ -110,11 +109,12 @@ ID_PANNING_TWIST = "panning_twist"
 ID_PANNING_SPREAD = "panning_spread"
 -- todo: add tri?
 PANNING_LFO_SHAPES = { "sine", "up", "down", "random" }
+DEFAULT_PANNING_LFO_RATE_IDX = 16
 
 params:add_separator("PANNING", "PANNING")
-params:add_binary(ID_PANNING_LFO_ENABLED, "LFO enabled", "toggle", 0)
+params:add_binary(ID_PANNING_LFO_ENABLED, "LFO enabled", "toggle", 1)
 params:add_option(ID_PANNING_LFO_SHAPE, "LFO shape", PANNING_LFO_SHAPES, 1)
-params:add_option(ID_PANNING_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels)
+params:add_option(ID_PANNING_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, DEFAULT_PANNING_LFO_RATE_IDX)
 params:add_control(ID_PANNING_TWIST, "twist", controlspec_pan_twist)
 params:add_control(ID_PANNING_SPREAD, "spread", controlspec_pan_spread)
 
@@ -161,5 +161,5 @@ end
 
 params:add_number("filter_freq", "filter freq", 25.0, 200.0, 63.0)
 params:add_number("filter_gain", "filter gain", 0.05, 5.0, 1.0)
-params:add_number("filter_res", "filter res", 0.1, 2.0, 1.4)
-params:add_number("filter_wet", "filter wet", 0.0, 1.0, 1.0)
+params:add_number("filter_res", "filter res", 0.0, 0.9, .2)
+params:add_number("filter_wet", "filter wet", 0.0, 1.0, 0.0)

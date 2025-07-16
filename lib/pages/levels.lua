@@ -93,7 +93,6 @@ function page:render()
     end
     page.footer.button_text.k3.value = string.upper(params:string(ID_LEVELS_LFO_SHAPE))
     page.footer.button_text.e3.value = misc_util.trim(tostring(params:get(ID_LEVELS_AMP)), 5)
-
     page.footer:render()
 end
 
@@ -106,10 +105,10 @@ local function recalculate_levels()
 end
 
 local function action_enable_lfo(v)
-    if levels_lfo:get("enabled") == 1 then
-        levels_lfo:stop()
-    else
+    if v == 1 then
         levels_lfo:start()
+    else
+        levels_lfo:stop()
     end
     levels_lfo:set('phase', params:get(ID_LEVELS_POS))
 end

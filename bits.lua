@@ -95,15 +95,6 @@ end
 
 local function enable_filterbank()
   route_softcut_to_sc()
-  engine.res(0.2)
-  -- engine.v1(1)
-  engine.v2(1)
-  -- engine.v3(1)
-  engine.v4(1)
-  -- engine.v5(1)
-  engine.v6(1)
-  -- engine.v7(1)
-  engine.v8(1)
 end
 
 params:set_action("filter_wet", function(v) engine.wet(v) end)
@@ -113,14 +104,6 @@ params:set_action("filter_res", function(v) engine.res(v) end)
 
 local function disable_filterbank()
   reset_routing()
-  engine.v1(0)
-  engine.v2(0)
-  engine.v3(0)
-  engine.v4(0)
-  engine.v5(0)
-  engine.v6(0)
-  engine.v7(0)
-  engine.v8(0)
 end
 
 function init()
