@@ -5,10 +5,6 @@ Grid = {
     y = 16,
     rows = 10,
     columns = 21,
-    block_w = 3,
-    block_h = 3,
-    margin_w = 1,
-    margin_h = 1,
     fill = 1,
     active_fill = 6,
     flash_fill = 15,
@@ -38,11 +34,17 @@ function Grid:new(o)
     return o
 end
 
-local indicator_x = 97
+local rows = 6
+local columns = 16
+local block_w = 3
+local block_h = 3
+local margin_w = 1
+local margin_h = 1
+local indicator_x = 32 + (block_w+margin_w)*columns + 1
 local indicator_base_y = 16
 local indicator_w = 1
 local indicator_h = 3
-local indicator_vmargin = indicator_h + 1
+local indicator_vmargin = indicator_h + margin_h
 local faint_fill = 1
 
 function Grid:draw_track_indicator(voice)
@@ -75,8 +77,8 @@ function Grid:render()
         for column = 0, self.columns - 1 do
             -- iterate over entire grid
             local idx = column + 1 -- step index in for loop
-            local x = self.x + (self.block_w + self.margin_w) * column
-            local y = self.y + (self.block_h + self.margin_h) * row
+            local x = self.x + (block_w + margin_w) * column
+            local y = self.y + (block_h + margin_h) * row
             local step_active = self.sequences[voice][idx] ~= 0.0
 
             -- draw sequence step indicator
@@ -85,30 +87,30 @@ function Grid:render()
             else
                 screen.level(faint_fill)
             end
-            screen.rect(28 + (idx * 4), 41, 3, 1)
+            screen.rect(self.x + (column * (block_w+margin_w)), self.y + (block_h+margin_h)*self.rows + 1, 3, 1)
             screen.fill()
 
-            -- screen.rect(x, y, self.block_w, self.block_h)
+            -- screen.rect(x, y, block_w, block_h)
             if step_active then
                 -- brighten if active
                 if self.current_step == idx then
                     -- step triggered, flash block brightly
                     screen.level(self.flash_fill)
-                    screen.rect(x, y, self.block_w, self.block_h)
+                    screen.rect(x, y, block_w, block_h)
                     screen.fill()
                 else
                     -- step not triggered, but it is an active step in the sequence
                     local v = self.sequences[voice][idx]
                     screen.level(misc_util.round(3 + math.abs(v) * 12))
-                    screen.rect(x, y, self.block_w, self.block_h)
-                --     -- local h = misc_util.round(self.block_h * self.sequences[voice][idx])
+                    screen.rect(x, y, block_w, block_h)
+                --     -- local h = misc_util.round(block_h * self.sequences[voice][idx])
                 --     local l = misc_util.round(self.active_fill * math.abs(v))
                 --     -- todo: vary brightness based on v
-                --     screen.rect(x, y, self.block_w, h)
+                --     screen.rect(x, y, block_w, h)
                     screen.fill()
                 end
             else
-                screen.rect(x, y, self.block_w, self.block_h)
+                screen.rect(x, y, block_w, block_h)
                 screen.level(self.fill)
                 screen.fill()
             end
