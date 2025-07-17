@@ -16,7 +16,7 @@ local waveform_h = 6
 local is_stereo
 
 local filename = ""
-selected_sample = nil -- = "audio/etsuko/neon-light/neon intro.wav"
+selected_sample = "audio/etsuko/chris/play-safe.wav"
 local sample_length
 
 local slice_lfo
@@ -119,7 +119,7 @@ local function update_softcut_ranges()
         --- or 26-32 when start=26.
         --- this works fine for n_slices > 6; else, voices need to recycle slices;
         --- hence the modulo.
-        start_pos = slice_start_timestamps[((start - 1 + i) % n_slices) + 1]
+        local start_pos = slice_start_timestamps[((start - 1 + i) % n_slices) + 1]
         -- loop start/end works as buffer range when loop not enabled
         softcut.loop_start(voice, start_pos)
 

@@ -10,9 +10,13 @@ MusicUtil = require "musicutil"
 
 local audio_util = include("bits/lib/util/audio_util")
 
-local global_state = include("bits/lib/state")
+local parameters = include("bits/lib/parameters")
+local filter_parameters = include("bits/lib/ps/filter")
 local page_sampling = include("bits/lib/pages/sampling")
 local page_sequencer = include("bits/lib/pages/sequencer")
+local page_phaseseq = include("bits/lib/pages/phaseseq")
+local page_filter = include("bits/lib/pages/filter")
+local page_character = include("bits/lib/pages/character")
 local page_control = include("bits/lib/pages/control")
 local page_panning = include("bits/lib/pages/panning")
 local page_pitch = include("bits/lib/pages/pitch")
@@ -37,6 +41,8 @@ local pages = {
   page_sampling,
   page_sequencer,
   page_control,
+  page_filter,
+  page_character,
   page_panning,
   page_pitch,
   page_levels,
@@ -65,14 +71,15 @@ local function count()
   ready = true -- used for fps
 end
 
+local midi_device = {}
+local midi_device_names = {}
+local midi_target
+
 local function enable_all_voices()
-  local filterbank = { 100, 200, 400, 800, 1600, 3200 }
   for i = 1, 6 do
     softcut.enable(i, 1)
     softcut.buffer(i, 1)
     softcut.fade_time(i, state.fade_time)
-    softcut.post_filter_fc(i, filterbank[i])
-    softcut.post_filter_rq(i, .3)
     softcut.level_slew_time(i, 1 / fps)
     softcut.pan_slew_time(i, 1 / fps)
   end
@@ -102,13 +109,16 @@ local function enable_filterbank()
   route_softcut_to_sc()
 end
 
-params:set_action("filter_wet", function(v) engine.wet(v) end)
-params:set_action("filter_freq", function(v) engine.freq(v) end)
-params:set_action("filter_gain", function(v) engine.gain(v) end)
-params:set_action("filter_res", function(v) engine.res(v) end)
+function midi_to_hz(note)
+  local hz = (440 / 32) * (2 ^ ((note - 9) / 12))
+  return hz
+end
 
-local function disable_filterbank()
-  reset_routing()
+function midi_cb(data)
+  local d = midi.to_msg(data)
+  if d.type == "note_on" then
+    engine.freq(midi_to_hz(d.note))
+  end
 end
 
 function init()
@@ -127,9 +137,29 @@ function init()
   enable_filterbank()
   enable_all_voices()
 
+
+  for i = 1,#midi.vports do -- query all ports
+    midi_device[i] = midi.connect(i) -- connect each device
+    table.insert( 
+      midi_device_names,
+      i..": "..util.trim_string_to_width(midi_device[i].name, 38) -- value to insert
+    )
+  end
+  params:add_option("midi keyboard", "midi keyboard", midi_device_names, 1)
+  params:set_action("midi keyboard",
+  function(x) 
+    if midi_target then midi_target.event = nil end
+    midi_target = midi_device[x]
+    midi_target.event = midi_cb
+    end
+  )
+  params:bang()
+
   -- metro for screen refresh
   c = metro.init(count, 1 / fps)
   c:start()
+
+
 end
 
 function key(n, z)

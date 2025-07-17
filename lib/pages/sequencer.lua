@@ -37,7 +37,7 @@ local step_divider = 1 -- 1 means 1 step = 1 1/16th note
 local cue_step_divider = nil
 
 local voice_pos = {} -- playhead positions of softcut voices
-local voice_pos_percentage = {}
+voice_pos_percentage = {}
 local perlin_lfo
 
 -- softcut VCA system concept:
@@ -64,7 +64,7 @@ local function generate_perlin_seq()
                 -- so higher density, is more values in sequence.
                 v = 0.0 -- 0.0 is only value not interpreted as an active step
             end
-            params:set(SEQ_PARAM_IDS[voice][step], v)
+            params:set(ID_SEQ_STEP[voice][step], v)
         end
     end
 end
@@ -84,7 +84,7 @@ end
 local function update_grid_state()
     for y = 1, ROWS do
         for x = 1, COLUMNS do
-            grid_graphic.sequences[y][x] = params:get(SEQ_PARAM_IDS[y][x])
+            grid_graphic.sequences[y][x] = params:get(ID_SEQ_STEP[y][x])
         end
     end
 end
@@ -171,7 +171,7 @@ local function main_sequencer_callback()
         local x = current_step -- x pos of sequencer, i.e. current step
         for y = 1, ROWS do
             -- todo: implement a check if it already fired for this step
-            local perlin_val = params:get(SEQ_PARAM_IDS[y][x])
+            local perlin_val = params:get(ID_SEQ_STEP[y][x])
             local a = math.abs(perlin_val)
             local on = a > 0.0
 
@@ -242,6 +242,34 @@ function page:render()
     window:render()
     update_grid_state() -- typically not needed, only when pset is loaded
     grid_graphic:render()
+    local basex = 32 --96
+
+    local basey = 12
+
+    local spacing_h = 4
+    local w = 64
+    local h = 3
+    local barw = 1
+
+    screen.level(5)
+    -- for j=1,6 do
+    --     screen.level(3+math.abs(j-6)*2)
+    --     local phase = voice_pos_percentage[j]
+    --     screen.level(1)
+    --     -- screen.rect(basex,basey + j*spacing_h,w, h)
+    --     screen.fill()
+        
+    --     if phase ~= nil then
+    --         local a = math.sin(.25+phase*2*math.pi)
+    --         screen.level(0+math.floor(a*7))
+    --         local x = basex
+    --         local y = basey + j*spacing_h
+    --         -- screen.move(x+64*phase -3, y)
+    --         screen.rect(2+math.floor(x + (w-2) * phase)-2,y, barw, h)
+    --         screen.fill()
+    --     end
+    -- end
+
     if selected_sample then
         for voice = 1, 6 do
             softcut.query_position(voice)

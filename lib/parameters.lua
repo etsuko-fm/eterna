@@ -75,7 +75,7 @@ SEQ_STREAM = "STREA"
 SEQ_MOMENTARY = "MOMEN"
 SEQ_GATE = "GATE"
 LOOP_TABLE = {SEQ_STREAM, SEQ_GATE}
-SEQ_PARAM_IDS = {}
+ID_SEQ_STEP = {}
 
 params:add_separator("SEQUENCER", "SEQUENCER")
 params:add_control(ID_SEQ_PERLIN_X, "perlin x", controlspec_perlin)
@@ -89,12 +89,12 @@ params:add_option(ID_SEQ_PB_STYLE, "playback style", LOOP_TABLE, 1)
 
 -- add 96 params for sequence step status
 for y = 1, 6 do
-    SEQ_PARAM_IDS[y] = {}
+    ID_SEQ_STEP[y] = {}
     for x = 1, 16 do
-        SEQ_PARAM_IDS[y][x] = "sequencer_step_" .. y .. "_" .. x
-        -- params:add_binary(SEQ_PARAM_IDS[y][x], SEQ_PARAM_IDS[y][x], "toggle", 0)
-        params:add_number(SEQ_PARAM_IDS[y][x], SEQ_PARAM_IDS[y][x], -1, 1,0)
-        params:hide(SEQ_PARAM_IDS[y][x])
+        ID_SEQ_STEP[y][x] = "sequencer_step_" .. y .. "_" .. x
+        -- params:add_binary(ID_SEQ_STEP[y][x], ID_SEQ_STEP[y][x], "toggle", 0)
+        params:add_number(ID_SEQ_STEP[y][x], ID_SEQ_STEP[y][x], -1, 1,0)
+        params:hide(ID_SEQ_STEP[y][x])
     end
 end
 
@@ -155,11 +155,3 @@ for voice = 1, 6 do
     params:hide(SLICE_PARAM_IDS[voice].loop_end)
 end
 
----
---- FILTERBANK
----
-
-params:add_number("filter_freq", "filter freq", 25.0, 200.0, 63.0)
-params:add_number("filter_gain", "filter gain", 0.05, 5.0, 1.0)
-params:add_number("filter_res", "filter res", 0.0, 0.9, .2)
-params:add_number("filter_wet", "filter wet", 0.0, 1.0, 0.0)
