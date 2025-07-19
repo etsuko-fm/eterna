@@ -37,7 +37,8 @@ local function calculate_rates()
         if params:get(get_voice_dir_param_id(voice)) == 2 then -- todo: lookuptable 2>rev, 1>fwd
             rate = -rate
         end
-        softcut.rate(voice, rate)
+        -- softcut.rate(voice, rate)
+        engine.rate(voice-1, rate)
         -- graph is linear while rate is exponential 
         page.pitch_graph.voice_pos[i] = -math.log(math.abs(rate), 2)
     end

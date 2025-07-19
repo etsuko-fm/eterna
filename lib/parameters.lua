@@ -19,7 +19,7 @@ local LEVELS_LFO_DEFAULT_RATE_INDEX = 20
 
 params:add_separator("BITS_LEVELS", "LEVELS")
 params:add_binary(ID_LEVELS_LFO_ENABLED, "LFO enabled", "toggle", 0)
-params:add_option(ID_LEVELS_LFO_SHAPE, "LFO shape", LEVELS_LFO_SHAPES, 1)
+params:add_option(ID_LEVELS_LFO_SHAPE, "LFO shape", LEVELS_LFO_SHAPES, 2)
 params:add_option(ID_LEVELS_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, LEVELS_LFO_DEFAULT_RATE_INDEX)
 params:add_control(ID_LEVELS_POS, "position", controlspec_pos)
 params:add_control(ID_LEVELS_AMP, "amp", controlspec_amp)
@@ -113,7 +113,7 @@ DEFAULT_PANNING_LFO_RATE_IDX = 16
 
 params:add_separator("PANNING", "PANNING")
 params:add_binary(ID_PANNING_LFO_ENABLED, "LFO enabled", "toggle", 1)
-params:add_option(ID_PANNING_LFO_SHAPE, "LFO shape", PANNING_LFO_SHAPES, 1)
+params:add_option(ID_PANNING_LFO_SHAPE, "LFO shape", PANNING_LFO_SHAPES, 2)
 params:add_option(ID_PANNING_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, DEFAULT_PANNING_LFO_RATE_IDX)
 params:add_control(ID_PANNING_TWIST, "twist", controlspec_pan_twist)
 params:add_control(ID_PANNING_SPREAD, "spread", controlspec_pan_spread)
@@ -124,8 +124,7 @@ params:add_control(ID_PANNING_SPREAD, "spread", controlspec_pan_spread)
 ID_SAMPLING_AUDIO_FILE = "sampling_audio_file"
 ID_SAMPLING_NUM_SLICES = "sampling_num_slices"
 ID_SAMPLING_SLICE_START = "sampling_slice_start"
-
-SLICE_PARAM_IDS = {}
+ID_SAMPLING_SLICE_SECTIONS = {}
 
 function get_slice_start_param_id(voice)
     return "sampling_" .. voice .. "_start"
@@ -135,7 +134,7 @@ function get_slice_end_param_id(voice)
 end
 
 for voice = 1, 6 do
-    SLICE_PARAM_IDS[voice] = {
+    ID_SAMPLING_SLICE_SECTIONS[voice] = {
         loop_start = get_slice_start_param_id(voice),
         loop_end = get_slice_end_param_id(voice),
     }
@@ -148,10 +147,10 @@ params:add_control(ID_SAMPLING_SLICE_START, "start", controlspec_start)
 
 for voice = 1, 6 do
     -- ranges per slice
-    params:add_number(SLICE_PARAM_IDS[voice].loop_start, SLICE_PARAM_IDS[voice].loop_start, 0)
-    params:add_number(SLICE_PARAM_IDS[voice].loop_end, SLICE_PARAM_IDS[voice].loop_end, 0)
+    params:add_number(ID_SAMPLING_SLICE_SECTIONS[voice].loop_start, ID_SAMPLING_SLICE_SECTIONS[voice].loop_start, 0)
+    params:add_number(ID_SAMPLING_SLICE_SECTIONS[voice].loop_end, ID_SAMPLING_SLICE_SECTIONS[voice].loop_end, 0)
 
-    params:hide(SLICE_PARAM_IDS[voice].loop_start)
-    params:hide(SLICE_PARAM_IDS[voice].loop_end)
+    params:hide(ID_SAMPLING_SLICE_SECTIONS[voice].loop_start)
+    params:hide(ID_SAMPLING_SLICE_SECTIONS[voice].loop_end)
 end
 

@@ -121,15 +121,12 @@ local function update_softcut_ranges()
         --- hence the modulo.
         local start_pos = slice_start_timestamps[((start - 1 + i) % n_slices) + 1]
         -- loop start/end works as buffer range when loop not enabled
-        softcut.loop_start(voice, start_pos)
-
         -- end point is where the next slice starts
         local end_pos = start_pos + (slice_length * .999)  -- leave a small gap to prevent overlap
-        softcut.loop_end(voice, end_pos)
 
         -- save in params, so waveforms can render correctly
-        params:set(SLICE_PARAM_IDS[voice].loop_start, start_pos)
-        params:set(SLICE_PARAM_IDS[voice].loop_end, end_pos)
+        params:set(ID_SAMPLING_SLICE_SECTIONS[voice].loop_start, start_pos)
+        params:set(ID_SAMPLING_SLICE_SECTIONS[voice].loop_end, end_pos)
         -- voice_position_to_start(voice) --todo: fix, order of initalization bug
     end
     -- reflect changes in graphic
@@ -146,6 +143,7 @@ local function load_sample(file)
     if is_stereo then
         softcut.render_buffer(2, 0, sample_length, waveform_width)
     end
+    engine.load_file(file)
     if is_stereo then
         waveform_h = 5
         waveform_graphics[1].y = 20
@@ -171,7 +169,7 @@ local function select_sample()
             filename = to_sample_name(file_path)
             load_sample(file_path)
             for voice = 1,6 do
-                softcut.play(voice, 1)
+                -- softcut.play(voice, 1)
             end
         end
         page_disabled = false -- proceed with rendering page instead of file menu
@@ -265,6 +263,7 @@ function page:render()
     page.footer:render()
 end
 
+
 local function add_params()
     -- file selection
     params:set_action(ID_SAMPLING_AUDIO_FILE, function(file) load_sample(file) end)
@@ -275,16 +274,19 @@ local function add_params()
     -- starting slice
     params:set_action(ID_SAMPLING_SLICE_START, action_slice_start)
     constrain_max_start(SLICES_DEFAULT)
+    for voice = 1, 6 do
+        params:set_action(ID_SAMPLING_SLICE_SECTIONS[voice].loop_start, function(v) engine.loop_start(voice-1, v) end)
+        params:set_action(ID_SAMPLING_SLICE_SECTIONS[voice].loop_end, function(v) engine.loop_end(voice-1, v) end)
+    end
+
     params:bang()
 end
 
 function page:initialize()
     add_params()
 
-    engine.load_file("/home/we/dust/"..selected_sample, -1)
+    engine.load_file("/home/we/dust/"..selected_sample)
     loaded_poll:update()
-    engine.rate(0.5)
-    engine.trigger(0)
 
     -- add waveform
     waveform_graphics[1] = Waveform:new({

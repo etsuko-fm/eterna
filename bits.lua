@@ -12,9 +12,10 @@ local audio_util = include("bits/lib/util/audio_util")
 
 local parameters = include("bits/lib/parameters")
 local filter_parameters = include("bits/lib/ps/filter")
+local env_parameters = include("bits/lib/ps/envelopes")
 local page_sampling = include("bits/lib/pages/sampling")
 local page_sequencer = include("bits/lib/pages/sequencer")
-local page_phaseseq = include("bits/lib/pages/phaseseq")
+local page_envelopes = include("bits/lib/pages/envelopes")
 local page_filter = include("bits/lib/pages/filter")
 local page_character = include("bits/lib/pages/character")
 local page_control = include("bits/lib/pages/control")
@@ -40,6 +41,7 @@ state = {
 local pages = {
   page_sampling,
   page_sequencer,
+  page_envelopes,
   page_control,
   page_filter,
   page_character,
@@ -77,7 +79,7 @@ local midi_target
 
 local function enable_all_voices()
   for i = 1, 6 do
-    softcut.enable(i, 1)
+    softcut.enable(i, 0)
     softcut.buffer(i, 1)
     softcut.fade_time(i, state.fade_time)
     softcut.level_slew_time(i, 1 / fps)
