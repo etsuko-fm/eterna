@@ -20,7 +20,8 @@ Engine_Heap : CroneEngine {
     filterBus = Bus.audio(context.server, 2);
     // ("filterBus index" + filterBus.index).postln;
 
-    swirlFilter = Synth.new("swirlFilter", target:context.xg, args: [\in, filterBus, \out, 0]);
+    // swirlFilter = Synth.new("swirlFilter", target:context.xg, args: [\in, filterBus, \out, 0]);
+    swirlFilter = Synth.new("swirlFilter", target:context.xg, args: [\in, 0, \out, 0]);
     samplePlayer = Synth.before(swirlFilter, "tapevoice", [
       \out, filterBus,
       \rate, 0.5,

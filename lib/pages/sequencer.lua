@@ -23,7 +23,6 @@ local MAX_STEPS = sequence_util.max_steps
 
 local transport_on = true
 local holding_step = false
-local envs = {}
 
 -- todo: add in bits.lua? otherwise dependent on order of pages loaded
 
@@ -39,10 +38,6 @@ local cue_step_divider = nil
 local voice_pos = {} -- playhead positions of softcut voices
 voice_pos_percentage = {}
 local perlin_lfo
-
--- softcut VCA system concept:
--- set_master_volume(voice, x)
--- use level_slew_time to create envelopes
 
 local function generate_perlin_seq()
     -- print("regen - ", math.random())
@@ -79,14 +74,6 @@ end
 local function e3(d)
     local new = params:get(ID_SEQ_PERLIN_DENSITY) + controlspec_perlin_density.quantum * d
     params:set(ID_SEQ_PERLIN_DENSITY, new, false)
-end
-
-local function update_grid_state()
-    for y = 1, ROWS do
-        for x = 1, COLUMNS do
-            grid_graphic.sequences[y][x] = params:get(ID_SEQ_STEP[y][x])
-        end
-    end
 end
 
 local function toggle_evolve()
@@ -136,10 +123,6 @@ function voice_position_to_phase(voice, phase)
     softcut.position(voice, abs_pos)
 end
 
-local function env_cb(stage, voice)
-    softcut.level(voice, 1/stage)
-end
-
 local hold_step = nil
 local function main_sequencer_callback()
     -- advance
@@ -183,13 +166,7 @@ local function main_sequencer_callback()
                 if current_global_step % step_divider == 0 then
                     voice_position_to_phase(y, a)
                     softcut.level(y,1)
-                    -- softcut.play(y, 1)
-                    -- if envs[y] ~= nil then
-                    --     metro.free(envs[y].id)
-                    --     envs[y] = nil
-                    -- end
-                    -- envs[y] = metro.init(function(stage) env_cb(stage, y) end, .001, 100)
-                    -- envs[y]:start()
+                    softcut.play(y, 1)
                 end
             elseif LOOP_TABLE[params:get(ID_SEQ_PB_STYLE)] == SEQ_GATE then
                 softcut.play(y, 0)

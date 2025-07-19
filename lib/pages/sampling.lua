@@ -281,10 +281,10 @@ end
 function page:initialize()
     add_params()
 
-    engine.load_file("/home/we/dust/"..selected_sample, -1)
-    loaded_poll:update()
-    engine.rate(0.5)
-    engine.trigger(0)
+    -- engine.load_file("/home/we/dust/"..selected_sample, -1)
+    -- loaded_poll:update()
+    -- engine.rate(0.5)
+    -- engine.trigger(0)
 
     -- add waveform
     waveform_graphics[1] = Waveform:new({
