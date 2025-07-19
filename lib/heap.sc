@@ -1,62 +1,101 @@
 Engine_Heap : CroneEngine {
-  var <synth;
+  var swirlFilter;
+  var samplePlayer;
+  var filterBus;
   
   *new { arg context, doneCallback;
     ^super.new(context, doneCallback);
   }
   
   alloc {
-    synth = {
-      arg out, wet=1.0, freq=63.0, res = 0.2, gain=1.0;
+    var s = Server.default;
+    var isLoaded = false;
+    // server, frames, channels, bufnum
+    var buffNum = 0;
+    var channels = 2;
+    var buff = Buffer.new(context.server, 0, channels, buffNum);
+ 
+    // Done with definitions, sync
+    context.server.sync;
+    filterBus = Bus.audio(context.server, 2);
+    // ("filterBus index" + filterBus.index).postln;
 
-      var dry, dryL, dryR, outputL, outputR;
-      var inputL = SoundIn.ar(0);
-      var inputR = SoundIn.ar(1);
-      var safeFreq = freq.clip(5.0, 24000.0);
-      var safeRes = res.clip(0.1, 2.0);
-	
-    	var filtersL = Mix.ar([
-    		SVF.ar(inputL, safeFreq*2, Lag.kr(res), 0.0, 1.0, 0.0).tanh,
-    		SVF.ar(inputL, safeFreq*8, Lag.kr(res), 0.0, 1.0, 0.0).tanh,
-    		SVF.ar(inputL, safeFreq*32, Lag.kr(res), 0.0, 1.0, 0.0).tanh,
-    		SVF.ar(inputL, safeFreq*128, Lag.kr(res), 0.0, 1.0, 0.0).tanh,
-      ]);
-    	
-    	var filtersR = Mix.ar([
-    		SVF.ar(inputR, safeFreq*2, Lag.kr(res), 0.0, 1.0, 0.0).tanh,
-    		SVF.ar(inputR, safeFreq*8, Lag.kr(res), 0.0, 1.0, 0.0).tanh,
-    		SVF.ar(inputR, safeFreq*32, Lag.kr(res), 0.0, 1.0, 0.0).tanh,
-    		SVF.ar(inputR, safeFreq*128, Lag.kr(res), 0.0, 1.0, 0.0).tanh,
-      ]);
+    swirlFilter = Synth.new("swirlFilter", target:context.xg, args: [\in, filterBus, \out, 0]);
+    samplePlayer = Synth.before(swirlFilter, "tapevoice", [
+      \out, filterBus,
+      \rate, 0.5,
+      \loopStart, 2,
+      \loopEnd, 12,
+      \numChannels, 1,
+      \decay, 4.0,
+      \t_trig, 0
+    ]);
 
-      dry = 1.0 - wet;
-      filtersL = filtersL * wet;
-      filtersR = filtersR * wet;
-      dryL = inputL * dry;
-      dryR = inputR * dry;
-      outputL = ((filtersL + dryL) * gain).tanh;
-      outputR = ((filtersR + dryR) * gain).tanh;
-
-      Out.ar(out, [outputL, outputR]);
-    }.play(args: [\out, context.out_b], target: context.xg);
+    context.server.sync;
 
     this.addCommand("freq", "f", { arg msg;
-      synth.set(\freq, msg[1]);
+      swirlFilter.set(\freq, msg[1]);
     });
 
     this.addCommand("res", "f", { arg msg;
-      synth.set(\res, msg[1]);
+      swirlFilter.set(\res, msg[1]);
     });
     this.addCommand("wet", "f", { arg msg;
-      synth.set(\wet, msg[1]);
+      swirlFilter.set(\wet, msg[1]);
     });
 
-    this.addCommand("gain", "f", { arg msg;
-      synth.set(\gain, msg[1]);
+    this.addCommand("gain", "f", { arg msg; 
+      swirlFilter.set(\gain, msg[1]);
     });
+
+    this.addCommand("rate", "f", { arg msg;
+      samplePlayer.set(\t_trig, 1);
+      samplePlayer.set(\rate, msg[1]);
+    });
+
+  	this.addCommand("load_file","si", { 
+      arg msg;
+      buff.free;
+      isLoaded = false;
+    	buff = Buffer.read(context.server,msg[1], numFrames:msg[2], action: { 
+        |buffer| 
+        ("Loaded" + buffer.numFrames + "frames of" + buffer.path).postln;
+	      isLoaded = true;
+        samplePlayer.set(\bufnum, buffer.bufnum);
+      });
+    });
+
+    this.addCommand("rate", "if", {
+      arg msg;
+      ("Setting voice" + msg[1] + "to rate" + msg[2]).postln;
+      samplePlayer.set(\rate, msg[2]);
+    });
+
+    this.addCommand("trigger", "i", {
+      arg msg;
+      ("Triggered voice" + msg[1]).postln;
+      samplePlayer.set(\t_trig, 1);
+    });
+
+    this.addCommand("stop", "i", {
+      arg msg;
+      ("Stopping voice" + msg[1]).postln;
+      samplePlayer.set(\rate, 0);
+    });
+    this.addCommand("position", "if", {arg msg;
+      ("Setting playback position for voice" + msg[1] + "to" + msg[2]).postln;
+    });
+
+    this.addPoll(\file_loaded, {
+	      isLoaded;
+	    }, periodic:false
+    );
   }
   
   free {
-    synth.free;
+    Buffer.freeAll;
+    swirlFilter.free;
+    samplePlayer.free;
+    filterBus.free;
   }
 }
