@@ -23,7 +23,7 @@ local MAX_STEPS = sequence_util.max_steps
 
 local transport_on = true
 local holding_step = false
-
+local envs = {}
 
 -- todo: add in bits.lua? otherwise dependent on order of pages loaded
 
@@ -136,6 +136,10 @@ function voice_position_to_phase(voice, phase)
     softcut.position(voice, abs_pos)
 end
 
+local function env_cb(stage, voice)
+    softcut.level(voice, 1/stage)
+end
+
 local hold_step = nil
 local function main_sequencer_callback()
     -- advance
@@ -178,7 +182,14 @@ local function main_sequencer_callback()
             if on then
                 if current_global_step % step_divider == 0 then
                     voice_position_to_phase(y, a)
-                    softcut.play(y, 1)
+                    softcut.level(y,1)
+                    -- softcut.play(y, 1)
+                    -- if envs[y] ~= nil then
+                    --     metro.free(envs[y].id)
+                    --     envs[y] = nil
+                    -- end
+                    -- envs[y] = metro.init(function(stage) env_cb(stage, y) end, .001, 100)
+                    -- envs[y]:start()
                 end
             elseif LOOP_TABLE[params:get(ID_SEQ_PB_STYLE)] == SEQ_GATE then
                 softcut.play(y, 0)
@@ -221,6 +232,7 @@ function toggle_hold_step()
     end
 end
 
+
 function clock.transport.start()
     print("start transport")
     transport_on = true
@@ -240,47 +252,17 @@ end
 
 function page:render()
     window:render()
-    update_grid_state() -- typically not needed, only when pset is loaded
+    -- update_grid_state() -- typically not needed, only when pset is loaded
     grid_graphic:render()
-    local basex = 32 --96
-
-    local basey = 12
-
-    local spacing_h = 4
-    local w = 64
-    local h = 3
-    local barw = 1
-
-    screen.level(5)
-    -- for j=1,6 do
-    --     screen.level(3+math.abs(j-6)*2)
-    --     local phase = voice_pos_percentage[j]
-    --     screen.level(1)
-    --     -- screen.rect(basex,basey + j*spacing_h,w, h)
-    --     screen.fill()
-        
-    --     if phase ~= nil then
-    --         local a = math.sin(.25+phase*2*math.pi)
-    --         screen.level(0+math.floor(a*7))
-    --         local x = basex
-    --         local y = basey + j*spacing_h
-    --         -- screen.move(x+64*phase -3, y)
-    --         screen.rect(2+math.floor(x + (w-2) * phase)-2,y, barw, h)
-    --         screen.fill()
+    -- if selected_sample then
+    --     for voice = 1, 6 do
+    --         softcut.query_position(voice)
     --     end
     -- end
-
-    if selected_sample then
-        for voice = 1, 6 do
-            softcut.query_position(voice)
-        end
-    end
     page.footer.button_text.k2.value = SEQ_EVOLVE_TABLE[params:get(ID_SEQ_EVOLVE)]
     page.footer.button_text.k3.value = LOOP_TABLE[params:get(ID_SEQ_PB_STYLE)]
-    page.footer.button_text.e3.name = "DENS"
     page.footer.button_text.e2.value = params:get(ID_SEQ_PERLIN_X)
     page.footer.button_text.e3.value = params:get(ID_SEQ_PERLIN_DENSITY)
-
     page.footer:render()
 end
 
@@ -302,6 +284,10 @@ local function action_playback_style(v)
     end
 end
 
+local function update_grid_step(x,y,v)
+    grid_graphic.sequences[y][x] = v
+end
+
 local function add_params()
     params:set_action(ID_SEQ_PERLIN_X, generate_perlin_seq)
     params:set_action(ID_SEQ_PERLIN_Y, generate_perlin_seq)
@@ -309,6 +295,11 @@ local function add_params()
     params:set_action(ID_SEQ_PERLIN_DENSITY, generate_perlin_seq)
     params:set_action(ID_SEQ_EVOLVE, action_evolve)
     params:set_action(ID_SEQ_PB_STYLE, action_playback_style)
+    for y = 1, 6 do
+        for x = 1, 16 do
+            params:set_action(ID_SEQ_STEP[y][x], function(v) update_grid_step(x,y,v) end)
+        end
+    end
 end
 
 local function report_softcut(voice, pos)
