@@ -68,17 +68,19 @@ function Grid:draw_track_indicator(voice)
     screen.fill()
 end
 
+local basex = 32
+local basey = 16
 function Grid:render()
     if self.hide then return end
     local voice
     for row = 0, self.rows - 1 do
         voice = row + 1
-        self:draw_track_indicator(voice)
+        -- self:draw_track_indicator(voice)
         for column = 0, self.columns - 1 do
             -- iterate over entire grid
             local idx = column + 1 -- step index in for loop
-            local x = self.x + (block_w + margin_w) * column
-            local y = self.y + (block_h + margin_h) * row
+            local x = basex + (block_w + margin_w) * column
+            local y = basey + (block_h + margin_h) * row
             local step_active = self.sequences[voice][idx] ~= 0.0
 
             -- draw sequence step indicator
@@ -87,10 +89,9 @@ function Grid:render()
             else
                 screen.level(faint_fill)
             end
-            screen.rect(self.x + (column * (block_w+margin_w)), self.y + (block_h+margin_h)*self.rows + 1, 3, 1)
+            screen.rect(basex + (column * (block_w+margin_w)), basey + (block_h+margin_h)*self.rows + 1, 3, 1)
             screen.fill()
 
-            -- screen.rect(x, y, block_w, block_h)
             if step_active then
                 -- brighten if active
                 if self.current_step == idx then
@@ -101,12 +102,8 @@ function Grid:render()
                 else
                     -- step not triggered, but it is an active step in the sequence
                     local v = self.sequences[voice][idx]
-                    screen.level(misc_util.round(3 + math.abs(v) * 12))
+                    screen.level(5) -- math.floor(3 + math.abs(v) * 12)
                     screen.rect(x, y, block_w, block_h)
-                --     -- local h = misc_util.round(block_h * self.sequences[voice][idx])
-                --     local l = misc_util.round(self.active_fill * math.abs(v))
-                --     -- todo: vary brightness based on v
-                --     screen.rect(x, y, block_w, h)
                     screen.fill()
                 end
             else

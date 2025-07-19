@@ -22,7 +22,7 @@ local page_panning = include("bits/lib/pages/panning")
 local page_pitch = include("bits/lib/pages/pitch")
 local page_levels = include("bits/lib/pages/levels")
 
-local fps = 60
+local fps = 45
 local ready
 
 engine.name = 'Heap'
@@ -91,7 +91,7 @@ local function route_softcut_to_sc()
   _norns.audio_connect("softcut:output_1", "SuperCollider:in_1")
   _norns.audio_connect("softcut:output_2", "SuperCollider:in_2")
 
-  --- supercollider is now responsible for passing on softcut playback; 
+  --- supercollider is now responsible for passing on softcut playback;
   --- disconnect softcut from crone
   _norns.audio_disconnect("softcut:output_1", "crone:input_3")
   _norns.audio_disconnect("softcut:output_2", "crone:input_4")
@@ -121,6 +121,8 @@ function midi_cb(data)
   end
 end
 
+loaded_poll = nil
+
 function init()
   -- Encoder sensitivity
   norns.enc.sens(1, 5)
@@ -129,6 +131,17 @@ function init()
     norns.enc.sens(i, 1)
     norns.enc.accel(i, false)
   end
+  loaded_poll = poll.set("file_loaded")
+
+  loaded_poll.callback = function(val)
+    if val then
+      print("file loaded!")
+      -- engine.play(0)
+    else
+      print("poll loaded but value is " .. val)
+    end
+  end
+
 
   for _, page in ipairs(pages) do
     page:initialize()
@@ -136,21 +149,19 @@ function init()
   params:bang()
   enable_filterbank()
   enable_all_voices()
-
-
-  for i = 1,#midi.vports do -- query all ports
+  for i = 1, #midi.vports do         -- query all ports
     midi_device[i] = midi.connect(i) -- connect each device
-    table.insert( 
+    table.insert(
       midi_device_names,
-      i..": "..util.trim_string_to_width(midi_device[i].name, 38) -- value to insert
+      i .. ": " .. util.trim_string_to_width(midi_device[i].name, 38) -- value to insert
     )
   end
   params:add_option("midi keyboard", "midi keyboard", midi_device_names, 1)
   params:set_action("midi keyboard",
-  function(x) 
-    if midi_target then midi_target.event = nil end
-    midi_target = midi_device[x]
-    midi_target.event = midi_cb
+    function(x)
+      if midi_target then midi_target.event = nil end
+      midi_target = midi_device[x]
+      midi_target.event = midi_cb
     end
   )
   params:bang()
@@ -158,8 +169,6 @@ function init()
   -- metro for screen refresh
   c = metro.init(count, 1 / fps)
   c:start()
-
-
 end
 
 function key(n, z)
@@ -250,7 +259,6 @@ function on()
     softcut.play(i, 1)
   end
 end
-
 
 function cleanup()
   reset_routing()
