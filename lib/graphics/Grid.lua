@@ -102,7 +102,7 @@ function Grid:render()
                 else
                     -- step not triggered, but it is an active step in the sequence
                     local v = self.sequences[voice][idx]
-                    screen.level(5) -- math.floor(3 + math.abs(v) * 12)
+                    screen.level(math.floor(2 + math.abs(v) * 13))
                     screen.rect(x, y, block_w, block_h)
                     screen.fill()
                 end

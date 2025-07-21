@@ -1,6 +1,6 @@
 Engine_Heap : CroneEngine {
   var swirlFilter;
-  var samplePlayer;
+  var voices;
   var filterBus;
   
   *new { arg context, doneCallback;
@@ -10,29 +10,27 @@ Engine_Heap : CroneEngine {
   alloc {
     var s = Server.default;
     var isLoaded = false;
-    // server, frames, channels, bufnum
-    var buffNum = 0;
-    var channels = 2;
-    var buff = Buffer.new(context.server, 0, channels, buffNum);
- 
-    // Done with definitions, sync
-    context.server.sync;
+    var bufnumL = 0;
+    var bufnumR = 1;
+    var file;
+    var numChannels;
+    var buffL, buffR; // = Buffer.new(context.server, 0, 1, buffNum);
+    var f;
     filterBus = Bus.audio(context.server, 2);
-    // ("filterBus index" + filterBus.index).postln;
-
-    // swirlFilter = Synth.new("swirlFilter", target:context.xg, args: [\in, filterBus, \out, 0]);
-    swirlFilter = Synth.new("swirlFilter", target:context.xg, args: [\in, 0, \out, 0]);
-    samplePlayer = Synth.before(swirlFilter, "tapevoice", [
-      \out, filterBus,
-      \rate, 0.5,
-      \loopStart, 2,
-      \loopEnd, 12,
-      \numChannels, 1,
-      \decay, 4.0,
-      \t_trig, 0
-    ]);
-
     context.server.sync;
+    
+    swirlFilter = Synth.new("swirlFilter", target:context.xg, args: [\in, filterBus, \out, 0]);
+    voices = Array.fill(6, { |i|
+        Synth.before(swirlFilter, "tapevoice", [
+        \out, filterBus,
+        \rate, 1.0,
+        \loopStart, 0,
+        \loopEnd, 1,
+        \numChannels, 1,
+        \decay, 4.0,
+        \t_trig, 0])}
+    );
+    
 
     this.addCommand("freq", "f", { arg msg;
       swirlFilter.set(\freq, msg[1]);
@@ -49,42 +47,87 @@ Engine_Heap : CroneEngine {
       swirlFilter.set(\gain, msg[1]);
     });
 
-    this.addCommand("rate", "f", { arg msg;
-      samplePlayer.set(\t_trig, 1);
-      samplePlayer.set(\rate, msg[1]);
+    this.addCommand("set_buffer","si", { 
+      arg msg;
+      voices[msg[1]].set(\bufnum, msg[2]);
     });
 
-  	this.addCommand("load_file","si", { 
+  	this.addCommand("load_file","s", { 
       arg msg;
-      buff.free;
-      isLoaded = false;
-    	buff = Buffer.read(context.server,msg[1], numFrames:msg[2], action: { 
-        |buffer| 
-        ("Loaded" + buffer.numFrames + "frames of" + buffer.path).postln;
-	      isLoaded = true;
-        samplePlayer.set(\bufnum, buffer.bufnum);
+      buffL.free;
+      buffR.free;
+      isLoaded = false;      
+      f = SoundFile.new;
+      f.openRead(msg[1].asString);
+      ("file" + msg[1].asString + "has" + f.numChannels + "channels").postln;
+      f.close;
+      
+      // todo: limit buffer read to 2^24 samples because of Phasor resolution
+    	buffL = Buffer.readChannel(context.server, msg[1].asString, channels:[0], bufnum: bufnumL, action: { 
+        |b|
+
+        // if file is stereo, load the right channel into buffR
+        if (f.numChannels > 1) {
+          "Loading second channel".postln;
+          buffR = Buffer.readChannel(context.server, msg[1].asString, channels:[1], bufnum: bufnumR, action: {|b| isLoaded = true;});
+          // Spread 2 channels over 6 voices
+          for(0,2) {arg i; voices[i].set(\bufnum, bufnumL)};
+          for(3,5) {arg i; voices[i].set(\bufnum, bufnumR)};
+        } { 
+          // if mono, also mark loading as finished
+          isLoaded = true;
+
+          // Let all voices use the left buffer
+          voices.do {|voice| voice.set(\bufnum, bufnumL)};
+        };
       });
     });
 
     this.addCommand("rate", "if", {
       arg msg;
       ("Setting voice" + msg[1] + "to rate" + msg[2]).postln;
-      samplePlayer.set(\rate, msg[2]);
+      voices[msg[1]].set(\rate, msg[2]);
     });
 
     this.addCommand("trigger", "i", {
       arg msg;
-      ("Triggered voice" + msg[1]).postln;
-      samplePlayer.set(\t_trig, 1);
+      voices[msg[1]].set(\t_trig, 1);
     });
 
-    this.addCommand("stop", "i", {
-      arg msg;
-      ("Stopping voice" + msg[1]).postln;
-      samplePlayer.set(\rate, 0);
-    });
     this.addCommand("position", "if", {arg msg;
       ("Setting playback position for voice" + msg[1] + "to" + msg[2]).postln;
+    });
+
+    this.addCommand("attack", "if", {arg msg;
+      voices[msg[1]].set(\attack, msg[2]);
+    });
+
+    this.addCommand("decay", "if", {arg msg;
+      voices[msg[1]].set(\decay, msg[2]);
+    });
+
+    this.addCommand("filter_env", "if", {arg msg;
+      voices[msg[1]].set(\freq, msg[2]);
+    });
+
+    this.addCommand("pan", "if", {arg msg;
+      voices[msg[1]].set(\pan, msg[2]);
+    });
+
+    this.addCommand("loop_start", "if", {arg msg;
+      voices[msg[1]].set(\loopStart, msg[2]);
+    });
+
+    this.addCommand("loop_end", "if", {arg msg;
+      voices[msg[1]].set(\loopEnd, msg[2]);
+    });
+
+    this.addCommand("level", "if", {arg msg;
+      voices[msg[1]].set(\level, msg[2]);
+    });
+
+    this.addCommand("env_level", "if", {arg msg;
+      voices[msg[1]].set(\envLevel, msg[2]);
     });
 
     this.addPoll(\file_loaded, {
@@ -96,7 +139,7 @@ Engine_Heap : CroneEngine {
   free {
     Buffer.freeAll;
     swirlFilter.free;
-    samplePlayer.free;
+    voices.do(_.free);
     filterBus.free;
   }
 }

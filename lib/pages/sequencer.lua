@@ -13,7 +13,7 @@ local COLUMNS = 16
 local PERLIN_ZOOM = 4/3 ---4 / 3 -- empirically tuned
 
 local ID_SEQ_DIMENSIONS = { ID_SEQ_PERLIN_X, ID_SEQ_PERLIN_Y, ID_SEQ_PERLIN_Z }
-local SEQ_EVOLVE_RATES = {1024*12, 1024*8, 1024*4} -- in quarter notes, but fuzzy concept due to how perlin computes
+local SEQ_EVOLVE_RATES = {1024*24, 1024*16, 1024*8} -- in quarter notes, but fuzzy concept due to how perlin computes
 local current_dimension = 1
 
 local LOOP_TABLE_TO_SOFTCUT = {1, 0}
@@ -123,6 +123,7 @@ function voice_position_to_phase(voice, phase)
     softcut.position(voice, abs_pos)
 end
 
+
 local hold_step = nil
 local function main_sequencer_callback()
     -- advance
@@ -164,12 +165,17 @@ local function main_sequencer_callback()
 
             if on then
                 if current_global_step % step_divider == 0 then
-                    voice_position_to_phase(y, a)
-                    softcut.level(y,1)
-                    softcut.play(y, 1)
+                    engine.trigger(y-1)
+                    -- engine.filter_env(y-1, 800)
+                    local atk = math.max(params:get(ID_ENVELOPES_ATTACK) * a, 0.01)
+                    local dec = params:get(ID_ENVELOPES_DECAY) * a
+                    engine.attack(y-1, atk)
+                    engine.decay(y-1, dec)
+                    -- voice_position_to_phase(y, a) -- this was the phase sequencer, maybe not relevant anymore
+                    engine.env_level(y,1)
                 end
             elseif LOOP_TABLE[params:get(ID_SEQ_PB_STYLE)] == SEQ_GATE then
-                softcut.play(y, 0)
+                -- engine.stop(y-1)
             end
         end
         clock.sync(1/4)
@@ -286,7 +292,7 @@ local function report_softcut(voice, pos)
     voice_pos[voice] = pos
     local voice_dir = params:get(get_voice_dir_param_id(voice))
 
-    -- todo : should be able to use SLICE_PARAM_IDS from sampling page, saves string concat
+    -- todo : should be able to use ID_SAMPLING_SLICE_SECTIONS from sampling page, saves string concat
     local slice_start = params:get(get_slice_start_param_id(voice))
     local slice_end = params:get(get_slice_end_param_id(voice))
     local slice_length = slice_end - slice_start

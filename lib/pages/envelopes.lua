@@ -1,0 +1,112 @@
+local Page = include("bits/lib/Page")
+local Window = include("bits/lib/graphics/Window")
+-- local EnvGraphic = include("bits/lib/graphics/EnvGraphic")
+local misc_util = include("bits/lib/util/misc")
+
+local page_name = "ENVELOPES"
+local window
+local ENVELOPES_graphic
+
+-- local function calculate_env_positions()
+--     local DECAY = params:get(ID_ENVELOPES_DECAY)
+--     local ATTACK = params:get(ID_ENVELOPES_ATTACK)
+--     for i = 0, 5 do
+--         local voice = i + 1
+--         local angle = (DECAY + i / 6) * (math.pi * 2) -- Divide the range of radians into 6 equal parts, add offset
+--         local pan =  ATTACK * math.cos(angle)
+--         engine.pan(i, pan)
+--     end
+-- end
+
+local function adjust_attack(d)
+    local new_val = params:get(ID_ENVELOPES_ATTACK) + d * controlspec_env_attack.quantum
+    params:set(ID_ENVELOPES_ATTACK, new_val, false)
+end
+
+local function adjust_decay(d)
+    local new_val = params:get(ID_ENVELOPES_DECAY) + d * controlspec_env_decay.quantum
+    params:set(ID_ENVELOPES_DECAY, new_val, false)
+end
+
+local page = Page:create({
+    name = page_name,
+    e2 = adjust_attack,
+    e3 = adjust_decay,
+    k2_off = nil,
+    k3_off = nil,
+})
+
+local function action_attack(v)
+    for i=0,5 do
+        engine.attack(i,v)
+    end
+end
+
+local function action_decay(v)
+    for i=0,5 do
+        -- engine.decay(i,v)
+    end
+end
+
+local function action_filter_env(v)
+    for i=0,5 do
+        engine.filter_env(i,v)
+    end
+end
+local function add_params()
+    params:set_action(ID_ENVELOPES_ATTACK, action_attack)
+    params:set_action(ID_ENVELOPES_DECAY, action_decay)
+    params:set_action(ID_ENVELOPES_FILTER_ENV, action_filter_env)
+end
+
+function page:render()
+    window:render()
+    local DECAY = params:get(ID_ENVELOPES_DECAY)
+    local ATTACK = params:get(ID_ENVELOPES_ATTACK)
+    -- envelopes_graphic:render()
+    page.footer.button_text.e2.value = misc_util.trim(tostring(ATTACK), 5)
+    page.footer.button_text.e3.value = misc_util.trim(tostring(DECAY), 5)
+    page.footer:render()
+end
+
+function page:initialize()
+    add_params()
+    window = Window:new({
+        x = 0,
+        y = 0,
+        w = 128,
+        h = 64,
+        title = "ENVELOPES",
+        font_face = TITLE_FONT,
+        brightness = 15,
+        border = false,
+        selected = true,
+        horizontal_separations = 0,
+        vertical_separations = 0,
+    })
+    -- graphics
+    -- ENVELOPES_graphic = EnvGraphic:new()
+    page.footer = Footer:new({
+        button_text = {
+            k2 = {
+                name = "",
+                value = "",
+            },
+            k3 = {
+                name = "",
+                value = "",
+            },
+            e2 = {
+                name = "ATTACK",
+                value = "",
+            },
+            e3 = {
+                name = "DECAY",
+                value = "",
+            },
+        },
+        font_face = FOOTER_FONT,
+    })
+end
+
+return page

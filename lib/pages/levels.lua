@@ -99,8 +99,8 @@ end
 local function recalculate_levels()
     local sigma = amp_to_sigma(params:get(ID_LEVELS_AMP))
     local levels = gaussian.calculate_gaussian_levels(params:get(ID_LEVELS_POS), sigma)
-    for i = 1, 6 do
-        softcut.level(i, levels[i])
+    for i = 0, 5 do
+        engine.level(i, levels[i])
     end
 end
 
@@ -161,10 +161,6 @@ function page:initialize()
     local sigma = amp_to_sigma(params:get(ID_LEVELS_AMP))
     local levels = gaussian.calculate_gaussian_levels(params:get(ID_LEVELS_POS), sigma)
     bars_graphic.levels = levels
-
-    for voice = 1, 6 do
-        softcut.level(voice, levels[voice])
-    end
 
     page.footer = Footer:new({
         button_text = {
