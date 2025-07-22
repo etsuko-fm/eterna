@@ -85,7 +85,6 @@ Engine_Heap : CroneEngine {
 
     this.addCommand("rate", "if", {
       arg msg;
-      ("Setting voice" + msg[1] + "to rate" + msg[2]).postln;
       voices[msg[1]].set(\rate, msg[2]);
     });
 

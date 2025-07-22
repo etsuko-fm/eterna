@@ -135,7 +135,6 @@ end
 
 local function load_sample(file)
     -- use specified `file` as a sample and store enabled length of softcut buffer in state
-    print("file: ", file)
     if not file or file == "-" then return end
     sample_length, is_stereo = audio_util.load_sample(file, false)
     selected_sample = file
@@ -285,7 +284,7 @@ end
 function page:initialize()
     add_params()
 
-    engine.load_file("/home/we/dust/"..selected_sample)
+    -- engine.load_file("/home/we/dust/"..selected_sample)
     loaded_poll:update()
 
     -- add waveform
