@@ -137,7 +137,7 @@ function init()
 
   loaded_poll.callback = function(val)
     if val then
-      print("file loaded!")
+      print("SC poll: file loaded")
       -- engine.play(0)
     else
       print("poll loaded but value is " .. val)
