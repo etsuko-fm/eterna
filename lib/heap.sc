@@ -144,6 +144,11 @@ Engine_Heap : CroneEngine {
       voices[msg[1]].set(\curve, msg[2]);
     });
 
+    this.addCommand("enable_env", "if", {
+      arg msg;
+      voices[msg[1]].set(\enable_env, msg[2]);
+    });
+
     this.addPoll(\file_loaded, {
 	      isLoaded;
 	    }, periodic:false

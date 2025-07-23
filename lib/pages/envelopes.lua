@@ -5,7 +5,7 @@ local misc_util = include("bits/lib/util/misc")
 
 local page_name = "ENVELOPES"
 local window
-local ENVELOPES_graphic
+local ENVELOPES_GRAPHIC
 
 
 
@@ -36,11 +36,16 @@ local function toggle_curve()
     params:set(p, util.wrap(curr+1, 1, #ENVELOPE_CURVES))
 end
 
+local function toggle_enable()
+    local p = ID_ENVELOPES_ENABLE
+    params:set(p, 1 - params:get(p))
+end
+
 local page = Page:create({
     name = page_name,
     e2 = adjust_attack,
     e3 = adjust_decay,
-    k2_off = nil,
+    k2_off = toggle_enable,
     k3_off = toggle_curve,
 })
 
@@ -52,7 +57,13 @@ end
 
 local function action_decay(v)
     for i=0,5 do
-        -- engine.decay(i,v)
+        engine.decay(i,v)
+    end
+end
+
+local function action_enable(v)
+    for i=0,5 do
+        engine.enable_env(i, v)
     end
 end
 
@@ -71,6 +82,7 @@ local function add_params()
     params:set_action(ID_ENVELOPES_DECAY, action_decay)
     params:set_action(ID_ENVELOPES_FILTER_ENV, action_filter_env)
     params:set_action(ID_ENVELOPES_CURVE, action_curve)
+    params:set_action(ID_ENVELOPES_ENABLE, action_enable)
 end
 
 function page:render()
@@ -78,7 +90,9 @@ function page:render()
     local attack = params:get(ID_ENVELOPES_ATTACK)
     local decay = params:get(ID_ENVELOPES_DECAY)
     local curve = ENVELOPE_NAMES[params:get(ID_ENVELOPES_CURVE)]
-    -- envelopes_graphic:render()
+    local enabled = params:get(ID_ENVELOPES_ENABLE) == 1 and "ON" or "OFF"
+    -- ENVELOPES_GRAPHIC:render()
+    page.footer.button_text.k2.value = enabled
     page.footer.button_text.k3.value = curve
     page.footer.button_text.e2.value = misc_util.trim(tostring(attack), 5)
     page.footer.button_text.e3.value = misc_util.trim(tostring(decay), 5)
@@ -101,11 +115,11 @@ function page:initialize()
         vertical_separations = 0,
     })
     -- graphics
-    -- ENVELOPES_graphic = EnvGraphic:new()
+    -- ENVELOPES_GRAPHIC = EnvGraphic:new()
     page.footer = Footer:new({
         button_text = {
             k2 = {
-                name = "",
+                name = "ENABLE",
                 value = "",
             },
             k3 = {

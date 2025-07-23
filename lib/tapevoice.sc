@@ -7,13 +7,16 @@ TapeVoice {
 				SynthDef("tapevoice", {
 					// loopStart and loopEnd in seconds
 					// 't_' has a special meaning in SC, resets value to zero after receiving a 1
-					arg out, rate = 0, bufnum=0, loop=0.0, loopStart=0.0, loopEnd=0.0, gate=0, t_trig=0, attack=0.01, decay=1.0, pan=0.0, level=1.0, envLevel=1.0, freq=400.0, res=0.2, xfade=0.01, curve=(-4);
+					arg out, rate = 0, bufnum=0, loop=0.0, loopStart=0.0, loopEnd=0.0, gate=0,
+					 t_trig=0, attack=0.01, decay=1.0, pan=0.0, level=1.0, envLevel=1.0, freq=400.0,
+					 res=0.2, xfade=0.01, curve=(-4), enable_env=1;
 					var end, playhead1, playhead2, playback, playback1, playback2;
 					var start = loopStart  * SampleRate.ir; // convert seconds to samples
 					var playheadId = ToggleFF.kr(t_trig); // toggles each time voice is triggered
 					var crossfade = -1 + Lag.ar(K2A.ar(playheadId*2), xfade);
 					var t_1 = Select.kr(playheadId, [t_trig, 0]);
 					var t_2 = Select.kr(playheadId, [0, t_trig]);
+					var percEnv1, percEnv2;
 
 					// if loopEnd is set, use it; otherwise use entire buffer
 					end = Select.kr(
@@ -54,11 +57,20 @@ TapeVoice {
 					);
 
 					// First "VCA" is envLevel
-					playback1 = playback1 * EnvGen.ar(Env.perc(attack, decay, envLevel, curve), t_1);
-					playback1 = SVF.ar(playback1, EnvGen.ar(Env.perc(attack, decay, envLevel, curve), t_1) * Lag.kr(freq), Lag.kr(res), 1.0, 0.0, 0.0);
+					// Select.kr(enable_env, [percEnv1, 1]);
 
-					playback2 = playback2 * EnvGen.ar(Env.perc(attack, decay, envLevel, curve), t_2);
-					playback2 = SVF.ar(playback2, EnvGen.ar(Env.perc(attack, decay, envLevel, curve), t_2) * Lag.kr(freq), Lag.kr(res), 1.0, 0.0, 0.0);
+					percEnv1 = EnvGen.ar(Env.perc(attack, decay, envLevel, curve), t_1);
+					percEnv2 = EnvGen.ar(Env.perc(attack, decay, envLevel, curve), t_2);
+
+					// If envelopes are disabled, replace the env with a simple 1 (always-on)
+					percEnv1 = Select.kr(enable_env, [1, percEnv1]);
+					percEnv2 = Select.kr(enable_env, [1, percEnv2]);
+
+					playback1 = playback1 * percEnv1;
+					playback1 = SVF.ar(playback1, percEnv1 * Lag.kr(freq), Lag.kr(res), 1.0, 0.0, 0.0);
+
+					playback2 = playback2 * percEnv2;
+					playback2 = SVF.ar(playback2, percEnv2 * Lag.kr(freq), Lag.kr(res), 1.0, 0.0, 0.0);
 
 					playback = XFade2.ar(playback1, playback2, crossfade);
 					playback = Pan2.ar(playback, pan);

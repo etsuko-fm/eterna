@@ -3,6 +3,7 @@
 ---
 local page_id = "env_"
 
+ID_ENVELOPES_ENABLE = page_id.."enable"
 ID_ENVELOPES_ATTACK = page_id.."attack"
 ID_ENVELOPES_DECAY = page_id.."decay"
 ID_ENVELOPES_FILTER_ENV = page_id .."filter_env"
@@ -53,7 +54,8 @@ controlspec_env_filter = controlspec.def {
 }
 
 params:add_separator("ENVELOPE", "ENVELOPE")
+params:add_binary(ID_ENVELOPES_ENABLE, "enable", "toggle")
 params:add_control(ID_ENVELOPES_ATTACK, "attack", controlspec_env_attack)
 params:add_control(ID_ENVELOPES_DECAY, "decay", controlspec_env_decay)
-params:add_control(ID_ENVELOPES_FILTER_ENV, "filter env", controlspec_env_filter)
 params:add_option(ID_ENVELOPES_CURVE, "curve", ENVELOPE_CURVES)
+params:add_control(ID_ENVELOPES_FILTER_ENV, "filter env", controlspec_env_filter)
