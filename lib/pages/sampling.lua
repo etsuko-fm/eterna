@@ -165,11 +165,8 @@ end
 local function select_sample()
     local function callback(file_path)
         if file_path ~= 'cancel' then
+            params:set(ID_SAMPLING_AUDIO_FILE, file_path)
             filename = to_sample_name(file_path)
-            load_sample(file_path)
-            for voice = 1,6 do
-                -- softcut.play(voice, 1)
-            end
         end
         page_disabled = false -- proceed with rendering page instead of file menu
         page_indicator_disabled = false

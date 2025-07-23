@@ -7,7 +7,7 @@ TapeVoice {
 				SynthDef("tapevoice", {
 					// loopStart and loopEnd in seconds
 					// 't_' has a special meaning in SC, resets value to zero after receiving a 1
-					arg out, rate = 0, buf, bufnum=0, loop=0.0, loopStart=0.0, loopEnd=0.0, gate=0, t_trig=0, attack=0.01, decay=1.0, pan=0.0, level=1.0, envLevel=1.0, freq=400.0, res=0.2, xfade=0.01;
+					arg out, rate = 0, bufnum=0, loop=0.0, loopStart=0.0, loopEnd=0.0, gate=0, t_trig=0, attack=0.01, decay=1.0, pan=0.0, level=1.0, envLevel=1.0, freq=400.0, res=0.2, xfade=0.01, curve=(-4);
 					var end, playhead1, playhead2, playback, playback1, playback2;
 					var start = loopStart  * SampleRate.ir; // convert seconds to samples
 					var playheadId = ToggleFF.kr(t_trig); // toggles each time voice is triggered
@@ -54,11 +54,11 @@ TapeVoice {
 					);
 
 					// First "VCA" is envLevel
-					playback1 = playback1 * EnvGen.ar(Env.perc(attack, decay, envLevel, -4), t_1);
-					playback1 = SVF.ar(playback1, EnvGen.ar(Env.perc(attack, decay, envLevel, -4), t_1) * Lag.kr(freq), Lag.kr(res), 1.0, 0.0, 0.0);
+					playback1 = playback1 * EnvGen.ar(Env.perc(attack, decay, envLevel, curve), t_1);
+					playback1 = SVF.ar(playback1, EnvGen.ar(Env.perc(attack, decay, envLevel, curve), t_1) * Lag.kr(freq), Lag.kr(res), 1.0, 0.0, 0.0);
 
-					playback2 = playback2 * EnvGen.ar(Env.perc(attack, decay, envLevel, -4), t_2);
-					playback2 = SVF.ar(playback2, EnvGen.ar(Env.perc(attack, decay, envLevel, -4), t_2) * Lag.kr(freq), Lag.kr(res), 1.0, 0.0, 0.0);
+					playback2 = playback2 * EnvGen.ar(Env.perc(attack, decay, envLevel, curve), t_2);
+					playback2 = SVF.ar(playback2, EnvGen.ar(Env.perc(attack, decay, envLevel, curve), t_2) * Lag.kr(freq), Lag.kr(res), 1.0, 0.0, 0.0);
 
 					playback = XFade2.ar(playback1, playback2, crossfade);
 					playback = Pan2.ar(playback, pan);

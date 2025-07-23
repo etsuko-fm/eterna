@@ -6,6 +6,12 @@ local page_id = "env_"
 ID_ENVELOPES_ATTACK = page_id.."attack"
 ID_ENVELOPES_DECAY = page_id.."decay"
 ID_ENVELOPES_FILTER_ENV = page_id .."filter_env"
+ID_ENVELOPES_CURVE = page_id .. "curve"
+
+ENVELOPE_CURVES = {-3, 0, 3}
+ENVELOPE_NAMES = {"CONVX", "LIN", "CNCAV"}
+
+
 local ENV_ATTACK_MIN = 0.001
 local ENV_ATTACK_MAX = 10.0
 local ENV_DECAY_MIN = 0.01
@@ -50,3 +56,4 @@ params:add_separator("ENVELOPE", "ENVELOPE")
 params:add_control(ID_ENVELOPES_ATTACK, "attack", controlspec_env_attack)
 params:add_control(ID_ENVELOPES_DECAY, "decay", controlspec_env_decay)
 params:add_control(ID_ENVELOPES_FILTER_ENV, "filter env", controlspec_env_filter)
+params:add_option(ID_ENVELOPES_CURVE, "curve", ENVELOPE_CURVES)

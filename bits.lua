@@ -28,6 +28,8 @@ local ready
 
 engine.name = 'Heap'
 
+grid_device = grid.connect()
+
 page_indicator_disabled = false
 
 DEFAULT_FONT = 68

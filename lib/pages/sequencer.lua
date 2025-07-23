@@ -12,11 +12,9 @@ local COLUMNS = 16
 
 local PERLIN_ZOOM = 4/3 ---4 / 3 -- empirically tuned
 
-local ID_SEQ_DIMENSIONS = { ID_SEQ_PERLIN_X, ID_SEQ_PERLIN_Y, ID_SEQ_PERLIN_Z }
 local SEQ_EVOLVE_RATES = {1024*24, 1024*16, 1024*8} -- in quarter notes, but fuzzy concept due to how perlin computes
-local current_dimension = 1
 
-local LOOP_TABLE_TO_SOFTCUT = {1, 0}
+local SEQUENCE_STYLE_TABLE_TO_SOFTCUT = {1, 0}
 
 
 local MAX_STEPS = sequence_util.max_steps
@@ -53,7 +51,13 @@ local function generate_perlin_seq()
             local perlin_y = voice * PERLIN_ZOOM + y_seed
             local perlin_z = z_seed
             local v = perlin:noise(perlin_x, perlin_y, perlin_z) -- -1 to 1
-            if math.abs(v) > density then
+
+            -- base density map on a different seed of x/y/z, so that
+            -- not only low or high values are filtered out
+            local density_seed = 11
+            local d = perlin:noise(perlin_x+density_seed, perlin_y+density_seed, perlin_z+density_seed)
+
+            if math.abs(d) > density then
                 -- if value is .81/-.81 and density is .8, value is filtered out; 
                 -- generalized, then 20% of the values is filtered out. 
                 -- so higher density, is more values in sequence.
@@ -66,7 +70,7 @@ end
 
 local function e2(d)
     -- works for x, y, and z
-    local p = ID_SEQ_DIMENSIONS[current_dimension]
+    local p = ID_SEQ_PERLIN_X
     local new = params:get(p) + controlspec_perlin.quantum * d
     params:set(p, new, false)
 end
@@ -83,8 +87,8 @@ local function toggle_evolve()
 end
 
 local function toggle_playback_style()
-    local p = ID_SEQ_PB_STYLE
-    local new = util.wrap(params:get(p) + 1, 1, #LOOP_TABLE)
+    local p = ID_SEQ_STYLE
+    local new = util.wrap(params:get(p) + 1, 1, #SEQUENCE_STYLE_TABLE)
     params:set(p, new)
 end
 
@@ -104,10 +108,10 @@ function voice_position_to_start(voice)
     if params:get(get_voice_dir_param_id(voice)) == 1 then
         -- play forward
         -- query position
-        softcut.position(voice, params:get(get_slice_start_param_id(voice)))
+        engine.position(voice, params:get(get_slice_start_param_id(voice)))
     else
         -- play reverse, start at end
-        softcut.position(voice, params:get(get_slice_end_param_id(voice)))
+        engine.position(voice, params:get(get_slice_end_param_id(voice)))
     end
 end
 
@@ -120,7 +124,7 @@ function voice_position_to_phase(voice, phase)
     -- move softcut position to provided phase
     local rel_pos = phase * slice_length
     local abs_pos = slice_start + rel_pos
-    softcut.position(voice, abs_pos)
+    engine.position(voice, abs_pos)
 end
 
 
@@ -174,7 +178,7 @@ local function main_sequencer_callback()
                     -- voice_position_to_phase(y, a) -- this was the phase sequencer, maybe not relevant anymore
                     engine.env_level(y,1)
                 end
-            elseif LOOP_TABLE[params:get(ID_SEQ_PB_STYLE)] == SEQ_GATE then
+            elseif SEQUENCE_STYLE_TABLE[params:get(ID_SEQ_STYLE)] == SEQ_GATE then
                 -- engine.stop(y-1)
             end
         end
@@ -243,10 +247,11 @@ function page:render()
     --     end
     -- end
     page.footer.button_text.k2.value = SEQ_EVOLVE_TABLE[params:get(ID_SEQ_EVOLVE)]
-    page.footer.button_text.k3.value = LOOP_TABLE[params:get(ID_SEQ_PB_STYLE)]
+    page.footer.button_text.k3.value = SEQUENCE_STYLE_TABLE[params:get(ID_SEQ_STYLE)]
     page.footer.button_text.e2.value = params:get(ID_SEQ_PERLIN_X)
     page.footer.button_text.e3.value = params:get(ID_SEQ_PERLIN_DENSITY)
     page.footer:render()
+    grid_device:refresh()
 end
 
 local function action_evolve(v)
@@ -263,13 +268,26 @@ end
 
 local function action_playback_style(v)
     for voice=1,6 do
-        softcut.loop(voice, LOOP_TABLE_TO_SOFTCUT[v])
+        softcut.loop(voice, SEQUENCE_STYLE_TABLE_TO_SOFTCUT[v])
     end
 end
 
 local function update_grid_step(x,y,v)
     grid_graphic.sequences[y][x] = v
+    if v > 0 then
+        grid_device:led(x, y, 4 + math.floor(math.abs(v)*8))
+    else
+        grid_device:led(x, y, 0)
+    end
+
 end
+
+grid.key = function(x,y,z)
+    if SEQUENCE_STYLE_TABLE[params:get(ID_SEQ_STYLE)] == SEQ_GRID then
+        -- would sequence from grid
+    end
+end
+
 
 local function add_params()
     params:set_action(ID_SEQ_PERLIN_X, generate_perlin_seq)
@@ -277,7 +295,7 @@ local function add_params()
     params:set_action(ID_SEQ_PERLIN_Z, generate_perlin_seq)
     params:set_action(ID_SEQ_PERLIN_DENSITY, generate_perlin_seq)
     params:set_action(ID_SEQ_EVOLVE, action_evolve)
-    params:set_action(ID_SEQ_PB_STYLE, action_playback_style)
+    params:set_action(ID_SEQ_STYLE, action_playback_style)
     for y = 1, 6 do
         for x = 1, 16 do
             params:set_action(ID_SEQ_STEP[y][x], function(v) update_grid_step(x,y,v) end)
@@ -369,7 +387,7 @@ function page:initialize()
         period = SEQ_EVOLVE_RATES[1],
         phase = 0,
         action = function(scaled, raw)
-            params:set(ID_SEQ_PERLIN_Z, controlspec_perlin:map(scaled))
+            params:set(ID_SEQ_PERLIN_Y, controlspec_perlin:map(scaled))
         end
     }
 

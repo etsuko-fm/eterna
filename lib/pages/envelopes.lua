@@ -7,6 +7,8 @@ local page_name = "ENVELOPES"
 local window
 local ENVELOPES_graphic
 
+
+
 -- local function calculate_env_positions()
 --     local DECAY = params:get(ID_ENVELOPES_DECAY)
 --     local ATTACK = params:get(ID_ENVELOPES_ATTACK)
@@ -28,12 +30,18 @@ local function adjust_decay(d)
     params:set(ID_ENVELOPES_DECAY, new_val, false)
 end
 
+local function toggle_curve()
+    local p = ID_ENVELOPES_CURVE
+    local curr = params:get(p)
+    params:set(p, util.wrap(curr+1, 1, #ENVELOPE_CURVES))
+end
+
 local page = Page:create({
     name = page_name,
     e2 = adjust_attack,
     e3 = adjust_decay,
     k2_off = nil,
-    k3_off = nil,
+    k3_off = toggle_curve,
 })
 
 local function action_attack(v)
@@ -53,19 +61,27 @@ local function action_filter_env(v)
         engine.filter_env(i,v)
     end
 end
+local function action_curve(idx)
+    for voice=0,5 do
+        engine.env_curve(voice, ENVELOPE_CURVES[idx])
+    end
+end
 local function add_params()
     params:set_action(ID_ENVELOPES_ATTACK, action_attack)
     params:set_action(ID_ENVELOPES_DECAY, action_decay)
     params:set_action(ID_ENVELOPES_FILTER_ENV, action_filter_env)
+    params:set_action(ID_ENVELOPES_CURVE, action_curve)
 end
 
 function page:render()
     window:render()
-    local DECAY = params:get(ID_ENVELOPES_DECAY)
-    local ATTACK = params:get(ID_ENVELOPES_ATTACK)
+    local attack = params:get(ID_ENVELOPES_ATTACK)
+    local decay = params:get(ID_ENVELOPES_DECAY)
+    local curve = ENVELOPE_NAMES[params:get(ID_ENVELOPES_CURVE)]
     -- envelopes_graphic:render()
-    page.footer.button_text.e2.value = misc_util.trim(tostring(ATTACK), 5)
-    page.footer.button_text.e3.value = misc_util.trim(tostring(DECAY), 5)
+    page.footer.button_text.k3.value = curve
+    page.footer.button_text.e2.value = misc_util.trim(tostring(attack), 5)
+    page.footer.button_text.e3.value = misc_util.trim(tostring(decay), 5)
     page.footer:render()
 end
 
@@ -93,7 +109,7 @@ function page:initialize()
                 value = "",
             },
             k3 = {
-                name = "",
+                name = "CURVE",
                 value = "",
             },
             e2 = {
