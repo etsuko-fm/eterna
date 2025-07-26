@@ -130,7 +130,7 @@ end
 
 local hold_step = nil
 local function main_sequencer_callback()
-    -- advance
+    -- runs every 1/16th note of current clock bpm (based on a 4/4 time signature); e.g. every 125ms for 120bpm
     while true do
         if cue_step_divider then
             -- wait until the current_global_step aligns with the new step_size
@@ -143,11 +143,12 @@ local function main_sequencer_callback()
         end
         current_global_step = util.wrap(current_global_step + 1, 1, MAX_STEPS)
 
+        -- hold step feature, UI available on seq-ctrl page
         if not holding_step then
             if hold_step then
-                -- means resumed this frame
-                -- current_global_step ticked on meanwhile; but we don't want to jump frames
-                -- except for any offset introduced
+                -- means step was held, but resumed this step
+                -- current_global_step ticked on meanwhile; but we don't want to jump to another step; 
+                -- shold always go on neatly to the n+1 sequence step
                 print("resumed at "..current_global_step)
                 current_global_step = current_step * step_divider + (current_step - hold_step )
                 hold_step = nil
@@ -166,17 +167,17 @@ local function main_sequencer_callback()
             local perlin_val = params:get(ID_SEQ_STEP[y][x])
             local a = math.abs(perlin_val)
             local on = a > 0.0
-
+            engine.env_level(y, a) -- always set env/gate level based on perlin val
             if on then
                 if current_global_step % step_divider == 0 then
                     engine.trigger(y-1)
                     -- engine.filter_env(y-1, 800)
+                    -- modulate attack and decay based on perlin value
                     local atk = math.max(params:get(ID_ENVELOPES_ATTACK) * a, 0.01)
                     local dec = params:get(ID_ENVELOPES_DECAY) * a
                     engine.attack(y-1, atk)
                     engine.decay(y-1, dec)
                     -- voice_position_to_phase(y, a) -- this was the phase sequencer, maybe not relevant anymore
-                    engine.env_level(y,1)
                 end
             elseif SEQUENCE_STYLE_TABLE[params:get(ID_SEQ_STYLE)] == SEQ_GATE then
                 -- engine.stop(y-1)

@@ -11,60 +11,62 @@ TapeVoice {
 					 t_trig=0, attack=0.01, decay=1.0, pan=0.0, level=1.0, envLevel=1.0, freq=400.0,
 					 res=0.2, xfade=0.01, curve=(-4), enable_env=1;
 					var end, playhead1, playhead2, playback, playback1, playback2;
-					var start = loopStart  * SampleRate.ir; // convert seconds to samples
+					var start = loopStart  * BufSampleRate.ir(bufnum); // convert seconds to samples
 					var playheadId = ToggleFF.kr(t_trig); // toggles each time voice is triggered
 					var crossfade = -1 + Lag.ar(K2A.ar(playheadId*2), xfade);
 					var t_1 = Select.kr(playheadId, [t_trig, 0]);
 					var t_2 = Select.kr(playheadId, [0, t_trig]);
-					var percEnv1, percEnv2;
+					var percEnv1, percEnv2, startVal, endVal;
+					var duration, ramp, position, ramp1, ramp2, playheadEnv, durationFraction, startFrac, endFrac;
 
 					// if loopEnd is set, use it; otherwise use entire buffer
 					end = Select.kr(
 						loopEnd > 0,
 						[
 							BufFrames.kr(bufnum),
-							loopEnd * SampleRate.ir
+							loopEnd * BufSampleRate.ir(bufnum)
 						]
 					);
+					duration = (end - start).abs / rate.abs; //in frames
+					durationFraction = (end - start) / BufFrames.kr(bufnum);
 
-					playhead1 = Phasor.ar(
-						trig: t_1,
-						rate: BufRateScale.kr(bufnum) * rate,
-						start: start,
-						end: end,
-						resetPos: start
-					);
-					playhead2 = Phasor.ar(
-						trig: t_2,
-						rate: BufRateScale.kr(bufnum) * rate,
-						start: start,
-						end: end,
-						resetPos: start
-					);
+					// start position as fraction of total frames in buffer
+					startFrac = start / BufFrames.kr(bufnum);
+
+					// end position as fraction of total frames in buffer
+					endFrac = end / BufFrames.kr(bufnum);
+
+					startVal = Select.kr(rate >= 0, [endFrac, startFrac]);
+					endVal   = Select.kr(rate >= 0, [startFrac, endFrac]);
+
+					playheadEnv = Env([startVal, endVal], [duration/BufSampleRate.ir(bufnum)], \lin);
+					ramp1 = EnvGen.ar(playheadEnv, gate: t_1);
+					ramp2 = EnvGen.ar(playheadEnv, gate: t_2);
+					playhead1 = BufFrames.kr(bufnum) * ramp1;  // works both directions
+					playhead2 = BufFrames.kr(bufnum) * ramp2;
+
 					playback1 = BufRd.ar(
 						numChannels: 1,
 						bufnum: bufnum,
 						phase: playhead1,
-						loop: loop,
+						loop: 0,
 						interpolation: 4
 					);
 					playback2 = BufRd.ar(
 						numChannels: 1,
 						bufnum: bufnum,
 						phase: playhead2,
-						loop: loop,
+						loop: 0,
 						interpolation: 4
 					);
 
-					// First "VCA" is envLevel
-					// Select.kr(enable_env, [percEnv1, 1]);
 
 					percEnv1 = EnvGen.ar(Env.perc(attack, decay, envLevel, curve), t_1);
 					percEnv2 = EnvGen.ar(Env.perc(attack, decay, envLevel, curve), t_2);
 
-					// If envelopes are disabled, replace the env with a simple 1 (always-on)
-					percEnv1 = Select.kr(enable_env, [1, percEnv1]);
-					percEnv2 = Select.kr(enable_env, [1, percEnv2]);
+					// If envelopes are disabled, the voice plays continuously with envLevel as optional amplitude modulator
+					percEnv1 = Select.kr(enable_env, [envLevel, percEnv1]);
+					percEnv2 = Select.kr(enable_env, [envLevel, percEnv2]);
 
 					playback1 = playback1 * percEnv1;
 					playback1 = SVF.ar(playback1, percEnv1 * Lag.kr(freq), Lag.kr(res), 1.0, 0.0, 0.0);
