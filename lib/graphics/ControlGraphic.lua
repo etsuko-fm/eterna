@@ -31,12 +31,12 @@ local faint_level = 3
 local bright_level = 15
 
 local x = 32
-local y = 32
+local y = 36
 local bpm_x = 95
 local seq_h = 3
 local seq_y = y
-local rep_x = x+10
-local rep_y = y-15
+local rep_x = x
+local rep_y = y - 3
 local play_btn_w = 5
 local play_btn_h = 8
 local pause_button_rect_w = 2
@@ -69,7 +69,7 @@ function ControlGraphic:render()
         else
             screen.level(faint_level)
         end
-        screen.rect(rep_x, rep_y + i * 3, 2, 2)
+        screen.rect(rep_x + i * 16, rep_y, 3, 1)
         screen.fill()
     end
 
@@ -81,7 +81,6 @@ function ControlGraphic:render()
         else
             screen.level(faint_level)
         end
-        local step_h = seq_h
         local step_y = seq_y
         if i % 4 == 0 then
             h = seq_h + 1
