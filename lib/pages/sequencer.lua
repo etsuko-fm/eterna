@@ -167,7 +167,7 @@ local function main_sequencer_callback()
             local perlin_val = params:get(ID_SEQ_STEP[y][x])
             local a = math.abs(perlin_val)
             local on = a > 0.0
-            engine.env_level(y, a) -- always set env/gate level based on perlin val
+            -- engine.env_level(y, a) -- always set env/gate level based on perlin val
             if on then
                 if current_global_step % step_divider == 0 then
                     engine.trigger(y-1)
