@@ -21,13 +21,15 @@ local ENVELOPES_GRAPHIC
 -- end
 
 local function adjust_attack(d)
-    local new_val = params:get(ID_ENVELOPES_ATTACK) + d * controlspec_env_attack.quantum
-    params:set(ID_ENVELOPES_ATTACK, new_val, false)
+    local p = ID_ENVELOPES_ATTACK
+    local new_val = params:get_raw(p) + d * controlspec_env_attack.quantum
+    params:set_raw(p, new_val)
 end
 
 local function adjust_decay(d)
-    local new_val = params:get(ID_ENVELOPES_DECAY) + d * controlspec_env_decay.quantum
-    params:set(ID_ENVELOPES_DECAY, new_val, false)
+    local p = ID_ENVELOPES_DECAY
+    local new_val = params:get_raw(p) + d * controlspec_env_decay.quantum
+    params:set_raw(p, new_val)
 end
 
 local function toggle_curve()
