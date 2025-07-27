@@ -13,7 +13,7 @@ ENVELOPE_CURVES = {-3, 0, 3}
 ENVELOPE_NAMES = {"CONVX", "LIN", "CNCAV"}
 
 
-local ENV_ATTACK_MIN = 0.01
+local ENV_ATTACK_MIN = 0.0001
 local ENV_ATTACK_MAX = 10.0
 local ENV_DECAY_MIN = 0.01
 local ENV_DECAY_MAX = 10.0
@@ -24,7 +24,7 @@ controlspec_env_attack = controlspec.def {
     min = ENV_ATTACK_MIN,
     max = ENV_ATTACK_MAX,
     warp = 'exp',
-    step = 0.0001,
+    step = 0.00001,
     default = ENV_ATTACK_MIN,
     units = '',
     quantum = 0.005,

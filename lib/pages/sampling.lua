@@ -259,7 +259,6 @@ function page:render()
     page.footer:render()
 end
 
-
 local function add_params()
     -- file selection
     params:set_action(ID_SAMPLING_AUDIO_FILE, function(file) load_sample(file) end)
@@ -271,8 +270,8 @@ local function add_params()
     params:set_action(ID_SAMPLING_SLICE_START, action_slice_start)
     constrain_max_start(SLICES_DEFAULT)
     for voice = 1, 6 do
-        params:set_action(ID_SAMPLING_SLICE_SECTIONS[voice].loop_start, function(v) engine.loop_start(voice-1, v) end)
-        params:set_action(ID_SAMPLING_SLICE_SECTIONS[voice].loop_end, function(v) engine.loop_end(voice-1, v) end)
+        params:set_action(ID_SAMPLING_SLICE_SECTIONS[voice].loop_start, function(v) UPDATE_SLICES=true end)
+        params:set_action(ID_SAMPLING_SLICE_SECTIONS[voice].loop_end, function(v) UPDATE_SLICES=true end)
     end
 
     params:bang()

@@ -26,6 +26,7 @@ local page_levels = include("bits/lib/pages/levels")
 local fps = 45
 local ready
 
+UPDATE_SLICES = false
 engine.name = 'Heap'
 
 grid_device = grid.connect()

@@ -132,6 +132,13 @@ local hold_step = nil
 local function main_sequencer_callback()
     -- runs every 1/16th note of current clock bpm (based on a 4/4 time signature); e.g. every 125ms for 120bpm
     while true do
+        if UPDATE_SLICES then
+            for voice=0,5 do
+                engine.loop_start(voice, params:get(ID_SAMPLING_SLICE_SECTIONS[voice+1].loop_start))
+                engine.loop_end(voice, params:get(ID_SAMPLING_SLICE_SECTIONS[voice+1].loop_end))
+            end
+            UPDATE_SLICES = false
+        end
         if cue_step_divider then
             -- wait until the current_global_step aligns with the new step_size
             if current_global_step % cue_step_divider == 0 then
