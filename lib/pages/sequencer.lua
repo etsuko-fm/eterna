@@ -101,7 +101,12 @@ local page = Page:create({
 })
 
 function set_cue_step_divider(v)
+    -- cue up a change in sequence step length
     cue_step_divider = v
+end
+
+function get_cue_step_divider()
+    return cue_step_divider
 end
 
 function voice_position_to_start(voice)

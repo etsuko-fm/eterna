@@ -5,14 +5,15 @@ ControlGraphic = {
     h = 64,
     title = "WINDOW",
     font_face = 1,
-    bpm_font_face=40,
-    bpm_font_size=12,
-    bpm=120.0,
-    bright=15,
-    default_level=3,
-    is_playing=true,
-    current_step=nil,
-    current_quarter=nil,
+    bpm_font_face = 40,
+    bpm_font_size = 12,
+    bpm = 120.0,
+    bright = 15,
+    default_level = 3,
+    is_playing = true,
+    current_step = nil,
+    current_quarter = nil,
+    cue = nil,
 }
 
 function ControlGraphic:new(o)
@@ -43,18 +44,18 @@ local pause_button_rect_w = 2
 
 local function draw_play_button()
     screen.level(bright_level)
-    screen.move(x,y-14)
-    screen.line_rel(play_btn_w,play_btn_h/2)
-    screen.line_rel(-play_btn_w, play_btn_h/2)
-    screen.line_rel(0,-play_btn_h)
+    screen.move(x, y - 14)
+    screen.line_rel(play_btn_w, play_btn_h / 2)
+    screen.line_rel(-play_btn_w, play_btn_h / 2)
+    screen.line_rel(0, -play_btn_h)
     screen.fill()
 end
 
 local function draw_pause_button()
     screen.level(bright_level)
-    screen.rect(x,y-14, pause_button_rect_w, 8)
+    screen.rect(x, y - 14, pause_button_rect_w, 8)
     screen.fill()
-    screen.rect(x+4,y-14, pause_button_rect_w, 8)
+    screen.rect(x + 4, y - 14, pause_button_rect_w, 8)
     screen.fill()
 end
 
@@ -62,7 +63,7 @@ function ControlGraphic:render()
     if self.hide then return end
 
     -- 1/4 report
-    for i = 0,3 do
+    for i = 0, 3 do
         local q = i + 1
         if q == self.current_quarter then
             screen.level(bright_level)
@@ -74,8 +75,8 @@ function ControlGraphic:render()
     end
 
     -- sequence steps
-    for i=0,15 do
-        local step = i+1
+    for i = 0, 15 do
+        local step = i + 1
         if step == self.current_step then
             screen.level(bright_level)
         else
@@ -99,6 +100,14 @@ function ControlGraphic:render()
     screen.font_size(self.bpm_font_size)
     screen.font_face(self.bpm_font_face) -- 7 is ok; 40 is nice @ size 12
     screen.text_right(self.bpm)
+
+
+    -- cue
+    if self.cue then
+        screen.level(2)
+        screen.rect(x+64,37,1,1)
+        screen.fill()
+    end
 
     -- play/pause
     if self.is_playing then

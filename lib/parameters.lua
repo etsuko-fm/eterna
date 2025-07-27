@@ -99,7 +99,6 @@ for y = 1, 6 do
     end
 end
 
-
 ---
 --- PANNING
 ---

@@ -53,6 +53,7 @@ function page:render()
     control_graphic.is_playing = is_playing
     control_graphic.current_step = report_current_step()
     control_graphic.current_quarter = util.wrap(math.ceil(report_current_global_step()/4), 1, 4)
+    control_graphic.cue = get_cue_step_divider()
     control_graphic:render()
     page.footer:render()
 end
