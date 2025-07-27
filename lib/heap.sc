@@ -16,21 +16,26 @@ Engine_Heap : CroneEngine {
     var numChannels;
     var buffL, buffR; // = Buffer.new(context.server, 0, 1, buffNum);
     var f;
+
+    voices = Array.fill(6, { |i|
+      Synth.before(swirlFilter, "tapevoice", [
+      \out, filterBus,
+      \bufnum, 0, 
+      \rate, 1.0,
+      \loopStart, 0.0,
+      \loopEnd, 4.0,
+      \numChannels, 1,
+      \decay, 4.0,
+      \t_trig, 0,
+      \enable_env, 0,
+      \envLevel, 1.0,
+      ])}
+    );  
+
     filterBus = Bus.audio(context.server, 2);
     context.server.sync;
     
-    swirlFilter = Synth.new("swirlFilter", target:context.xg, args: [\in, filterBus, \out, 0]);
-    voices = Array.fill(6, { |i|
-        Synth.before(swirlFilter, "tapevoice", [
-        \out, filterBus,
-        \rate, 1.0,
-        \loopStart, 0,
-        \loopEnd, 1,
-        \numChannels, 1,
-        \decay, 4.0,
-        \t_trig, 0])}
-    );
-    
+    swirlFilter = Synth.new("swirlFilter", target:context.xg, args: [\in, filterBus, \out, 0]);    
 
     this.addCommand("freq", "f", { arg msg;
       swirlFilter.set(\freq, msg[1]);
@@ -56,15 +61,38 @@ Engine_Heap : CroneEngine {
       arg msg;
       buffL.free;
       buffR.free;
-      isLoaded = false;      
+      
+      voices.do(_.free);
+      voices.free;
+      
+      isLoaded = false; 
+
+      // Get file metadata 
       f = SoundFile.new;
       f.openRead(msg[1].asString);
       ("file" + msg[1].asString + "has" + f.numChannels + "channels").postln;
       f.close;
-      
+
+
       // todo: limit buffer read to 2^24 samples because of Phasor resolution
     	buffL = Buffer.readChannel(context.server, msg[1].asString, channels:[0], bufnum: bufnumL, action: { 
         |b|
+        // Create voices. Todo: this incorrectly resets all there other params, too
+        voices = Array.fill(6, { |i|
+          Synth.before(swirlFilter, "tapevoice", [
+          \out, filterBus,
+          \bufnum, 0, 
+          \rate, 1.0,
+          \loopStart, 0.0,
+          \loopEnd, 4.0,
+          \numChannels, 1,
+          \decay, 4.0,
+          \t_trig, 0,
+          \enable_env, 0,
+          \envLevel, 1.0,
+          ])}
+        );  
+
 
         // if file is stereo, load the right channel into buffR
         if (f.numChannels > 1) {

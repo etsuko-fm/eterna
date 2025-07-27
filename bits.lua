@@ -151,7 +151,7 @@ function init()
     page:initialize()
   end
   params:bang()
-  enable_filterbank()
+  -- enable_filterbank()
   enable_all_voices()
   for i = 1, #midi.vports do         -- query all ports
     midi_device[i] = midi.connect(i) -- connect each device
@@ -265,6 +265,6 @@ function on()
 end
 
 function cleanup()
-  reset_routing()
+  -- reset_routing()/
   metro.free_all()
 end
