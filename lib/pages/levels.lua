@@ -6,7 +6,7 @@ local gaussian = include("bits/lib/util/gaussian")
 local misc_util = include("bits/lib/util/misc")
 local lfo_util = include("bits/lib/util/lfo")
 
-local bars_graphic
+local level_graphic
 local graph_x = 36 -- (128 - graph_width) / 2
 local graph_y = 40
 
@@ -72,9 +72,9 @@ local page = Page:create({
 
 function page:render()
     local sigma = amp_to_sigma(params:get(ID_LEVELS_AMP))
-    bars_graphic.levels = gaussian.calculate_gaussian_levels(params:get(ID_LEVELS_POS), sigma)
+    level_graphic.levels = gaussian.calculate_gaussian_levels(params:get(ID_LEVELS_POS), sigma)
     screen.clear()
-    bars_graphic:render()
+    level_graphic:render()
 
     window:render()
     if levels_lfo:get("enabled") == 1 then
@@ -146,12 +146,12 @@ function page:initialize()
     })
 
     -- graphics
-    bars_graphic = LevelsGraphic:new({
+    level_graphic = LevelsGraphic:new({
         x = graph_x,
         y = graph_y,
         bar_width = 6,
         max_bar_height = 24,
-        num_bars_graphic = 6,
+        num_level_graphic = 6,
         brightness = 15,
     })
 
@@ -160,7 +160,7 @@ function page:initialize()
 
     local sigma = amp_to_sigma(params:get(ID_LEVELS_AMP))
     local levels = gaussian.calculate_gaussian_levels(params:get(ID_LEVELS_POS), sigma)
-    bars_graphic.levels = levels
+    level_graphic.levels = levels
 
     page.footer = Footer:new({
         button_text = {
@@ -194,7 +194,7 @@ function page:initialize()
         period = 8,
         phase = 0,
         action = function(scaled, raw)
-            bars_graphic.scan_val = scaled
+            level_graphic.scan_val = scaled
             params:set(ID_LEVELS_POS, controlspec_pos:map(scaled), false)
         end
     }

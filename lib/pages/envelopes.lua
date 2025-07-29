@@ -1,11 +1,11 @@
 local Page = include("bits/lib/Page")
 local Window = include("bits/lib/graphics/Window")
--- local EnvGraphic = include("bits/lib/graphics/EnvGraphic")
+local EnvGraphic = include("bits/lib/graphics/EnvGraphic")
 local misc_util = include("bits/lib/util/misc")
 
 local page_name = "ENVELOPES"
 local window
-local ENVELOPES_GRAPHIC
+local envelope_graphic
 
 
 
@@ -93,7 +93,12 @@ function page:render()
     local decay = params:get(ID_ENVELOPES_DECAY)
     local curve = ENVELOPE_NAMES[params:get(ID_ENVELOPES_CURVE)]
     local enabled = params:get(ID_ENVELOPES_ENABLE) == 1 and "ON" or "OFF"
-    -- ENVELOPES_GRAPHIC:render()
+    for i=1,6 do
+        envelope_graphic.attack[i] = attack / ENV_ATTACK_MAX
+        envelope_graphic.decay[i] = decay / ENV_DECAY_MAX
+    end
+    
+    envelope_graphic:render()
     page.footer.button_text.k2.value = enabled
     page.footer.button_text.k3.value = curve
     page.footer.button_text.e2.value = misc_util.trim(tostring(attack), 5)
@@ -117,7 +122,7 @@ function page:initialize()
         vertical_separations = 0,
     })
     -- graphics
-    -- ENVELOPES_GRAPHIC = EnvGraphic:new()
+    envelope_graphic = EnvGraphic:new()
     page.footer = Footer:new({
         button_text = {
             k2 = {
