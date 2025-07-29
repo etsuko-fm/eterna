@@ -172,8 +172,16 @@ local function main_sequencer_callback()
                 hold_step = current_step
             end
         end
-        grid_graphic.current_step = current_step
+        -- grid_graphic.current_step = current_step
         local x = current_step -- x pos of sequencer, i.e. current step
+
+        -- true when switching from previous step to the current step
+        local is_step_change = current_global_step % step_divider == 0
+
+        if is_step_change then
+            grid_graphic.current_step = current_step
+        end
+
         for y = 1, ROWS do
             -- todo: implement a check if it already fired for this step
             local perlin_val = params:get(ID_SEQ_STEP[y][x])
@@ -181,7 +189,9 @@ local function main_sequencer_callback()
             local on = a > 0.0
             -- engine.env_level(y, a) -- always set env/gate level based on perlin val
             if on then
-                if current_global_step % step_divider == 0 then
+                -- using modulo check to prevent triggering every 1/16 when step size is larger
+                if is_step_change then
+                    grid_graphic.current_step = current_step
                     engine.trigger(y-1)
                     -- engine.filter_env(y-1, 800)
                     -- modulate attack and decay based on perlin value
