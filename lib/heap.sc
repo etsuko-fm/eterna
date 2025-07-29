@@ -16,21 +16,7 @@ Engine_Heap : CroneEngine {
     var numChannels;
     var buffL, buffR; // = Buffer.new(context.server, 0, 1, buffNum);
     var f;
-
-    voices = Array.fill(6, { |i|
-      Synth.before(swirlFilter, "tapevoice", [
-      \out, filterBus,
-      \bufnum, 0, 
-      \rate, 1.0,
-      \loopStart, 0.0,
-      \loopEnd, 4.0,
-      \numChannels, 1,
-      \decay, 4.0,
-      \t_trig, 0,
-      \enable_env, 0,
-      \envLevel, 1.0,
-      ])}
-    );  
+    var voicesEmpty = true;
 
     filterBus = Bus.audio(context.server, 2);
     context.server.sync;
@@ -62,8 +48,8 @@ Engine_Heap : CroneEngine {
       buffL.free;
       buffR.free;
       
-      voices.do(_.free);
-      voices.free;
+      // voices.do(_.free);
+      // voices.free;
       
       isLoaded = false; 
 
@@ -78,20 +64,23 @@ Engine_Heap : CroneEngine {
     	buffL = Buffer.readChannel(context.server, msg[1].asString, channels:[0], bufnum: bufnumL, action: { 
         |b|
         // Create voices. Todo: this incorrectly resets all there other params, too
-        voices = Array.fill(6, { |i|
-          Synth.before(swirlFilter, "tapevoice", [
-          \out, filterBus,
-          \bufnum, 0, 
-          \rate, 1.0,
-          \loopStart, 0.0,
-          \loopEnd, 4.0,
-          \numChannels, 1,
-          \decay, 4.0,
-          \t_trig, 0,
-          \enable_env, 0,
-          \envLevel, 1.0,
-          ])}
-        );  
+        if (voicesEmpty) {
+          voices = Array.fill(6, { |i|
+            Synth.before(swirlFilter, "tapevoice", [
+            \out, filterBus,
+            \bufnum, 0, 
+            \rate, 1.0,
+            \loopStart, 0.0,
+            \loopEnd, 4.0,
+            \numChannels, 1,
+            \decay, 4.0,
+            \t_trig, 0,
+            \enable_env, 0,
+            \envLevel, 1.0,
+            ])}
+          );  
+        };
+        voicesEmpty = false;
 
 
         // if file is stereo, load the right channel into buffR
