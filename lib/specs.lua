@@ -44,6 +44,18 @@ controlspec_perlin = controlspec.def {
     wrap = true
 }
 
+controlspec_perlin_y = controlspec.def {
+    min = 0,
+    max = 25,
+    warp = 'lin',
+    step = .00001,
+    default = math.random(4) * 25.0,
+    units = '',
+    quantum = .00001,
+    wrap = true
+}
+
+
 controlspec_perlin_density = controlspec.def {
     min = 0,
     max = 1,

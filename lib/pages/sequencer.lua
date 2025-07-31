@@ -6,14 +6,9 @@ local window
 local grid_graphic
 local ROWS = 6
 local COLUMNS = 16
-
 local PERLIN_ZOOM = 4/3 ---4 / 3 -- empirically tuned
-
-local SEQ_EVOLVE_RATES = {1024*24, 1024*16, 1024*8} -- in quarter notes, but fuzzy concept due to how perlin computes
-
+local SEQ_EVOLVE_RATES = {2^15, 2^14, 2^13} -- in quarter notes, but fuzzy concept due to how perlin computes
 local SEQUENCE_STYLE_TABLE_TO_SOFTCUT = {1, 0}
-
-
 local MAX_STEPS = sequence_util.max_steps
 
 local transport_on = true
@@ -410,6 +405,7 @@ function page:initialize()
             params:set(ID_SEQ_PERLIN_Y, controlspec_perlin:map(scaled))
         end
     }
+    perlin_lfo:set('reset_target', 'mid: rising')
 
 end
 

@@ -25,7 +25,6 @@ params:add_control(ID_LEVELS_POS, "position", controlspec_pos)
 params:add_control(ID_LEVELS_AMP, "amp", controlspec_amp)
 
 
-
 ---
 --- SEQUENCER
 ---
@@ -46,12 +45,12 @@ ID_SEQ_STEP = {}
 
 params:add_separator("SEQUENCER", "SEQUENCER")
 params:add_control(ID_SEQ_PERLIN_X, "perlin x", controlspec_perlin)
-params:add_control(ID_SEQ_PERLIN_Y, "perlin y", controlspec_perlin)
+params:add_control(ID_SEQ_PERLIN_Y, "perlin y", controlspec_perlin_y)
 params:hide(ID_SEQ_PERLIN_Y)
 params:add_control(ID_SEQ_PERLIN_Z, "perlin z", controlspec_perlin)
 params:hide(ID_SEQ_PERLIN_Z)
 params:add_control(ID_SEQ_PERLIN_DENSITY, "sequence density", controlspec_perlin_density)
-params:add_option(ID_SEQ_EVOLVE, "evolve", SEQ_EVOLVE_TABLE, 2)
+params:add_option(ID_SEQ_EVOLVE, "evolve", SEQ_EVOLVE_TABLE, 1)
 params:add_option(ID_SEQ_STYLE, "sequence style", SEQUENCE_STYLE_TABLE, 1)
 
 -- add 96 params for sequence step status
