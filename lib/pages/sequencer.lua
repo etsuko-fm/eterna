@@ -1,7 +1,4 @@
-local Page = include("bits/lib/Page")
-local Window = include("bits/lib/graphics/Window")
 local GridGraphic = include("bits/lib/graphics/Grid")
-local Footer = include("bits/lib/graphics/Footer")
 local perlin = include("bits/lib/ext/perlin")
 local sequence_util = include("bits/lib/util/sequence")
 local page_name = "SEQUENCER"

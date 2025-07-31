@@ -32,39 +32,6 @@ controlspec_amp = controlspec.def {
     wrap = false
 }
 
-PITCH_CENTER_MIN = -2
-PITCH_CENTER_MAX = 2
-PITCH_CENTER_QUANTUM = 1 / 120
-PITCH_CENTER_QUANTUM_QNT = 1.0
-
-PITCH_SPREAD_MIN = -2
-PITCH_SPREAD_MAX = 2
-PITCH_SPREAD_MIN_QNT = -2
-PITCH_SPREAD_MAX_QNT = 2
-PITCH_SPREAD_QUANTUM = 0.01
-PITCH_SPREAD_QUANTUM_QNT = 0.5
-
-controlspec_pbr_center = controlspec.def {
-    min = PITCH_CENTER_MIN,
-    max = PITCH_CENTER_MAX,
-    warp = 'lin',
-    step = 1 / 120,
-    default = -1.0,
-    units = '',
-    quantum = PITCH_CENTER_QUANTUM_QNT,
-    wrap = false
-}
-
-controlspec_pbr_spread = controlspec.def {
-    min = PITCH_SPREAD_MIN_QNT,
-    max = PITCH_SPREAD_MAX_QNT,
-    warp = 'lin',
-    step = 0.01,
-    default = 1.0,
-    units = '',
-    quantum = PITCH_SPREAD_QUANTUM_QNT,
-    wrap = false
-}
 
 controlspec_perlin = controlspec.def {
     min = 0,

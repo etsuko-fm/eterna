@@ -8,11 +8,18 @@
 _lfos = require 'lfo'
 MusicUtil = require "musicutil"
 
-local audio_util = include("bits/lib/util/audio_util")
+Page = include("bits/lib/Page")
+Window = include("bits/lib/graphics/Window")
+Footer = include("bits/lib/graphics/Footer")
+audio_util = include("bits/lib/util/audio_util")
+lfo_util = include("bits/lib/util/lfo")
+misc_util = include("bits/lib/util/misc")
 
-local parameters = include("bits/lib/parameters")
-local filter_parameters = include("bits/lib/ps/filter")
-local env_parameters = include("bits/lib/ps/envelopes")
+include("bits/lib/parameters")
+include("bits/lib/ps/filter")
+include("bits/lib/ps/envelopes")
+include("bits/lib/ps/rates")
+
 local page_sampling = include("bits/lib/pages/sampling")
 local page_sequencer = include("bits/lib/pages/sequencer")
 local page_envelopes = include("bits/lib/pages/envelopes")
@@ -20,11 +27,11 @@ local page_filter = include("bits/lib/pages/filter")
 local page_character = include("bits/lib/pages/character")
 local page_control = include("bits/lib/pages/control")
 local page_panning = include("bits/lib/pages/panning")
-local page_pitch = include("bits/lib/pages/pitch")
+local page_rates = include("bits/lib/pages/rates")
 local page_levels = include("bits/lib/pages/levels")
-
 local fps = 45
 local ready
+
 
 UPDATE_SLICES = false
 engine.name = 'Heap'
@@ -48,7 +55,7 @@ local pages = {
   page_envelopes,
   page_filter,
   page_character,
-  page_pitch,
+  page_rates,
   page_panning,
   page_levels,
 }

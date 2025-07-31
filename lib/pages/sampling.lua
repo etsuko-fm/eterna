@@ -1,5 +1,3 @@
-local Page = include("bits/lib/Page")
-local Window = include("bits/lib/graphics/Window")
 local Waveform = include("bits/lib/graphics/Waveform")
 local misc_util = include("bits/lib/util/misc")
 local SliceGraphic = include("bits/lib/graphics/SliceGraphic")

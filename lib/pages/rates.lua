@@ -1,13 +1,8 @@
-local Page = include("bits/lib/Page")
-local Window = include("bits/lib/graphics/Window")
 local PitchGraph = include("bits/lib/graphics/PitchGraph")
 local page_name = "Playback"
-local misc_util = include("bits/lib/util/misc")
-
 local page
 
 local function calculate_rates()
-    local quantize = QUANTIZE_TABLE[params:get(ID_PITCH_QUANTIZE)]
     -- recalculate softcut playback rates, taking into account quantize, spread, center, direction
     for i = 0, 5 do
         -- map 6 values as equally spread angles on a (virtual) circle, by using radians (fraction * 2PI)
@@ -19,19 +14,22 @@ local function calculate_rates()
         local extend = 2 --2.67 -- manually tuned, 2.7 is also nice
 
         -- here pitch is still a linear value, representing steps on the slider
-        local pitch = math.sin(radians * extend) * params:get(ID_PITCH_SPREAD)
+        local pitch = math.sin(radians * extend) * params:get(ID_RATES_SPREAD)
 
         -- double to increase range, we'll use half the range for reverse playback (-4 < pitch < 0) and half for forward (0 < pitch < 4)
-        pitch = pitch + params:get(ID_PITCH_CENTER)
+        pitch = pitch + params:get(ID_RATES_CENTER)
 
-        if quantize ~= OFF then
-            -- quantize to integers between -2 and 2,because 2^[-2|-1|0|1|2] gives quantized rates from 0.25 to 4
-            pitch = math.floor(pitch + 0.5)
-        end
+        -- quantize to integers; between -2 and 2, because 2^[-2|-1|0|1|2] gives quantized rates from 0.25 to 4
+        pitch = math.floor(pitch + 0.5)
 
         -- these correspond to the octaves;
         -- 1 = normal, 1/2 = -12, -1/4 = -24, -1/8 = -36
-        local rate = util.clamp(2 ^ pitch, .25, 4)
+        local rate
+        if RANGE_TABLE[params:get(ID_RATES_RANGE)] == THREE_OCTAVES then
+            rate = util.clamp(2 ^ pitch, .5, 2)
+        else
+            rate = util.clamp(2 ^ pitch, .25, 4)
+        end
 
         local voice = i + 1
         if params:get(get_voice_dir_param_id(voice)) == 2 then -- todo: lookuptable 2>rev, 1>fwd
@@ -74,48 +72,43 @@ local function update_playback_dir(new_val)
 end
 
 local function add_params()
-    params:set_action(ID_PITCH_QUANTIZE, action_quantize)
-    params:set_action(ID_PITCH_CENTER, calculate_rates)
-    params:set_action(ID_PITCH_SPREAD, calculate_rates)
-    params:set_action(ID_PITCH_DIRECTION, update_playback_dir)
+    params:set_action(ID_RATES_RANGE, action_range)
+    params:set_action(ID_RATES_CENTER, calculate_rates)
+    params:set_action(ID_RATES_SPREAD, calculate_rates)
+    params:set_action(ID_RATES_DIRECTION, update_playback_dir)
 end
 
-function action_quantize(v)
-    if QUANTIZE_TABLE[v] == OCTAVES then
-        params:set(ID_PITCH_CENTER, math.floor(params:get(ID_PITCH_CENTER) + .5))
-        controlspec_pbr_center.quantum = PITCH_CENTER_QUANTUM_QNT;
-        controlspec_pbr_spread.quantum = PITCH_SPREAD_QUANTUM_QNT
-        controlspec_pbr_spread.minval = PITCH_SPREAD_MIN_QNT
-        controlspec_pbr_spread.maxval = PITCH_SPREAD_MAX_QNT
-        params:set(ID_PITCH_SPREAD, math.floor(params:get(ID_PITCH_SPREAD) + .5))
+function action_range(v)
+    if RANGE_TABLE[v] == THREE_OCTAVES then
+        controlspec_rates_center.minval = -1
+        controlspec_rates_center.maxval = 1
     else
-        controlspec_pbr_center.quantum = PITCH_CENTER_QUANTUM;
-        controlspec_pbr_spread.quantum = PITCH_SPREAD_QUANTUM;
-        controlspec_pbr_spread.minval = PITCH_SPREAD_MIN
-        controlspec_pbr_spread.maxval = PITCH_SPREAD_MAX
+        controlspec_rates_center.minval = -2
+        controlspec_rates_center.maxval = 2
     end
     calculate_rates()
 end
 
 local function cycle_direction()
-    local new = util.wrap(params:get(ID_PITCH_DIRECTION) + 1, 1, 3)
-    params:set(ID_PITCH_DIRECTION, new)
+    local new = util.wrap(params:get(ID_RATES_DIRECTION) + 1, 1, 3)
+    params:set(ID_RATES_DIRECTION, new)
 end
 
 
-local function toggle_quantize()
-    local old = params:get(ID_PITCH_QUANTIZE)
-    local new = util.wrap(old + 1, 1, #QUANTIZE_TABLE)
-    params:set(ID_PITCH_QUANTIZE, new)
+local function toggle_range()
+    local old = params:get(ID_RATES_RANGE)
+    local new = util.wrap(old + 1, 1, #RANGE_TABLE)
+    params:set(ID_RATES_RANGE, new)
 end
 
 local function adjust_center(d)
-    params:set(ID_PITCH_CENTER, params:get(ID_PITCH_CENTER) + d * controlspec_pbr_center.quantum, false)
-    page.pitch_graph.center = params:get(ID_PITCH_CENTER) * -2 -- why *-2?
+    params:set(ID_RATES_CENTER, params:get(ID_RATES_CENTER) + d * controlspec_rates_center.quantum, false)
+    page.pitch_graph.center = params:get(ID_RATES_CENTER) * -2 -- todo: why *-2?
 end
 
 local function adjust_spread(d)
-    params:set(ID_PITCH_SPREAD, params:get(ID_PITCH_SPREAD) + d * controlspec_pbr_spread.quantum)
+    local p = ID_RATES_SPREAD
+    params:set(p, params:get(p) + d * controlspec_rates_spread.quantum)
 end
 
 page = Page:create({
@@ -127,22 +120,20 @@ page = Page:create({
     k2_on = nil,
     k2_off = cycle_direction,
     k3_on = nil,
-    k3_off = toggle_quantize,
+    k3_off = toggle_range,
 })
 
 function page:render()
     page.window:render()
-    page.footer.button_text.k2.value = PLAYBACK_TABLE[params:get(ID_PITCH_DIRECTION)]
-    page.footer.button_text.k3.value = QUANTIZE_TABLE[params:get(ID_PITCH_QUANTIZE)]
+    page.footer.button_text.k2.value = PLAYBACK_TABLE[params:get(ID_RATES_DIRECTION)]
+    page.footer.button_text.k3.value = RANGE_TABLE[params:get(ID_RATES_RANGE)]
 
-    -- convert -3/+3 range to -36/+36 rounded to 1 decimal
     page.footer.button_text.e2.value = misc_util.trim(tostring(
-        params:get(ID_PITCH_CENTER)
+        params:get(ID_RATES_CENTER)
     ), 5)
 
-    -- Round value to 2 decimals
     page.footer.button_text.e3.value = misc_util.trim(tostring(
-        math.floor(params:get(ID_PITCH_SPREAD) * 100 + .5) / 100
+        params:get(ID_RATES_SPREAD)
     ), 5)
 
     page.pitch_graph:render()
@@ -174,8 +165,8 @@ function page:initialize()
                 value = "BI",
             },
             k3 = {
-                name = "QUANT",
-                value = "12", -- [N] SEMITONES, OCTAVES, FREE
+                name = "RANGE",
+                value = "3 OCT",
             },
             e2 = {
                 name = "CNTR",

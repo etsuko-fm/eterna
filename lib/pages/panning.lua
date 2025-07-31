@@ -1,9 +1,4 @@
-local Page = include("bits/lib/Page")
-local Window = include("bits/lib/graphics/Window")
 local PanningGraphic = include("bits/lib/graphics/PanningGraphic")
-local misc_util = include("bits/lib/util/misc")
-local lfo_util = include("bits/lib/util/lfo")
-
 local page_name = "PANNING"
 local window
 local panning_graphic

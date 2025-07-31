@@ -1,11 +1,6 @@
-local Page = include("bits/lib/Page")
-local page_name = "ScanLfo"
-local Window = include("bits/lib/graphics/Window")
+local page_name = "Levels"
 local LevelsGraphic = include("bits/lib/graphics/LevelsGraphic")
 local gaussian = include("bits/lib/util/gaussian")
-local misc_util = include("bits/lib/util/misc")
-local lfo_util = include("bits/lib/util/lfo")
-
 local level_graphic
 local graph_x = 36 -- (128 - graph_width) / 2
 local graph_y = 40
