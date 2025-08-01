@@ -8,12 +8,6 @@ local function adjust_drive(d)
     params:set_raw(p, new_val, false)
 end
 
-local function adjust_wet(d)
-    local p = ID_FILTER_WET
-    local new_val = params:get(p) + d * controlspec_filter_wet.quantum
-    params:set(p, new_val, false)
-end
-
 local function toggle_type()
 end
 
@@ -23,13 +17,11 @@ end
 local page = Page:create({
     name = page_name,
     e2 = adjust_drive,
-    e3 = adjust_wet,
     k2_off = toggle_type,
     k3_off = toggle_spread,
 })
 
 local function add_params()
-    params:set_action(ID_FILTER_WET, function(v) engine.wet(v) end)
     params:set_action(ID_FILTER_DRIVE, function(v) engine.gain(v) end)
 end
 
@@ -38,9 +30,7 @@ function page:render()
     screen.move(64,32)
     screen.text_center("character")
     local drive = params:get(ID_FILTER_DRIVE)
-    local wet = params:get(ID_FILTER_WET)
     page.footer.button_text.e2.value = drive
-    page.footer.button_text.e3.value = wet
     page.footer:render()
 end
 

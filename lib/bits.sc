@@ -1,5 +1,5 @@
 Engine_Bits : CroneEngine {
-  var swirlFilter;
+  var activeFilter;
   var voices;
   var filterBus;
   
@@ -18,24 +18,47 @@ Engine_Bits : CroneEngine {
     var f;
     var voicesEmpty = true;
 
+    // Audio from the voices is routed through filterBus
     filterBus = Bus.audio(context.server, 2);
+    
     context.server.sync;
     
-    swirlFilter = Synth.new("swirlFilter", target:context.xg, args: [\in, filterBus, \out, 0]);    
+    activeFilter = Synth.new("SwirlFilter", target:context.xg, args: [\in, filterBus, \out, 0]);    
+    //context.xg is the audio context's fx group
+
+    this.addCommand("set_filter_type", "s", { arg msg;
+      switch(msg[1])
+      { "SWIRL" } {
+        activeFilter.free;
+        activeFilter = Synth.new("SwirlFilter", target:context.xg, args: [\in, filterBus, \out, 0]);    
+      }
+      { "HP"} {
+        activeFilter.free;
+        activeFilter = Synth.new("HighPass", target:context.xg, args: [\in, filterBus, \out, 0]);    
+      }
+      { "LP" } {
+        activeFilter.free;
+        activeFilter = Synth.new("LowPass", target:context.xg, args: [\in, filterBus, \out, 0]);    
+      }
+      { "NONE" } {
+        activeFilter.free;
+        activeFilter = Synth.new("PassThrough", target:context.xg, args: [\in, filterBus, \out, 0]);    
+      };
+    });
 
     this.addCommand("freq", "f", { arg msg;
-      swirlFilter.set(\freq, msg[1]);
+      activeFilter.set(\freq, msg[1]);
     });
 
     this.addCommand("res", "f", { arg msg;
-      swirlFilter.set(\res, msg[1]);
+      activeFilter.set(\res, msg[1]);
     });
     this.addCommand("wet", "f", { arg msg;
-      swirlFilter.set(\wet, msg[1]);
+      activeFilter.set(\wet, msg[1]);
     });
 
     this.addCommand("gain", "f", { arg msg; 
-      swirlFilter.set(\gain, msg[1]);
+      activeFilter.set(\gain, msg[1]);
     });
 
     this.addCommand("set_buffer","si", { 
@@ -66,7 +89,7 @@ Engine_Bits : CroneEngine {
         // Create voices. Todo: this incorrectly resets all there other params, too
         if (voicesEmpty) {
           voices = Array.fill(6, { |i|
-            Synth.before(swirlFilter, "tapevoice", [
+            Synth.before(activeFilter, "tapevoice", [
             \out, filterBus,
             \bufnum, 0, 
             \rate, 1.0,
@@ -174,7 +197,7 @@ Engine_Bits : CroneEngine {
   
   free {
     Buffer.freeAll;
-    swirlFilter.free;
+    activeFilter.free;
     voices.do(_.free);
     filterBus.free;
   }
