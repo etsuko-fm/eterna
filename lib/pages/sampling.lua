@@ -1,5 +1,4 @@
 local Waveform = include("bits/lib/graphics/Waveform")
-local misc_util = include("bits/lib/util/misc")
 local SliceGraphic = include("bits/lib/graphics/SliceGraphic")
 
 local page_name = "SAMPLING"

@@ -1,7 +1,4 @@
-local Page = include("bits/lib/Page")
-local Window = include("bits/lib/graphics/Window")
 local EnvGraphic = include("bits/lib/graphics/EnvGraphic")
-local misc_util = include("bits/lib/util/misc")
 
 local page_name = "ENVELOPES"
 local window

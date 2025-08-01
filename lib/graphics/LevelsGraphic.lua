@@ -1,5 +1,3 @@
-local misc_util = include("bits/lib/util/misc")
-
 LevelsGraphic = {
     x = 0,
     y = 0,

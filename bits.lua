@@ -14,11 +14,13 @@ Footer = include("bits/lib/graphics/Footer")
 audio_util = include("bits/lib/util/audio_util")
 lfo_util = include("bits/lib/util/lfo")
 misc_util = include("bits/lib/util/misc")
+sequence_util = include("bits/lib/util/sequence")
 
 include("bits/lib/parameters")
 include("bits/lib/ps/filter")
 include("bits/lib/ps/envelopes")
 include("bits/lib/ps/rates")
+include("bits/lib/ps/levels")
 
 local page_sampling = include("bits/lib/pages/sampling")
 local page_sequencer = include("bits/lib/pages/sequencer")

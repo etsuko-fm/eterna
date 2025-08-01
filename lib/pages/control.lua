@@ -1,9 +1,4 @@
-local Page = include("bits/lib/Page")
-local Window = include("bits/lib/graphics/Window")
 local ControlGraphic = include("bits/lib/graphics/ControlGraphic")
-local sequence_util = include("bits/lib/util/sequence")
-local misc_util = include("bits/lib/util/misc")
-
 local page_name = "SEQUENCE CONTROL"
 local window
 local control_graphic

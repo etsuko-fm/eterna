@@ -1,8 +1,3 @@
-local Page = include("bits/lib/Page")
-local Window = include("bits/lib/graphics/Window")
-local misc_util = include("bits/lib/util/misc")
-local lfo_util = include("bits/lib/util/lfo")
-
 local page_name = "FILTER"
 local window
 local filter_lfo

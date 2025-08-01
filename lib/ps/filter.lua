@@ -1,7 +1,6 @@
 ---
 --- FILTER params
 ---
-local lfo_util = include("bits/lib/util/lfo")
 
 local page_id = "filter_"
 ID_FILTER_FREQ = page_id.."freq"
@@ -69,7 +68,7 @@ controlspec_filter_wet = controlspec.def {
 params:add_separator("FILTER", "FILTER")
 
 params:add_binary(ID_FILTER_LFO_ENABLED, "LFO enabled", "toggle", 0)
-params:add_option(ID_FILTER_LFO_SHAPE, "LFO shape", LEVELS_LFO_SHAPES, 1)
+params:add_option(ID_FILTER_LFO_SHAPE, "LFO shape", FILTER_LFO_SHAPES, 1)
 params:add_option(ID_FILTER_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 8)
 params:add_control(ID_FILTER_FREQ, "frequency", controlspec_filter_freq)
 params:add_control(ID_FILTER_RES, "resonance", controlspec_filter_res)

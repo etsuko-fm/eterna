@@ -1,6 +1,5 @@
 local GridGraphic = include("bits/lib/graphics/Grid")
 local perlin = include("bits/lib/ext/perlin")
-local sequence_util = include("bits/lib/util/sequence")
 local page_name = "SEQUENCER"
 local window
 local grid_graphic

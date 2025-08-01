@@ -1,36 +1,3 @@
--- Sigma - i.e. the Gaussian distribution concept
-LEVELS_SIGMA_MIN = 0.3
-LEVELS_SIGMA_MAX = 15
-LEVELS_LFO_SHAPES = { "sine", "up", "down", "random" }
-
-local LEVELS_POSITION_MIN = 0
-local LEVELS_POSITION_MAX = 1
-
-controlspec_pos = controlspec.def {
-    min = LEVELS_POSITION_MIN,
-    max = LEVELS_POSITION_MAX,
-    warp = 'lin',
-    step = 0.01,
-    default = 0.42,
-    units = '',
-    quantum = 0.01,
-    wrap = true
-}
-
--- Amp maps the arbitrary sigma range from 0 to 1
-local LEVELS_AMP_MIN = 0
-local LEVELS_AMP_MAX = 1
-
-controlspec_amp = controlspec.def {
-    min = LEVELS_AMP_MIN,
-    max = LEVELS_AMP_MAX,
-    warp = 'lin',
-    step = 0.01,
-    default = 0.45,
-    units = '',
-    quantum = 0.01,
-    wrap = false
-}
 
 
 controlspec_perlin = controlspec.def {

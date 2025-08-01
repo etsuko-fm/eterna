@@ -17,7 +17,6 @@ local lfo_period_label_values = {}
 -- for converting from float value to label
 local lfo_period_value_labels = {}
 
--- todo: verify gcd, decimal_to_fraction, lfo_period_labels; ai-generated
 local function gcd(a, b)
     while b ~= 0 do
         a, b = b, a % b
