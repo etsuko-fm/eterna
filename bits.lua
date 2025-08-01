@@ -34,7 +34,7 @@ local ready
 
 
 UPDATE_SLICES = false
-engine.name = 'Heap'
+engine.name = 'Bits'
 
 grid_device = grid.connect()
 
