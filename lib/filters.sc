@@ -7,18 +7,18 @@ BitsFilters {
 					arg in, out, freq=63.0, res = 0.2, gain=1.0, filterType=0;
 					var input = In.ar(in, 2);
 					var safeFreq = freq.clip(5.0, 24000.0);
-					var safeRes = res.clip(0.1, 2.0);
+					var safeRes = res.clip(0.0, 0.999);
 					var filtered_signal = Select.ar(filterType, [
 						// 0 - highpass
 						[
-							BMoog.ar(input[0], Lag.kr(safeFreq), Lag.kr(safeRes), mode: 1).tanh,
-							BMoog.ar(input[1], Lag.kr(safeFreq), Lag.kr(safeRes), mode: 1).tanh,
+							BMoog.ar(input[0], Lag.kr(safeFreq), Lag.kr(safeRes), saturation:0, gain: 0.4, mode: 1).tanh,
+							BMoog.ar(input[1], Lag.kr(safeFreq), Lag.kr(safeRes), saturation:0, gain: 0.4, mode: 1).tanh,
 						],
 						// 1 - lowpass
 						[
 							MoogVCF.ar(input[0], Lag.kr(safeFreq), Lag.kr(safeRes)).tanh,
 							MoogVCF.ar(input[1], Lag.kr(safeFreq), Lag.kr(safeRes)).tanh,
-						],
+						],	
 						// 2 - swirl
 						[
 							Mix.ar([

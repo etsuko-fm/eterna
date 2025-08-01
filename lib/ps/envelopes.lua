@@ -13,9 +13,9 @@ ENVELOPE_CURVES = {-3, 0, 3}
 ENVELOPE_NAMES = {"NEG", "LIN", "POS"}
 
 
-local ENV_ATTACK_MIN = 0.0001
+local ENV_ATTACK_MIN = 0.0005
 ENV_ATTACK_MAX = 10.0
-local ENV_DECAY_MIN = 0.01
+local ENV_DECAY_MIN = 0.001
 ENV_DECAY_MAX = 10.0
 local ENV_FILTER_MIN = 50
 local ENV_FILTER_MAX = 20000
@@ -24,7 +24,7 @@ controlspec_env_attack = controlspec.def {
     min = ENV_ATTACK_MIN,
     max = ENV_ATTACK_MAX,
     warp = 'exp',
-    step = 0.00001,
+    step = 0.0001,
     default = ENV_ATTACK_MIN,
     units = '',
     quantum = 0.005,

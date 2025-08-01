@@ -14,7 +14,7 @@ FILTER_LFO_SHAPES = { "sine", "up", "down", "random" }
 FILTER_TYPES = { "HP", "LP", "SWIRL", "NONE" }
 local FILTER_DRIVE_MIN = 0.5
 local FILTER_DRIVE_MAX = 5.0
-local FILTER_FREQ_MIN = 25
+local FILTER_FREQ_MIN = 20
 local FILTER_FREQ_MAX = 20000
 local FILTER_RES_MIN = 0.0
 local FILTER_RES_MAX = 0.98
@@ -22,11 +22,11 @@ local FILTER_RES_MAX = 0.98
 controlspec_filter_freq = controlspec.def {
     min = FILTER_FREQ_MIN,
     max = FILTER_FREQ_MAX,
-    warp = 'lin',
-    step = 1.0,
-    default = 25.0,
+    warp = 'exp',
+    step = 0.1,
+    default = 440.0,
     units = '',
-    quantum = 1/(FILTER_FREQ_MAX-FILTER_FREQ_MIN),
+    quantum =0.005,-- 1/(FILTER_FREQ_MAX-FILTER_FREQ_MIN),
     wrap = false
 }
 
