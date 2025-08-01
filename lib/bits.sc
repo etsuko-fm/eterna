@@ -14,7 +14,7 @@ Engine_Bits : CroneEngine {
     var bufnumR = 1;
     var file;
     var numChannels;
-    var buffL, buffR; // = Buffer.new(context.server, 0, 1, buffNum);
+    var buffL, buffR;
     var f;
     var voicesEmpty = true;
 
@@ -23,26 +23,23 @@ Engine_Bits : CroneEngine {
     
     context.server.sync;
     
-    activeFilter = Synth.new("SwirlFilter", target:context.xg, args: [\in, filterBus, \out, 0]);    
+    activeFilter = Synth.new("BitsFilters", target:context.xg, args: [\in, filterBus, \out, 0]);    
     //context.xg is the audio context's fx group
 
     this.addCommand("set_filter_type", "s", { arg msg;
-      switch(msg[1])
-      { "SWIRL" } {
-        activeFilter.free;
-        activeFilter = Synth.new("SwirlFilter", target:context.xg, args: [\in, filterBus, \out, 0]);    
-      }
+      msg[1].postln;
+      switch(msg[1].asString)
       { "HP"} {
-        activeFilter.free;
-        activeFilter = Synth.new("HighPass", target:context.xg, args: [\in, filterBus, \out, 0]);    
+        activeFilter.set(\filterType, 0);
       }
       { "LP" } {
-        activeFilter.free;
-        activeFilter = Synth.new("LowPass", target:context.xg, args: [\in, filterBus, \out, 0]);    
+        activeFilter.set(\filterType, 1);
+      }
+      { "SWIRL" } {
+        activeFilter.set(\filterType, 2);
       }
       { "NONE" } {
-        activeFilter.free;
-        activeFilter = Synth.new("PassThrough", target:context.xg, args: [\in, filterBus, \out, 0]);    
+        activeFilter.set(\filterType, 3);
       };
     });
 
@@ -70,10 +67,6 @@ Engine_Bits : CroneEngine {
       arg msg;
       buffL.free;
       buffR.free;
-      
-      // voices.do(_.free);
-      // voices.free;
-      
       isLoaded = false; 
 
       // Get file metadata 
@@ -82,11 +75,9 @@ Engine_Bits : CroneEngine {
       ("file" + msg[1].asString + "has" + f.numChannels + "channels").postln;
       f.close;
 
-
       // todo: limit buffer read to 2^24 samples because of Phasor resolution
     	buffL = Buffer.readChannel(context.server, msg[1].asString, channels:[0], bufnum: bufnumL, action: { 
         |b|
-        // Create voices. Todo: this incorrectly resets all there other params, too
         if (voicesEmpty) {
           voices = Array.fill(6, { |i|
             Synth.before(activeFilter, "tapevoice", [
@@ -104,7 +95,6 @@ Engine_Bits : CroneEngine {
           );  
         };
         voicesEmpty = false;
-
 
         // if file is stereo, load the right channel into buffR
         if (f.numChannels > 1) {

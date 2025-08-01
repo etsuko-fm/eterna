@@ -9,6 +9,9 @@ local function adjust_drive(d)
 end
 
 local function toggle_type()
+    local p = ID_FILTER_TYPE
+    local curr = params:get(p)
+    params:set(p, util.wrap(curr + 1, 1, #FILTER_TYPES))
 end
 
 local function toggle_spread()
@@ -23,6 +26,7 @@ local page = Page:create({
 
 local function add_params()
     params:set_action(ID_FILTER_DRIVE, function(v) engine.gain(v) end)
+    params:set_action(ID_FILTER_TYPE, function(v) engine.set_filter_type(FILTER_TYPES[v]) end)
 end
 
 function page:render()
@@ -30,6 +34,8 @@ function page:render()
     screen.move(64,32)
     screen.text_center("character")
     local drive = params:get(ID_FILTER_DRIVE)
+    local filter_type = params:get(ID_FILTER_TYPE)
+    page.footer.button_text.k2.value = FILTER_TYPES[filter_type]
     page.footer.button_text.e2.value = drive
     page.footer:render()
 end
