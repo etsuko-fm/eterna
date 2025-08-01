@@ -35,7 +35,7 @@ end
 local function toggle_curve()
     local p = ID_ENVELOPES_CURVE
     local curr = params:get(p)
-    params:set(p, util.wrap(curr+1, 1, #ENVELOPE_CURVES))
+    params:set(p, util.wrap(curr + 1, 1, #ENVELOPE_CURVES))
 end
 
 local function toggle_enable()
@@ -52,30 +52,30 @@ local page = Page:create({
 })
 
 local function action_attack(v)
-    for i=0,5 do
-        engine.attack(i,v)
+    for i = 0, 5 do
+        engine.attack(i, v)
     end
 end
 
 local function action_decay(v)
-    for i=0,5 do
-        engine.decay(i,v)
+    for i = 0, 5 do
+        engine.decay(i, v)
     end
 end
 
 local function action_enable(v)
-    for i=0,5 do
+    for i = 0, 5 do
         engine.enable_env(i, v)
     end
 end
 
 local function action_filter_env(v)
-    for i=0,5 do
-        engine.filter_env(i,v)
+    for i = 0, 5 do
+        engine.filter_env(i, v)
     end
 end
 local function action_curve(idx)
-    for voice=0,5 do
+    for voice = 0, 5 do
         engine.env_curve(voice, ENVELOPE_CURVES[idx])
     end
 end
@@ -93,11 +93,11 @@ function page:render()
     local decay = params:get(ID_ENVELOPES_DECAY)
     local curve = ENVELOPE_NAMES[params:get(ID_ENVELOPES_CURVE)]
     local enabled = params:get(ID_ENVELOPES_ENABLE) == 1 and "ON" or "OFF"
-    for i=1,6 do
+    for i = 1, 6 do
         envelope_graphic.attack[i] = attack / ENV_ATTACK_MAX
         envelope_graphic.decay[i] = decay / ENV_DECAY_MAX
     end
-    
+
     envelope_graphic:render()
     page.footer.button_text.k2.value = enabled
     page.footer.button_text.k3.value = curve

@@ -10,7 +10,7 @@ ID_ENVELOPES_FILTER_ENV = page_id .."filter_env"
 ID_ENVELOPES_CURVE = page_id .. "curve"
 
 ENVELOPE_CURVES = {-3, 0, 3}
-ENVELOPE_NAMES = {"CONVX", "LIN", "CNCAV"}
+ENVELOPE_NAMES = {"NEG", "LIN", "POS"}
 
 
 local ENV_ATTACK_MIN = 0.0001
@@ -54,7 +54,7 @@ controlspec_env_filter = controlspec.def {
 }
 
 params:add_separator("ENVELOPE", "ENVELOPE")
-params:add_binary(ID_ENVELOPES_ENABLE, "enable", "toggle")
+params:add_binary(ID_ENVELOPES_ENABLE, "enable", "toggle", 1)
 params:add_control(ID_ENVELOPES_ATTACK, "attack", controlspec_env_attack)
 params:add_control(ID_ENVELOPES_DECAY, "decay", controlspec_env_decay)
 params:add_option(ID_ENVELOPES_CURVE, "curve", ENVELOPE_CURVES)
