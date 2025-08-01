@@ -125,68 +125,94 @@ Engine_Bits : CroneEngine {
 
     this.addCommand("rate", "if", {
       arg msg;
-      voices[msg[1]].set(\rate, msg[2]);
+      if (voicesEmpty.not) {
+        voices[msg[1]].set(\rate, msg[2]);
+      };
     });
 
     this.addCommand("trigger", "i", {
       arg msg;
-      voices[msg[1]].set(\t_trig, 1);
+      if (voicesEmpty.not) {
+        voices[msg[1]].set(\t_trig, 1);
+      };
     });
 
     this.addCommand("position", "if", {
       arg msg;
-      voices[msg[1]].set(\loopStart, msg[2]);
-      voices[msg[1]].set(\t_trig, 1);
+      if (voicesEmpty.not) {
+        voices[msg[1]].set(\loopStart, msg[2]);
+        voices[msg[1]].set(\t_trig, 1);
+      };
     });
 
     this.addCommand("attack", "if", {
       arg msg;
-      voices[msg[1]].set(\attack, msg[2]);
+      if (voicesEmpty.not) {
+        voices[msg[1]].set(\attack, msg[2]);
+      };
     });
 
     this.addCommand("decay", "if", {
       arg msg;
-      voices[msg[1]].set(\decay, msg[2]);
+      if (voicesEmpty.not) {
+        voices[msg[1]].set(\decay, msg[2]);
+      };
     });
 
     this.addCommand("filter_env", "if", {
       arg msg;
-      voices[msg[1]].set(\freq, msg[2]);
+      if (voicesEmpty.not) {
+        voices[msg[1]].set(\freq, msg[2]);
+      };
     });
 
     this.addCommand("pan", "if", {
       arg msg;
-      voices[msg[1]].set(\pan, msg[2]);
+      if (voicesEmpty.not) {
+        voices[msg[1]].set(\pan, msg[2]);
+      };
     });
 
     this.addCommand("loop_start", "if", {
       arg msg;
-      voices[msg[1]].set(\loopStart, msg[2]);
+      if (voicesEmpty.not) {
+        voices[msg[1]].set(\loopStart, msg[2]);
+      };
     });
 
     this.addCommand("loop_end", "if", {
       arg msg;
-      voices[msg[1]].set(\loopEnd, msg[2]);
+      if (voicesEmpty.not) {
+        voices[msg[1]].set(\loopEnd, msg[2]);
+      };
     });
 
     this.addCommand("level", "if", {
       arg msg;
-      voices[msg[1]].set(\level, msg[2]);
+      if (voicesEmpty.not) {
+        voices[msg[1]].set(\level, msg[2]);
+      };
     });
 
     this.addCommand("env_level", "if", {
       arg msg;
-      voices[msg[1]].set(\envLevel, msg[2]);
+      if (voicesEmpty.not) {
+        voices[msg[1]].set(\envLevel, msg[2]);
+      };
     });
 
     this.addCommand("env_curve", "if", {
       arg msg;
-      voices[msg[1]].set(\curve, msg[2]);
+      if (voicesEmpty.not) {
+        voices[msg[1]].set(\curve, msg[2]);
+      };
     });
 
     this.addCommand("enable_env", "if", {
       arg msg;
-      voices[msg[1]].set(\enableEnv, msg[2]);
+      if (voicesEmpty.not) {
+        voices[msg[1]].set(\enableEnv, msg[2]);
+      };
     });
 
     this.addPoll(\file_loaded, {
