@@ -101,6 +101,8 @@ function Footer:render()
     if self.hide then return end
     screen.line_width(1)
     screen.font_size(8)
+    screen.font_face(self.font_face)
+
     -- draw 8 blocks
     screen.level(self.background_fill)
     for i = 1, 4 do
@@ -152,7 +154,6 @@ function Footer:render()
 
         -- write button text
         screen.move(rect_x_positions[i] + hor_txt_offset, text_y_row_1)
-        screen.font_face(self.font_face)
         screen.text(self.button_text[btn.name].name)
         screen.move(rect_x_positions[i] + hor_txt_offset, text_y_row_2)
         screen.text(self.button_text[btn.name].value)

@@ -2,6 +2,8 @@ Engine_Bits : CroneEngine {
   var activeFilter;
   var voices;
   var filterBus;
+  var fxBus;
+  var echo;
   
   *new { arg context, doneCallback;
     ^super.new(context, doneCallback);
@@ -12,18 +14,17 @@ Engine_Bits : CroneEngine {
     var isLoaded = false;
     var bufnumL = 0;
     var bufnumR = 1;
-    var file;
-    var numChannels;
-    var buffL, buffR;
-    var f;
+    var file, numChannels, buffL, buffR, f;
     var voicesEmpty = true;
 
-    // Audio from the voices is routed through filterBus
+    // Routing: buffers > filter > fx > context.xg
     filterBus = Bus.audio(context.server, 2);
+    fxBus = Bus.audio(context.server, 2);
     
     context.server.sync;
     
-    activeFilter = Synth.new("BitsFilters", target:context.xg, args: [\in, filterBus, \out, 0]);    
+    activeFilter = Synth.new("BitsFilters", target:context.xg, args: [\in, filterBus, \out, fxBus]);    
+    echo = Synth.after(activeFilter, "BitsEcho", target:context.xg, args: [\in, fxBus, \out, 0]);    
     //context.xg is the audio context's fx group
 
     this.addCommand("set_filter_type", "s", { arg msg;
@@ -205,6 +206,21 @@ Engine_Bits : CroneEngine {
       };
     });
 
+    this.addCommand("echo_feedback", "f", {
+      arg msg;
+      echo.set(\feedback, msg[1]);
+    });
+
+    this.addCommand("echo_time", "f", {
+      arg msg;
+      echo.set(\delayTime, msg[1]);
+    });
+
+    this.addCommand("echo_wet", "f", {
+      arg msg;
+      echo.set(\wetAmount, msg[1]);
+    });
+
     this.addPoll(\file_loaded, {
 	      isLoaded;
 	    }, periodic:false
@@ -216,5 +232,7 @@ Engine_Bits : CroneEngine {
     activeFilter.free;
     voices.do(_.free);
     filterBus.free;
+    fxBus.free;
+    echo.free;
   }
 }

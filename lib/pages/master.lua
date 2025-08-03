@@ -1,4 +1,4 @@
-local page_name = "FILTER CHARACTER"
+local page_name = "MASTER"
 local window
 
 local function adjust_drive(d)
@@ -24,7 +24,7 @@ end
 function page:render()
     window:render()
     screen.move(64,32)
-    screen.text_center("character")
+    screen.text_center("MASTER")
     local drive = params:get(ID_FILTER_DRIVE)
     page.footer.button_text.e2.value = drive
     page.footer:render()

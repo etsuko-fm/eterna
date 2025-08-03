@@ -21,12 +21,14 @@ include("bits/lib/ps/filter")
 include("bits/lib/ps/envelopes")
 include("bits/lib/ps/rates")
 include("bits/lib/ps/levels")
+include("bits/lib/ps/echo")
 
 local page_sampling = include("bits/lib/pages/sampling")
 local page_sequencer = include("bits/lib/pages/sequencer")
 local page_envelopes = include("bits/lib/pages/envelopes")
 local page_filter = include("bits/lib/pages/filter")
-local page_character = include("bits/lib/pages/character")
+local page_echo = include("bits/lib/pages/echo")
+local page_master = include("bits/lib/pages/master")
 local page_control = include("bits/lib/pages/control")
 local page_panning = include("bits/lib/pages/panning")
 local page_rates = include("bits/lib/pages/rates")
@@ -56,13 +58,14 @@ local pages = {
   page_control,
   page_envelopes,
   page_filter,
-  page_character,
+  page_echo,
   page_rates,
   page_panning,
   page_levels,
+  page_master,
 }
 
-local current_page_index = 4
+local current_page_index = 6
 local current_page = pages[current_page_index]
 
 local function page_forward()
