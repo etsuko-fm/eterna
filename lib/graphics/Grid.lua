@@ -71,10 +71,10 @@ local basey = 16
 function Grid:render()
     if self.hide then return end
     local voice
-    for row = 0, self.rows - 1 do
+    for row = 0, rows - 1 do
         voice = row + 1
         -- self:draw_track_indicator(voice)
-        for column = 0, self.columns - 1 do
+        for column = 0, columns - 1 do
             -- iterate over entire grid
             local idx = column + 1 -- step index in for loop
             local x = basex + (block_w + margin_w) * column
@@ -105,6 +105,7 @@ function Grid:render()
                     screen.fill()
                 end
             else
+                -- inactive step
                 screen.rect(x, y, block_w, block_h)
                 screen.level(self.fill)
                 screen.fill()

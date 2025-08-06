@@ -3,9 +3,7 @@ local perlin = include("bits/lib/ext/perlin")
 local page_name = "SEQUENCER"
 local window
 local grid_graphic
-local ROWS = 6
-local COLUMNS = 16
-local PERLIN_ZOOM = 4/3 ---4 / 3 -- empirically tuned
+local PERLIN_ZOOM = 5/3 ---4 / 3 -- empirically tuned
 local SEQ_EVOLVE_RATES = {2^15, 2^14, 2^13} -- in quarter notes, but fuzzy concept due to how perlin computes
 local SEQUENCE_STYLE_TABLE_TO_SOFTCUT = {1, 0}
 local MAX_STEPS = sequence_util.max_steps
@@ -20,13 +18,14 @@ local main_seq_clock_id
 local current_step = 1
 local current_global_step = 1 -- holds values of 1 to MAX_STEPS, even if sequence length is shorter
 
-local sequence_steps = 16
+local sequence_steps = SEQ_COLUMNS
 local step_divider = 1 -- 1 means 1 step = 1 1/16th note
 local cue_step_divider = nil
 
 local voice_pos = {} -- playhead positions of softcut voices
 voice_pos_percentage = {}
 local perlin_lfo
+local redraw_sequence = false
 
 local function generate_perlin_seq()
     -- print("regen - ", math.random())
@@ -36,28 +35,37 @@ local function generate_perlin_seq()
     local y_seed = params:get(ID_SEQ_PERLIN_Y)
     local z_seed = params:get(ID_SEQ_PERLIN_Z)
 
-    for voice = 1, ROWS do
-        for step = 1, COLUMNS do
+    for voice = 1, SEQ_ROWS do
+        for step = 1, SEQ_COLUMNS do
             local perlin_x = step * PERLIN_ZOOM + x_seed
             local perlin_y = voice * PERLIN_ZOOM + y_seed
-            local perlin_z = z_seed
-            local v = perlin:noise(perlin_x, perlin_y, perlin_z) -- -1 to 1
+            local pnoise = perlin:noise(perlin_x, perlin_y, z_seed)
+            local v = util.clamp(util.linlin(-1, 1, -0.3, 1.3, pnoise), 0.01, 1)
 
-            -- base density map on a different seed of x/y/z, so that
-            -- not only low or high values are filtered out
-            local density_seed = 11
-            local d = perlin:noise(perlin_x+density_seed, perlin_y+density_seed, perlin_z+density_seed)
-
-            if math.abs(d) > density then
-                -- if value is .81/-.81 and density is .8, value is filtered out; 
-                -- generalized, then 20% of the values is filtered out. 
-                -- so higher density, is more values in sequence.
-                v = 0.0 -- 0.0 is only value not interpreted as an active step
+            if density == 0 then v = 0
+            else
+                -- base density map on a different seed of x/y/z, so that
+                -- not only low or high values are filtered out
+                local density_seed = 11.0
+                -- map to larger range than [0:1], then clamp, because perlin noise leans to the center of the range
+                local mask = util.clamp(util.linlin(-1,1,-0.3,1.3, perlin:noise(perlin_x + density_seed, perlin_y + density_seed, z_seed)), 0, 1)
+                if mask >= density and (mask ~= 1.0 and density ~= 1.0) then
+                    v = 0.0 -- 0.0 is only value not interpreted as an active step    
+                end
             end
             params:set(ID_SEQ_STEP[voice][step], v)
         end
     end
 end
+
+-- local min_val = math.huge
+-- local max_val = -math.huge
+-- for x = 0, 1000, 0.01 do
+--     local n = perlin:noise(x, math.random()*10, math.random()*10)
+--     if n < min_val then min_val = n end
+--     if n > max_val then max_val = n end
+-- end
+-- print("Min:", min_val, "Max:", max_val)
 
 local function e2(d)
     -- works for x, y, and z
@@ -173,7 +181,7 @@ local function main_sequencer_callback()
             grid_graphic.current_step = current_step
         end
 
-        for y = 1, ROWS do
+        for y = 1, SEQ_ROWS do
             -- todo: implement a check if it already fired for this step
             local perlin_val = params:get(ID_SEQ_STEP[y][x])
             local a = math.abs(perlin_val)
@@ -253,13 +261,14 @@ end
 
 function page:render()
     window:render()
-    -- update_grid_state() -- typically not needed, only when pset is loaded
+    if redraw_sequence then
+        -- condition prevents updating perlin values more often than the screen refreshes. 
+        generate_perlin_seq()
+        redraw_sequence = false
+    end
+
     grid_graphic:render()
-    -- if selected_sample then
-    --     for voice = 1, 6 do
-    --         softcut.query_position(voice)
-    --     end
-    -- end
+
     page.footer.button_text.k2.value = SEQ_EVOLVE_TABLE[params:get(ID_SEQ_EVOLVE)]
     page.footer.button_text.k3.value = SEQUENCE_STYLE_TABLE[params:get(ID_SEQ_STYLE)]
     page.footer.button_text.e2.value = params:get(ID_SEQ_PERLIN_X)
@@ -303,15 +312,19 @@ grid.key = function(x,y,z)
 end
 
 
+local function toggle_redraw()
+    redraw_sequence = true
+end
+
 local function add_params()
-    params:set_action(ID_SEQ_PERLIN_X, generate_perlin_seq)
-    params:set_action(ID_SEQ_PERLIN_Y, generate_perlin_seq)
-    params:set_action(ID_SEQ_PERLIN_Z, generate_perlin_seq)
-    params:set_action(ID_SEQ_PERLIN_DENSITY, generate_perlin_seq)
+    params:set_action(ID_SEQ_PERLIN_X, toggle_redraw)
+    params:set_action(ID_SEQ_PERLIN_Y, toggle_redraw)
+    params:set_action(ID_SEQ_PERLIN_Z, toggle_redraw)
+    params:set_action(ID_SEQ_PERLIN_DENSITY, toggle_redraw)
     params:set_action(ID_SEQ_EVOLVE, action_evolve)
     params:set_action(ID_SEQ_STYLE, action_playback_style)
-    for y = 1, 6 do
-        for x = 1, 16 do
+    for y = 1, SEQ_ROWS do
+        for x = 1, SEQ_COLUMNS do
             params:set_action(ID_SEQ_STEP[y][x], function(v) update_grid_step(x,y,v) end)
         end
     end

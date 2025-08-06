@@ -22,6 +22,7 @@ include("bits/lib/ps/envelopes")
 include("bits/lib/ps/rates")
 include("bits/lib/ps/levels")
 include("bits/lib/ps/echo")
+include("bits/lib/ps/sequencer")
 
 local page_sampling = include("bits/lib/pages/sampling")
 local page_sequencer = include("bits/lib/pages/sequencer")

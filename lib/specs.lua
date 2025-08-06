@@ -1,39 +1,3 @@
-
-
-controlspec_perlin = controlspec.def {
-    min = 0,
-    max = 100,
-    warp = 'lin',
-    step = .01,
-    default = math.random(4) * 25.0,
-    units = '',
-    quantum = .1,
-    wrap = true
-}
-
-controlspec_perlin_y = controlspec.def {
-    min = 0,
-    max = 25,
-    warp = 'lin',
-    step = .00001,
-    default = math.random(4) * 25.0,
-    units = '',
-    quantum = .00001,
-    wrap = true
-}
-
-
-controlspec_perlin_density = controlspec.def {
-    min = 0,
-    max = 1,
-    warp = 'lin',
-    step = .001,
-    default = 0.5, -- default value
-    units = '',
-    quantum = .01,
-    wrap = false
-}
-
 local PAN_TWIST_MIN = 0
 local PAN_TWIST_MAX = 1
 
