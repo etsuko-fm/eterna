@@ -1,7 +1,7 @@
 EchoGraphic = {
     x = 64,
     y = 25,
-    radius = 10,
+    radius = 12,
     hide = false,
     curve = 'lin', --lin, convex, concave
     selected = 1, -- time slice selected
@@ -24,16 +24,16 @@ local offset = math.pi / 2 + spacing/2
 local first = true
 function EchoGraphic:render()
     if self.hide then return end
-    local radius = self.radius * self.feedback
+    local radius = self.radius * (self.feedback/4)
     local count = 0
     local r = 1
     local n = 1
     local brightness = 15
     while r < radius do
         count = count + 1
-        r = math.floor((n) + n * self.time/2)
-        brightness = util.clamp(15 - r, 1, 15)
-        brightness = util.round_up(brightness * self.feedback)
+        r = math.floor((n) + n * self.time/4)
+        brightness = util.clamp(15 - count*3, 1, 15)
+        brightness = util.round_up(brightness * self.feedback/4)
         screen.level(brightness)
         n = n+1
         if first then print(r) end

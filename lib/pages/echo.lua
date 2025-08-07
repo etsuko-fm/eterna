@@ -48,7 +48,7 @@ function page:render()
     local wet = params:get(ID_ECHO_DRYWET)
     local feedback = ECHO_FEEDBACK_NAMES[params:get(ID_ECHO_FEEDBACK)]
     echo_graphic.time = params:get(ID_ECHO_TIME)
-    echo_graphic.feedback = ECHO_FEEDBACK_AMOUNTS[params:get(ID_ECHO_FEEDBACK)]
+    echo_graphic.feedback =params:get(ID_ECHO_FEEDBACK) -- 1 to 4
     echo_graphic.wet = params:get(ID_ECHO_DRYWET)
     echo_graphic:render()
     page.footer.button_text.k3.value = feedback
