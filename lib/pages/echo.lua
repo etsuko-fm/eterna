@@ -1,5 +1,7 @@
 local page_name = "ECHO"
 local window
+local EchoGraphic = include("bits/lib/graphics/EchoGraphic")
+local echo_graphic
 
 local function adjust_wet(d)
     local p = ID_ECHO_DRYWET
@@ -39,16 +41,21 @@ local function add_params()
 end
 
 function page:render()
-    window:render()
-    screen.move(64, 32)
-    screen.text_center("ECHO")
+    
+    -- screen.move(64, 32)
+    -- screen.text_center("ECHO")
     local time = ECHO_TIME_NAMES[params:get(ID_ECHO_TIME)]
     local wet = params:get(ID_ECHO_DRYWET)
     local feedback = ECHO_FEEDBACK_NAMES[params:get(ID_ECHO_FEEDBACK)]
+    echo_graphic.time = params:get(ID_ECHO_TIME)
+    echo_graphic.feedback = ECHO_FEEDBACK_AMOUNTS[params:get(ID_ECHO_FEEDBACK)]
+    echo_graphic.wet = params:get(ID_ECHO_DRYWET)
+    echo_graphic:render()
     page.footer.button_text.k3.value = feedback
     page.footer.button_text.e2.value = time
     page.footer.button_text.e3.value = wet
     page.footer:render()
+    window:render()
 end
 
 function page:initialize()
@@ -66,6 +73,9 @@ function page:initialize()
         horizontal_separations = 0,
         vertical_separations = 0,
     })
+
+    echo_graphic = EchoGraphic:new()
+
     -- graphics
     page.footer = Footer:new({
         button_text = {
