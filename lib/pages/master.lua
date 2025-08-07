@@ -37,7 +37,7 @@ function page:initialize()
         y = 0,
         w = 128,
         h = 64,
-        title = "FX",
+        title = "MASTER",
         font_face = TITLE_FONT,
         brightness = 15,
         border = false,

@@ -55,14 +55,14 @@ state = {
 
 local pages = {
   page_sampling,
-  page_sequencer,
   page_control,
+  page_sequencer,
   page_envelopes,
+  page_rates,
+  page_levels,
+  page_panning,
   page_filter,
   page_echo,
-  page_rates,
-  page_panning,
-  page_levels,
   page_master,
 }
 
