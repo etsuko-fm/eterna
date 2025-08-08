@@ -1,6 +1,7 @@
 local page_name = "FILTER"
 local window
-
+local FilterGraphic = include("bits/lib/graphics/FilterGraphic")
+local filter_graphic
 local function adjust_freq(d)
     local p = ID_FILTER_FREQ
     local new_val = params:get_raw(p) + d * controlspec_filter_freq.quantum
@@ -38,16 +39,25 @@ end
 
 function page:render()
     window:render()
-    screen.move(64,32)
-    screen.text_center("filter")
     local freq = params:get(ID_FILTER_FREQ)
     local res = params:get(ID_FILTER_RES)
     local filter_type = params:get(ID_FILTER_TYPE)
-    -- When LFO is disabled, E2 controls pan position
+    filter_graphic.freq = freq
+    filter_graphic.res = res
+    filter_graphic.type = filter_type
+    filter_graphic:render()
     page.footer.button_text.k2.value = FILTER_TYPES[filter_type]
-    page.footer.button_text.e2.name = "FREQ"
-    page.footer.button_text.e2.value = misc_util.trim(tostring(freq), 5)
-    page.footer.button_text.e3.value = misc_util.trim(tostring(res), 5)
+    if FILTER_TYPES[filter_type] ~= "NONE" then
+        page.footer.button_text.e2.name = "FREQ"
+        page.footer.button_text.e3.name = "RES"
+        page.footer.button_text.e2.value = misc_util.trim(tostring(freq), 5)
+        page.footer.button_text.e3.value = misc_util.trim(tostring(res), 5)
+    else
+        page.footer.button_text.e2.name = ""
+        page.footer.button_text.e3.name = ""
+        page.footer.button_text.e2.value = ""
+        page.footer.button_text.e3.value = ""
+    end
     page.footer:render()
 end
 
@@ -67,6 +77,8 @@ function page:initialize()
         vertical_separations = 0,
     })
     -- graphics
+    filter_graphic = FilterGraphic:new()
+
     page.footer = Footer:new({
         button_text = {
             k2 = {

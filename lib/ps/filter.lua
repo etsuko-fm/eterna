@@ -37,7 +37,7 @@ controlspec_filter_res = controlspec.def {
     step = 0.01,
     default = 0.2,
     units = '',
-    quantum = 0.01,
+    quantum = 0.02,
     wrap = false
 }
 
