@@ -267,6 +267,13 @@ function page:render()
         redraw_sequence = false
     end
 
+    amp1poll:update()
+    amp2poll:update()
+    amp3poll:update()
+    amp4poll:update()
+    amp5poll:update()
+    amp6poll:update()
+
     grid_graphic:render()
 
     page.footer.button_text.k2.value = SEQ_EVOLVE_TABLE[params:get(ID_SEQ_EVOLVE)]
@@ -336,7 +343,6 @@ local function report_softcut(voice, pos)
 
     voice_pos[voice] = pos
     local voice_dir = params:get(get_voice_dir_param_id(voice))
-
     -- todo : should be able to use ID_SAMPLING_SLICE_SECTIONS from sampling page, saves string concat
     local slice_start = params:get(get_slice_start_param_id(voice))
     local slice_end = params:get(get_slice_end_param_id(voice))
@@ -356,10 +362,22 @@ local function report_softcut(voice, pos)
     grid_graphic.voice_pos_percentage[voice] = voice_pos_percentage[voice]
 end
 
+local function amp_callback(voice, val)
+    grid_graphic.voice_amp[voice] = val
+end
+
+
 function page:initialize()
     -- allows value to be modified by other pages
     page.sequence_speed = sequence_util.convert_sequence_speed[sequence_util.default_speed_idx]
     add_params()
+    amp1poll.callback = function(v) amp_callback(1, v) end
+    amp2poll.callback = function(v) amp_callback(2, v) end
+    amp3poll.callback = function(v) amp_callback(3, v) end
+    amp4poll.callback = function(v) amp_callback(4, v) end
+    amp5poll.callback = function(v) amp_callback(5, v) end
+    amp6poll.callback = function(v) amp_callback(6, v) end
+
     window = Window:new({
         x = 0,
         y = 0,

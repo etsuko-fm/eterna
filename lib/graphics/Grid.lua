@@ -16,6 +16,7 @@ Grid = {
         { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },
     },
     voice_pos_percentage = { nil, nil, nil, nil, nil, nil }, -- table of 6 items, with value 0-1 for position of voice in loop section
+    voice_amp = { 0, 0, 0, 0, 0, 0, },
     is_playing = { false, false, false, false, false, false },
     hide = false,
 }
@@ -40,30 +41,29 @@ local margin_w = 1
 local margin_h = 1
 local indicator_x = 32 + (block_w+margin_w)*columns + 1
 local indicator_base_y = 16
-local indicator_w = 1
+local indicator_w = 16
 local indicator_h = 3
 local indicator_vmargin = indicator_h + margin_h
 local faint_fill = 1
 
 function Grid:draw_track_indicator(voice)
-    if self.voice_pos_percentage[voice] == nil then return end
+    if self.voice_amp[voice] == nil then return end
     local zero_idx = voice - 1
 
     -- brightness is reversely proportional to position of playhead in slice selection
     --- e.g. later in slice, is fainter brightness
 
     -- sometimes position comes to -0.0003, which troubles math.floor; hence +2 to have min brightness of 1
-    local brightness = faint_fill
-    if self.is_playing[voice] then
-        local rev_pos = 1 - self.voice_pos_percentage[voice]
-        brightness = math.floor(2 + rev_pos * 15)
-    end
-
-    screen.level(brightness)
+    screen.level(2)
     local indicator_y = indicator_base_y + (indicator_vmargin * zero_idx)
-    screen.rect(indicator_x, indicator_y, indicator_w, indicator_h)
-
-    screen.fill()
+    local v = self.voice_amp[voice]
+    if v > 0 then
+        screen.rect(indicator_x, indicator_y, 2 + indicator_w * v, indicator_h)
+        screen.fill()
+    else
+        screen.rect(indicator_x, indicator_y, 1, indicator_h)
+        screen.fill()
+    end
 end
 
 local basex = 32
@@ -73,7 +73,7 @@ function Grid:render()
     local voice
     for row = 0, rows - 1 do
         voice = row + 1
-        -- self:draw_track_indicator(voice)
+        self:draw_track_indicator(voice)
         for column = 0, columns - 1 do
             -- iterate over entire grid
             local idx = column + 1 -- step index in for loop

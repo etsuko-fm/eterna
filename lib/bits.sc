@@ -4,6 +4,7 @@ Engine_Bits : CroneEngine {
   var filterBus;
   var fxBus;
   var echo;
+  var ampBuses;
   
   *new { arg context, doneCallback;
     ^super.new(context, doneCallback);
@@ -20,6 +21,7 @@ Engine_Bits : CroneEngine {
     // Routing: buffers > filter > fx > context.xg
     filterBus = Bus.audio(context.server, 2);
     fxBus = Bus.audio(context.server, 2);
+    ampBuses = Array.fill(6, { Bus.control(s, 1) });
     
     context.server.sync;
     
@@ -92,6 +94,7 @@ Engine_Bits : CroneEngine {
             \t_trig, 0,
             \enable_env, 0,
             \envLevel, 1.0,
+            \ampBus, ampBuses[i].index,
             ])}
           );  
         };
@@ -206,25 +209,18 @@ Engine_Bits : CroneEngine {
       };
     });
 
-    this.addCommand("echo_feedback", "f", {
-      arg msg;
-      echo.set(\feedback, msg[1]);
-    });
+    this.addCommand("echo_feedback", "f", { arg msg; echo.set(\feedback, msg[1]); });
+    this.addCommand("echo_time", "f",     { arg msg; echo.set(\delayTime, msg[1]); });
+    this.addCommand("echo_wet", "f",      { arg msg; echo.set(\wetAmount, msg[1]); });
 
-    this.addCommand("echo_time", "f", {
-      arg msg;
-      echo.set(\delayTime, msg[1]);
-    });
+    this.addPoll(\file_loaded, { isLoaded; }, periodic:false);
 
-    this.addCommand("echo_wet", "f", {
-      arg msg;
-      echo.set(\wetAmount, msg[1]);
-    });
-
-    this.addPoll(\file_loaded, {
-	      isLoaded;
-	    }, periodic:false
-    );
+    this.addPoll(\voice1amp, { ampBuses[0].getSynchronous; }, periodic: true);
+    this.addPoll(\voice2amp, { ampBuses[1].getSynchronous; }, periodic: true);
+    this.addPoll(\voice3amp, { ampBuses[2].getSynchronous; }, periodic: true);
+    this.addPoll(\voice4amp, { ampBuses[3].getSynchronous; }, periodic: true);
+    this.addPoll(\voice5amp, { ampBuses[4].getSynchronous; }, periodic: true);
+    this.addPoll(\voice6amp, { ampBuses[5].getSynchronous; }, periodic: true);
   }
   
   free {
@@ -234,5 +230,6 @@ Engine_Bits : CroneEngine {
     filterBus.free;
     fxBus.free;
     echo.free;
+    ampBuses.do(_.free);
   }
 }

@@ -140,6 +140,12 @@ function midi_cb(data)
 end
 
 loaded_poll = nil
+amp1poll = nil
+amp2poll = nil
+amp3poll = nil
+amp4poll = nil
+amp5poll = nil
+amp6poll = nil
 
 function init()
   -- Encoder sensitivity
@@ -150,6 +156,13 @@ function init()
     norns.enc.accel(i, false)
   end
   loaded_poll = poll.set("file_loaded")
+  amp1poll = poll.set("voice1amp");
+  amp2poll = poll.set("voice2amp");
+  amp3poll = poll.set("voice3amp");
+  amp4poll = poll.set("voice4amp");
+  amp5poll = poll.set("voice5amp");
+  amp6poll = poll.set("voice6amp");
+
 
   loaded_poll.callback = function(val)
     if val then
@@ -159,7 +172,6 @@ function init()
       print("poll loaded but value is " .. val)
     end
   end
-
 
   for _, page in ipairs(pages) do
     page:initialize()
