@@ -20,6 +20,7 @@ local function adjust_sigma(d)
 end
 
 local function toggle_shape()
+    if levels_lfo:get("enabled") == 0 then return end
     local index = params:get(ID_LEVELS_LFO_SHAPE)
     local next_index = (index % #LEVELS_LFO_SHAPES) + 1
     params:set(ID_LEVELS_LFO_SHAPE, next_index, false)
@@ -75,6 +76,12 @@ function page:render()
     if levels_lfo:get("enabled") == 1 then
         -- When LFO is disabled, E2 controls LFO rate
         page.footer.button_text.k2.value = "ON"
+
+        -- Show LFO shape button
+        page.footer.button_text.k3.name = "SHAPE"
+        page.footer.button_text.k3.value = string.upper(params:string(ID_LEVELS_LFO_SHAPE))
+
+        -- Switch POS to RATE
         page.footer.button_text.e2.name = "RATE"
 
         -- convert period to label representation
@@ -85,8 +92,11 @@ function page:render()
         page.footer.button_text.k2.value = "OFF"
         page.footer.button_text.e2.name = "POS"
         page.footer.button_text.e2.value = misc_util.trim(tostring(params:get(ID_LEVELS_POS)), 5)
+        -- Hide shape button
+        page.footer.button_text.k3.name = ""
+        page.footer.button_text.k3.value = ""
     end
-    page.footer.button_text.k3.value = string.upper(params:string(ID_LEVELS_LFO_SHAPE))
+
     page.footer.button_text.e3.value = misc_util.trim(tostring(params:get(ID_LEVELS_AMP)), 5)
     page.footer:render()
 end

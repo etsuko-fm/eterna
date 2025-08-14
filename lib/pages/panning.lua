@@ -32,6 +32,7 @@ local function toggle_lfo()
 end
 
 local function toggle_shape()
+    if panning_lfo:get("enabled") == 0 then return end
     local index = params:get(ID_PANNING_LFO_SHAPE)
     local next_index = (index % #PANNING_LFO_SHAPES) + 1
     params:set(ID_PANNING_LFO_SHAPE, next_index, false)
@@ -91,14 +92,21 @@ function page:render()
         -- convert period to label representation
         local period = panning_lfo:get('period')
         page.footer.button_text.e2.value = lfo_util.lfo_period_value_labels[period]
+
+        -- Show LFO shape button
+        page.footer.button_text.k3.name = "SHAPE"
+        page.footer.button_text.k3.value = string.upper(params:string(ID_PANNING_LFO_SHAPE))
     else
         -- When LFO is disabled, E2 controls pan position
         page.footer.button_text.k2.value = "OFF"
         page.footer.button_text.e2.name = "TWIST"
         page.footer.button_text.e2.value = misc_util.trim(tostring(twist), 5)
+
+        -- Hide LFO shape button
+        page.footer.button_text.k3.name = ""
+        page.footer.button_text.k3.value = ""
     end
     page.footer.button_text.e3.value = misc_util.trim(tostring(spread), 5)
-    page.footer.button_text.k3.value = string.upper(panning_lfo:get("shape"))
     page.footer:render()
 end
 
