@@ -92,7 +92,7 @@ function page:initialize()
                 value = "",
             },
             e3 = {
-                name = "DRY/WE",
+                name = "MIX",
                 value = "",
             },
         },

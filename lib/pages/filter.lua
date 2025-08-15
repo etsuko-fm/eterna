@@ -13,28 +13,41 @@ local function adjust_res(d)
     params:set(ID_FILTER_RES, new_val, false)
 end
 
-local function e2(d)
-    adjust_freq(d)
-end
-
 local function toggle_type()
     local p = ID_FILTER_TYPE
     local curr = params:get(p)
     params:set(p, util.wrap(curr + 1, 1, #FILTER_TYPES))
 end
+local function toggle_drywet()
+    local p = ID_FILTER_WET
+    local curr = params:get(p)
+    params:set(p, util.wrap(curr + 1, 1, #DRY_WET_TYPES))
+end
+
 
 local page = Page:create({
     name = page_name,
-    e2 = e2,
+    e2 = adjust_freq,
     e3 = adjust_res,
     k2_off = toggle_type,
-    k3_off = nil,
+    k3_off = toggle_drywet,
 })
+
+local function action_wet(v)
+    if DRY_WET_TYPES[v] == "DRY" then
+        engine.filter_dry(1)
+    elseif DRY_WET_TYPES[v] == "50/50" then
+        engine.filter_dry(.5)
+    else
+        engine.filter_dry(0)
+    end
+end
 
 local function add_params()
     params:set_action(ID_FILTER_FREQ, function(v) engine.freq(v) end)
     params:set_action(ID_FILTER_TYPE, function(v) engine.set_filter_type(FILTER_TYPES[v]) end)
     params:set_action(ID_FILTER_RES, function(v) engine.res(v) end)
+    params:set_action(ID_FILTER_WET, action_wet)
 end
 
 function page:render()
@@ -42,6 +55,7 @@ function page:render()
     local freq = params:get(ID_FILTER_FREQ)
     local res = params:get(ID_FILTER_RES)
     local filter_type = params:get(ID_FILTER_TYPE)
+    local drywet = params:get(ID_FILTER_WET)
     filter_graphic.freq = freq
     filter_graphic.res = res
     filter_graphic.type = filter_type
@@ -50,6 +64,8 @@ function page:render()
     if FILTER_TYPES[filter_type] ~= "NONE" then
         page.footer.button_text.e2.name = "FREQ"
         page.footer.button_text.e3.name = "RES"
+        page.footer.button_text.k3.name = "MIX"
+        page.footer.button_text.k3.value = DRY_WET_TYPES[drywet]
         page.footer.button_text.e2.value = misc_util.trim(tostring(freq), 5)
         page.footer.button_text.e3.value = misc_util.trim(tostring(res), 5)
     else
@@ -86,7 +102,7 @@ function page:initialize()
                 value = "",
             },
             k3 = {
-                name = "",
+                name = "MIX",
                 value = "",
             },
             e2 = {

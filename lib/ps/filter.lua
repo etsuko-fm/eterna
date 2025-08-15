@@ -6,12 +6,15 @@ local page_id = "filter_"
 ID_FILTER_FREQ = page_id.."freq"
 ID_FILTER_RES = page_id.."res"
 ID_FILTER_DRIVE = page_id.."drive"
+ID_FILTER_WET = page_id.."wet"
 ID_FILTER_TYPE = page_id.."type"
 ID_FILTER_LFO_ENABLED = page_id.."lfo_enabled"
 ID_FILTER_LFO_SHAPE = page_id.."lfo_shape"
 ID_FILTER_LFO_RATE = page_id.."lfo_rate"
 FILTER_LFO_SHAPES = { "sine", "up", "down", "random" }
 FILTER_TYPES = { "HP", "LP", "SWIRL", "NONE" }
+DRY_WET_TYPES = {"DRY", "50/50", "WET"}
+
 local FILTER_DRIVE_MIN = 0.5
 local FILTER_DRIVE_MAX = 5.0
 local FILTER_FREQ_MIN = 20
@@ -57,6 +60,7 @@ params:add_binary(ID_FILTER_LFO_ENABLED, "LFO enabled", "toggle", 0)
 params:add_option(ID_FILTER_LFO_SHAPE, "LFO shape", FILTER_LFO_SHAPES, 1)
 params:add_option(ID_FILTER_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 8)
 params:add_option(ID_FILTER_TYPE, "filter type", FILTER_TYPES, 1)
+params:add_option(ID_FILTER_WET, "dry/wet", DRY_WET_TYPES, 3)
 params:add_control(ID_FILTER_FREQ, "frequency", controlspec_filter_freq)
 params:add_control(ID_FILTER_RES, "resonance", controlspec_filter_res)
 params:add_control(ID_FILTER_DRIVE, "drive", controlspec_filter_drive)
