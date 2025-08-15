@@ -84,27 +84,22 @@ local function to_sample_name(path)
     return util.trim_string_to_width(s, 108)
 end
 
-local function update_slice_graphic()
-    local num_slices = params:get(ID_SAMPLING_NUM_SLICES)
-    local slice_start = params:get(ID_SAMPLING_SLICE_START)
-    local slice_len = 1 / num_slices
-
-    slice_graphic.num_slices = num_slices
-    slice_graphic.slice_start = slice_start
-    slice_graphic.slice_len = slice_len
-end
-
-local function update_softcut_ranges()
+local function update_loop_ranges()
     local n_slices = params:get(ID_SAMPLING_NUM_SLICES)
+
+    -- if slices > num_voices, not all slices can be assigned to a voice
+    -- 6 consecutive slices are assigned to voice 1-6
     local start = params:get(ID_SAMPLING_SLICE_START)
 
     -- edit buffer ranges per softcut voice
-    local slice_start_timestamps = {}
+    local slice_start_timestamps = {} -- start position of each slice, in seconds
     local slice_length = get_slice_length()
     if not slice_length then return end
 
     for i = 1, n_slices do
-        -- start at 0
+        -- slice 1 starts at 0.0 seconds; 
+        -- slice 2 starts at 1*slice_length,
+        -- slice 3 starts at 2*slice_length, etc
         slice_start_timestamps[i] = (i - 1) * slice_length
     end
 
@@ -116,7 +111,9 @@ local function update_softcut_ranges()
         --- or 26-32 when start=26.
         --- this works fine for n_slices > 6; else, voices need to recycle slices;
         --- hence the modulo.
-        local start_pos = slice_start_timestamps[((start - 1 + i) % n_slices) + 1]
+        local slice_index = util.wrap(start + i, 1, n_slices)
+        slice_graphic.active_slices[voice] = slice_index --update slice graphic
+        local start_pos = slice_start_timestamps[slice_index]
         -- loop start/end works as buffer range when loop not enabled
         -- end point is where the next slice starts
         local end_pos = start_pos + (slice_length * .999)  -- leave a small gap to prevent overlap
@@ -126,8 +123,7 @@ local function update_softcut_ranges()
         params:set(ID_SAMPLING_SLICE_SECTIONS[voice].loop_end, end_pos)
         -- voice_position_to_start(voice) --todo: fix, order of initalization bug
     end
-    -- reflect changes in graphic
-    update_slice_graphic()
+    -- reflect changes in graphic (it'll get params from state)
 end
 
 local function load_sample(file)
@@ -156,7 +152,7 @@ local function load_sample(file)
             softcut.buffer(voice, 1)
         end
     end
-    update_softcut_ranges()
+    update_loop_ranges()
 end
 
 local function select_sample()
@@ -174,14 +170,10 @@ local function select_sample()
 end
 
 local function constrain_max_start(num_slices)
-    -- starting slice should always be 1 when num slices <= 6;
-    -- when num slices > 6, its max is the (number of slices - 6)
-    local num_voices = 6
-    if num_slices > num_voices then
-        controlspec_start.maxval = 1 + num_slices - num_voices
-    else
-        controlspec_start.maxval = 1
-    end
+    -- side effect of adjusting maxval, is that raw * maxval of the controlspec
+    -- is a new value, which is why this method implicitly adjusts the value of start
+    controlspec_start.maxval = num_slices
+    controlspec_start.quantum = 1/num_slices
 end
 
 local function shuffle()
@@ -197,25 +189,28 @@ end
 local function action_num_slices(v)
     -- update max start based on number of slices
     constrain_max_start(v)
-    update_softcut_ranges()
+    slice_graphic.slice_len = 1/v
+    slice_graphic.num_slices = v
+    update_loop_ranges()
 end
 
 local function action_slice_start(v)
-    update_softcut_ranges()
+    update_loop_ranges()
 end
 
 local function adjust_num_slices(d)
     if selected_sample then
         local p = ID_SAMPLING_NUM_SLICES
-        params:set(p, params:get(p) + d * controlspec_slices.quantum)    
+        params:set_raw(p, params:get_raw(p) + d * controlspec_slices.quantum)
     end
 end
 
 local function adjust_slice_start(d)
     if selected_sample then
         local p = ID_SAMPLING_SLICE_START
-        local new = params:get(p) + d * controlspec_start.quantum
-        params:set(p, new)
+        local max_slices = params:get(ID_SAMPLING_NUM_SLICES)
+        local new = util.wrap(params:get_raw(p) + d * controlspec_start.quantum, 1, max_slices)
+        params:set_raw(p, new)
     end
 end
 
@@ -275,6 +270,7 @@ local function add_params()
 end
 
 function page:initialize()
+    slice_graphic = SliceGraphic:new()
     add_params()
 
     -- engine.load_file("/home/we/dust/"..selected_sample)
@@ -301,7 +297,7 @@ function page:initialize()
         render_samples = waveform_width,
     })
 
-    slice_graphic = SliceGraphic:new() 
+    
 
     local function on_render(ch, start, i, s)
         -- this is a callback, for every softcut.render_buffer() invocation

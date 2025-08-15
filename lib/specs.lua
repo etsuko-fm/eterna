@@ -38,7 +38,7 @@ controlspec_slices = controlspec.def {
     step = 1,
     default = SLICES_DEFAULT,
     units = '',
-    quantum = 1,
+    quantum = 1/SLICES_MAX,
     wrap = false
 }
 
@@ -52,6 +52,6 @@ controlspec_start = controlspec.def {
     step = 1,
     default = 1,
     units = '',
-    quantum = 1,
-    wrap = false
+    quantum = 1/START_MAX,
+    wrap = true
 }
