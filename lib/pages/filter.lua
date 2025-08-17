@@ -59,21 +59,15 @@ function page:render()
     filter_graphic.freq = freq
     filter_graphic.res = res
     filter_graphic.type = filter_type
+    filter_graphic.mix = (params:get(ID_FILTER_WET) - 1) / 2 -- 1/2/3 is 0/0.5/1
     filter_graphic:render()
     page.footer.button_text.k2.value = FILTER_TYPES[filter_type]
-    if FILTER_TYPES[filter_type] ~= "NONE" then
-        page.footer.button_text.e2.name = "FREQ"
-        page.footer.button_text.e3.name = "RES"
-        page.footer.button_text.k3.name = "MIX"
-        page.footer.button_text.k3.value = DRY_WET_TYPES[drywet]
-        page.footer.button_text.e2.value = misc_util.trim(tostring(freq), 5)
-        page.footer.button_text.e3.value = misc_util.trim(tostring(res), 5)
-    else
-        page.footer.button_text.e2.name = ""
-        page.footer.button_text.e3.name = ""
-        page.footer.button_text.e2.value = ""
-        page.footer.button_text.e3.value = ""
-    end
+    page.footer.button_text.e2.name = "FREQ"
+    page.footer.button_text.e3.name = "RES"
+    page.footer.button_text.k3.name = "MIX"
+    page.footer.button_text.k3.value = DRY_WET_TYPES[drywet]
+    page.footer.button_text.e2.value = misc_util.trim(tostring(freq), 5)
+    page.footer.button_text.e3.value = misc_util.trim(tostring(res), 5)
     page.footer:render()
 end
 

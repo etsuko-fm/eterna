@@ -19,7 +19,12 @@ BitsFilters {
 							SVF.ar(input[0], safeFreq, safeRes, 1.0, 0.0, 0.0).tanh,
 							SVF.ar(input[1], safeFreq, safeRes, 1.0, 0.0, 0.0).tanh,
 						],	
-						// 2 - swirl
+						// 2 - bandpass
+						[
+							SVF.ar(input[0], safeFreq, safeRes, 0.0, 1.0, 0.0).tanh,
+							SVF.ar(input[1], safeFreq, safeRes, 0.0, 1.0, 0.0).tanh,
+						],	
+						// 3 - swirl
 						[
 							Mix.ar([
 									SVF.ar(input[0], safeFreq, safeRes, 0.0, 1.0, 0.0).tanh,
@@ -34,7 +39,7 @@ BitsFilters {
 								SVF.ar(input[1], safeFreq*64, safeRes, 0.0, 1.0, 0.0).tanh,
 							])
 						],
-						// 3 - passthrough
+						// 4 - passthrough
 						input
 					]);	
 					// Make dry/wet mix between filtered/unfiltered; multiply by gain; take the tanh of that

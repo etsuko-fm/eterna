@@ -38,11 +38,14 @@ Engine_Bits : CroneEngine {
       { "LP" } {
         filter.set(\filterType, 1);
       }
-      { "SWIRL" } {
+      { "BP" } {
         filter.set(\filterType, 2);
       }
-      { "NONE" } {
+      { "SWIRL" } {
         filter.set(\filterType, 3);
+      }
+      { "NONE" } {
+        filter.set(\filterType, 4);
       };
     });
 
