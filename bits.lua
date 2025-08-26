@@ -66,7 +66,7 @@ local pages = {
   page_master,
 }
 
-local current_page_index = 6
+local current_page_index = 4
 local current_page = pages[current_page_index]
 
 local function page_forward()
@@ -103,30 +103,6 @@ local function enable_all_voices()
   end
 end
 
-local function route_softcut_to_sc()
-  audio.level_eng_cut(0)
-  -- connect softcut output to supercollider input
-  _norns.audio_connect("softcut:output_1", "SuperCollider:in_1")
-  _norns.audio_connect("softcut:output_2", "SuperCollider:in_2")
-
-  --- supercollider is now responsible for passing on softcut playback;
-  --- disconnect softcut from crone
-  _norns.audio_disconnect("softcut:output_1", "crone:input_3")
-  _norns.audio_disconnect("softcut:output_2", "crone:input_4")
-end
-
-local function reset_routing()
-  -- reverse of route_softcut_to_sc
-  _norns.audio_disconnect("softcut:output_1", "SuperCollider:in_1")
-  _norns.audio_disconnect("softcut:output_2", "SuperCollider:in_2")
-  _norns.audio_connect("softcut:output_1", "crone:input_3")
-  _norns.audio_connect("softcut:output_2", "crone:input_4")
-end
-
-local function enable_filterbank()
-  route_softcut_to_sc()
-end
-
 function midi_to_hz(note)
   local hz = (440 / 32) * (2 ^ ((note - 9) / 12))
   return hz
@@ -138,14 +114,6 @@ function midi_cb(data)
     engine.freq(midi_to_hz(d.note))
   end
 end
-
-loaded_poll = nil
-amp1poll = nil
-amp2poll = nil
-amp3poll = nil
-amp4poll = nil
-amp5poll = nil
-amp6poll = nil
 
 function init()
   -- Encoder sensitivity
@@ -163,6 +131,14 @@ function init()
   amp5poll = poll.set("voice5amp");
   amp6poll = poll.set("voice6amp");
 
+  env1poll = poll.set("voice1env");
+  env2poll = poll.set("voice2env");
+  env3poll = poll.set("voice3env");
+  env4poll = poll.set("voice4env");
+  env5poll = poll.set("voice5env");
+  env6poll = poll.set("voice6env");
+
+
 
   loaded_poll.callback = function(val)
     if val then
@@ -177,8 +153,7 @@ function init()
     page:initialize()
   end
   params:bang()
-  -- enable_filterbank()
-  enable_all_voices()
+  -- enable_all_voices()
   for i = 1, #midi.vports do         -- query all ports
     midi_device[i] = midi.connect(i) -- connect each device
     table.insert(
@@ -291,6 +266,5 @@ function on()
 end
 
 function cleanup()
-  -- reset_routing()/
   metro.free_all()
 end

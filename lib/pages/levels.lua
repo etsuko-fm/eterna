@@ -68,6 +68,13 @@ local page = Page:create({
 
 function page:render()
     local sigma = amp_to_sigma(params:get(ID_LEVELS_AMP))
+    amp1poll:update()
+    amp2poll:update()
+    amp3poll:update()
+    amp4poll:update()
+    amp5poll:update()
+    amp6poll:update()
+
     level_graphic.levels = gaussian.calculate_gaussian_levels(params:get(ID_LEVELS_POS), sigma)
     screen.clear()
     level_graphic:render()
@@ -134,8 +141,20 @@ local function add_params()
     params:set_action(ID_LEVELS_AMP, recalculate_levels)
 end
 
+local function amp_callback(voice, val)
+    level_graphic.voice_amp[voice] = val
+end
+
+
 function page:initialize()
     add_params()
+    amp1poll.callback = function(v) amp_callback(1, v) end
+    amp2poll.callback = function(v) amp_callback(2, v) end
+    amp3poll.callback = function(v) amp_callback(3, v) end
+    amp4poll.callback = function(v) amp_callback(4, v) end
+    amp5poll.callback = function(v) amp_callback(5, v) end
+    amp6poll.callback = function(v) amp_callback(6, v) end
+
     window = Window:new({
         x = 0,
         y = 0,

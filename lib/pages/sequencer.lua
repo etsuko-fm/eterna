@@ -193,12 +193,14 @@ local function main_sequencer_callback()
                     grid_graphic.current_step = current_step
                     engine.trigger(y-1)
                     -- engine.filter_env(y-1, 800)
-                    -- modulate attack and decay based on perlin value
-                    local atk = math.max(params:get(ID_ENVELOPES_ATTACK) * a, 0.01)
-                    local dec = params:get(ID_ENVELOPES_DECAY) * a
-                    engine.attack(y-1, atk)
-                    engine.decay(y-1, dec)
-                    -- voice_position_to_phase(y, a) -- this was the phase sequencer, maybe not relevant anymore
+                    -- TODO: modulate attack and decay based on perlin value
+                    if params:get(ID_ENVELOPES_MOD) then
+                        -- local atk = math.max(params:get(ID_ENVELOPES_ATTACK) * a, 0.01)
+                        -- local dec = params:get(ID_ENVELOPES_DECAY) * a
+                        -- engine.attack(y-1, atk)
+                        -- engine.decay(y-1, dec)                  
+                    end
+
                 end
             elseif SEQUENCE_STYLE_TABLE[params:get(ID_SEQ_STYLE)] == SEQ_GATE then
                 -- engine.stop(y-1)
@@ -267,12 +269,12 @@ function page:render()
         redraw_sequence = false
     end
 
-    amp1poll:update()
-    amp2poll:update()
-    amp3poll:update()
-    amp4poll:update()
-    amp5poll:update()
-    amp6poll:update()
+    env1poll:update()
+    env2poll:update()
+    env3poll:update()
+    env4poll:update()
+    env5poll:update()
+    env6poll:update()
 
     grid_graphic:render()
 
@@ -362,21 +364,11 @@ local function report_softcut(voice, pos)
     grid_graphic.voice_pos_percentage[voice] = voice_pos_percentage[voice]
 end
 
-local function amp_callback(voice, val)
-    grid_graphic.voice_amp[voice] = val
-end
-
-
 function page:initialize()
     -- allows value to be modified by other pages
     page.sequence_speed = sequence_util.convert_sequence_speed[sequence_util.default_speed_idx]
     add_params()
-    amp1poll.callback = function(v) amp_callback(1, v) end
-    amp2poll.callback = function(v) amp_callback(2, v) end
-    amp3poll.callback = function(v) amp_callback(3, v) end
-    amp4poll.callback = function(v) amp_callback(4, v) end
-    amp5poll.callback = function(v) amp_callback(5, v) end
-    amp6poll.callback = function(v) amp_callback(6, v) end
+    
 
     window = Window:new({
         x = 0,
@@ -391,10 +383,7 @@ function page:initialize()
         horizontal_separations = 0,
         vertical_separations = 0,
     })
-    grid_graphic = GridGraphic:new({
-        rows = ROWS,
-        columns = COLUMNS,
-    })
+    grid_graphic = GridGraphic:new()
     -- graphics
     page.footer = Footer:new({
         button_text = {
@@ -436,7 +425,7 @@ function page:initialize()
         end
     }
     perlin_lfo:set('reset_target', 'mid: rising')
-
+    generate_perlin_seq()
 end
 
 return page

@@ -4,8 +4,6 @@ local page_name = "ENVELOPES"
 local window
 local envelope_graphic
 
-
-
 -- local function calculate_env_positions()
 --     local DECAY = params:get(ID_ENVELOPES_DECAY)
 --     local ATTACK = params:get(ID_ENVELOPES_ATTACK)
@@ -17,15 +15,15 @@ local envelope_graphic
 --     end
 -- end
 
-local function adjust_attack(d)
-    local p = ID_ENVELOPES_ATTACK
-    local new_val = params:get_raw(p) + d * controlspec_env_attack.quantum
+local function adjust_shape(d)
+    local p = ID_ENVELOPES_SHAPE
+    local new_val = params:get_raw(p) + d * controlspec_env_shape.quantum
     params:set_raw(p, new_val)
 end
 
-local function adjust_decay(d)
-    local p = ID_ENVELOPES_DECAY
-    local new_val = params:get_raw(p) + d * controlspec_env_decay.quantum
+local function adjust_time(d)
+    local p = ID_ENVELOPES_TIME
+    local new_val = params:get_raw(p) + d * controlspec_env_time.quantum
     params:set_raw(p, new_val)
 end
 
@@ -35,41 +33,57 @@ local function toggle_curve()
     params:set(p, util.wrap(curr + 1, 1, #ENVELOPE_CURVES))
 end
 
-local function toggle_enable()
-    local p = ID_ENVELOPES_ENABLE
+local function toggle_mod()
+    local p = ID_ENVELOPES_MOD
     params:set(p, 1 - params:get(p))
 end
 
 local page = Page:create({
     name = page_name,
-    e2 = adjust_attack,
-    e3 = adjust_decay,
-    k2_off = toggle_enable,
+    e2 = adjust_time,
+    e3 = adjust_shape,
+    k2_off = toggle_mod,
     k3_off = toggle_curve,
 })
 
-local function action_attack(v)
-    for i = 0, 5 do
-        engine.attack(i, v)
+function get_attack(time, shape)
+    return time * shape
+end
+
+function get_decay(time, shape)
+    return time * (1-shape)
+end
+
+local function recalculate_time(time, shape)
+    if params:get(ID_ENVELOPES_MOD) == 0 then
+        -- only modify env if global mod is off
+        local attack = get_attack(time, shape)
+        local decay = get_decay(time, shape)
+        for i = 0, 5 do
+            engine.attack(i, attack)
+            engine.decay(i, decay)
+        end
     end
 end
 
-local function action_decay(v)
-    for i = 0, 5 do
-        engine.decay(i, v)
-    end
+local function action_time(time)
+    local shape = params:get(ID_ENVELOPES_SHAPE)
+    recalculate_time(time, shape)
 end
 
-local function action_enable(v)
-    for i = 0, 5 do
-        engine.enable_env(i, v)
-    end
+
+local function action_mod(v)
+    local shape = params:get(ID_ENVELOPES_SHAPE)
+    local time = params:get(ID_ENVELOPES_TIME)
+    recalculate_time(time, shape)
 end
 
-local function action_filter_env(v)
-    for i = 0, 5 do
-        engine.filter_env(i, v)
-    end
+local function action_shape(shape)
+    local time = params:get(ID_ENVELOPES_TIME)
+    recalculate_time(time, shape)
+    -- for i = 0, 5 do
+    --     engine.filter_env(i, v)
+    -- end
 end
 local function action_curve(idx)
     for voice = 0, 5 do
@@ -77,30 +91,34 @@ local function action_curve(idx)
     end
 end
 local function add_params()
-    params:set_action(ID_ENVELOPES_ATTACK, action_attack)
-    params:set_action(ID_ENVELOPES_DECAY, action_decay)
-    params:set_action(ID_ENVELOPES_FILTER_ENV, action_filter_env)
+    params:set_action(ID_ENVELOPES_TIME, action_time)
+    params:set_action(ID_ENVELOPES_SHAPE, action_shape)
     params:set_action(ID_ENVELOPES_CURVE, action_curve)
-    params:set_action(ID_ENVELOPES_ENABLE, action_enable)
+    params:set_action(ID_ENVELOPES_MOD, action_mod)
 end
 
 function page:render()
     window:render()
-    local attack = params:get(ID_ENVELOPES_ATTACK)
-    local decay = params:get(ID_ENVELOPES_DECAY)
+
+    local time = params:get(ID_ENVELOPES_TIME)
+    local shape = params:get(ID_ENVELOPES_SHAPE)
     local curve = ENVELOPE_NAMES[params:get(ID_ENVELOPES_CURVE)]
-    local enabled = params:get(ID_ENVELOPES_ENABLE) == 1 and "ON" or "OFF"
-    for i = 1, 6 do
-        envelope_graphic.attack[i] = attack / ENV_ATTACK_MAX
-        envelope_graphic.decay[i] = decay / ENV_DECAY_MAX
-    end
+    local mod = params:get(ID_ENVELOPES_MOD) == 1 and "ON" or "OFF"
+
+    envelope_graphic.time = util.explin(ENV_TIME_MIN, ENV_TIME_MAX, 0, 1, time)
+    envelope_graphic.shape = shape
+    envelope_graphic.curve = curve
 
     envelope_graphic:render()
-    page.footer.button_text.k2.value = enabled
+    page.footer.button_text.k2.value = mod
     page.footer.button_text.k3.value = curve
-    page.footer.button_text.e2.value = misc_util.trim(tostring(attack), 5)
-    page.footer.button_text.e3.value = misc_util.trim(tostring(decay), 5)
+    page.footer.button_text.e2.value = misc_util.trim(tostring(time), 5)
+    page.footer.button_text.e3.value = misc_util.trim(tostring(shape), 5)
     page.footer:render()
+end
+
+local function env_callback(voice, val)
+    -- envelope_graphic.voice_env[voice] = val
 end
 
 function page:initialize()
@@ -118,12 +136,20 @@ function page:initialize()
         horizontal_separations = 0,
         vertical_separations = 0,
     })
+
+    env1poll.callback = function(v) env_callback(1, v) end
+    env2poll.callback = function(v) env_callback(2, v) end
+    env3poll.callback = function(v) env_callback(3, v) end
+    env4poll.callback = function(v) env_callback(4, v) end
+    env5poll.callback = function(v) env_callback(5, v) end
+    env6poll.callback = function(v) env_callback(6, v) end
+
     -- graphics
     envelope_graphic = EnvGraphic:new()
     page.footer = Footer:new({
         button_text = {
             k2 = {
-                name = "ENABLE",
+                name = "MOD",
                 value = "",
             },
             k3 = {
@@ -131,11 +157,11 @@ function page:initialize()
                 value = "",
             },
             e2 = {
-                name = "ATTACK",
+                name = "TIME",
                 value = "",
             },
             e3 = {
-                name = "DECAY",
+                name = "SHAPE",
                 value = "",
             },
         },

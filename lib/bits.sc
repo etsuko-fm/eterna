@@ -5,6 +5,7 @@ Engine_Bits : CroneEngine {
   var fxBus;
   var echo;
   var ampBuses;
+  var envBuses;
   
   *new { arg context, doneCallback;
     ^super.new(context, doneCallback);
@@ -21,7 +22,12 @@ Engine_Bits : CroneEngine {
     // Routing: buffers > filter > fx > context.xg
     filterBus = Bus.audio(context.server, 2);
     fxBus = Bus.audio(context.server, 2);
+
+    // Control bus for reporting voice amplitude
     ampBuses = Array.fill(6, { Bus.control(s, 1) });
+
+    // Control bus for reporting voice envelope position
+    envBuses = Array.fill(6, { Bus.control(s, 1) });
     
     context.server.sync;
     
@@ -88,6 +94,7 @@ Engine_Bits : CroneEngine {
             \enable_env, 0,
             \envLevel, 1.0,
             \ampBus, ampBuses[i].index,
+            \envBus, envBuses[i].index,
             ])}
           );  
         };
@@ -214,6 +221,14 @@ Engine_Bits : CroneEngine {
     this.addPoll(\voice4amp, { ampBuses[3].getSynchronous; }, periodic: true);
     this.addPoll(\voice5amp, { ampBuses[4].getSynchronous; }, periodic: true);
     this.addPoll(\voice6amp, { ampBuses[5].getSynchronous; }, periodic: true);
+    
+    this.addPoll(\voice1env, { envBuses[0].getSynchronous; }, periodic: true);
+    this.addPoll(\voice2env, { envBuses[1].getSynchronous; }, periodic: true);
+    this.addPoll(\voice3env, { envBuses[2].getSynchronous; }, periodic: true);
+    this.addPoll(\voice4env, { envBuses[3].getSynchronous; }, periodic: true);
+    this.addPoll(\voice5env, { envBuses[4].getSynchronous; }, periodic: true);
+    this.addPoll(\voice6env, { envBuses[5].getSynchronous; }, periodic: true);
+
   }
   
   free {
@@ -224,5 +239,8 @@ Engine_Bits : CroneEngine {
     fxBus.free;
     echo.free;
     ampBuses.do(_.free);
+    ampBuses.free;
+    envBuses.do(_.free);
+    envBuses.free;
   }
 }

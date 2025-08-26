@@ -10,6 +10,7 @@ LevelsGraphic = {
     brightness=15,
     bg_bar_brightness=1,
     hide = false,
+    voice_amp = {},
 }
 
 function LevelsGraphic:new(o)
