@@ -15,8 +15,7 @@ Grid = {
         { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },
         { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },
     },
-    voice_pos_percentage = { nil, nil, nil, nil, nil, nil }, -- table of 6 items, with value 0-1 for position of voice in loop section
-    voice_amp = { 0, 0, 0, 0, 0, 0, },
+    voice_env = { 0, 0, 0, 0, 0, 0, },
     is_playing = { false, false, false, false, false, false },
     hide = false,
 }
@@ -39,15 +38,18 @@ local block_w = 3
 local block_h = 3
 local margin_w = 1
 local margin_h = 1
-local indicator_x = 32 + (block_w+margin_w)*columns + 1
+local basex = 32
+local basey = 16
+local indicator_x = 32 + (block_w + margin_w) * columns + 1
+local indicator_y = basey + (block_h + margin_h) * rows + 1
 local indicator_base_y = 16
-local indicator_w = 16
+local indicator_w = 1
 local indicator_h = 3
 local indicator_vmargin = indicator_h + margin_h
 local faint_fill = 1
 
 function Grid:draw_track_indicator(voice)
-    if self.voice_amp[voice] == nil then return end
+    if self.voice_env[voice] == nil then return end
     local zero_idx = voice - 1
 
     -- brightness is reversely proportional to position of playhead in slice selection
@@ -56,9 +58,10 @@ function Grid:draw_track_indicator(voice)
     -- sometimes position comes to -0.0003, which troubles math.floor; hence +2 to have min brightness of 1
     screen.level(2)
     local indicator_y = indicator_base_y + (indicator_vmargin * zero_idx)
-    local v = self.voice_amp[voice]
+    local v = self.voice_env[voice]
+    screen.level(1 + util.round(v * 14))
     if v > 0 then
-        screen.rect(indicator_x, indicator_y, 2 + indicator_w * v, indicator_h)
+        screen.rect(indicator_x, indicator_y, indicator_w, indicator_h)
         screen.fill()
     else
         screen.rect(indicator_x, indicator_y, 1, indicator_h)
@@ -66,8 +69,6 @@ function Grid:draw_track_indicator(voice)
     end
 end
 
-local basex = 32
-local basey = 16
 function Grid:render()
     if self.hide then return end
     local voice
@@ -87,7 +88,8 @@ function Grid:render()
             else
                 screen.level(faint_fill)
             end
-            screen.rect(basex + (column * (block_w+margin_w)), basey + (block_h+margin_h)*self.rows + 1, 3, 1)
+
+            screen.rect(basex + (column * (block_w + margin_w)), indicator_y, 3, 1)
             screen.fill()
 
             if step_active then

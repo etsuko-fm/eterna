@@ -117,9 +117,6 @@ function page:render()
     page.footer:render()
 end
 
-local function env_callback(voice, val)
-    -- envelope_graphic.voice_env[voice] = val
-end
 
 function page:initialize()
     add_params()
@@ -137,12 +134,6 @@ function page:initialize()
         vertical_separations = 0,
     })
 
-    env1poll.callback = function(v) env_callback(1, v) end
-    env2poll.callback = function(v) env_callback(2, v) end
-    env3poll.callback = function(v) env_callback(3, v) end
-    env4poll.callback = function(v) env_callback(4, v) end
-    env5poll.callback = function(v) env_callback(5, v) end
-    env6poll.callback = function(v) env_callback(6, v) end
 
     -- graphics
     envelope_graphic = EnvGraphic:new()

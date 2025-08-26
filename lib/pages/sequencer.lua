@@ -364,11 +364,21 @@ local function report_softcut(voice, pos)
     grid_graphic.voice_pos_percentage[voice] = voice_pos_percentage[voice]
 end
 
+local function env_callback(voice, val)
+    grid_graphic.voice_env[voice] = val
+end
+
 function page:initialize()
     -- allows value to be modified by other pages
     page.sequence_speed = sequence_util.convert_sequence_speed[sequence_util.default_speed_idx]
     add_params()
-    
+    env1poll.callback = function(v) env_callback(1, v) end
+    env2poll.callback = function(v) env_callback(2, v) end
+    env3poll.callback = function(v) env_callback(3, v) end
+    env4poll.callback = function(v) env_callback(4, v) end
+    env5poll.callback = function(v) env_callback(5, v) end
+    env6poll.callback = function(v) env_callback(6, v) end
+
 
     window = Window:new({
         x = 0,
