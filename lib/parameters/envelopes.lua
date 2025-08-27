@@ -37,7 +37,7 @@ controlspec_env_shape = controlspec.def {
     step = 0.001,
     default = 0,
     units = '',
-    quantum = 0.005,
+    quantum = 0.01,
     wrap = false
 }
 

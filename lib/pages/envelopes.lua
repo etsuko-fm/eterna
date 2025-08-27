@@ -103,14 +103,15 @@ function page:render()
     local time = params:get(ID_ENVELOPES_TIME)
     local shape = params:get(ID_ENVELOPES_SHAPE)
     local curve = ENVELOPE_NAMES[params:get(ID_ENVELOPES_CURVE)]
-    local mod = params:get(ID_ENVELOPES_MOD) == 1 and "ON" or "OFF"
+    local mod = params:get(ID_ENVELOPES_MOD)
 
-    envelope_graphic.time = util.explin(ENV_TIME_MIN, ENV_TIME_MAX, 0, 1, time)
+    envelope_graphic.time = misc_util.explin(ENV_TIME_MIN, ENV_TIME_MAX, 0.001, 1, time, 4)
     envelope_graphic.shape = shape
     envelope_graphic.curve = curve
+    envelope_graphic.mod = mod
 
     envelope_graphic:render()
-    page.footer.button_text.k2.value = mod
+    page.footer.button_text.k2.value = mod == 1 and "ON" or "OFF"
     page.footer.button_text.k3.value = curve
     page.footer.button_text.e2.value = misc_util.trim(tostring(time), 5)
     page.footer.button_text.e3.value = misc_util.trim(tostring(shape), 5)

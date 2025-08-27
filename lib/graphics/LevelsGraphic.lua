@@ -48,7 +48,7 @@ function LevelsGraphic:render()
             self.x + (i * (self.w - self.bar_width) / (self.num_bars - 1)),
             self.y,
             self.bar_width,
-            misc_util.round(-self.h * self.levels[voice])
+            util.round(-self.h * self.levels[voice])
         )
         screen.fill()
     end

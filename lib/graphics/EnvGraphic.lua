@@ -38,15 +38,26 @@ local function draw_v_bar(x, y, w, h, fraction)
     screen.fill()
 end
 
-local function draw_h_bar(x, y, w, h, fraction)
+local function draw_h_bar(x, y, w, h, fraction, use_gradient)
     --bg
     screen.level(bg_fill)
     screen.rect(x, y, w, h)
     screen.fill()
     --fg
-    screen.level(fg_fill)
-    screen.rect(x, y, w * fraction, h)
-    screen.fill()
+    if use_gradient == 1 then
+        local w_per_block = w * fraction / 6
+        local total_w = math.floor(w * fraction)
+        for i=total_w, 0, -1 do
+            local level = util.linlin(0,total_w, 2,15, i)
+            screen.level(util.round(level))
+            screen.rect(x + i, y, 1, h)
+            screen.fill()
+        end
+    else
+        screen.level(fg_fill)
+        screen.rect(x, y, w * fraction, h)
+        screen.fill()
+    end
 end
 
 local function bezier_controls(x0, y0, x3, y3, k, t)
@@ -71,10 +82,10 @@ local function bezier_controls(x0, y0, x3, y3, k, t)
     return x1, y1, x2, y2
 end
 
-local function draw_envelope(shape, curve, x, y, w, h)
+local function draw_envelope(shape, curve, x, y, w, h, level)
     screen.line_width(1)
-    screen.line_join("bevel")
-        screen.level(15)
+    -- screen.line_join("bevel")
+    screen.level(level)
 
     local startx = util.round(x)
     local starty = util.round(y)
@@ -110,11 +121,22 @@ function EnvGraphic:render()
     -- local shape = calc_shape(self.atk, self.dec)
     -- local time = (self.atk + self.dec)/2
     -- local margin = 4
-    draw_envelope(self.shape, self.curve, env_x, env_y, env_w, env_h)
+    if self.mod == 1 then
+        for i=3, 0, -1 do
+            local level
+            if i == 0 then level = 15 else level = math.max(15 - 6*i, 1) end
+        local modify = i * -0.1
+        local shape = math.max(self.shape + modify, 0)
+        draw_envelope(shape, self.curve, env_x, env_y, env_w, env_h, level)
+        end
+    else
+        draw_envelope(self.shape, self.curve, env_x, env_y, env_w, env_h, 15)
+    end
 
     -- time bar
-
-    draw_h_bar(64-16, 39, 32, 3, self.time)
+    local bar_w = 32
+    local bar_h = 3
+    draw_h_bar(64-16, 39, bar_w, bar_h, self.time, self.mod)
 
     -- for voice = 0,2 do
     --     draw_envelope(shape, env_x + voice*(env_w + margin), env_y, env_w, env_h)    
@@ -136,6 +158,14 @@ function EnvGraphic:render()
     --     screen.line(x+3,y)
     --     screen.stroke()
     --     -- draw_bar(x, y, 2, 8, level)
+    -- end
+    -- for i = 1, 64 do
+    --     local x = i * 2
+    --     screen.level(0)
+    --     screen.line_width(1)
+    --     screen.move(x, 10)
+    --     screen.line(x, 54)
+    --     screen.stroke()
     -- end
 
 end

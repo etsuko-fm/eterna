@@ -3,9 +3,9 @@ local perlin = include("bits/lib/ext/perlin")
 local page_name = "SEQUENCER"
 local window
 local grid_graphic
-local PERLIN_ZOOM = 5/3 ---4 / 3 -- empirically tuned
-local SEQ_EVOLVE_RATES = {2^15, 2^14, 2^13} -- in quarter notes, but fuzzy concept due to how perlin computes
-local SEQUENCE_STYLE_TABLE_TO_SOFTCUT = {1, 0}
+local PERLIN_ZOOM = 5 / 3                   ---4 / 3 -- empirically tuned
+local SEQ_EVOLVE_RATES = { 2 ^ 15, 2 ^ 14, 2 ^ 13 } -- in quarter notes, but fuzzy concept due to how perlin computes
+local SEQUENCE_STYLE_TABLE_TO_SOFTCUT = { 1, 0 }
 local MAX_STEPS = sequence_util.max_steps
 
 local transport_on = true
@@ -23,7 +23,6 @@ local step_divider = 1 -- 1 means 1 step = 1 1/16th note
 local cue_step_divider = nil
 
 local voice_pos = {} -- playhead positions of softcut voices
-voice_pos_percentage = {}
 local perlin_lfo
 local redraw_sequence = false
 
@@ -42,15 +41,18 @@ local function generate_perlin_seq()
             local pnoise = perlin:noise(perlin_x, perlin_y, z_seed)
             local v = util.clamp(util.linlin(-1, 1, -0.3, 1.3, pnoise), 0.01, 1)
 
-            if density == 0 then v = 0
+            if density == 0 then
+                v = 0
             else
                 -- base density map on a different seed of x/y/z, so that
                 -- not only low or high values are filtered out
                 local density_seed = 11.0
                 -- map to larger range than [0:1], then clamp, because perlin noise leans to the center of the range
-                local mask = util.clamp(util.linlin(-1,1,-0.3,1.3, perlin:noise(perlin_x + density_seed, perlin_y + density_seed, z_seed)), 0, 1)
+                local mask = util.clamp(
+                util.linlin(-1, 1, -0.3, 1.3, perlin:noise(perlin_x + density_seed, perlin_y + density_seed, z_seed)), 0,
+                    1)
                 if mask >= density and (mask ~= 1.0 and density ~= 1.0) then
-                    v = 0.0 -- 0.0 is only value not interpreted as an active step    
+                    v = 0.0 -- 0.0 is only value not interpreted as an active step
                 end
             end
             params:set(ID_SEQ_STEP[voice][step], v)
@@ -131,15 +133,14 @@ function voice_position_to_phase(voice, phase)
     engine.position(voice, abs_pos)
 end
 
-
 local hold_step = nil
 local function main_sequencer_callback()
     -- runs every 1/16th note of current clock bpm (based on a 4/4 time signature); e.g. every 125ms for 120bpm
     while true do
         if UPDATE_SLICES then
-            for voice=0,5 do
-                engine.loop_start(voice, params:get(ID_SAMPLING_SLICE_SECTIONS[voice+1].loop_start))
-                engine.loop_end(voice, params:get(ID_SAMPLING_SLICE_SECTIONS[voice+1].loop_end))
+            for voice = 0, 5 do
+                engine.loop_start(voice, params:get(ID_SAMPLING_SLICE_SECTIONS[voice + 1].loop_start))
+                engine.loop_end(voice, params:get(ID_SAMPLING_SLICE_SECTIONS[voice + 1].loop_end))
             end
             UPDATE_SLICES = false
         end
@@ -158,16 +159,16 @@ local function main_sequencer_callback()
         if not holding_step then
             if hold_step then
                 -- means step was held, but resumed this step
-                -- current_global_step ticked on meanwhile; but we don't want to jump to another step; 
+                -- current_global_step ticked on meanwhile; but we don't want to jump to another step;
                 -- shold always go on neatly to the n+1 sequence step
-                print("resumed at "..current_global_step)
-                current_global_step = current_step * step_divider + (current_step - hold_step )
+                print("resumed at " .. current_global_step)
+                current_global_step = current_step * step_divider + (current_step - hold_step)
                 hold_step = nil
             end
             current_step = util.wrap(math.ceil(current_global_step / step_divider), 1, sequence_steps)
         else
             if hold_step == nil then
-                print("Frozen at "..current_step)
+                print("Frozen at " .. current_step)
                 hold_step = current_step
             end
         end
@@ -181,6 +182,11 @@ local function main_sequencer_callback()
             grid_graphic.current_step = current_step
         end
 
+        local time = params:get(ID_ENVELOPES_TIME)
+        local shape = params:get(ID_ENVELOPES_SHAPE)
+        local attack = get_attack(time, shape)
+        local decay = get_decay(time, shape)
+
         for y = 1, SEQ_ROWS do
             -- todo: implement a check if it already fired for this step
             local perlin_val = params:get(ID_SEQ_STEP[y][x])
@@ -191,22 +197,19 @@ local function main_sequencer_callback()
                 -- using modulo check to prevent triggering every 1/16 when step size is larger
                 if is_step_change then
                     grid_graphic.current_step = current_step
-                    engine.trigger(y-1)
+                    engine.trigger(y - 1)
                     -- engine.filter_env(y-1, 800)
                     -- TODO: modulate attack and decay based on perlin value
                     if params:get(ID_ENVELOPES_MOD) then
-                        -- local atk = math.max(params:get(ID_ENVELOPES_ATTACK) * a, 0.01)
-                        -- local dec = params:get(ID_ENVELOPES_DECAY) * a
-                        -- engine.attack(y-1, atk)
-                        -- engine.decay(y-1, dec)                  
+                        engine.attack(y - 1, attack * a)
+                        engine.decay(y - 1, decay * a)
                     end
-
                 end
             elseif SEQUENCE_STYLE_TABLE[params:get(ID_SEQ_STYLE)] == SEQ_GATE then
                 -- engine.stop(y-1)
             end
         end
-        clock.sync(1/4)
+        clock.sync(1 / 4)
     end
 end
 
@@ -233,6 +236,7 @@ end
 function report_current_step()
     return current_step
 end
+
 function toggle_hold_step()
     if holding_step then
         holding_step = false
@@ -242,7 +246,6 @@ function toggle_hold_step()
         print('holding')
     end
 end
-
 
 function clock.transport.start()
     print("start transport")
@@ -264,7 +267,7 @@ end
 function page:render()
     window:render()
     if redraw_sequence then
-        -- condition prevents updating perlin values more often than the screen refreshes. 
+        -- condition prevents updating perlin values more often than the screen refreshes.
         generate_perlin_seq()
         redraw_sequence = false
     end
@@ -287,9 +290,9 @@ function page:render()
 end
 
 local function action_evolve(v)
-    -- min one to disregard 
+    -- min one to disregard
     if v > 1 then
-        perlin_lfo:set('period', SEQ_EVOLVE_RATES[v-1])
+        perlin_lfo:set('period', SEQ_EVOLVE_RATES[v - 1])
         if perlin_lfo:get("enabled") == 0 then
             perlin_lfo:start()
         end
@@ -299,22 +302,21 @@ local function action_evolve(v)
 end
 
 local function action_playback_style(v)
-    for voice=1,6 do
+    for voice = 1, 6 do
         softcut.loop(voice, SEQUENCE_STYLE_TABLE_TO_SOFTCUT[v])
     end
 end
 
-local function update_grid_step(x,y,v)
+local function update_grid_step(x, y, v)
     grid_graphic.sequences[y][x] = v
     if v > 0 then
-        grid_device:led(x, y, 4 + math.floor(math.abs(v)*8))
+        grid_device:led(x, y, 4 + math.floor(math.abs(v) * 8))
     else
         grid_device:led(x, y, 0)
     end
-
 end
 
-grid.key = function(x,y,z)
+grid.key = function(x, y, z)
     if SEQUENCE_STYLE_TABLE[params:get(ID_SEQ_STYLE)] == SEQ_GRID then
         -- would sequence from grid
     end
@@ -334,7 +336,7 @@ local function add_params()
     params:set_action(ID_SEQ_STYLE, action_playback_style)
     for y = 1, SEQ_ROWS do
         for x = 1, SEQ_COLUMNS do
-            params:set_action(ID_SEQ_STEP[y][x], function(v) update_grid_step(x,y,v) end)
+            params:set_action(ID_SEQ_STEP[y][x], function(v) update_grid_step(x, y, v) end)
         end
     end
 end

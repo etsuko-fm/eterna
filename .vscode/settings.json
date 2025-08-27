@@ -10,5 +10,8 @@
         "util",
         "_norns",
         "engine"
+    ],
+    "Lua.diagnostics.disable": [
+        "lowercase-global"
     ]
 }

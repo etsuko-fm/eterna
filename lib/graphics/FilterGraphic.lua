@@ -140,6 +140,7 @@ function FilterGraphic:render()
         draw_bandpass(self.freq * 64, self.res)
     end
 
+    -- draw vertical black lines to make graphic less intense
     for i = 1, 64 do
         local x = i * 2
         screen.level(0)
