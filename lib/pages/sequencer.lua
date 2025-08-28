@@ -3,7 +3,7 @@ local perlin = include("bits/lib/ext/perlin")
 local page_name = "SEQUENCER"
 local window
 local grid_graphic
-local PERLIN_ZOOM = 5 / 3                   ---4 / 3 -- empirically tuned
+local PERLIN_ZOOM = 10 / 3                   ---4 / 3 -- empirically tuned
 local SEQ_EVOLVE_RATES = { 2 ^ 15, 2 ^ 14, 2 ^ 13 } -- in quarter notes, but fuzzy concept due to how perlin computes
 local SEQUENCE_STYLE_TABLE_TO_SOFTCUT = { 1, 0 }
 local MAX_STEPS = sequence_util.max_steps
@@ -134,7 +134,7 @@ function voice_position_to_phase(voice, phase)
 end
 
 local hold_step = nil
-local function main_sequencer_callback()
+local function run_sequencer()
     -- runs every 1/16th note of current clock bpm (based on a 4/4 time signature); e.g. every 125ms for 120bpm
     while true do
         if UPDATE_SLICES then
@@ -182,27 +182,43 @@ local function main_sequencer_callback()
             grid_graphic.current_step = current_step
         end
 
-        local time = params:get(ID_ENVELOPES_TIME)
-        local shape = params:get(ID_ENVELOPES_SHAPE)
-        local attack = get_attack(time, shape)
-        local decay = get_decay(time, shape)
+        local max_time = params:get(ID_ENVELOPES_TIME)
+        local max_shape = params:get(ID_ENVELOPES_SHAPE)
+        local enable_mod = params:get(ID_ENVELOPES_MOD) == 1
 
         for y = 1, SEQ_ROWS do
+            local voice = y - 1
             -- todo: implement a check if it already fired for this step
             local perlin_val = params:get(ID_SEQ_STEP[y][x])
             local a = math.abs(perlin_val)
             local on = a > 0.0
+
+            local mod_amt
+            if enable_mod then
+                -- use half of sequencer val for modulation    
+                mod_amt = 0.5 + a / 2
+            else
+                mod_amt = 1
+            end
+
+            -- modulate time and shape
+            local time = max_time * mod_amt
+            local shape = max_shape * mod_amt
+            local attack = get_attack(time, shape)
+            local decay = get_decay(time, shape)
+
             -- engine.env_level(y, a) -- always set env/gate level based on perlin val
             if on then
                 -- using modulo check to prevent triggering every 1/16 when step size is larger
                 if is_step_change then
                     grid_graphic.current_step = current_step
-                    engine.trigger(y - 1)
+                    engine.level(voice, a)
+                    engine.trigger(voice)
                     -- engine.filter_env(y-1, 800)
                     -- TODO: modulate attack and decay based on perlin value
                     if params:get(ID_ENVELOPES_MOD) then
-                        engine.attack(y - 1, attack * a)
-                        engine.decay(y - 1, decay * a)
+                        engine.attack(voice, attack)
+                        engine.decay(voice, decay)
                     end
                 end
             elseif SEQUENCE_STYLE_TABLE[params:get(ID_SEQ_STYLE)] == SEQ_GATE then
@@ -250,7 +266,7 @@ end
 function clock.transport.start()
     print("start transport")
     transport_on = true
-    main_seq_clock_id = clock.run(main_sequencer_callback)
+    main_seq_clock_id = clock.run(run_sequencer)
 end
 
 function clock.transport.stop()
@@ -420,7 +436,7 @@ function page:initialize()
     })
 
     -- start sequencer
-    main_seq_clock_id = clock.run(main_sequencer_callback)
+    main_seq_clock_id = clock.run(run_sequencer)
     -- for softcut updates
     softcut.event_position(report_softcut)
 
