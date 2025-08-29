@@ -56,7 +56,7 @@ function get_decay(time, shape)
 end
 
 local function recalculate_time(time, shape)
-    if params:get(ID_ENVELOPES_MOD) == 0 then
+    if ENVELOPE_MOD_OPTIONS[params:get(ID_ENVELOPES_MOD)] == "OFF" then
         -- only modify env if global mod is off
         local attack = get_attack(time, shape)
         local decay = get_decay(time, shape)
