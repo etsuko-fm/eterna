@@ -1,4 +1,4 @@
-local EnvGraphic = include("bits/lib/graphics/EnvGraphic")
+local EnvGraphic = include("symbiosis/lib/graphics/EnvGraphic")
 
 local page_name = "ENVELOPES"
 local window

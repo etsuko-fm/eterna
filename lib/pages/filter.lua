@@ -1,6 +1,6 @@
 local page_name = "FILTER"
 local window
-local FilterGraphic = include("bits/lib/graphics/FilterGraphic")
+local FilterGraphic = include("symbiosis/lib/graphics/FilterGraphic")
 local filter_graphic
 local function adjust_freq(d)
     local p = ID_FILTER_FREQ

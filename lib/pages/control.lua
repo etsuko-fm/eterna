@@ -1,4 +1,4 @@
-local ControlGraphic = include("bits/lib/graphics/ControlGraphic")
+local ControlGraphic = include("symbiosis/lib/graphics/ControlGraphic")
 local page_name = "SEQUENCE CONTROL"
 local window
 local control_graphic

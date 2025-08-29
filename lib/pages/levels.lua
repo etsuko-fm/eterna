@@ -1,6 +1,6 @@
 local page_name = "Levels"
-local LevelsGraphic = include("bits/lib/graphics/LevelsGraphic")
-local gaussian = include("bits/lib/util/gaussian")
+local LevelsGraphic = include("symbiosis/lib/graphics/LevelsGraphic")
+local gaussian = include("symbiosis/lib/util/gaussian")
 local level_graphic
 local graph_x = 36 -- (128 - graph_width) / 2
 local graph_y = 40

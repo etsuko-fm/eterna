@@ -1,4 +1,4 @@
-local PitchGraph = include("bits/lib/graphics/PitchGraph")
+local PitchGraph = include("symbiosis/lib/graphics/PitchGraph")
 local page_name = "Playback"
 local page
 

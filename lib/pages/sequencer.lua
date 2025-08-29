@@ -1,5 +1,5 @@
-local GridGraphic = include("bits/lib/graphics/Grid")
-local perlin = include("bits/lib/ext/perlin")
+local GridGraphic = include("symbiosis/lib/graphics/Grid")
+local perlin = include("symbiosis/lib/ext/perlin")
 local page_name = "SEQUENCER"
 local window
 local grid_graphic

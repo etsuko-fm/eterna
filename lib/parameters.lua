@@ -1,4 +1,4 @@
-local specs = include("bits/lib/specs")
+local specs = include("symbiosis/lib/specs")
 
 ---
 --- GLOBAL

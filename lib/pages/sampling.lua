@@ -1,5 +1,5 @@
-local Waveform = include("bits/lib/graphics/Waveform")
-local SliceGraphic = include("bits/lib/graphics/SliceGraphic")
+local Waveform = include("symbiosis/lib/graphics/Waveform")
+local SliceGraphic = include("symbiosis/lib/graphics/SliceGraphic")
 
 local page_name = "SAMPLING"
 local fileselect = require('fileselect')

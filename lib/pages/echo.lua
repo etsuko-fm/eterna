@@ -1,6 +1,6 @@
 local page_name = "ECHO"
 local window
-local EchoGraphic = include("bits/lib/graphics/EchoGraphic")
+local EchoGraphic = include("symbiosis/lib/graphics/EchoGraphic")
 local echo_graphic
 
 local function adjust_wet(d)

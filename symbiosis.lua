@@ -1,4 +1,4 @@
--- bits: 6-voice sample player
+-- Symbiosis
 -- 1.0.0 @etsuko.fm
 -- E1: scroll pages
 --
@@ -8,38 +8,38 @@
 _lfos = require 'lfo'
 MusicUtil = require "musicutil"
 
-Page = include("bits/lib/Page")
-Window = include("bits/lib/graphics/Window")
-Footer = include("bits/lib/graphics/Footer")
-audio_util = include("bits/lib/util/audio_util")
-lfo_util = include("bits/lib/util/lfo")
-misc_util = include("bits/lib/util/misc")
-sequence_util = include("bits/lib/util/sequence")
+Page = include("symbiosis/lib/Page")
+Window = include("symbiosis/lib/graphics/Window")
+Footer = include("symbiosis/lib/graphics/Footer")
+audio_util = include("symbiosis/lib/util/audio_util")
+lfo_util = include("symbiosis/lib/util/lfo")
+misc_util = include("symbiosis/lib/util/misc")
+sequence_util = include("symbiosis/lib/util/sequence")
 
-include("bits/lib/parameters")
-include("bits/lib/parameters/filter")
-include("bits/lib/parameters/envelopes")
-include("bits/lib/parameters/rates")
-include("bits/lib/parameters/levels")
-include("bits/lib/parameters/echo")
-include("bits/lib/parameters/sequencer")
+include("symbiosis/lib/parameters")
+include("symbiosis/lib/parameters/filter")
+include("symbiosis/lib/parameters/envelopes")
+include("symbiosis/lib/parameters/rates")
+include("symbiosis/lib/parameters/levels")
+include("symbiosis/lib/parameters/echo")
+include("symbiosis/lib/parameters/sequencer")
 
-local page_sampling = include("bits/lib/pages/sampling")
-local page_sequencer = include("bits/lib/pages/sequencer")
-local page_envelopes = include("bits/lib/pages/envelopes")
-local page_filter = include("bits/lib/pages/filter")
-local page_echo = include("bits/lib/pages/echo")
-local page_master = include("bits/lib/pages/master")
-local page_control = include("bits/lib/pages/control")
-local page_panning = include("bits/lib/pages/panning")
-local page_rates = include("bits/lib/pages/rates")
-local page_levels = include("bits/lib/pages/levels")
+local page_sampling = include("symbiosis/lib/pages/sampling")
+local page_sequencer = include("symbiosis/lib/pages/sequencer")
+local page_envelopes = include("symbiosis/lib/pages/envelopes")
+local page_filter = include("symbiosis/lib/pages/filter")
+local page_echo = include("symbiosis/lib/pages/echo")
+local page_master = include("symbiosis/lib/pages/master")
+local page_control = include("symbiosis/lib/pages/control")
+local page_panning = include("symbiosis/lib/pages/panning")
+local page_rates = include("symbiosis/lib/pages/rates")
+local page_levels = include("symbiosis/lib/pages/levels")
 local fps = 45
 local ready
 
 
 UPDATE_SLICES = false
-engine.name = 'Bits'
+engine.name = 'Symbiosis'
 
 grid_device = grid.connect()
 
