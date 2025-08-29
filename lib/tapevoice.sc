@@ -9,7 +9,7 @@ TapeVoice {
 					// 't_' has a special meaning in SC, resets value to zero after receiving a 1
 					arg out, rate = 0, bufnum=0, loop=0.0, loopStart=0.0, loopEnd=0.0,
 					 t_trig=0, attack=0.01, decay=1.0, pan=0.0, level=1.0, envLevel=1.0, freq=400.0,
-					 res=0.2, xfade=0.05, curve=(-4), enableEnv=1, ampBus, envBus;
+					 res=0.0, xfade=0.05, curve=(-4), enableEnv=1, enableLpg=1, ampBus, envBus;
 					var start, end, playhead1, playhead2, playback, playback1, playback2, start1, start2, end1, end2, duration1, duration2;
 					var playheadId = ToggleFF.kr(t_trig); // toggles each time voice is triggered
 
@@ -73,10 +73,10 @@ TapeVoice {
 					percEnv2 = Select.kr(enableEnv, [envLevel, percEnv2]);
 
 					playback1 = playback1 * percEnv1 * EnvGen.ar(playheadEnv1, gate: t_1);
-					// playback1 = SVF.ar(playback1, percEnv1 * Lag.kr(freq), Lag.kr(res), 1.0, 0.0, 0.0);
+					playback1 = Select.ar(enableLpg, [playback1, SVF.ar(playback1, percEnv1 * freq, res, 1.0, 0.0, 0.0)]);
 
 					playback2 = playback2 * percEnv2 * EnvGen.ar(playheadEnv2, gate: t_2);
-					// playback2 = SVF.ar(playback2, percEnv2 * Lag.kr(freq), Lag.kr(res), 1.0, 0.0, 0.0);
+					playback2 = Select.ar(enableLpg, [playback2, SVF.ar(playback2, percEnv2 * freq, res, 1.0, 0.0, 0.0)]);
 
 					playback = XFade2.ar(playback1, playback2, crossfade);
 					playback = Pan2.ar(playback, pan);

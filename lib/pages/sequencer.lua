@@ -3,7 +3,7 @@ local perlin = include("bits/lib/ext/perlin")
 local page_name = "SEQUENCER"
 local window
 local grid_graphic
-local PERLIN_ZOOM = 10 / 3                   ---4 / 3 -- empirically tuned
+local PERLIN_ZOOM = 10 / 3                          ---4 / 3 -- empirically tuned
 local SEQ_EVOLVE_RATES = { 2 ^ 15, 2 ^ 14, 2 ^ 13 } -- in quarter notes, but fuzzy concept due to how perlin computes
 local SEQUENCE_STYLE_TABLE_TO_SOFTCUT = { 1, 0 }
 local MAX_STEPS = sequence_util.max_steps
@@ -49,7 +49,8 @@ local function generate_perlin_seq()
                 local density_seed = 11.0
                 -- map to larger range than [0:1], then clamp, because perlin noise leans to the center of the range
                 local mask = util.clamp(
-                util.linlin(-1, 1, -0.3, 1.3, perlin:noise(perlin_x + density_seed, perlin_y + density_seed, z_seed)), 0,
+                    util.linlin(-1, 1, -0.3, 1.3, perlin:noise(perlin_x + density_seed, perlin_y + density_seed, z_seed)),
+                    0,
                     1)
                 if mask >= density and (mask ~= 1.0 and density ~= 1.0) then
                     v = 0.0 -- 0.0 is only value not interpreted as an active step
@@ -184,7 +185,7 @@ local function run_sequencer()
 
         local max_time = params:get(ID_ENVELOPES_TIME)
         local max_shape = params:get(ID_ENVELOPES_SHAPE)
-        local enable_mod = params:get(ID_ENVELOPES_MOD) == 1
+        local enable_mod = ENVELOPE_MOD_OPTIONS[params:get(ID_ENVELOPES_MOD)]
 
         for y = 1, SEQ_ROWS do
             local voice = y - 1
@@ -194,8 +195,8 @@ local function run_sequencer()
             local on = a > 0.0
 
             local mod_amt
-            if enable_mod then
-                -- use half of sequencer val for modulation    
+            if enable_mod  ~= "OFF" then
+                -- use half of sequencer val for modulation
                 mod_amt = 0.5 + a / 2
             else
                 mod_amt = 1
@@ -214,15 +215,15 @@ local function run_sequencer()
                     grid_graphic.current_step = current_step
                     engine.level(voice, a)
                     engine.trigger(voice)
-                    -- engine.filter_env(y-1, 800)
-                    -- TODO: modulate attack and decay based on perlin value
-                    if params:get(ID_ENVELOPES_MOD) then
+                    if enable_mod == "LPG" then
+                        -- applies envelope to a lowpass filter
+                        engine.lpg_freq(voice, misc_util.linexp(0, 1, 80, 20000, a, 1))
+                    end
+                    if enable_mod ~= "OFF" then
                         engine.attack(voice, attack)
                         engine.decay(voice, decay)
                     end
                 end
-            elseif SEQUENCE_STYLE_TABLE[params:get(ID_SEQ_STYLE)] == SEQ_GATE then
-                -- engine.stop(y-1)
             end
         end
         clock.sync(1 / 4)
@@ -357,30 +358,30 @@ local function add_params()
     end
 end
 
-local function report_softcut(voice, pos)
-    -- if playhead moved since last report, assume track reached endpoint
-    grid_graphic.is_playing[voice] = voice_pos[voice] ~= nil and voice_pos[voice] ~= pos
+-- local function report_softcut(voice, pos)
+--     -- if playhead moved since last report, assume track reached endpoint
+--     grid_graphic.is_playing[voice] = voice_pos[voice] ~= nil and voice_pos[voice] ~= pos
 
-    voice_pos[voice] = pos
-    local voice_dir = params:get(get_voice_dir_param_id(voice))
-    -- todo : should be able to use ID_SAMPLING_SLICE_SECTIONS from sampling page, saves string concat
-    local slice_start = params:get(get_slice_start_param_id(voice))
-    local slice_end = params:get(get_slice_end_param_id(voice))
-    local slice_length = slice_end - slice_start
+--     voice_pos[voice] = pos
+--     local voice_dir = params:get(get_voice_dir_param_id(voice))
+--     -- todo : should be able to use ID_SAMPLING_SLICE_SECTIONS from sampling page, saves string concat
+--     local slice_start = params:get(get_slice_start_param_id(voice))
+--     local slice_end = params:get(get_slice_end_param_id(voice))
+--     local slice_length = slice_end - slice_start
 
-    local normalized_pos = pos - slice_start
-    if voice_dir == 1 then -- forward, todo: use table
-        voice_pos_percentage[voice] = normalized_pos / slice_length
-    else                   -- backwards
-        -- e.g. slice length = 5.0 sec
-        --- position = 32.0 - 37.0 seec
-        --- position = 36.0 sec, but going backwards;
-        --- so position is 36.0 - 32.0 = 4.0 (normalized_pos);
-        --- then slice_length - normalized_pos (5.0-4.0) = 1.0 gives the relative position
-        voice_pos_percentage[voice] = (slice_length - normalized_pos) / slice_length
-    end
-    grid_graphic.voice_pos_percentage[voice] = voice_pos_percentage[voice]
-end
+--     local normalized_pos = pos - slice_start
+--     if voice_dir == 1 then -- forward, todo: use table
+--         voice_pos_percentage[voice] = normalized_pos / slice_length
+--     else                   -- backwards
+--         -- e.g. slice length = 5.0 sec
+--         --- position = 32.0 - 37.0 seec
+--         --- position = 36.0 sec, but going backwards;
+--         --- so position is 36.0 - 32.0 = 4.0 (normalized_pos);
+--         --- then slice_length - normalized_pos (5.0-4.0) = 1.0 gives the relative position
+--         voice_pos_percentage[voice] = (slice_length - normalized_pos) / slice_length
+--     end
+--     grid_graphic.voice_pos_percentage[voice] = voice_pos_percentage[voice]
+-- end
 
 local function env_callback(voice, val)
     grid_graphic.voice_env[voice] = val
@@ -438,7 +439,7 @@ function page:initialize()
     -- start sequencer
     main_seq_clock_id = clock.run(run_sequencer)
     -- for softcut updates
-    softcut.event_position(report_softcut)
+    -- softcut.event_position(report_softcut)
 
     perlin_lfo = _lfos:add {
         shape = 'tri',

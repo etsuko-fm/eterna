@@ -11,6 +11,7 @@ ID_ENVELOPES_SHAPE = page_id .. "shape"
 
 ENVELOPE_CURVES = {-3, 0, 3}
 ENVELOPE_NAMES = {"NEG", "LIN", "POS"}
+ENVELOPE_MOD_OPTIONS = {"OFF", "TIME", "LPG"}
 
 ENV_TIME_MIN = 0.0015
 ENV_TIME_MAX = 5
@@ -54,7 +55,7 @@ controlspec_env_filter = controlspec.def {
 }
 
 params:add_separator("ENVELOPE", "ENVELOPE")
-params:add_binary(ID_ENVELOPES_MOD, "mod", "toggle", 1)
+params:add_option(ID_ENVELOPES_MOD, "mod", ENVELOPE_MOD_OPTIONS)
 params:add_control(ID_ENVELOPES_TIME, "time", controlspec_env_time)
 params:add_control(ID_ENVELOPES_SHAPE, "shape", controlspec_env_shape)
 params:add_option(ID_ENVELOPES_CURVE, "curve", ENVELOPE_CURVES)

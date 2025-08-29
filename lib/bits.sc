@@ -153,7 +153,14 @@ Engine_Bits : CroneEngine {
       };
     });
 
-    this.addCommand("filter_env", "if", {
+    this.addCommand("enable_lpg", "ii", {
+      arg msg;
+      if (voicesEmpty.not) {
+        voices[msg[1]].set(\enableLpg, msg[2]);
+      };
+    });
+
+    this.addCommand("lpg_freq", "if", {
       arg msg;
       if (voicesEmpty.not) {
         voices[msg[1]].set(\freq, msg[2]);

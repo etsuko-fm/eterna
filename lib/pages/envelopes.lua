@@ -35,7 +35,8 @@ end
 
 local function toggle_mod()
     local p = ID_ENVELOPES_MOD
-    params:set(p, 1 - params:get(p))
+    local curr = params:get(p)
+    params:set(p, util.wrap(curr + 1, 1, #ENVELOPE_MOD_OPTIONS))
 end
 
 local page = Page:create({
@@ -75,15 +76,15 @@ end
 local function action_mod(v)
     local shape = params:get(ID_ENVELOPES_SHAPE)
     local time = params:get(ID_ENVELOPES_TIME)
+    for sc_voice = 0,5 do
+        engine.enable_lpg(sc_voice, ENVELOPE_MOD_OPTIONS[v] == "LPG" and 1 or 0)
+    end
     recalculate_time(time, shape)
 end
 
 local function action_shape(shape)
     local time = params:get(ID_ENVELOPES_TIME)
     recalculate_time(time, shape)
-    -- for i = 0, 5 do
-    --     engine.filter_env(i, v)
-    -- end
 end
 local function action_curve(idx)
     for voice = 0, 5 do
@@ -108,10 +109,10 @@ function page:render()
     envelope_graphic.time = misc_util.explin(ENV_TIME_MIN, ENV_TIME_MAX, 0.001, 1, time, 4)
     envelope_graphic.shape = shape
     envelope_graphic.curve = curve
-    envelope_graphic.mod = mod
+    envelope_graphic.mod = ENVELOPE_MOD_OPTIONS[mod] ~= "OFF" and 1 or 0
 
     envelope_graphic:render()
-    page.footer.button_text.k2.value = mod == 1 and "ON" or "OFF"
+    page.footer.button_text.k2.value = ENVELOPE_MOD_OPTIONS[mod]
     page.footer.button_text.k3.value = curve
     page.footer.button_text.e2.value = misc_util.trim(tostring(time), 5)
     page.footer.button_text.e3.value = misc_util.trim(tostring(shape), 5)

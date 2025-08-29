@@ -25,9 +25,7 @@ local function set_contains(set, number)
     return set[number] == true
 end
 
--- explin(slo, shi, dlo, dhi, f, exp)
--- Convert exponential range [slo, shi] to linear range [dlo, dhi],
--- with an "exp" parameter controlling exponentiality (default = 1).
+-- Convert exponential range [slo, shi] to linear range [dlo, dhi]
 function explin(slo, shi, dlo, dhi, f, exp)
     exp = exp or 1  -- exponentiality factor (1 = plain log scaling)
 
@@ -47,7 +45,30 @@ function explin(slo, shi, dlo, dhi, f, exp)
     return dlo + (dhi - dlo) * t
 end
 
+-- Convert linear range [slo, shi] to exponential range [dlo, dhi]
+function linexp(slo, shi, dlo, dhi, f, exp)
+    exp = exp or 1  -- exponentiality factor (1 = plain log scaling)
+
+    -- sanity checks
+    if dlo == 0 or dhi == 0 or (dlo * dhi < 0) then
+        error("dlo and dhi must be non-zero and of the same sign")
+    end
+
+    -- normalize input linearly
+    local t = (f - slo) / (shi - slo)
+
+    -- apply exponentiality factor (inverse of explin's power)
+    t = t ^ (1 / exp)
+
+    -- scale to exponential destination
+    return math.exp(
+        math.log(math.abs(dlo)) +
+        (math.log(math.abs(dhi)) - math.log(math.abs(dlo))) * t
+    )
+end
+
 return {
+    linexp = linexp,
     explin = explin,
     trim = trim,
     list_to_set = list_to_set,

@@ -4,10 +4,10 @@ EchoGraphic = {
     radius = 12,
     hide = false,
     curve = 'lin', --lin, convex, concave
-    selected = 1, -- time slice selected
+    selected = 1,  -- time slice selected
     feedback = 1,
     wet = 1,
-    time=7,
+    time = 7,
 }
 
 function EchoGraphic:new(o)
@@ -17,29 +17,37 @@ function EchoGraphic:new(o)
     return o              -- return instance
 end
 
+local spacing = math.pi / 16
+local offset = math.pi / 2 + spacing / 2
 
-local spacing = math.pi/16
-local offset = math.pi / 2 + spacing/2
+local function draw_slider(x, y, w, h, fraction)
+    for i = 1, w, 2 do
+        screen.rect(x + i, y, 1, 3)
+        screen.fill()
+    end
+    screen.level(15)
+    screen.rect(x + (w - 2) * fraction, y, 3, h)
+    screen.fill()
+end
 
-local first = true
 function EchoGraphic:render()
     if self.hide then return end
-    local radius = self.radius * (self.feedback/4)
+    local radius = self.radius * (self.feedback / 4)
     local count = 0
     local r = 1
     local n = 1
     local brightness = 15
     while r < radius do
         count = count + 1
-        r = math.floor((n) + n * self.time/4)
-        brightness = util.clamp(15 - count*3, 1, 15)
-        brightness = util.round_up(brightness * self.feedback/4)
+        r = math.floor((n) + n * self.time / 4)
+        brightness = util.clamp(15 - count * 3, 1, 15)
+        brightness = util.round_up(brightness * self.feedback / 4)
         screen.level(brightness)
-        n = n+1
+        n = n + 1
         if first then print(r) end
         for i = 1, 8 do
             -- offset = offset + spacing/1000 % math.pi*2
-            local slice = math.pi/4
+            local slice = math.pi / 4
 
             local a1 = offset + (i * slice)
             local a2 = offset + (i + 1) * slice - spacing
@@ -53,32 +61,17 @@ function EchoGraphic:render()
             screen.stroke()
             screen.move(self.x, self.y)
         end
-
     end
-
-    -- for i = 1, 4 do
-    --     screen.level(0)
-    --     screen.circle(self.x, self.y, self.radius - i)
-    --     screen.fill()
-    -- end
 
     screen.level(1)
     local w = 32
-    local h  = 3
-    -- screen.rect(self.x-w/2, self.y+18, w, h)
-    -- screen.fill()
+    local h = 3
 
     screen.level(1)
-    local x = self.x-w/2
-    local y = self.y+16
-    for i = 1, w, 2 do
-        screen.rect(x + i, y, 1, 3)
-        screen.fill()
-    end
-    screen.level(15)
-    screen.rect(x + (w-2) * self.wet, y, 3, h)
-    screen.fill()
-    first = false
+    local x = self.x - w / 2
+    local y = self.y + 16
+
+    draw_slider(x, y, w, h, self.wet)
 end
 
 return EchoGraphic
