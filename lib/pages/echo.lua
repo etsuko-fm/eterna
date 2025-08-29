@@ -9,15 +9,15 @@ local function adjust_wet(d)
     params:set_raw(p, new_val)
 end
 
-local function adjust_time(d)
-    local p = ID_ECHO_TIME
-    local new_val = math.min(params:get(p) + d, #ECHO_TIME_AMOUNTS)
+local function adjust_feedback(d)
+    local p = ID_ECHO_FEEDBACK
+    local new_val = params:get_raw(p) + d * controlspec_echo_feedback.quantum
     params:set(p, new_val)
 end
 
-local function cycle_feedback()
-    local p = ID_ECHO_FEEDBACK
-    local new_val = util.wrap(params:get(p) + 1, 1, #ECHO_FEEDBACK_AMOUNTS)
+local function cycle_time()
+    local p = ID_ECHO_TIME
+    local new_val = util.wrap(params:get(p) + 1, 1, #ECHO_TIME_AMOUNTS)
     params:set(p, new_val)
 end
 
@@ -30,10 +30,10 @@ end
 
 local page = Page:create({
     name = page_name,
-    e2 = adjust_time,
+    e2 = adjust_feedback,
     e3 = adjust_wet,
     k2_off = cycle_style,
-    k3_off = cycle_feedback,
+    k3_off = cycle_time,
 })
 
 local function action_echo_time(v)
@@ -51,7 +51,7 @@ end
 local function add_params()
     params:set_action(ID_ECHO_DRYWET, function(v) engine.echo_wet(v) end)
     params:set_action(ID_ECHO_STYLE, action_echo_style)
-    params:set_action(ID_ECHO_FEEDBACK, function(v) engine.echo_feedback(ECHO_FEEDBACK_AMOUNTS[v]) end)
+    params:set_action(ID_ECHO_FEEDBACK, function(v) engine.echo_feedback(v) end)
     params:set_action(ID_ECHO_TIME, action_echo_time)
 end
 
@@ -61,15 +61,15 @@ function page:render()
     -- screen.text_center("ECHO")
     local time = ECHO_TIME_NAMES[params:get(ID_ECHO_TIME)]
     local wet = params:get(ID_ECHO_DRYWET)
-    local feedback = ECHO_FEEDBACK_NAMES[params:get(ID_ECHO_FEEDBACK)]
+    local feedback = params:get(ID_ECHO_FEEDBACK)
     local style = ECHO_STYLES[params:get(ID_ECHO_STYLE)]
     echo_graphic.time = params:get(ID_ECHO_TIME)
     echo_graphic.feedback =params:get(ID_ECHO_FEEDBACK) -- 1 to 4
     echo_graphic.wet = params:get(ID_ECHO_DRYWET)
     echo_graphic:render()
     page.footer.button_text.k2.value = style
-    page.footer.button_text.k3.value = feedback
-    page.footer.button_text.e2.value = time
+    page.footer.button_text.k3.value = time
+    page.footer.button_text.e2.value = feedback
     page.footer.button_text.e3.value = wet
     page.footer:render()
     window:render()
@@ -101,11 +101,11 @@ function page:initialize()
                 value = "",
             },
             k3 = {
-                name = "FEEDB",
+                name = "TIME",
                 value = "",
             },
             e2 = {
-                name = "TIME",
+                name = "FEEDB",
                 value = "",
             },
             e3 = {
