@@ -36,7 +36,6 @@ Engine_Bits : CroneEngine {
     //context.xg is the audio context's fx group
 
     this.addCommand("set_filter_type", "s", { arg msg;
-      msg[1].postln;
       switch(msg[1].asString)
       { "HP"} {
         filter.set(\filterType, 0);
@@ -219,22 +218,26 @@ Engine_Bits : CroneEngine {
     this.addCommand("echo_feedback", "f", { arg msg; echo.set(\feedback, msg[1]); });
     this.addCommand("echo_time", "f",     { arg msg; echo.set(\delayTime, msg[1]); });
     this.addCommand("echo_wet", "f",      { arg msg; echo.set(\wetAmount, msg[1]); });
+    this.addCommand("echo_style", "s",    { arg msg; 
+      switch(msg[1].asString)
+      { "NEUTRAL"} {
+        echo.set(\style, 0);
+      }
+      { "DARK" } {
+        echo.set(\style, 1);
+      }
+      { "BRIGHT" } {
+        echo.set(\style, 2);
+      };
+     });
 
     this.addPoll(\file_loaded, { isLoaded; }, periodic:false);
 
-    this.addPoll(\voice1amp, { ampBuses[0].getSynchronous; }, periodic: true);
-    this.addPoll(\voice2amp, { ampBuses[1].getSynchronous; }, periodic: true);
-    this.addPoll(\voice3amp, { ampBuses[2].getSynchronous; }, periodic: true);
-    this.addPoll(\voice4amp, { ampBuses[3].getSynchronous; }, periodic: true);
-    this.addPoll(\voice5amp, { ampBuses[4].getSynchronous; }, periodic: true);
-    this.addPoll(\voice6amp, { ampBuses[5].getSynchronous; }, periodic: true);
-    
-    this.addPoll(\voice1env, { envBuses[0].getSynchronous; }, periodic: true);
-    this.addPoll(\voice2env, { envBuses[1].getSynchronous; }, periodic: true);
-    this.addPoll(\voice3env, { envBuses[2].getSynchronous; }, periodic: true);
-    this.addPoll(\voice4env, { envBuses[3].getSynchronous; }, periodic: true);
-    this.addPoll(\voice5env, { envBuses[4].getSynchronous; }, periodic: true);
-    this.addPoll(\voice6env, { envBuses[5].getSynchronous; }, periodic: true);
+    6.do { |i|
+        var idx = i; // clearer name
+        this.addPoll(("voice" ++ (idx+1) ++ "amp").asSymbol, { ampBuses[idx].getSynchronous }, periodic: true);
+        this.addPoll(("voice" ++ (idx+1) ++ "env").asSymbol, { envBuses[idx].getSynchronous }, periodic: true);
+    };
 
   }
   

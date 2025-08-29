@@ -8,8 +8,8 @@ TapeVoice {
 					// loopStart and loopEnd in seconds
 					// 't_' has a special meaning in SC, resets value to zero after receiving a 1
 					arg out, rate = 0, bufnum=0, loop=0.0, loopStart=0.0, loopEnd=0.0,
-					 t_trig=0, attack=0.01, decay=1.0, pan=0.0, level=1.0, envLevel=1.0, freq=400.0,
-					 res=0.0, xfade=0.05, curve=(-4), enableEnv=1, enableLpg=1, ampBus, envBus;
+					 t_trig=0, attack=0.01, decay=1.0, pan=0.0, level=1.0, envLevel=1.0, freq=20000,
+					 res=0.0, xfade=0.05, curve=(-4), enableEnv=1, enableLpg=0, ampBus, envBus;
 					var start, end, playhead1, playhead2, playback, playback1, playback2, start1, start2, end1, end2, duration1, duration2;
 					var playheadId = ToggleFF.kr(t_trig); // toggles each time voice is triggered
 

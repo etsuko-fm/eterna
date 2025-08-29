@@ -21,10 +21,18 @@ local function cycle_feedback()
     params:set(p, new_val)
 end
 
+local function cycle_style()
+    local p = ID_ECHO_STYLE
+    local new_val = util.wrap(params:get(p) + 1, 1, #ECHO_STYLES)
+    params:set(p, new_val)
+
+end
+
 local page = Page:create({
     name = page_name,
     e2 = adjust_time,
     e3 = adjust_wet,
+    k2_off = cycle_style,
     k3_off = cycle_feedback,
 })
 
@@ -34,8 +42,15 @@ local function action_echo_time(v)
     engine.echo_time(duration)
 end
 
+
+local function action_echo_style(v)
+    engine.echo_style(ECHO_STYLES[v])
+    print('set echo to ' .. ECHO_STYLES[v])
+end
+
 local function add_params()
     params:set_action(ID_ECHO_DRYWET, function(v) engine.echo_wet(v) end)
+    params:set_action(ID_ECHO_STYLE, action_echo_style)
     params:set_action(ID_ECHO_FEEDBACK, function(v) engine.echo_feedback(ECHO_FEEDBACK_AMOUNTS[v]) end)
     params:set_action(ID_ECHO_TIME, action_echo_time)
 end
@@ -47,10 +62,12 @@ function page:render()
     local time = ECHO_TIME_NAMES[params:get(ID_ECHO_TIME)]
     local wet = params:get(ID_ECHO_DRYWET)
     local feedback = ECHO_FEEDBACK_NAMES[params:get(ID_ECHO_FEEDBACK)]
+    local style = ECHO_STYLES[params:get(ID_ECHO_STYLE)]
     echo_graphic.time = params:get(ID_ECHO_TIME)
     echo_graphic.feedback =params:get(ID_ECHO_FEEDBACK) -- 1 to 4
     echo_graphic.wet = params:get(ID_ECHO_DRYWET)
     echo_graphic:render()
+    page.footer.button_text.k2.value = style
     page.footer.button_text.k3.value = feedback
     page.footer.button_text.e2.value = time
     page.footer.button_text.e3.value = wet
