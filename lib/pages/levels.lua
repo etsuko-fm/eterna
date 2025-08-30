@@ -34,7 +34,7 @@ local function adjust_position(d)
     local incr = d * controlspec_pos.quantum
     local curr = params:get(ID_LEVELS_POS)
     local new_val = curr + incr
-    params:set(ID_LEVELS_POS, new_val, false)
+    params:set(ID_LEVELS_POS, new_val)
 end
 
 local function adjust_lfo_rate(d)
@@ -49,15 +49,11 @@ local function e2(d)
     end
 end
 
-local function e3(d)
-    adjust_sigma(d)
-end
-
 local page = Page:create({
     name = page_name,
     e1 = nil,
     e2 = e2,
-    e3 = e3,
+    e3 = adjust_sigma,
     k1_hold_on = nil,
     k1_hold_off = nil,
     k2_on = nil,

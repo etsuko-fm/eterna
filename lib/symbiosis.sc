@@ -104,8 +104,9 @@ Engine_Symbiosis : CroneEngine {
           "Loading second channel".postln;
           buffR = Buffer.readChannel(context.server, msg[1].asString, channels:[1], bufnum: bufnumR, action: {|b| isLoaded = true;});
           // Spread 2 channels over 6 voices
-          for(0,2) {arg i; voices[i].set(\bufnum, bufnumL)};
-          for(3,5) {arg i; voices[i].set(\bufnum, bufnumR)};
+          voices.do { |voice, i|
+              voice.set(\bufnum, if(i < (voices.size div: 2)) { bufnumL } { bufnumR });
+          };
         } { 
           // if mono, also mark loading as finished
           isLoaded = true;
@@ -216,7 +217,11 @@ Engine_Symbiosis : CroneEngine {
     });
 
     this.addCommand("echo_feedback", "f", { arg msg; echo.set(\feedback, msg[1]); });
-    this.addCommand("echo_time", "f",     { arg msg; echo.set(\delayTime, msg[1]); });
+    this.addCommand("echo_time", "f",     { 
+      arg msg; 
+      echo.set(\delayTime, msg[1]); 
+      echo.set(\t_trig, 1); 
+      });
     this.addCommand("echo_wet", "f",      { arg msg; echo.set(\wetAmount, msg[1]); });
     this.addCommand("echo_style", "s",    { arg msg; 
       switch(msg[1].asString)
