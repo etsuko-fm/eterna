@@ -66,7 +66,7 @@ local pages = {
   page_master,
 }
 
-local current_page_index = 4
+local current_page_index = 9
 local current_page = pages[current_page_index]
 
 local function page_forward()
