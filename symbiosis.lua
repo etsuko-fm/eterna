@@ -55,8 +55,8 @@ state = {
 
 local pages = {
   page_sampling,
-  page_control,
   page_sequencer,
+  page_control,
   page_envelopes,
   page_rates,
   page_levels,
