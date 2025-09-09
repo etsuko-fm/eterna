@@ -93,16 +93,6 @@ local midi_device = {}
 local midi_device_names = {}
 local midi_target
 
-local function enable_all_voices()
-  for i = 1, 6 do
-    softcut.enable(i, 0)
-    softcut.buffer(i, 1)
-    softcut.fade_time(i, state.fade_time)
-    softcut.level_slew_time(i, 1 / fps)
-    softcut.pan_slew_time(i, 1 / fps)
-  end
-end
-
 function midi_to_hz(note)
   local hz = (440 / 32) * (2 ^ ((note - 9) / 12))
   return hz
@@ -138,22 +128,11 @@ function init()
   env5poll = poll.set("voice5env");
   env6poll = poll.set("voice6env");
 
-
-
-  loaded_poll.callback = function(val)
-    if val then
-      print("SC poll: file loaded")
-      -- engine.play(0)
-    else
-      print("poll loaded but value is " .. val)
-    end
-  end
-
   for _, page in ipairs(pages) do
     page:initialize()
   end
   params:bang()
-  -- enable_all_voices()
+
   for i = 1, #midi.vports do         -- query all ports
     midi_device[i] = midi.connect(i) -- connect each device
     table.insert(
@@ -176,7 +155,14 @@ function init()
   c:start()
 end
 
+clock.tempo_change_handler = function(bpm)
+  recalculate_echo_time(bpm)
+end
+
+
+
 function key(n, z)
+  -- K1/K2/K3 controls whatever is assigned to them on the current page
   if n == 1 and z == 0 and current_page.k1_off then current_page.k1_off() end
   if n == 1 and z == 1 and current_page.k1_on then current_page.k1_on() end
 
@@ -199,6 +185,7 @@ function key(n, z)
 end
 
 function enc(n, d)
+  -- E1 cycles pages
   if n == 1 then
     if d > 0 then
       page_forward()
@@ -206,10 +193,13 @@ function enc(n, d)
       page_backward()
     end
   end
+
+  -- E2/E3 controls whatever is assigned to them on the current page
   if n == 2 and current_page.e2 then
     current_page.e2(d)
     current_page.footer.active_knob = "e2"
   end
+
   if n == 3 and current_page.e3 then
     current_page.e3(d)
     current_page.footer.active_knob = "e3"
@@ -217,6 +207,7 @@ function enc(n, d)
 end
 
 local function draw_page_indicator()
+  -- draw stripes on top left that indicate which page is active
   screen.level(11)
   local h
   local y
@@ -237,6 +228,7 @@ local function draw_page_indicator()
 end
 
 function refresh()
+  -- refresh screen
   if ready then
     ready = false
     screen.clear()
@@ -251,18 +243,6 @@ end
 -- convenience methods for matron
 function rerun()
   norns.script.load(norns.state.script)
-end
-
-function off()
-  for i = 1, 6 do
-    softcut.play(i, 0)
-  end
-end
-
-function on()
-  for i = 1, 6 do
-    softcut.play(i, 1)
-  end
 end
 
 function cleanup()

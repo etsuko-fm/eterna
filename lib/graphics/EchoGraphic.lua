@@ -127,7 +127,7 @@ function EchoGraphic:draw_circles()
         if current_option == self.time then
             screen.level(15)
         else
-            screen.level(1 * i % 3)
+            screen.level(1)
         end
         screen.line_width(1)
         screen.stroke()
@@ -141,7 +141,6 @@ function EchoGraphic:render()
     local availble_space = RADIANS * 0.5
     local negative_space = RADIANS - availble_space
     local radians_per_slice = (availble_space - (div*spacing)) / div
-    print(negative_space)
     local a1 = bottom
     local a2 = -bottom
     -- self:draw_spaced_arcs(div, math.pi/16 * 4, math.pi/16 RADIANS/32, 4)

@@ -25,7 +25,6 @@ local function cycle_style()
     local p = ID_ECHO_STYLE
     local new_val = util.wrap(params:get(p) + 1, 1, #ECHO_STYLES)
     params:set(p, new_val)
-
 end
 
 local page = Page:create({
@@ -36,10 +35,19 @@ local page = Page:create({
     k3_off = cycle_time,
 })
 
+function recalculate_echo_time(bpm, time_fraction)
+    -- global, because also used for tempo change handler
+    if not time_fraction then
+        time_fraction = ECHO_TIME_AMOUNTS[params:get(ID_ECHO_TIME)]
+    end
+    local duration = (60 / bpm) * time_fraction
+    print('new echo duration: '.. duration)
+    engine.echo_time(duration)
+end
+
 local function action_echo_time(v)
     local time_fraction = ECHO_TIME_AMOUNTS[v]
-    local duration = (60 / clock.get_tempo()) * time_fraction
-    engine.echo_time(duration)
+    recalculate_echo_time(clock.get_tempo(), time_fraction)
 end
 
 
@@ -56,7 +64,6 @@ local function add_params()
 end
 
 function page:render()
-    
     -- screen.move(64, 32)
     -- screen.text_center("ECHO")
     local time = ECHO_TIME_NAMES[params:get(ID_ECHO_TIME)]
@@ -64,7 +71,7 @@ function page:render()
     local feedback = params:get(ID_ECHO_FEEDBACK)
     local style = ECHO_STYLES[params:get(ID_ECHO_STYLE)]
     echo_graphic.time = params:get(ID_ECHO_TIME)
-    echo_graphic.feedback =params:get(ID_ECHO_FEEDBACK) -- 1 to 4
+    echo_graphic.feedback = params:get(ID_ECHO_FEEDBACK) -- 1 to 4
     echo_graphic.wet = params:get(ID_ECHO_DRYWET)
     echo_graphic:render()
     page.footer.button_text.k2.value = style
