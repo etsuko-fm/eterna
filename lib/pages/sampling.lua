@@ -81,7 +81,7 @@ end
 
 local function to_sample_name(path)
     local s = string.upper(remove_extension(path_to_file_name(path)))
-    return util.trim_string_to_width(s, 108)
+    return util.trim_string_to_width(s, 100)
 end
 
 local function update_loop_ranges()
@@ -97,7 +97,7 @@ local function update_loop_ranges()
     if not slice_length then return end
 
     for i = 1, n_slices do
-        -- slice 1 starts at 0.0 seconds; 
+        -- slice 1 starts at 0.0 seconds;
         -- slice 2 starts at 1*slice_length,
         -- slice 3 starts at 2*slice_length, etc
         slice_start_timestamps[i] = (i - 1) * slice_length
@@ -116,7 +116,7 @@ local function update_loop_ranges()
         local start_pos = slice_start_timestamps[slice_index]
         -- loop start/end works as buffer range when loop not enabled
         -- end point is where the next slice starts
-        local end_pos = start_pos + (slice_length * .999)  -- leave a small gap to prevent overlap
+        local end_pos = start_pos + (slice_length * .999) -- leave a small gap to prevent overlap
 
         -- save in params, so waveforms can render correctly
         params:set(ID_SAMPLING_SLICE_SECTIONS[voice].loop_start, start_pos)
@@ -139,16 +139,16 @@ local function load_sample(file)
     if is_stereo then
         waveform_h = 5
         waveform_graphics[1].y = 20
-        for voice = 1,3 do
+        for voice = 1, 3 do
             softcut.buffer(voice, 1)
         end
-        for voice = 4,6 do
+        for voice = 4, 6 do
             softcut.buffer(voice, 2)
         end
     else
         waveform_h = 10
         waveform_graphics[1].y = 26
-        for voice=1,6 do
+        for voice = 1, 6 do
             softcut.buffer(voice, 1)
         end
     end
@@ -165,7 +165,7 @@ local function select_sample()
         page_indicator_disabled = false
     end
     fileselect.enter(_path.audio, callback, "audio")
-    page_disabled = true -- don't render current page
+    page_disabled = true           -- don't render current page
     page_indicator_disabled = true -- hide page indicator
 end
 
@@ -173,12 +173,12 @@ local function constrain_max_start(num_slices)
     -- side effect of adjusting maxval, is that raw * maxval of the controlspec
     -- is a new value, which is why this method implicitly adjusts the value of start
     controlspec_start.maxval = num_slices
-    controlspec_start.quantum = 1/num_slices
+    controlspec_start.quantum = 1 / num_slices
 end
 
 local function shuffle()
     -- randomizes number of slices and slice start
-    if selected_sample then 
+    if selected_sample then
         local new_num_slices = math.random(SLICES_MIN, SLICES_MAX)
         local new_start = math.random(1, math.max(1, new_num_slices - 6))
         params:set(ID_SAMPLING_NUM_SLICES, new_num_slices)
@@ -189,7 +189,7 @@ end
 local function action_num_slices(v)
     -- update max start based on number of slices
     constrain_max_start(v)
-    slice_graphic.slice_len = 1/v
+    slice_graphic.slice_len = 1 / v
     slice_graphic.num_slices = v
     update_loop_ranges()
 end
@@ -243,7 +243,7 @@ function page:render()
         screen.level(3)
         screen.font_face(DEFAULT_FONT)
         window.title = "SAMPLING"
-        screen.move(64,32)
+        screen.move(64, 32)
         screen.text_center("PRESS K2 TO LOAD SAMPLE")
     end
 
@@ -262,8 +262,8 @@ local function add_params()
     params:set_action(ID_SAMPLING_SLICE_START, action_slice_start)
     constrain_max_start(SLICES_DEFAULT)
     for voice = 1, 6 do
-        params:set_action(ID_SAMPLING_SLICE_SECTIONS[voice].loop_start, function(v) UPDATE_SLICES=true end)
-        params:set_action(ID_SAMPLING_SLICE_SECTIONS[voice].loop_end, function(v) UPDATE_SLICES=true end)
+        params:set_action(ID_SAMPLING_SLICE_SECTIONS[voice].loop_start, function(v) UPDATE_SLICES = true end)
+        params:set_action(ID_SAMPLING_SLICE_SECTIONS[voice].loop_end, function(v) UPDATE_SLICES = true end)
     end
 
     params:bang()
@@ -297,8 +297,6 @@ function page:initialize()
         render_samples = waveform_width,
     })
 
-    
-
     local function on_render(ch, start, i, s)
         -- this is a callback, for every softcut.render_buffer() invocation
         waveform_samples[ch] = as_abs_values(s)
@@ -311,7 +309,7 @@ function page:initialize()
     if selected_sample then
         filename = to_sample_name(selected_sample)
         if debug_mode then load_sample(_path.dust .. selected_sample) end
-        softcut.render_buffer(1, 0, sample_length, waveform_width)    
+        softcut.render_buffer(1, 0, sample_length, waveform_width)
     end
 
     window = Window:new({
