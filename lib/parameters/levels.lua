@@ -14,10 +14,10 @@ controlspec_pos = controlspec.def {
     min = LEVELS_POSITION_MIN,
     max = LEVELS_POSITION_MAX,
     warp = 'lin',
-    step = 0.01,
+    step = 1/180,
     default = 0.42,
     units = '',
-    quantum = 0.01,
+    quantum = 1/180,
     wrap = true
 }
 

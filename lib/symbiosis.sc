@@ -16,7 +16,7 @@ Engine_Symbiosis : CroneEngine {
     var isLoaded = false;
     var bufnumL = 0;
     var bufnumR = 1;
-    var file, numChannels, buffL, buffR, f;
+    var file, numChannels, buffL, buffR, f, peakL, peakR, normalizeFactor, maxAmp;
     var voicesEmpty = true;
 
     // Routing: buffers > filter > fx > context.xg
@@ -103,6 +103,21 @@ Engine_Symbiosis : CroneEngine {
         if (f.numChannels > 1) {
           "Loading second channel".postln;
           buffR = Buffer.readChannel(context.server, msg[1].asString, channels:[1], bufnum: bufnumR, action: {|b| isLoaded = true;});
+
+          // normalize both 
+          peakL = buffL.maxAbsValue;
+          peakR = buffR.maxAbsValue;
+
+          // compute overall max
+          maxAmp = [peakL, peakR].maxItem;
+          normalizeFactor = 1.0 / maxAmp;
+
+          // apply scaling in place
+          buffL.scale(normalizeFactor); 
+          buffR.scale(normalizeFactor); 
+          ("left and right buffer normalized by scaling both with factor " + normalizeFactor).postln;
+
+
           // Spread 2 channels over 6 voices
           voices.do { |voice, i|
               voice.set(\bufnum, if(i < (voices.size div: 2)) { bufnumL } { bufnumR });
@@ -110,6 +125,8 @@ Engine_Symbiosis : CroneEngine {
         } { 
           // if mono, also mark loading as finished
           isLoaded = true;
+          buffL.normalize();
+          ("mono buffer normalized").postln;
 
           // Let all voices use the left buffer
           voices.do {|voice| voice.set(\bufnum, bufnumL)};

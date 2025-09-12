@@ -71,7 +71,10 @@ function page:render()
     amp5poll:update()
     amp6poll:update()
 
-    level_graphic.levels = gaussian.calculate_gaussian_levels(params:get(ID_LEVELS_POS), sigma)
+    local pos = params:get(ID_LEVELS_POS)
+    level_graphic.levels = gaussian.calculate_gaussian_levels(pos, sigma)
+    level_graphic.scan_val = pos
+
     screen.clear()
     level_graphic:render()
 
@@ -94,7 +97,8 @@ function page:render()
         -- When LFO is disabled, E2 controls scan position
         page.footer.button_text.k2.value = "OFF"
         page.footer.button_text.e2.name = "POS"
-        page.footer.button_text.e2.value = misc_util.trim(tostring(params:get(ID_LEVELS_POS)), 5)
+        -- multiply by 6 because of 6 voices; indicates which voice is fully audible    
+        page.footer.button_text.e2.value = misc_util.trim(tostring(pos*6), 4)
         -- Hide shape button
         page.footer.button_text.k3.name = ""
         page.footer.button_text.k3.value = ""
@@ -108,7 +112,7 @@ local function recalculate_levels()
     local sigma = amp_to_sigma(params:get(ID_LEVELS_AMP))
     local levels = gaussian.calculate_gaussian_levels(params:get(ID_LEVELS_POS), sigma)
     for i = 0, 5 do
-        engine.level(i, levels[i+1])
+        engine.level(i, levels[i + 1])
     end
     -- print(levels[1])
 end
@@ -182,6 +186,7 @@ function page:initialize()
     local sigma = amp_to_sigma(params:get(ID_LEVELS_AMP))
     local levels = gaussian.calculate_gaussian_levels(params:get(ID_LEVELS_POS), sigma)
     level_graphic.levels = levels
+
 
     page.footer = Footer:new({
         button_text = {
