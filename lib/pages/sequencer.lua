@@ -13,22 +13,16 @@ local holding_step = false
 
 -- todo: add in bits.lua? otherwise dependent on order of pages loaded
 
-
 local main_seq_clock_id
 local current_step = 1
 local current_global_step = 1 -- holds values of 1 to MAX_STEPS, even if sequence length is shorter
-
 local sequence_steps = SEQ_COLUMNS
 local step_divider = 1 -- 1 means 1 step = 1 1/16th note
 local cue_step_divider = nil
-
-local voice_pos = {} -- playhead positions of softcut voices
 local perlin_lfo
 local redraw_sequence = false
 
 local function generate_perlin_seq()
-    -- print("regen - ", math.random())
-    -- need as many values as there are rows and columns
     local density = params:get(ID_SEQ_PERLIN_DENSITY)
     local x_seed = params:get(ID_SEQ_PERLIN_X)
     local y_seed = params:get(ID_SEQ_PERLIN_Y)
@@ -60,15 +54,6 @@ local function generate_perlin_seq()
         end
     end
 end
-
--- local min_val = math.huge
--- local max_val = -math.huge
--- for x = 0, 1000, 0.01 do
---     local n = perlin:noise(x, math.random()*10, math.random()*10)
---     if n < min_val then min_val = n end
---     if n > max_val then max_val = n end
--- end
--- print("Min:", min_val, "Max:", max_val)
 
 local function e2(d)
     -- works for x, y, and z
@@ -135,44 +120,103 @@ function voice_position_to_phase(voice, phase)
 end
 
 local hold_step = nil
+
+local function update_slices()
+    if UPDATE_SLICES then
+        for voice = 0, 5 do
+            engine.loop_start(voice, params:get(ID_SAMPLING_SLICE_SECTIONS[voice + 1].loop_start))
+            engine.loop_end(voice, params:get(ID_SAMPLING_SLICE_SECTIONS[voice + 1].loop_end))
+        end
+        UPDATE_SLICES = false
+    end
+end
+
+local function update_step_divider()
+    if cue_step_divider then
+        -- wait until the current_global_step aligns with the new step_size
+        if current_global_step % cue_step_divider == 0 then
+            -- align the current global step with the new step divider, to prevent jumping
+            current_global_step = current_step * cue_step_divider
+            step_divider = cue_step_divider
+            cue_step_divider = nil
+        end
+    end
+end
+
+local function set_current_step()
+    -- hold step feature, UI available on seq-ctrl page
+    if not holding_step then
+        if hold_step then
+            -- means step was held, but resumed this step
+            -- current_global_step ticked on meanwhile; but we don't want to jump to another step;
+            -- shold always go on neatly to the n+1 sequence step
+            print("resumed at " .. current_global_step)
+            current_global_step = current_step * step_divider + (current_step - hold_step)
+            hold_step = nil
+        end
+        current_step = util.wrap(math.ceil(current_global_step / step_divider), 1, sequence_steps)
+    else
+        if hold_step == nil then
+            print("Frozen at " .. current_step)
+            hold_step = current_step
+        end
+    end
+end
+
+local function calculate_envelope(enable_mod, step_val)
+        local max_time = params:get(ID_ENVELOPES_TIME)
+    local max_shape = params:get(ID_ENVELOPES_SHAPE)
+
+    local mod_amt
+    if enable_mod ~= "OFF" then
+        -- use half of sequencer val for modulation
+        mod_amt = 0.5 + step_val / 2
+    else
+        mod_amt = 1
+    end
+
+    -- modulate time and shape
+    local time = max_time * mod_amt
+    local shape = max_shape * mod_amt
+    local attack = get_attack(time, shape)
+    local decay = get_decay(time, shape)
+
+    return attack, decay
+end
+
+
+local function evaluate_step(x, y, is_step_change)
+    local voice = y - 1 -- for 0-based supercollider arrays
+    local enable_mod = ENVELOPE_MOD_OPTIONS[params:get(ID_ENVELOPES_MOD)]
+    local perlin_val = params:get(ID_SEQ_STEP[y][x])
+    local a = math.abs(perlin_val)
+    local on = a > 0.0
+    local attack, decay = calculate_envelope(enable_mod, a)
+    if on then
+        -- using modulo check to prevent triggering every 1/16 when step size is larger
+        if is_step_change then
+            grid_graphic.current_step = current_step
+            engine.env_level(voice, a)
+            engine.trigger(voice)
+            if enable_mod == "LPG" then
+                -- applies envelope to a lowpass filter
+                engine.lpg_freq(voice, misc_util.linexp(0, 1, 80, 20000, a, 1))
+            end
+            if enable_mod ~= "OFF" then
+                engine.attack(voice, attack)
+                engine.decay(voice, decay)
+            end
+        end
+    end
+end
+
 local function run_sequencer()
     -- runs every 1/16th note of current clock bpm (based on a 4/4 time signature); e.g. every 125ms for 120bpm
     while true do
-        if UPDATE_SLICES then
-            for voice = 0, 5 do
-                engine.loop_start(voice, params:get(ID_SAMPLING_SLICE_SECTIONS[voice + 1].loop_start))
-                engine.loop_end(voice, params:get(ID_SAMPLING_SLICE_SECTIONS[voice + 1].loop_end))
-            end
-            UPDATE_SLICES = false
-        end
-        if cue_step_divider then
-            -- wait until the current_global_step aligns with the new step_size
-            if current_global_step % cue_step_divider == 0 then
-                -- align the current global step with the new step divider, to prevent jumping
-                current_global_step = current_step * cue_step_divider
-                step_divider = cue_step_divider
-                cue_step_divider = nil
-            end
-        end
+        update_slices()
+        update_step_divider()
         current_global_step = util.wrap(current_global_step + 1, 1, MAX_STEPS)
-
-        -- hold step feature, UI available on seq-ctrl page
-        if not holding_step then
-            if hold_step then
-                -- means step was held, but resumed this step
-                -- current_global_step ticked on meanwhile; but we don't want to jump to another step;
-                -- shold always go on neatly to the n+1 sequence step
-                print("resumed at " .. current_global_step)
-                current_global_step = current_step * step_divider + (current_step - hold_step)
-                hold_step = nil
-            end
-            current_step = util.wrap(math.ceil(current_global_step / step_divider), 1, sequence_steps)
-        else
-            if hold_step == nil then
-                print("Frozen at " .. current_step)
-                hold_step = current_step
-            end
-        end
+        set_current_step()
         -- grid_graphic.current_step = current_step
         local x = current_step -- x pos of sequencer, i.e. current step
 
@@ -183,48 +227,8 @@ local function run_sequencer()
             grid_graphic.current_step = current_step
         end
 
-        local max_time = params:get(ID_ENVELOPES_TIME)
-        local max_shape = params:get(ID_ENVELOPES_SHAPE)
-        local enable_mod = ENVELOPE_MOD_OPTIONS[params:get(ID_ENVELOPES_MOD)]
-
         for y = 1, SEQ_ROWS do
-            local voice = y - 1
-            -- todo: implement a check if it already fired for this step
-            local perlin_val = params:get(ID_SEQ_STEP[y][x])
-            local a = math.abs(perlin_val)
-            local on = a > 0.0
-
-            local mod_amt
-            if enable_mod  ~= "OFF" then
-                -- use half of sequencer val for modulation
-                mod_amt = 0.5 + a / 2
-            else
-                mod_amt = 1
-            end
-
-            -- modulate time and shape
-            local time = max_time * mod_amt
-            local shape = max_shape * mod_amt
-            local attack = get_attack(time, shape)
-            local decay = get_decay(time, shape)
-
-            -- engine.env_level(y, a) -- always set env/gate level based on perlin val
-            if on then
-                -- using modulo check to prevent triggering every 1/16 when step size is larger
-                if is_step_change then
-                    grid_graphic.current_step = current_step
-                    engine.env_level(voice, a)
-                    engine.trigger(voice)
-                    if enable_mod == "LPG" then
-                        -- applies envelope to a lowpass filter
-                        engine.lpg_freq(voice, misc_util.linexp(0, 1, 80, 20000, a, 1))
-                    end
-                    if enable_mod ~= "OFF" then
-                        engine.attack(voice, attack)
-                        engine.decay(voice, decay)
-                    end
-                end
-            end
+            evaluate_step(x, y, is_step_change)
         end
         clock.sync(1 / 4)
     end
@@ -357,31 +361,6 @@ local function add_params()
         end
     end
 end
-
--- local function report_softcut(voice, pos)
---     -- if playhead moved since last report, assume track reached endpoint
---     grid_graphic.is_playing[voice] = voice_pos[voice] ~= nil and voice_pos[voice] ~= pos
-
---     voice_pos[voice] = pos
---     local voice_dir = params:get(get_voice_dir_param_id(voice))
---     -- todo : should be able to use ID_SAMPLING_SLICE_SECTIONS from sampling page, saves string concat
---     local slice_start = params:get(get_slice_start_param_id(voice))
---     local slice_end = params:get(get_slice_end_param_id(voice))
---     local slice_length = slice_end - slice_start
-
---     local normalized_pos = pos - slice_start
---     if voice_dir == 1 then -- forward, todo: use table
---         voice_pos_percentage[voice] = normalized_pos / slice_length
---     else                   -- backwards
---         -- e.g. slice length = 5.0 sec
---         --- position = 32.0 - 37.0 seec
---         --- position = 36.0 sec, but going backwards;
---         --- so position is 36.0 - 32.0 = 4.0 (normalized_pos);
---         --- then slice_length - normalized_pos (5.0-4.0) = 1.0 gives the relative position
---         voice_pos_percentage[voice] = (slice_length - normalized_pos) / slice_length
---     end
---     grid_graphic.voice_pos_percentage[voice] = voice_pos_percentage[voice]
--- end
 
 local function env_callback(voice, val)
     grid_graphic.voice_env[voice] = val

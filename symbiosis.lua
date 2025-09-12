@@ -25,6 +25,7 @@ include("symbiosis/lib/parameters/rates")
 include("symbiosis/lib/parameters/levels")
 include("symbiosis/lib/parameters/echo")
 include("symbiosis/lib/parameters/sequencer")
+include("symbiosis/lib/tests")
 
 local page_sampling = include("symbiosis/lib/pages/sampling")
 local page_sequencer = include("symbiosis/lib/pages/sequencer")
