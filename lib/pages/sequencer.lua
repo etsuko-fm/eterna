@@ -213,7 +213,7 @@ local function run_sequencer()
                 -- using modulo check to prevent triggering every 1/16 when step size is larger
                 if is_step_change then
                     grid_graphic.current_step = current_step
-                    engine.level(voice, a)
+                    engine.env_level(voice, a)
                     engine.trigger(voice)
                     if enable_mod == "LPG" then
                         -- applies envelope to a lowpass filter

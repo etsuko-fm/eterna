@@ -56,19 +56,23 @@ state = {
 }
 
 local pages = {
+  -- 1
   page_sampling,
   page_sequencer,
   page_control,
+  -- 4
   page_envelopes,
   page_rates,
   page_levels,
+  -- 7
   page_panning,
   page_filter,
   page_echo,
+  -- 10
   page_master,
 }
 
-local current_page_index = 9
+local current_page_index = 6
 local current_page = pages[current_page_index]
 
 local function page_forward()
