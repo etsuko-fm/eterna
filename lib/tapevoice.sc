@@ -81,7 +81,7 @@ TapeVoice {
 					playback = XFade2.ar(playback1, playback2, crossfade);
 					playback = Pan2.ar(playback, pan);
 
-					amp = Amplitude.kr(Mix.ar(playback), releaseTime:0.1);
+					amp = Amplitude.kr(Mix.ar(playback), releaseTime:3);
 					Out.kr(ampBus, amp);
 					Out.kr(envBus, Select.kr(playheadId, [percEnv1, percEnv2]));
 

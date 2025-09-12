@@ -43,14 +43,26 @@ function LevelsGraphic:render()
             -self.h
         )
         screen.fill()
-        screen.level(self.brightness)
+        screen.level(3)
+        local x = self.x + (i * (self.w - self.bar_width) / (self.num_bars - 1))
+        local h = util.round(-self.h * self.levels[voice])
         screen.rect(
-            self.x + (i * (self.w - self.bar_width) / (self.num_bars - 1)),
+            x,
             self.y,
             self.bar_width,
-            util.round(-self.h * self.levels[voice])
+            h
         )
         screen.fill()
+
+        if self.voice_amp[voice] ~= nil then
+            screen.level(10)
+            local amp = misc_util.explin(0.001, 1, 0.001, 1, self.voice_amp[voice],1.5)
+            screen.rect(x, self.y, self.bar_width, h*amp)
+            screen.fill()
+        else
+            print(voice.."is nil")
+        end
+
     end
 end
 
