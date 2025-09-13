@@ -18,7 +18,7 @@ sequence_util = include("symbiosis/lib/util/sequence")
 
 include("symbiosis/lib/parameters/global")
 include("symbiosis/lib/parameters/panning")
-include("symbiosis/lib/parameters/sampling")
+include("symbiosis/lib/parameters/slice")
 include("symbiosis/lib/parameters/filter")
 include("symbiosis/lib/parameters/envelopes")
 include("symbiosis/lib/parameters/rates")
@@ -27,7 +27,7 @@ include("symbiosis/lib/parameters/echo")
 include("symbiosis/lib/parameters/sequencer")
 include("symbiosis/lib/tests")
 
-local page_sampling = include("symbiosis/lib/pages/sampling")
+local page_slice = include("symbiosis/lib/pages/sampling")
 local page_sequencer = include("symbiosis/lib/pages/sequencer")
 local page_envelopes = include("symbiosis/lib/pages/envelopes")
 local page_filter = include("symbiosis/lib/pages/filter")
@@ -58,7 +58,7 @@ state = {
 
 local pages = {
   -- 1
-  page_sampling,
+  page_slice,
   page_sequencer,
   page_control,
   -- 4
