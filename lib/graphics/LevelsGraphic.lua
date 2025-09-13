@@ -49,13 +49,6 @@ function LevelsGraphic:render()
 
     for i = 0, 5 do
         local voice = i + 1
-        -- screen.rect(
-        --     self.x + (i * (self.w - self.bar_width) / (self.num_bars - 1)),
-        --     self.y,
-        --     self.bar_width,
-        --     -self.h
-        -- )
-        -- screen.fill()
         screen.level(self.bg_bar_brightness)
         local x = self.x + (i * (self.w - self.bar_width) / (self.num_bars - 1))
         local h = util.round(-self.h * self.levels[voice])
