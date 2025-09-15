@@ -124,8 +124,8 @@ local hold_step = nil
 local function update_slices()
     if UPDATE_SLICES then
         for voice = 0, 5 do
-            engine.loop_start(voice, params:get(ID_SAMPLING_SLICE_SECTIONS[voice + 1].loop_start))
-            engine.loop_end(voice, params:get(ID_SAMPLING_SLICE_SECTIONS[voice + 1].loop_end))
+            engine.loop_start(voice, params:get(ID_SLICES_SECTIONS[voice + 1].loop_start))
+            engine.loop_end(voice, params:get(ID_SLICES_SECTIONS[voice + 1].loop_end))
         end
         UPDATE_SLICES = false
     end

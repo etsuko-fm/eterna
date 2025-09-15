@@ -67,7 +67,7 @@ end
 
 local function get_slice_length()
     -- returns slice length in seconds
-    local n_slices = params:get(ID_SAMPLING_NUM_SLICES)
+    local n_slices = params:get(ID_SLICES_NUM_SLICES)
     if n_slices and sample_length then
         return (1 / n_slices) * sample_length
     else
@@ -85,11 +85,11 @@ local function to_sample_name(path)
 end
 
 local function update_loop_ranges()
-    local n_slices = params:get(ID_SAMPLING_NUM_SLICES)
+    local n_slices = params:get(ID_SLICES_NUM_SLICES)
 
     -- if slices > num_voices, not all slices can be assigned to a voice
     -- 6 consecutive slices are assigned to voice 1-6
-    local start = params:get(ID_SAMPLING_SLICE_START)
+    local start = params:get(ID_SLICES_START)
 
     -- edit buffer ranges per softcut voice
     local slice_start_timestamps = {} -- start position of each slice, in seconds
@@ -119,8 +119,8 @@ local function update_loop_ranges()
         local end_pos = start_pos + (slice_length * .999) -- leave a small gap to prevent overlap
 
         -- save in params, so waveforms can render correctly
-        params:set(ID_SAMPLING_SLICE_SECTIONS[voice].loop_start, start_pos)
-        params:set(ID_SAMPLING_SLICE_SECTIONS[voice].loop_end, end_pos)
+        params:set(ID_SLICES_SECTIONS[voice].loop_start, start_pos)
+        params:set(ID_SLICES_SECTIONS[voice].loop_end, end_pos)
         -- voice_position_to_start(voice) --todo: fix, order of initalization bug
     end
     -- reflect changes in graphic (it'll get params from state)
@@ -158,7 +158,7 @@ end
 local function select_sample()
     local function callback(file_path)
         if file_path ~= 'cancel' then
-            params:set(ID_SAMPLING_AUDIO_FILE, file_path)
+            params:set(ID_SLICES_AUDIO_FILE, file_path)
             filename = to_sample_name(file_path)
         end
         page_disabled = false -- proceed with rendering page instead of file menu
@@ -172,18 +172,8 @@ end
 local function constrain_max_start(num_slices)
     -- side effect of adjusting maxval, is that raw * maxval of the controlspec
     -- is a new value, which is why this method implicitly adjusts the value of start
-    controlspec_start.maxval = num_slices
-    controlspec_start.quantum = 1 / num_slices
-end
-
-local function shuffle()
-    -- randomizes number of slices and slice start
-    if selected_sample then
-        local new_num_slices = math.random(SLICES_MIN, SLICES_MAX)
-        local new_start = math.random(1, math.max(1, new_num_slices - 6))
-        params:set(ID_SAMPLING_NUM_SLICES, new_num_slices)
-        params:set(ID_SAMPLING_SLICE_START, new_start)
-    end
+    controlspec_slice_start.maxval = num_slices
+    controlspec_slice_start.quantum = 1 / num_slices
 end
 
 local function action_num_slices(v)
@@ -200,28 +190,57 @@ end
 
 local function adjust_num_slices(d)
     if selected_sample then
-        local p = ID_SAMPLING_NUM_SLICES
+        local p = ID_SLICES_NUM_SLICES
         params:set_raw(p, params:get_raw(p) + d * controlspec_slices.quantum)
     end
 end
 
 local function adjust_slice_start(d)
     if selected_sample then
-        local p = ID_SAMPLING_SLICE_START
-        local max_slices = params:get(ID_SAMPLING_NUM_SLICES)
-        local new = util.wrap(params:get_raw(p) + d * controlspec_start.quantum, 1, max_slices)
+        local p = ID_SLICES_START
+        local max_slices = params:get(ID_SLICES_NUM_SLICES)
+        local new = util.wrap(params:get_raw(p) + d * controlspec_slice_start.quantum, 1, max_slices)
         params:set_raw(p, new)
     end
 end
 
+local function cycle_lfo()
+    local p = ID_SLICES_LFO
+    local new_val = util.wrap(params:get(p) + 1, 1, #SLICES_LFO_OPTIONS)
+    params:set(p, new_val)
+end
+
+local function action_lfo(v)
+    local selection = SLICES_LFO_OPTIONS[v]
+    print(slice_lfo:get("enabled"))
+    if selection == "off" then
+        slice_lfo:stop()
+    else
+        if slice_lfo:get("enabled") == 0 then slice_lfo:start() end
+        slice_lfo:set('shape', selection)
+    end
+    -- todo: this always needed?
+    slice_lfo:set('phase', params:get(ID_SLICES_START))
+end
+
+local function e2(d)
+    -- todo: can you make this a function of the lfo util?
+    if slice_lfo:get("enabled") == 1 then
+        lfo_util.adjust_lfo_rate_quant(d, slice_lfo)
+    else
+        adjust_slice_start(d)
+    end
+end
+
+
 local page = Page:create({
     name = page_name,
-    e2 = adjust_num_slices,
-    e3 = adjust_slice_start,
+    e2 = e2,
+    e3 = adjust_num_slices,
     k1_hold_on = nil,
     k1_hold_off = nil,
-    k2_off = select_sample,
-    k3_off = shuffle,
+    k2_off = cycle_lfo,
+    k3_off = select_sample,
 })
 
 function page:render()
@@ -229,16 +248,36 @@ function page:render()
         fileselect:redraw()
         return
     end -- for rendering the fileselect interface
+    local lfo_val = SLICES_LFO_OPTIONS[params:get(ID_SLICES_LFO)]
 
     if selected_sample then
+        -- show filename of selecteed sample in title bar
         window.title = filename
         waveform_graphics[1]:render()
         if is_stereo then
             waveform_graphics[2]:render()
         end
         slice_graphic:render()
-        page.footer.button_text.e2.value = params:get(ID_SAMPLING_NUM_SLICES)
-        page.footer.button_text.e3.value = params:get(ID_SAMPLING_SLICE_START)
+
+        page.footer.button_text.e2.value = params:get(ID_SLICES_START)
+        page.footer.button_text.e3.value = params:get(ID_SLICES_NUM_SLICES)
+
+
+        page.footer.button_text.k2.value = string.upper(lfo_val)
+
+        if slice_lfo:get("enabled") == 1 then
+            -- When LFO is disabled, E2 controls LFO rate
+            page.footer.button_text.e2.name = "RATE"
+            -- convert period to label representation
+            local period = slice_lfo:get('period')
+            page.footer.button_text.e2.value = lfo_util.lfo_period_value_labels[period]
+        else
+            -- When LFO is disabled, E2 controls pan position
+            -- page.footer.button_text.k2.value = "OFF"
+            -- page.footer.button_text.e2.name = "TWIST"
+            -- page.footer.button_text.e2.value = misc_util.trim(tostring(), 5)
+        end
+
     else
         screen.level(3)
         screen.font_face(DEFAULT_FONT)
@@ -247,30 +286,50 @@ function page:render()
         screen.text_center("PRESS K2 TO LOAD SAMPLE")
     end
 
+
+
     window:render()
     page.footer:render()
 end
 
 local function add_params()
     -- file selection
-    params:set_action(ID_SAMPLING_AUDIO_FILE, function(file) load_sample(file) end)
+    params:set_action(ID_SLICES_AUDIO_FILE, function(file) load_sample(file) end)
 
     -- number of slices
-    params:set_action(ID_SAMPLING_NUM_SLICES, action_num_slices)
+    params:set_action(ID_SLICES_NUM_SLICES, action_num_slices)
 
     -- starting slice
-    params:set_action(ID_SAMPLING_SLICE_START, action_slice_start)
+    params:set_action(ID_SLICES_START, action_slice_start)
     constrain_max_start(SLICES_DEFAULT)
     for voice = 1, 6 do
-        params:set_action(ID_SAMPLING_SLICE_SECTIONS[voice].loop_start, function(v) UPDATE_SLICES = true end)
-        params:set_action(ID_SAMPLING_SLICE_SECTIONS[voice].loop_end, function(v) UPDATE_SLICES = true end)
+        params:set_action(ID_SLICES_SECTIONS[voice].loop_start, function(v) UPDATE_SLICES = true end)
+        params:set_action(ID_SLICES_SECTIONS[voice].loop_end, function(v) UPDATE_SLICES = true end)
     end
 
+    -- lfo
+    params:set_action(ID_SLICES_LFO, action_lfo)
     params:bang()
 end
 
 function page:initialize()
     slice_graphic = SliceGraphic:new()
+
+    -- lfo
+    slice_lfo = _lfos:add {
+        shape = 'up',
+        min = 0,
+        max = 1,
+        depth = 1,
+        mode = 'clocked',
+        period = 8,
+        phase = 0,
+        action = function(scaled, raw)
+            params:set(ID_SLICES_START, controlspec_slice_start:map(scaled))
+        end
+    }
+    slice_lfo:set('reset_target', 'mid: rising')
+
     add_params()
 
     -- engine.load_file("/home/we/dust/"..selected_sample)
@@ -329,39 +388,24 @@ function page:initialize()
     page.footer = Footer:new({
         button_text = {
             k2 = {
-                name = "LOAD",
+                name = "LFO",
                 value = "",
             },
             k3 = {
-                name = "SHUFF",
+                name = "LOAD",
                 value = "",
             },
             e2 = {
-                name = "SLCS",
+                name = "START",
                 value = "",
             },
             e3 = {
-                name = "START",
+                name = "SLCS",
                 value = "",
             },
         },
         font_face = FOOTER_FONT,
     })
-    -- lfo
-    slices_lfo = _lfos:add {
-        shape = 'up',
-        min = 0,
-        max = 1,
-        depth = 1,
-        mode = 'clocked',
-        period = 8,
-        phase = 0,
-        action = function(scaled, raw)
-            params:set(ID_SAMPLING_SLICE_START, controlspec_start:map(scaled))
-        end
-    }
-    slices_lfo:set('reset_target', 'mid: rising')
-    -- slices_lfo:start()
 end
 
 return page
