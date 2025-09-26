@@ -8,7 +8,7 @@ Engine_Symbiosis : CroneEngine {
   var filter, compressor, echo, bassMono;
 
   // Control buses
-  var ampBuses, envBuses, preCompControlBus, postCompControlBus;
+  var ampBuses, envBuses, preCompControlBuses, postCompControlBuses;
   
   *new { arg context, doneCallback;
     ^super.new(context, doneCallback);
@@ -46,8 +46,10 @@ Engine_Symbiosis : CroneEngine {
     bassMono = Synth.after(echo, "BassMono", args: [\in, bassMonoBus, \out, compBus]);
     compressor = Synth.after(bassMono, "GlueCompressor", args: [
       \in, compBus, 
-      \preControlBuses, preCompControlBuses, 
-      \postControlBuses, postCompControlBuses, 
+      \preControlBusL, preCompControlBuses[0].index, 
+      \preControlBusR, preCompControlBuses[1].index, 
+      \postControlBusL, postCompControlBuses[0].index, 
+      \postControlBusR, postCompControlBuses[1].index, 
       \out, 0
     ]);
     
@@ -312,7 +314,9 @@ Engine_Symbiosis : CroneEngine {
     envBuses.do(_.free);
     envBuses.free;
 
-    preCompControlBus.free;
-    postCompControlBus.free;
+    preCompControlBuses.do(_.free);
+    preCompControlBuses.free;
+    postCompControlBuses.do(_.free);
+    postCompControlBuses.free;
   }
 }

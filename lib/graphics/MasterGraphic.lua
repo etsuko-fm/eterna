@@ -21,12 +21,21 @@ end
 function MasterGraphic:render()
     if self.hide then return end
     screen.level(15)
+
+    -- pre levels 
     screen.rect(32, 40, 4, self.pre_comp_levels[1] * -20)
     screen.fill()
     screen.rect(38, 40, 4, self.pre_comp_levels[2] * -20)
     screen.fill()
     screen.move(64,32)
     screen.text_center("hello world!")
+
+    -- post levels
+    screen.rect(48, 40, 4, self.post_comp_levels[1] * -20)
+    screen.fill()
+    screen.rect(54, 40, 4, self.post_comp_levels[2] * -20)
+    screen.fill()
+    screen.move(64,32)
 end
 
 return MasterGraphic
