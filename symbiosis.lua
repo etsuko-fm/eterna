@@ -25,6 +25,7 @@ include("symbiosis/lib/parameters/levels")
 include("symbiosis/lib/parameters/panning")
 include("symbiosis/lib/parameters/filter")
 include("symbiosis/lib/parameters/echo")
+include("symbiosis/lib/parameters/master")
 
 include("symbiosis/lib/tests")
 

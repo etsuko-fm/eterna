@@ -49,7 +49,7 @@ BitsFilters {
 					var output = (gain * mix).tanh;
 					Out.ar(out, output);
 				}).add;
-			} // waitForBoot
-		} //add
-	} // initClass
+			}
+		}
+	}
 }

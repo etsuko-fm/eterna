@@ -2,31 +2,42 @@ local page_name = "MASTER"
 local window
 
 local function adjust_drive(d)
-    local p = ID_FILTER_DRIVE
-    local new_val = params:get_raw(p) + d * controlspec_filter_drive.quantum
+    local p = ID_MASTER_COMP_DRIVE
+    local new_val = params:get_raw(p) + d * controlspec_master_drive.quantum
     params:set_raw(p, new_val, false)
 end
 
 local function toggle_spread()
 end
 
+local function adjust_bass_mono_freq(d)
+    local p = ID_MASTER_MONO_FREQ
+    local new_val = params:get_raw(p) + d * controlspec_master_mono.quantum
+    params:set_raw(p, new_val, false)
+end
+
+
 local page = Page:create({
     name = page_name,
     e2 = adjust_drive,
+    e3 = adjust_bass_mono_freq,
     k2_off = nil,
     k3_off = toggle_spread,
 })
 
 local function add_params()
-    params:set_action(ID_FILTER_DRIVE, function(v) engine.gain(v) end)
+    params:set_action(ID_MASTER_COMP_DRIVE, function(v) engine.comp_gain(v) end)
+    params:set_action(ID_MASTER_MONO_FREQ, function(v) engine.bass_mono_freq(v) end)
 end
 
 function page:render()
     window:render()
     screen.move(64,32)
     screen.text_center("MASTER")
-    local drive = params:get(ID_FILTER_DRIVE)
+    local drive = params:get(ID_MASTER_COMP_DRIVE)
+    local mono_freq = params:get(ID_MASTER_MONO_FREQ)
     page.footer.button_text.e2.value = drive
+    page.footer.button_text.e3.value = mono_freq
     page.footer:render()
 end
 
@@ -61,7 +72,7 @@ function page:initialize()
                 value = "",
             },
             e3 = {
-                name = "",
+                name = "MONO",
                 value = "",
             },
         },

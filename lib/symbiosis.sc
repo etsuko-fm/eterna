@@ -1,11 +1,14 @@
-Engine_Symbiosis : CroneEngine {
-  var filter;
+Engine_Symbiosis : CroneEngine {  
   var voices;
-  var filterBus;
-  var fxBus;
-  var echo;
-  var ampBuses;
-  var envBuses;
+
+  // Audio buses
+  var filterBus, fxBus, bassMonoBus, compBus;
+
+  // Synths
+  var filter, compressor, echo, bassMono;
+
+  // Control buses
+  var ampBuses, envBuses, preCompControlBus, postCompControlBus;
   
   *new { arg context, doneCallback;
     ^super.new(context, doneCallback);
@@ -19,20 +22,30 @@ Engine_Symbiosis : CroneEngine {
     var file, numChannels, buffL, buffR, f, peakL, peakR, normalizeFactor, maxAmp;
     var voicesEmpty = true;
 
-    // Routing: buffers > filter > fx > context.xg
+    // Routing: buffers > filter > fx > bass mono > compressor > context.xg
     filterBus = Bus.audio(context.server, 2);
     fxBus = Bus.audio(context.server, 2);
+    bassMonoBus = Bus.audio(context.server, 2);
+    compBus = Bus.audio(context.server, 2);
 
     // Control bus for reporting voice amplitude
     ampBuses = Array.fill(6, { Bus.control(s, 1) });
 
     // Control bus for reporting voice envelope position
     envBuses = Array.fill(6, { Bus.control(s, 1) });
-    
+
+    // Control buses for reporting master amplitude (pre/post-comp)
+    preCompControlBus = Bus.control(s, 2);
+    postCompControlBus = Bus.control(s, 2);
+
     context.server.sync;
     
+    // Routing: input > filter > echo > bass mono > output 
     filter = Synth.new("BitsFilters", target:context.xg, args: [\in, filterBus, \out, fxBus]);    
-    echo = Synth.after(filter, "BitsEcho", target:context.xg, args: [\in, fxBus, \out, 0]);    
+    echo = Synth.after(filter, "BitsEcho", args: [\in, fxBus, \out, bassMonoBus]);
+    bassMono = Synth.after(echo, "BassMono", args: [\in, bassMonoBus, \out, compBus]);
+    compressor = Synth.after(bassMono, "GlueCompressor", args: [\in, compBus, \out, 0]);
+    
     //context.xg is the audio context's fx group
 
     this.addCommand("set_filter_type", "s", { arg msg;
@@ -57,7 +70,7 @@ Engine_Symbiosis : CroneEngine {
     this.addCommand("freq", "f", { arg msg; filter.set(\freq, msg[1]); });
     this.addCommand("res", "f", { arg msg; filter.set(\res, msg[1]); });
     this.addCommand("filter_dry", "f", { arg msg; filter.set(\dry, msg[1]); });
-    this.addCommand("gain", "f", { arg msg; filter.set(\gain, msg[1]); });
+    this.addCommand("filter_gain", "f", { arg msg; filter.set(\gain, msg[1]); });
 
     this.addCommand("set_buffer","si", { 
       arg msg;
@@ -253,10 +266,21 @@ Engine_Symbiosis : CroneEngine {
       };
      });
 
+
+    this.addCommand("bass_mono_freq", "f", { arg msg; bassMono.set(\freq, msg[1]); });
+    this.addCommand("bass_mono_dry", "f", { arg msg; bassMono.set(\dry, msg[1]); });
+    this.addCommand("comp_gain", "f", { arg msg; compressor.set(\gain, msg[1]); });
+
     this.addPoll(\file_loaded, { isLoaded; }, periodic:false);
 
-    6.do { |i|
-        var idx = i; // clearer name
+    this.addPoll(\pre_compL, { preCompControlBus[0].getSynchronous; }, periodic:true);
+    this.addPoll(\pre_compR, { preCompControlBus[1].getSynchronous; }, periodic:true);
+
+    this.addPoll(\post_compL, { postCompControlBus[0].getSynchronous; }, periodic:true);
+    this.addPoll(\post_compR, { postCompControlBus[1].getSynchronous; }, periodic:true);
+
+
+    6.do { |idx|
         this.addPoll(("voice" ++ (idx+1) ++ "amp").asSymbol, { ampBuses[idx].getSynchronous }, periodic: true);
         this.addPoll(("voice" ++ (idx+1) ++ "env").asSymbol, { envBuses[idx].getSynchronous }, periodic: true);
     };
@@ -268,8 +292,16 @@ Engine_Symbiosis : CroneEngine {
     filter.free;
     voices.do(_.free);
     filterBus.free;
+    
+    bassMonoBus.free;
+    bassMono.free;
+
     fxBus.free;
     echo.free;
+
+    compBus.free;
+    compressor.free;
+
     ampBuses.do(_.free);
     ampBuses.free;
     envBuses.do(_.free);
