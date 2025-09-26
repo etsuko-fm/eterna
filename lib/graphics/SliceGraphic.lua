@@ -48,18 +48,6 @@ function SliceGraphic:render()
         local rect_w = w * self.slice_len - 1
         screen.rect(startx, y,  rect_w, 1)
         screen.fill()
-        if index == self.active_slices[1] then
-            -- indicate starting slice
-            screen.rect(startx, y-1,  1, 3)
-            screen.fill()
-        elseif index == self.active_slices[6] then
-            -- indicate starting slice
-            screen.rect(startx+rect_w-1, y-1,  1, 3)
-            screen.fill()
-
-        end
-
-
     end
 end
 
