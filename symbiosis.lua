@@ -123,19 +123,24 @@ function init()
     norns.enc.accel(i, false)
   end
   loaded_poll = poll.set("file_loaded")
-  amp1poll = poll.set("voice1amp");
-  amp2poll = poll.set("voice2amp");
-  amp3poll = poll.set("voice3amp");
-  amp4poll = poll.set("voice4amp");
-  amp5poll = poll.set("voice5amp");
-  amp6poll = poll.set("voice6amp");
+  amp1poll = poll.set("voice1amp")
+  amp2poll = poll.set("voice2amp")
+  amp3poll = poll.set("voice3amp")
+  amp4poll = poll.set("voice4amp")
+  amp5poll = poll.set("voice5amp")
+  amp6poll = poll.set("voice6amp")
 
-  env1poll = poll.set("voice1env");
-  env2poll = poll.set("voice2env");
-  env3poll = poll.set("voice3env");
+  env1poll = poll.set("voice1env")
+  env2poll = poll.set("voice2env")
+  env3poll = poll.set("voice3env")
   env4poll = poll.set("voice4env");
-  env5poll = poll.set("voice5env");
-  env6poll = poll.set("voice6env");
+  env5poll = poll.set("voice5env")
+  env6poll = poll.set("voice6env")
+
+  pre_compL_poll = poll.set("pre_compL")
+  pre_compR_poll = poll.set("pre_compR")
+  post_compL_poll = poll.set("post_compL")
+  post_compR_poll = poll.set("post_compR")
 
   for _, page in ipairs(pages) do
     page:initialize()

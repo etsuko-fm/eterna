@@ -35,8 +35,8 @@ Engine_Symbiosis : CroneEngine {
     envBuses = Array.fill(6, { Bus.control(s, 1) });
 
     // Control buses for reporting master amplitude (pre/post-comp)
-    preCompControlBus = Bus.control(s, 2);
-    postCompControlBus = Bus.control(s, 2);
+    preCompControlBuses = Array.fill(2, { Bus.control(s, 1) });
+    postCompControlBuses = Array.fill(2, { Bus.control(s, 1) });
 
     context.server.sync;
     
@@ -44,7 +44,12 @@ Engine_Symbiosis : CroneEngine {
     filter = Synth.new("BitsFilters", target:context.xg, args: [\in, filterBus, \out, fxBus]);    
     echo = Synth.after(filter, "BitsEcho", args: [\in, fxBus, \out, bassMonoBus]);
     bassMono = Synth.after(echo, "BassMono", args: [\in, bassMonoBus, \out, compBus]);
-    compressor = Synth.after(bassMono, "GlueCompressor", args: [\in, compBus, \out, 0]);
+    compressor = Synth.after(bassMono, "GlueCompressor", args: [
+      \in, compBus, 
+      \preControlBuses, preCompControlBuses, 
+      \postControlBuses, postCompControlBuses, 
+      \out, 0
+    ]);
     
     //context.xg is the audio context's fx group
 
@@ -271,18 +276,18 @@ Engine_Symbiosis : CroneEngine {
     this.addCommand("bass_mono_dry", "f", { arg msg; bassMono.set(\dry, msg[1]); });
     this.addCommand("comp_gain", "f", { arg msg; compressor.set(\gain, msg[1]); });
 
-    this.addPoll(\file_loaded, { isLoaded; }, periodic:false);
+    this.addPoll(\file_loaded, { isLoaded }, periodic:false);
 
-    this.addPoll(\pre_compL, { preCompControlBus[0].getSynchronous; }, periodic:true);
-    this.addPoll(\pre_compR, { preCompControlBus[1].getSynchronous; }, periodic:true);
+    this.addPoll(\pre_compL, { preCompControlBuses[0].getSynchronous });
+    this.addPoll(\pre_compR, { preCompControlBuses[1].getSynchronous });
 
-    this.addPoll(\post_compL, { postCompControlBus[0].getSynchronous; }, periodic:true);
-    this.addPoll(\post_compR, { postCompControlBus[1].getSynchronous; }, periodic:true);
+    this.addPoll(\post_compL, { postCompControlBuses[0].getSynchronous });
+    this.addPoll(\post_compR, { postCompControlBuses[1].getSynchronous });
 
 
     6.do { |idx|
-        this.addPoll(("voice" ++ (idx+1) ++ "amp").asSymbol, { ampBuses[idx].getSynchronous }, periodic: true);
-        this.addPoll(("voice" ++ (idx+1) ++ "env").asSymbol, { envBuses[idx].getSynchronous }, periodic: true);
+        this.addPoll(("voice" ++ (idx+1) ++ "amp").asSymbol, { ampBuses[idx].getSynchronous });
+        this.addPoll(("voice" ++ (idx+1) ++ "env").asSymbol, { envBuses[idx].getSynchronous });
     };
 
   }
@@ -306,5 +311,8 @@ Engine_Symbiosis : CroneEngine {
     ampBuses.free;
     envBuses.do(_.free);
     envBuses.free;
+
+    preCompControlBus.free;
+    postCompControlBus.free;
   }
 }

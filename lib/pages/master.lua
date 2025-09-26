@@ -1,5 +1,7 @@
+local MasterGraphic = include("symbiosis/lib/graphics/MasterGraphic")
 local page_name = "MASTER"
 local window
+local master_graphic
 
 local function adjust_drive(d)
     local p = ID_MASTER_COMP_DRIVE
@@ -32,8 +34,14 @@ end
 
 function page:render()
     window:render()
-    screen.move(64,32)
-    screen.text_center("MASTER")
+
+    pre_compL_poll:update()
+    pre_compR_poll:update()
+    -- post_compL_poll:update()
+    -- post_compR_poll:update()
+
+    master_graphic:render()
+
     local drive = params:get(ID_MASTER_COMP_DRIVE)
     local mono_freq = params:get(ID_MASTER_MONO_FREQ)
     page.footer.button_text.e2.value = drive
@@ -43,6 +51,13 @@ end
 
 function page:initialize()
     add_params()
+    master_graphic = MasterGraphic:new()
+
+    -- pre_compL_poll.callback = function(v) master_graphic.pre_comp_levels[1] = v end
+    -- pre_compR_poll.callback = function(v) master_graphic.pre_comp_levels[2] = v end
+    -- post_compL_poll.callback = function(v) master_graphic.post_comp_levels[1] = v end
+    -- post_compR_poll.callback = function(v) master_graphic.post_comp_levels[2] = v end
+
     window = Window:new({
         x = 0,
         y = 0,
