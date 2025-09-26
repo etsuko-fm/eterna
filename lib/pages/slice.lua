@@ -170,10 +170,9 @@ local function select_sample()
 end
 
 local function constrain_max_start(num_slices)
-    -- side effect of adjusting maxval, is that raw * maxval of the controlspec
-    -- is a new value, which is why this method implicitly adjusts the value of start
+    -- side effect of adjusting controlspec_slice_start.maxval, is that (raw * maxval) of the controlspec
+    -- is a new value, which is why this method implicitly adjusts the value of slice start
     controlspec_slice_start.maxval = num_slices
-    controlspec_slice_start.quantum = 1 / num_slices
 end
 
 local function action_num_slices(v)
@@ -199,8 +198,8 @@ local function adjust_slice_start(d)
     if selected_sample then
         local p = ID_SLICES_START
         local max_slices = params:get(ID_SLICES_NUM_SLICES)
-        local new = util.wrap(params:get_raw(p) + d * controlspec_slice_start.quantum, 1, max_slices)
-        params:set_raw(p, new)
+        local new = util.wrap(params:get(p) + d, 1, max_slices)
+        params:set(p, new)
     end
 end
 
@@ -274,7 +273,7 @@ function page:render()
         else
             -- When LFO is disabled, E2 controls pan position
             -- page.footer.button_text.k2.value = "OFF"
-            -- page.footer.button_text.e2.name = "TWIST"
+            page.footer.button_text.e2.name = "START"
             -- page.footer.button_text.e2.value = misc_util.trim(tostring(), 5)
         end
 
