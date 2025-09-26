@@ -16,7 +16,7 @@ Grid = {
         { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },
     },
     voice_env = { 0, 0, 0, 0, 0, 0, },
-    is_playing = { false, false, false, false, false, false },
+    is_playing = true,
     hide = false,
 }
 
@@ -83,7 +83,7 @@ function Grid:render()
             local step_active = self.sequences[voice][idx] ~= 0.0
 
             -- draw sequence step indicator
-            if self.current_step == idx then
+            if self.current_step == idx and self.is_playing then
                 screen.level(6)
             else
                 screen.level(faint_fill)
@@ -94,7 +94,7 @@ function Grid:render()
 
             if step_active then
                 -- brighten if active
-                if self.current_step == idx then
+                if self.current_step == idx and self.is_playing then
                     -- step triggered, flash block brightly
                     screen.level(self.flash_fill)
                     screen.rect(x, y, block_w, block_h)

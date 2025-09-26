@@ -237,8 +237,12 @@ end
 function toggle_transport()
     if transport_on then
         clock.transport.stop()
+        grid_graphic.is_playing = false
+        current_global_step = 1
+        current_step = 1
     else
         clock.transport.start()
+        grid_graphic.is_playing = true
     end
 end
 
