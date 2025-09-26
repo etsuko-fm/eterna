@@ -1,5 +1,7 @@
 local MASTER_MONO_FREQ_MIN = 10
 local MASTER_MONO_FREQ_MAX = 1000
+local MASTER_DRIVE_MIN = 0.2
+local MASTER_DRIVE_MAX = 10
 
 
 ID_MASTER_MONO_FREQ = "master_mono_freq"
@@ -17,13 +19,13 @@ controlspec_master_mono = controlspec.def {
 }
 
 controlspec_master_drive = controlspec.def {
-    min = 0.25,
-    max = 5,
+    min = MASTER_DRIVE_MIN,
+    max = MASTER_DRIVE_MAX,
     warp = 'lin',
-    step = 0.1,
+    step = 0.01,
     default = 1,
     units = '',
-    quantum = 0.02,
+    quantum = 0.1 / (MASTER_DRIVE_MAX - MASTER_DRIVE_MIN),
     wrap = false
 }
 

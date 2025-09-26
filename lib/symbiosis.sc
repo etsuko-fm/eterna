@@ -8,8 +8,10 @@ Engine_Symbiosis : CroneEngine {
   var filter, compressor, echo, bassMono;
 
   // Control buses
-  var ampBuses, envBuses, preCompControlBuses, postCompControlBuses;
+  var ampBuses, envBuses, preCompControlBuses, postCompControlBuses, compAmountBuses;
   
+  var exampleArray;
+
   *new { arg context, doneCallback;
     ^super.new(context, doneCallback);
   }
@@ -21,6 +23,7 @@ Engine_Symbiosis : CroneEngine {
     var bufnumR = 1;
     var file, numChannels, buffL, buffR, f, peakL, peakR, normalizeFactor, maxAmp;
     var voicesEmpty = true;
+    exampleArray = Array.fill(4, { |i| i * 2});
 
     // Routing: buffers > filter > fx > bass mono > compressor > context.xg
     filterBus = Bus.audio(context.server, 2);
@@ -37,6 +40,7 @@ Engine_Symbiosis : CroneEngine {
     // Control buses for reporting master amplitude (pre/post-comp)
     preCompControlBuses = Array.fill(2, { Bus.control(s, 1) });
     postCompControlBuses = Array.fill(2, { Bus.control(s, 1) });
+    compAmountBuses = Array.fill(2, { Bus.control(s, 1) });
 
     context.server.sync;
     
@@ -50,6 +54,8 @@ Engine_Symbiosis : CroneEngine {
       \preControlBusR, preCompControlBuses[1].index, 
       \postControlBusL, postCompControlBuses[0].index, 
       \postControlBusR, postCompControlBuses[1].index, 
+      \compAmountBusL, compAmountBuses[0].index, 
+      \compAmountBusR, compAmountBuses[1].index, 
       \out, 0
     ]);
     
@@ -286,6 +292,10 @@ Engine_Symbiosis : CroneEngine {
     this.addPoll(\post_compL, { postCompControlBuses[0].getSynchronous });
     this.addPoll(\post_compR, { postCompControlBuses[1].getSynchronous });
 
+    this.addPoll(\comp_amountL, { compAmountBuses[0].getSynchronous });
+    this.addPoll(\comp_amountR, { compAmountBuses[1].getSynchronous });
+
+    this.addPoll(\array_example, { 3.1415 });
 
     6.do { |idx|
         this.addPoll(("voice" ++ (idx+1) ++ "amp").asSymbol, { ampBuses[idx].getSynchronous });
@@ -318,5 +328,9 @@ Engine_Symbiosis : CroneEngine {
     preCompControlBuses.free;
     postCompControlBuses.do(_.free);
     postCompControlBuses.free;
+    compAmountBuses.do(_.free);
+    compAmountBuses.free;
+
+    exampleArray.free;
   }
 }

@@ -4,6 +4,7 @@ MasterGraphic = {
     hide = false,
     pre_comp_levels = {0,0},
     post_comp_levels = {0,0},
+    comp_amount_levels = {0,0},
     lissajous_buf = {},
 }
 
@@ -56,7 +57,11 @@ function MasterGraphic:render()
     screen.fill()
     screen.rect(54, 40, 4, self.post_comp_levels[2] * -20)
     screen.fill()
-    screen.move(64,32)
+
+    -- comp amount
+    screen.rect(60, 30, 4, self.comp_amount_levels[1] * 20)
+    screen.rect(66, 30, 4, self.comp_amount_levels[2] * 20)
+    screen.fill()
 
     -- lissajous
     -- self:add_sample(self.post_comp_levels[1], self.post_comp_levels[2])

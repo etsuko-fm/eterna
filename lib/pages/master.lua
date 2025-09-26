@@ -39,6 +39,8 @@ function page:render()
     pre_compR_poll:update()
     post_compL_poll:update()
     post_compR_poll:update()
+    comp_amountL_poll:update()
+    comp_amountR_poll:update()
 
     master_graphic:render()
 
@@ -57,6 +59,8 @@ function page:initialize()
     pre_compR_poll.callback = function(v) master_graphic.pre_comp_levels[2] = v end
     post_compL_poll.callback = function(v) master_graphic.post_comp_levels[1] = v end
     post_compR_poll.callback = function(v) master_graphic.post_comp_levels[2] = v end
+    comp_amountL_poll.callback = function(v) master_graphic.comp_amount_levels[1] = v end
+    comp_amountR_poll.callback = function(v) master_graphic.comp_amount_levels[2] = v end
 
     window = Window:new({
         x = 0,
