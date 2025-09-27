@@ -42,6 +42,8 @@ function page:render()
     comp_amountL_poll:update()
     comp_amountR_poll:update()
 
+    master_graphic.drive_amount = params:get_raw(ID_MASTER_COMP_DRIVE)
+
     master_graphic:render()
 
     local drive = params:get(ID_MASTER_COMP_DRIVE)
@@ -79,11 +81,11 @@ function page:initialize()
     page.footer = Footer:new({
         button_text = {
             k2 = {
-                name = "SELECT",
+                name = "COMP",
                 value = "",
             },
             k3 = {
-                name = "PARAM",
+                name = "FREEZ",
                 value = "",
             },
             e2 = {

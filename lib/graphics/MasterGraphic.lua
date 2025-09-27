@@ -2,6 +2,7 @@ MasterGraphic = {
     x = 32,
     y = 11,
     hide = false,
+    drive_amount = 0,
     pre_comp_levels = {0,0},
     post_comp_levels = {0,0},
     comp_amount_levels = {0,0},
@@ -41,28 +42,70 @@ function MasterGraphic:draw_lissajous()
   screen.stroke()
 end
 
+local function draw_slider(x, y, w, h, fraction)
+    screen.level(1)
+    local target = math.floor((h * (1 - fraction)) / 2) * 2
+
+    for i = 0, h-1, 2 do
+        if i == target then
+            screen.level(15)
+        else
+            screen.level(1)
+        end
+
+        screen.rect(x, y + i, w, 1)
+        screen.fill()
+    end
+    screen.level(15)
+
+    -- -- indictor
+    -- local offset = 2
+    -- local indicator_y_raw = (h-offset) * fraction
+    -- local indicator_y =  offset + math.floor((y + (h-offset) * fraction) / 2) * 2
+    -- screen.rect(x, indicator_y, w, 1)
+    -- screen.fill()
+end
+
+
+local meters_x = 32
+local padding = 7
+local meters_y = 40
+local meters_h = 20
+
 function MasterGraphic:render()
     if self.hide then return end
     screen.level(15)
 
-    -- pre levels 
-    screen.rect(32, 40, 4, self.pre_comp_levels[1] * -20)
+    -- post levels
+    local post_level_x = meters_x + padding
+    local post_hL = self.post_comp_levels[1] * -meters_h
+    local post_hR = self.post_comp_levels[2] * -meters_h
+    screen.rect(post_level_x, meters_y, 4, post_hL)
     screen.fill()
-    screen.rect(38, 40, 4, self.pre_comp_levels[2] * -20)
+    screen.rect(post_level_x + padding, meters_y, 4, post_hR)
+    screen.fill()
+
+    screen.level(4)
+    local pre_level_x = post_level_x
+
+    -- pre levels 
+    local pre_h_left = self.pre_comp_levels[1] * -meters_h
+    local pre_h_right = self.pre_comp_levels[2] * -meters_h
+
+    screen.rect(pre_level_x, meters_y, 4, math.min(pre_h_left, -1))
+    screen.fill()
+    screen.rect(pre_level_x + padding, meters_y, 4, math.min(pre_h_right, -1))
     screen.fill()
     screen.move(64,32)
-
-    -- post levels
-    screen.rect(48, 40, 4, self.post_comp_levels[1] * -20)
-    screen.fill()
-    screen.rect(54, 40, 4, self.post_comp_levels[2] * -20)
-    screen.fill()
-
+    
+    local comp_padding = 5
+    local comp_x = pre_level_x + comp_padding
     -- comp amount
-    screen.rect(60, 30, 4, self.comp_amount_levels[1] * 20)
-    screen.rect(66, 30, 4, self.comp_amount_levels[2] * 20)
+    screen.rect(comp_x, meters_y-meters_h-5, 1, math.min(self.comp_amount_levels[1], 1) * meters_h)
+    screen.rect(comp_x+padding, meters_y-meters_h-5, 1, math.min(self.comp_amount_levels[2], 1) * meters_h)
     screen.fill()
 
+    draw_slider(meters_x, meters_y-25, 4, 25, self.drive_amount)
     -- lissajous
     -- self:add_sample(self.post_comp_levels[1], self.post_comp_levels[2])
     -- self:draw_lissajous()

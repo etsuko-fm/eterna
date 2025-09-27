@@ -114,6 +114,26 @@ function midi_cb(data)
   end
 end
 
+function osc.event(path,args,from)
+  if path == "/waveform" then
+    local blob = args[1]  -- the int8 array from OSC
+    local ints = {}
+
+    for i = 1, #blob do
+        local b = blob:byte(i)
+        -- convert to signed int8
+        if b > 127 then b = b - 256 end
+        table.insert(ints, b)
+    end
+
+    -- print the result
+    for i, v in ipairs(ints) do
+        print(i, v)
+    end
+  end
+end
+
+
 function init()
   -- Encoder sensitivity
   norns.enc.sens(1, 5)
@@ -122,6 +142,9 @@ function init()
     norns.enc.sens(i, 1)
     norns.enc.accel(i, false)
   end
+  engine.request_waveform(0)
+
+
   loaded_poll = poll.set("file_loaded")
   amp1poll = poll.set("voice1amp")
   amp2poll = poll.set("voice2amp")

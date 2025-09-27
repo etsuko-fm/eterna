@@ -12,10 +12,12 @@ Engine_Symbiosis : CroneEngine {
   
   var exampleArray;
 
+  var oscServer;
+
   *new { arg context, doneCallback;
     ^super.new(context, doneCallback);
   }
-  
+
   alloc {
     var s = Server.default;
     var isLoaded = false;
@@ -23,7 +25,8 @@ Engine_Symbiosis : CroneEngine {
     var bufnumR = 1;
     var file, numChannels, buffL, buffR, f, peakL, peakR, normalizeFactor, maxAmp;
     var voicesEmpty = true;
-    exampleArray = Array.fill(4, { |i| i * 2});
+    oscServer = NetAddr("localhost", 10111);
+    exampleArray = Int8Array.fill(8, { 12 });
 
     // Routing: buffers > filter > fx > bass mono > compressor > context.xg
     filterBus = Bus.audio(context.server, 2);
@@ -284,6 +287,11 @@ Engine_Symbiosis : CroneEngine {
     this.addCommand("bass_mono_dry", "f", { arg msg; bassMono.set(\dry, msg[1]); });
     this.addCommand("comp_gain", "f", { arg msg; compressor.set(\gain, msg[1]); });
 
+    this.addCommand("request_waveform", "i", { 
+      arg msg; 
+      oscServer.sendBundle(0, ['/waveform', exampleArray]);
+    });
+
     this.addPoll(\file_loaded, { isLoaded }, periodic:false);
 
     this.addPoll(\pre_compL, { preCompControlBuses[0].getSynchronous });
@@ -332,5 +340,6 @@ Engine_Symbiosis : CroneEngine {
     compAmountBuses.free;
 
     exampleArray.free;
+    oscServer.free;
   }
 }
