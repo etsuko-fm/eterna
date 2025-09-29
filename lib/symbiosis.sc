@@ -14,6 +14,10 @@ Engine_Symbiosis : CroneEngine {
 
   var oscServer;
 
+  var buffValsLeft, buffValsRight;
+
+  var r;
+
   *new { arg context, doneCallback;
     ^super.new(context, doneCallback);
   }
@@ -98,72 +102,86 @@ Engine_Symbiosis : CroneEngine {
 
   	this.addCommand("load_file","s", { 
       arg msg;
-      buffL.free;
-      buffR.free;
-      isLoaded = false; 
+      r = Routine {
+        |inval|
+        buffL.free;
+        buffR.free;
+        isLoaded = false; 
 
-      // Get file metadata 
-      f = SoundFile.new;
-      f.openRead(msg[1].asString);
-      ("file" + msg[1].asString + "has" + f.numChannels + "channels").postln;
-      f.close;
+        // Get file metadata 
+        f = SoundFile.new;
+        f.openRead(msg[1].asString);
+        ("file" + msg[1].asString + "has" + f.numChannels + "channels").postln;
+        f.close;
 
-      // todo: limit buffer read to 2^24 samples because of Phasor resolution
-    	buffL = Buffer.readChannel(context.server, msg[1].asString, channels:[0], bufnum: bufnumL, action: { 
-        |b|
-        if (voicesEmpty) {
-          voices = Array.fill(6, { |i|
-            Synth.before(filter, "tapevoice", [
-            \out, filterBus,
-            \bufnum, 0, 
-            \rate, 1.0,
-            \loopStart, 0.0,
-            \loopEnd, 4.0,
-            \numChannels, 1,
-            \decay, 4.0,
-            \t_trig, 0,
-            \enable_env, 0,
-            \envLevel, 1.0,
-            \ampBus, ampBuses[i].index,
-            \envBus, envBuses[i].index,
-            ])}
-          );  
-        };
-        voicesEmpty = false;
-
-        // if file is stereo, load the right channel into buffR
-        if (f.numChannels > 1) {
-          "Loading second channel".postln;
-          buffR = Buffer.readChannel(context.server, msg[1].asString, channels:[1], bufnum: bufnumR, action: {|b| isLoaded = true;});
-
-          // normalize both 
-          peakL = buffL.maxAbsValue;
-          peakR = buffR.maxAbsValue;
-
-          // compute overall max
-          maxAmp = [peakL, peakR].maxItem;
-          normalizeFactor = 1.0 / maxAmp;
-
-          // apply scaling in place
-          buffL.scale(normalizeFactor); 
-          buffR.scale(normalizeFactor); 
-          ("left and right buffer normalized by scaling both with factor " + normalizeFactor).postln;
-
-
-          // Spread 2 channels over 6 voices
-          voices.do { |voice, i|
-              voice.set(\bufnum, if(i < (voices.size div: 2)) { bufnumL } { bufnumR });
+        // todo: limit buffer read to 2^24 samples because of Phasor resolution
+        buffL = Buffer.readChannel(context.server, msg[1].asString, channels:[0], bufnum: bufnumL, action: { 
+          |b|
+          
+          ("1st channel loaded to buffer " ++ bufnumL).postln;
+          if (voicesEmpty) {
+            voices = Array.fill(6, { |i|
+              Synth.before(filter, "tapevoice", [
+              \out, filterBus,
+              \bufnum, 0, 
+              \rate, 1.0,
+              \loopStart, 0.0,
+              \loopEnd, 4.0,
+              \numChannels, 1,
+              \decay, 4.0,
+              \t_trig, 0,
+              \enable_env, 0,
+              \envLevel, 1.0,
+              \ampBus, ampBuses[i].index,
+              \envBus, envBuses[i].index,
+              ])}
+            );  
           };
-        } { 
-          // if mono, also mark loading as finished
-          isLoaded = true;
-          buffL.normalize();
-          ("mono buffer normalized").postln;
+          voicesEmpty = false;
 
-          // Let all voices use the left buffer
-          voices.do {|voice| voice.set(\bufnum, bufnumL)};
-        };
-      });
+          // if file is stereo, load the right channel into buffR
+          if (f.numChannels > 1) {
+            "Loading second channel".postln;
+            buffR = Buffer.readChannel(context.server, msg[1].asString, channels:[1], bufnum: bufnumR, action: {|b|
+            isLoaded = true;
+            ("2nd channel loaded to buffer " ++ bufnumR).postln;
+              // normalize both 
+              // buffValsLeft = buffL.loadToFloatArray(action: { |array| peakL = array.maxItem; });
+              // buffValsRight = buffR.loadToFloatArray(action: { |array| peakR = array.maxItem; });
+              // "syncing server".postln;
+              
+              Routine({
+                buffValsLeft = buffL.loadToFloatArray(action: { |array| peakL = array.maxItem; });
+                buffValsRight = buffR.loadToFloatArray(action: { |array| peakR = array.maxItem; });
+                context.server.sync();
+                ("Max of left/right channel: " ++ max(peakL, peakR)).postln;
+                maxAmp = max(peakL, peakR);
+                normalizeFactor = 1.0 / maxAmp;
+                ("Normalize factor: " ++ normalizeFactor).postln;
+                buffL.normalize(peakL * normalizeFactor); 
+                buffR.normalize(peakR * normalizeFactor); 
+                ("left and right buffer normalized by scaling both with factor " + normalizeFactor).postln;
+              }).next();
+                
+              // Spread 2 channels over 6 voices
+              voices.do { |voice, i|
+                  "Spreading stereo buffer over 6 voices".postln;
+                  voice.set(\bufnum, if(i < voices.size.div(2)) { bufnumL } { bufnumR });
+                  ("Num voices is " ++ voices.size.asString ++ ", .div(2) gives " ++ voices.size.div(2).asString).postln;
+                  voices.size.div(2).postln;
+              };
+            });
+          } { 
+            // if mono, also mark loading as finished
+            isLoaded = true;
+            buffL.normalize();
+            ("mono buffer normalized").postln;
+
+            // Let all voices use the left buffer
+            voices.do {|voice| voice.set(\bufnum, bufnumL)};
+          };
+        });
+      }.next();
     });
 
     this.addCommand("rate", "if", {
