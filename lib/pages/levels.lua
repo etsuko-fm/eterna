@@ -143,7 +143,7 @@ local function add_params()
 end
 
 local function amp_callback(voice, val)
-    level_graphic.voice_amp[voice] = val
+    level_graphic.voice_amp[voice] = amp_to_log(val)
 end
 
 

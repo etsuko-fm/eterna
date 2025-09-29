@@ -60,14 +60,13 @@ function LevelsGraphic:render()
         )
         screen.fill()
 
+        -- draw amp meters
         if self.voice_amp[voice] ~= nil then
             screen.level(15)
             -- if the signal clips, just show it as the maximum value
             local amp = math.min(self.voice_amp[voice], 1)
             screen.rect(x, self.y, self.bar_width, h * amp)
             screen.fill()
-        else
-            print(voice .. "is nil")
         end
     end
 

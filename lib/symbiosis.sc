@@ -2,10 +2,10 @@ Engine_Symbiosis : CroneEngine {
   var voices;
 
   // Audio buses
-  var filterBus, fxBus, bassMonoBus, compBus;
+  var filterBus, fxBus, bassMonoBus, compBus, maxBus;
 
   // Synths
-  var filter, compressor, echo, bassMono;
+  var filter, compressor, echo, bassMono, maximizer;
 
   // Control buses
   var ampBuses, envBuses, preCompControlBuses, postCompControlBuses, compAmountBuses;
@@ -33,6 +33,8 @@ Engine_Symbiosis : CroneEngine {
     fxBus = Bus.audio(context.server, 2);
     bassMonoBus = Bus.audio(context.server, 2);
     compBus = Bus.audio(context.server, 2);
+    // maxBus = Bus.audio(context.server, 2);
+
 
     // Control bus for reporting voice amplitude
     ampBuses = Array.fill(6, { Bus.control(s, 1) });
@@ -61,6 +63,7 @@ Engine_Symbiosis : CroneEngine {
       \compAmountBusR, compAmountBuses[1].index, 
       \out, 0
     ]);
+    // maximizer = Synth.after(compressor, "soundgood_2", args: [\in, maxBus,  \out, 0]);
     
     //context.xg is the audio context's fx group
 
@@ -326,6 +329,9 @@ Engine_Symbiosis : CroneEngine {
 
     compBus.free;
     compressor.free;
+    
+    maxBus.free;
+    maximizer.free;
 
     ampBuses.do(_.free);
     ampBuses.free;
@@ -338,6 +344,7 @@ Engine_Symbiosis : CroneEngine {
     postCompControlBuses.free;
     compAmountBuses.do(_.free);
     compAmountBuses.free;
+    
 
     exampleArray.free;
     oscServer.free;

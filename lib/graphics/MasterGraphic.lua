@@ -68,6 +68,8 @@ end
 
 
 local meters_x = 32
+local drive_slider_x = meters_x + 14
+local post_meters_x = drive_slider_x + 7
 local padding = 7
 local meters_y = 40
 local meters_h = 20
@@ -80,13 +82,13 @@ function MasterGraphic:render()
     local post_level_x = meters_x + padding
     local post_hL = self.post_comp_levels[1] * -meters_h
     local post_hR = self.post_comp_levels[2] * -meters_h
-    screen.rect(post_level_x, meters_y, 4, post_hL)
+    screen.rect(post_meters_x, meters_y, 4, post_hL)
     screen.fill()
-    screen.rect(post_level_x + padding, meters_y, 4, post_hR)
+    screen.rect(post_meters_x + padding, meters_y, 4, post_hR)
     screen.fill()
 
     screen.level(4)
-    local pre_level_x = post_level_x
+    local pre_level_x = meters_x
 
     -- pre levels 
     local pre_h_left = self.pre_comp_levels[1] * -meters_h
@@ -99,13 +101,13 @@ function MasterGraphic:render()
     screen.move(64,32)
     
     local comp_padding = 5
-    local comp_x = pre_level_x + comp_padding
+    local comp_x = post_meters_x + comp_padding
     -- comp amount
     screen.rect(comp_x, meters_y-meters_h-5, 1, math.min(self.comp_amount_levels[1], 1) * meters_h)
     screen.rect(comp_x+padding, meters_y-meters_h-5, 1, math.min(self.comp_amount_levels[2], 1) * meters_h)
     screen.fill()
 
-    draw_slider(meters_x, meters_y-25, 4, 25, self.drive_amount)
+    draw_slider(drive_slider_x, meters_y-25, 4, 25, self.drive_amount)
     -- lissajous
     -- self:add_sample(self.post_comp_levels[1], self.post_comp_levels[2])
     -- self:draw_lissajous()

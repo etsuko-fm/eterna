@@ -114,25 +114,40 @@ function midi_cb(data)
   end
 end
 
-function osc.event(path,args,from)
+function osc.event(path, args, from)
   if path == "/waveform" then
-    local blob = args[1]  -- the int8 array from OSC
+    local blob = args[1] -- the int8 array from OSC
     local ints = {}
 
     for i = 1, #blob do
-        local b = blob:byte(i)
-        -- convert to signed int8
-        if b > 127 then b = b - 256 end
-        table.insert(ints, b)
+      local b = blob:byte(i)
+      -- convert to signed int8
+      if b > 127 then b = b - 256 end
+      table.insert(ints, b)
     end
 
     -- print the result
     for i, v in ipairs(ints) do
-        print(i, v)
+      print(i, v)
     end
   end
 end
 
+function to_dBFS(x)
+  -- x: 0 to 1
+  local floor = -128
+  if x <= 0 then return floor end
+  local db = 20 * math.log(x, 10)
+  if db < floor then return floor else return db end
+end
+
+function amp_to_log(amp)
+  -- converts linear range to logarithmic range used by decibels
+  local floor = -128
+  if amp <= 0 then return 0.0 end
+  local db = to_dBFS(amp)
+  return (db - floor) / -floor -- normalize to 0..1
+end
 
 function init()
   -- Encoder sensitivity
@@ -161,7 +176,7 @@ function init()
   env6poll = poll.set("voice6env")
 
   arraypoll = poll.set("array_example")
-  arraypoll.callback = function(v) print("array"..v) end
+  arraypoll.callback = function(v) print("array" .. v) end
   arraypoll:update()
   print('finished setting up arraypoll')
   pre_compL_poll = poll.set("pre_compL")

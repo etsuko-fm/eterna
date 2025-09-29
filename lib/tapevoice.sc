@@ -88,11 +88,7 @@ TapeVoice {
 					// Second "VCA" is level
 					Out.ar(out, playback * level);
 				}).add;
-			} // waitForBoot
-		} //add
-	} // initClass
-
-	*new { // when this class is initialized...
-		^super.new.init; // ...run the 'init' below.
+			}
+		}
 	}
 }
