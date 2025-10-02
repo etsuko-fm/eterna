@@ -102,6 +102,8 @@ Engine_Symbiosis : CroneEngine {
 
   	this.addCommand("load_file","s", {
       arg msg;
+
+      // Routine to allow server.sync
       r = Routine {
         |inval|
         buffL.free;
@@ -126,6 +128,7 @@ Engine_Symbiosis : CroneEngine {
         isLoaded = true;
 
         // Instantiate voices
+        // TODO: voices.do(_.free) first, to prevent warning that buf data not found?
         if (voicesEmpty) {
           voices = Array.fill(6, { |i|
             Synth.before(filter, "tapevoice", [

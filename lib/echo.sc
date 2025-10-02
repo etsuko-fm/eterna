@@ -45,6 +45,7 @@ Echo {
                         HPF.ar(wetSig, 800) // bright
                     ]);
                     LocalOut.ar(wetSig);
+                    wetSig = LPF.ar(wetSig, 10000);
                     output = input + (wetSig * wetAmount); // wet/dry mix
 
 					Out.ar(out, output);

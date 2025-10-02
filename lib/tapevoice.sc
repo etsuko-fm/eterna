@@ -80,8 +80,14 @@ TapeVoice {
 
 					playback = XFade2.ar(playback1, playback2, crossfade);
 					playback = Pan2.ar(playback, pan);
+					
+					// Tweak spectrum due to all the digital processing
+					playback = HPF.ar(playback, 40);
+					playback = LPF.ar(playback, 10000); // Harshness
+					playback = BPeakEQ.ar(playback, 3500, 1.0, -2.0); // Presence
+					playback = BPeakEQ.ar(playback, 250, 1.0, 1.5); // Warmth
 
-					amp = LagUD.ar(Peak.ar(Mix.ar(playback), Impulse.ar(60)), 0, 1);
+					amp =  Amplitude.ar(Mix.ar(playback), 0, 0.2);
 					Out.kr(ampBus, amp);
 					Out.kr(envBus, Select.kr(playheadId, [percEnv1, percEnv2]));
 
