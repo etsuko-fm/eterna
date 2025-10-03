@@ -75,6 +75,9 @@ local pages = {
   page_master,
 }
 
+amp_historyL = {}
+amp_historyR = {}
+
 local current_page_index = 1
 local current_page = pages[current_page_index]
 
@@ -114,22 +117,44 @@ function midi_cb(data)
   end
 end
 
+function blob_to_table(blob, len)
+  -- converts OSC blobs, assuming to be an array of 32 bit integers, to a lua table
+  local ints = {}
+  local size = #blob
+  local offset = 1
+
+  while offset <= size do
+    -- iterate over blob, starting at `offset` (1 = first char)
+    local value
+    -- Unpack using ">i1" for big-endian single-byte integer, see lua docs 6.4.2
+    value, offset = string.unpack(">i1", blob, offset)
+    table.insert(ints, value)
+  end
+
+  return ints
+end
+
+
 function osc.event(path, args, from)
   if path == "/waveform" then
+    print("Lua: /waveform received from SC")
     local blob = args[1] -- the int8 array from OSC
-    local ints = {}
-
-    for i = 1, #blob do
-      local b = blob:byte(i)
-      -- convert to signed int8
-      if b > 127 then b = b - 256 end
-      table.insert(ints, b)
-    end
-
+    local unblob = blob_to_table(blob)
     -- print the result
-    for i, v in ipairs(ints) do
-      print(i, v)
-    end
+    -- for i, v in ipairs(unblob) do
+    --   print(i, v)
+    -- end
+  end
+  if path == "/ampHistoryL" then
+    local blob = args[1]
+    amp_historyL = blob_to_table(blob)
+    print("left 1st value: " .. amp_historyL[1])
+    print("left last value: " .. amp_historyL[#amp_historyL])
+    print("left table length: " .. #amp_historyL)
+  end
+  if path == "/ampHistoryR" then
+    local blob = args[1]
+    amp_historyR = blob_to_table(blob)
   end
 end
 

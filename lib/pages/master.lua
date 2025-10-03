@@ -35,6 +35,9 @@ end
 function page:render()
     window:render()
 
+    -- if math.random() > .95 then
+        engine.request_amp_history()
+    -- end
     pre_compL_poll:update()
     pre_compR_poll:update()
     post_compL_poll:update()

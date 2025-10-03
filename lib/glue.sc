@@ -18,6 +18,10 @@ GlueCompressor {
 					var compAmount = inAmp - outAmp;
 
 					var postLevel = Amplitude.ar(limited, 0, 0.2);
+					var trigRate = 6000;
+					var ampSendTrig = Impulse.ar(trigRate);
+					SendReply.ar(ampSendTrig, '/ampL', limited[0]);
+					SendReply.ar(ampSendTrig, '/ampR', limited[1]);
 
 					Out.ar(out, limited);
 					Out.kr(preControlBusL, preLevel[0]);

@@ -29,17 +29,22 @@ function MasterGraphic:add_sample(l, r)
 end
 
 function MasterGraphic:draw_lissajous()
-  local center_x = 64
-  local center_y = 32
-  local scale = 30
-
-  for i, s in ipairs(self.lissajous_buf) do
-    screen.level(i)
-    local x = center_x + s[1] * scale
-    local y = center_y - s[2] * scale
-    screen.pixel(x, y)
-  end
+  local center_x = 82
+  local center_y = 30
+  local scale = 24
+  screen.level(4)
+  screen.rect(center_x - scale/2, center_y-scale/2, scale, scale)
   screen.stroke()
+  screen.level(15)
+  -- print("length of history: " .. #amp_history)
+  for i, s in ipairs(amp_historyL) do
+    local divL = (s/128 - 0.5) * scale
+    local divR = (amp_historyR[i] / 128 - 0.5) * scale
+    local x = center_x + divL
+    local y = center_y - divR
+    screen.pixel(x,y)
+    screen.stroke()
+  end
 end
 
 local function draw_slider(x, y, w, h, fraction)
@@ -109,8 +114,7 @@ function MasterGraphic:render()
 
     draw_slider(drive_slider_x, meters_y-25, 4, 25, self.drive_amount)
     -- lissajous
-    -- self:add_sample(self.post_comp_levels[1], self.post_comp_levels[2])
-    -- self:draw_lissajous()
+    self:draw_lissajous()
 
 end
 
