@@ -210,8 +210,8 @@ function init()
   pre_compR_poll = poll.set("pre_compR")
   post_compL_poll = poll.set("post_compL")
   post_compR_poll = poll.set("post_compR")
-  comp_amountL_poll = poll.set("comp_amountL")
-  comp_amountR_poll = poll.set("comp_amountR")
+  post_gainL_poll = poll.set("post_gainL")
+  post_gainR_poll = poll.set("post_gainR")
 
   for _, page in ipairs(pages) do
     page:initialize()

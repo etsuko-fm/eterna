@@ -8,7 +8,7 @@ Engine_Symbiosis : CroneEngine {
   var filter, compressor, echo, bassMono, maximizer;
 
   // Control buses
-  var ampBuses, envBuses, preCompControlBuses, postCompControlBuses, compAmountBuses;
+  var ampBuses, envBuses, preCompControlBuses, postCompControlBuses, postGainBuses;
   
   var exampleArray;
 
@@ -68,8 +68,8 @@ Engine_Symbiosis : CroneEngine {
 
     // Control buses for reporting master amplitude (pre/post-comp)
     preCompControlBuses = Array.fill(2, { Bus.control(s, 1) });
+    postGainBuses = Array.fill(2, { Bus.control(s, 1) });
     postCompControlBuses = Array.fill(2, { Bus.control(s, 1) });
-    compAmountBuses = Array.fill(2, { Bus.control(s, 1) });
 
     // Ensure all buses have been created
     context.server.sync;
@@ -84,10 +84,10 @@ Engine_Symbiosis : CroneEngine {
       \ampbuf, bufAmp,
       \preControlBusL, preCompControlBuses[0].index, 
       \preControlBusR, preCompControlBuses[1].index, 
-      \postControlBusL, postCompControlBuses[0].index, 
-      \postControlBusR, postCompControlBuses[1].index, 
-      \compAmountBusL, compAmountBuses[0].index, 
-      \compAmountBusR, compAmountBuses[1].index, 
+      \postCompControlBusL, postCompControlBuses[0].index, 
+      \postCompControlBusR, postCompControlBuses[1].index, 
+      \postGainBusL, postGainBuses[0].index, 
+      \postGainBusR, postGainBuses[1].index, 
       \out, 0
     ]);
 
@@ -340,11 +340,15 @@ Engine_Symbiosis : CroneEngine {
      });
 
 
-    // Commands for mastering
+    // Commands for bass mono
     this.addCommand("bass_mono_freq", "f", { arg msg; bassMono.set(\freq, msg[1]); });
     this.addCommand("bass_mono_dry", "f", { arg msg; bassMono.set(\dry, msg[1]); });
-    this.addCommand("bass_mono_enabled", "i", {arg msg; bassMono.set(\enabled, msg[1]); })
+    this.addCommand("bass_mono_enabled", "i", {arg msg; bassMono.set(\enabled, msg[1]); });
+
+    // Commands for compressor
     this.addCommand("comp_gain", "f", { arg msg; compressor.set(\gain, msg[1]); });
+    this.addCommand("comp_ratio", "f", { arg msg; compressor.set(\ratio, msg[1]); });
+    this.addCommand("comp_threshold", "f", { arg msg; compressor.set(\threshold, msg[1]); });
 
     // Commands for visualization
     this.addCommand("request_waveform", "i", { 
@@ -352,7 +356,7 @@ Engine_Symbiosis : CroneEngine {
       oscServer.sendBundle(0, ['/waveform', exampleArray]);
     });
 
-    this.addCommand("set_amp_trig_rate", "i", {  arg msg; compressor.set(\meteringRate, msg[1])});
+    this.addCommand("set_metering_rate", "i", {  arg msg; compressor.set(\meteringRate, msg[1])});
 
     this.addCommand("request_amp_history", "", { 
       arg msg; 
@@ -368,8 +372,8 @@ Engine_Symbiosis : CroneEngine {
     this.addPoll(\post_compL, { postCompControlBuses[0].getSynchronous });
     this.addPoll(\post_compR, { postCompControlBuses[1].getSynchronous });
 
-    this.addPoll(\comp_amountL, { compAmountBuses[0].getSynchronous });
-    this.addPoll(\comp_amountR, { compAmountBuses[1].getSynchronous });
+    this.addPoll(\post_gainL, { postGainBuses[0].getSynchronous });
+    this.addPoll(\post_gainR, { postGainBuses[1].getSynchronous });
 
     this.addPoll(\array_example, { 3.1415 });
 
@@ -407,8 +411,8 @@ Engine_Symbiosis : CroneEngine {
     preCompControlBuses.free;
     postCompControlBuses.do(_.free);
     postCompControlBuses.free;
-    compAmountBuses.do(_.free);
-    compAmountBuses.free;
+    postGainBuses.do(_.free);
+    postGainBuses.free;
     
     exampleArray.free;
     oscServer.free;

@@ -5,7 +5,7 @@ MasterGraphic = {
   drive_amount = 0,
   pre_comp_levels = { 0, 0 },
   post_comp_levels = { 0, 0 },
-  comp_amount_levels = { 0, 0 },
+  post_gain_levels = { 0, 0 },
   lissajous_buf = {},
 }
 
@@ -110,7 +110,6 @@ function MasterGraphic:render()
   if self.hide then return end
   screen.level(15)
   local draw_pre = false
-  local draw_comp = false
 
   -- pre levels
   if draw_pre then
@@ -125,7 +124,7 @@ function MasterGraphic:render()
     screen.move(64, 32)
   end
 
-  -- -- post levels
+  -- post levels
   local post_hL = self.post_comp_levels[1] * -meters_h
   local post_hR = self.post_comp_levels[2] * -meters_h
   local post_padding = 3
@@ -135,17 +134,7 @@ function MasterGraphic:render()
   screen.rect(post_meters_x + post_padding, meters_y, post_meter_width, math.min(-1, post_hR))
   screen.fill()
 
-  -- -- comp amount
   screen.level(5)
-
-  if draw_comp then
-    local comp_padding = 2
-    local comp_x = post_meters_x + comp_padding
-
-    screen.rect(comp_x, meters_y - meters_h, 1, math.min(self.comp_amount_levels[1], 1) * meters_h)
-    screen.rect(comp_x + 4, meters_y - meters_h, 1, math.min(self.comp_amount_levels[2], 1) * meters_h)
-    screen.fill()
-  end
   local slider_h = 21
   draw_slider(drive_slider_x, center_y - 11, 4, slider_h, self.drive_amount)
 
