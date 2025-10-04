@@ -343,6 +343,7 @@ Engine_Symbiosis : CroneEngine {
     // Commands for mastering
     this.addCommand("bass_mono_freq", "f", { arg msg; bassMono.set(\freq, msg[1]); });
     this.addCommand("bass_mono_dry", "f", { arg msg; bassMono.set(\dry, msg[1]); });
+    this.addCommand("bass_mono_enabled", "i", {arg msg; bassMono.set(\enabled, msg[1]); })
     this.addCommand("comp_gain", "f", { arg msg; compressor.set(\gain, msg[1]); });
 
     // Commands for visualization
@@ -351,7 +352,7 @@ Engine_Symbiosis : CroneEngine {
       oscServer.sendBundle(0, ['/waveform', exampleArray]);
     });
 
-    this.addCommand("set_amp_trig_rate", "i", {  arg msg; compressor.set(\sendTrigRate, msg[1])});
+    this.addCommand("set_amp_trig_rate", "i", {  arg msg; compressor.set(\meteringRate, msg[1])});
 
     this.addCommand("request_amp_history", "", { 
       arg msg; 
