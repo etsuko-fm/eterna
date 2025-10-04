@@ -59,6 +59,7 @@ end
 function page:initialize()
     add_params()
     master_graphic = MasterGraphic:new()
+    engine.set_amp_trig_rate(1000)
 
     pre_compL_poll.callback = function(v) master_graphic.pre_comp_levels[1] = amp_to_log(v) end
     pre_compR_poll.callback = function(v) master_graphic.pre_comp_levels[2] = amp_to_log(v) end

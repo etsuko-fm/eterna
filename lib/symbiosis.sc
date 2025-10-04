@@ -46,7 +46,7 @@ Engine_Symbiosis : CroneEngine {
     // Buffer for collecting amplitude data for visualization
     var bufnumAmp = 2;
 
-    var historyLength = 128;
+    var historyLength = 32;
     var ampHistoryL = Int8Array.fill(historyLength, 0);
     var ampHistoryR = Int8Array.fill(historyLength, 0);
 
@@ -98,13 +98,14 @@ Engine_Symbiosis : CroneEngine {
     OSCFunc({ |msg|
         ampHistoryL.pop;
         ampHistoryL = ampHistoryL.insert(0, ((msg[3]+1/2)*128).round.asInteger);
-        // ("SC: ampHistoryL: " ++ ampHistoryL).postln;
-    }, '/ampL');
-    OSCFunc({ |msg|
         ampHistoryR.pop;
-        ampHistoryR = ampHistoryR.insert(0, ((msg[3]+1/2)*128).round.asInteger);
-        // ("SC: ampHistoryR: " ++ ampHistoryR).postln;
-    }, '/ampR');
+        ampHistoryR = ampHistoryR.insert(0, ((msg[4]+1/2)*128).round.asInteger);
+
+        // ("SC: ampHistoryL: " ++ ampHistoryL).postln;
+    }, '/amp');
+    // OSCFunc({ |msg|
+    //     // ("SC: ampHistoryR: " ++ ampHistoryR).postln;
+    // }, '/ampR');
 
     // Commands for sample voices
     this.addCommand("set_buffer","si", { 
@@ -350,13 +351,13 @@ Engine_Symbiosis : CroneEngine {
       oscServer.sendBundle(0, ['/waveform', exampleArray]);
     });
 
+    this.addCommand("set_amp_trig_rate", "i", {  arg msg; compressor.set(\sendTrigRate, msg[1])});
+
     this.addCommand("request_amp_history", "", { 
       arg msg; 
       oscServer.sendBundle(0, ['/ampHistoryL', ampHistoryL]);
       oscServer.sendBundle(0, ['/ampHistoryR', ampHistoryR]);
     });
-
-
 
     this.addPoll(\file_loaded, { isLoaded }, periodic:false);
 

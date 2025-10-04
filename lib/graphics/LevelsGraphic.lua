@@ -52,6 +52,9 @@ function LevelsGraphic:render()
         screen.level(self.bg_bar_brightness)
         local x = self.x + (i * (self.w - self.bar_width) / (self.num_bars - 1))
         local h = util.round(-self.h * self.levels[voice])
+
+        -- draw control amp meters
+        screen.level(8)
         screen.rect(
             x,
             self.y,
@@ -60,14 +63,16 @@ function LevelsGraphic:render()
         )
         screen.fill()
 
-        -- draw amp meters
+        -- draw live amp meters
+        screen.level(15)
         if self.voice_amp[voice] ~= nil then
-            screen.level(15)
             -- if the signal clips, just show it as the maximum value
             local amp = math.min(self.voice_amp[voice], 1)
             screen.rect(x, self.y, self.bar_width, h * amp)
             screen.fill()
         end
+
+
     end
 
     -- scan position slider

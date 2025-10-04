@@ -148,9 +148,9 @@ function osc.event(path, args, from)
   if path == "/ampHistoryL" then
     local blob = args[1]
     amp_historyL = blob_to_table(blob)
-    print("left 1st value: " .. amp_historyL[1])
-    print("left last value: " .. amp_historyL[#amp_historyL])
-    print("left table length: " .. #amp_historyL)
+    -- print("left 1st value: " .. amp_historyL[1])
+    -- print("left last value: " .. amp_historyL[#amp_historyL])
+    -- print("left table length: " .. #amp_historyL)
   end
   if path == "/ampHistoryR" then
     local blob = args[1]
@@ -158,9 +158,11 @@ function osc.event(path, args, from)
   end
 end
 
+DB_FLOOR = -60
+
 function to_dBFS(x)
   -- x: 0 to 1
-  local floor = -128
+  local floor = DB_FLOOR
   if x <= 0 then return floor end
   local db = 20 * math.log(x, 10)
   if db < floor then return floor else return db end
@@ -168,7 +170,7 @@ end
 
 function amp_to_log(amp)
   -- converts linear range to logarithmic range used by decibels
-  local floor = -128
+  local floor = DB_FLOOR
   if amp <= 0 then return 0.0 end
   local db = to_dBFS(amp)
   return (db - floor) / -floor -- normalize to 0..1

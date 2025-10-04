@@ -4,7 +4,7 @@ GlueCompressor {
 			var s = Server.default;
 			s.waitForBoot {
 				SynthDef("GlueCompressor", {
-					arg in, out, preControlBusL, preControlBusR, postControlBusL, postControlBusR, compAmountBusL, compAmountBusR, gain=1.0;
+					arg in, out, preControlBusL, preControlBusR, postControlBusL, postControlBusR, compAmountBusL, compAmountBusR, gain=1.0, sendTrigRate = 500;
                     var in_signal = In.ar(in, 2);
 					var in_scaled = in_signal * gain;
 					var preLevel =  Amplitude.ar(in_signal, 0, 0.2);
@@ -14,14 +14,13 @@ GlueCompressor {
 
 					// measure amplitude envelopes
 					var inAmp  = Amplitude.ar(in_scaled, 0, 0.01);   // short attack/release
-					var outAmp = Amplitude.ar(limited, 0, 0.01);
-					var compAmount = inAmp - outAmp;
+					// var outAmp = Amplitude.ar(limited, 0, 0.01);
+					var outAmp = LagUD.ar(Peak.ar(limited, Impulse.ar(sendTrigRate)), 0, 0.1);
+					var compAmount = inAmp - Amplitude.ar(limited, 0, 0.01); // was: - outAmp
 
 					var postLevel = Amplitude.ar(limited, 0, 0.2);
-					var trigRate = 6000;
-					var ampSendTrig = Impulse.ar(trigRate);
-					SendReply.ar(ampSendTrig, '/ampL', limited[0]);
-					SendReply.ar(ampSendTrig, '/ampR', limited[1]);
+					var ampSendTrig = Impulse.ar(sendTrigRate);
+					SendReply.ar(ampSendTrig, '/amp', [limited[0], limited[1]]);
 
 					Out.ar(out, limited);
 					Out.kr(preControlBusL, preLevel[0]);
