@@ -8,7 +8,7 @@ Engine_Symbiosis : CroneEngine {
   var filter, compressor, echo, bassMono, maximizer;
 
   // Control buses
-  var ampBuses, envBuses, preCompControlBuses, postCompControlBuses, postGainBuses;
+  var ampBuses, envBuses, preCompControlBuses, postCompControlBuses, postGainBuses, masterOutControlBuses;
   
   var exampleArray;
 
@@ -70,6 +70,7 @@ Engine_Symbiosis : CroneEngine {
     preCompControlBuses = Array.fill(2, { Bus.control(s, 1) });
     postGainBuses = Array.fill(2, { Bus.control(s, 1) });
     postCompControlBuses = Array.fill(2, { Bus.control(s, 1) });
+    masterOutControlBuses = Array.fill(2, { Bus.control(s, 1) });
 
     // Ensure all buses have been created
     context.server.sync;
@@ -86,6 +87,8 @@ Engine_Symbiosis : CroneEngine {
       \preControlBusR, preCompControlBuses[1].index, 
       \postCompControlBusL, postCompControlBuses[0].index, 
       \postCompControlBusR, postCompControlBuses[1].index, 
+      \masterOutControlBusL, masterOutControlBuses[0].index,
+      \masterOutControlBusR, masterOutControlBuses[1].index,
       \postGainBusL, postGainBuses[0].index, 
       \postGainBusR, postGainBuses[1].index, 
       \out, 0
@@ -372,7 +375,8 @@ Engine_Symbiosis : CroneEngine {
     this.addPoll(\post_gainL, { postGainBuses[0].getSynchronous });
     this.addPoll(\post_gainR, { postGainBuses[1].getSynchronous });
 
-    this.addPoll(\array_example, { 3.1415 });
+    this.addPoll(\masterL, { masterOutControlBuses[0].getSynchronous });
+    this.addPoll(\masterR, { masterOutControlBuses[1].getSynchronous });
 
     6.do { |idx|
         this.addPoll(("voice" ++ (idx+1) ++ "amp").asSymbol, { ampBuses[idx].getSynchronous });
@@ -410,6 +414,8 @@ Engine_Symbiosis : CroneEngine {
     postCompControlBuses.free;
     postGainBuses.do(_.free);
     postGainBuses.free;
+    masterOutControlBuses.do(_.free);
+    masterOutControlBuses.free;
     
     exampleArray.free;
     oscServer.free;
