@@ -52,10 +52,19 @@ local function action_comp_amount(v)
     end
 end
 
+local function action_master_output(v)
+     if v == "-INF" then
+        engine.comp_out_level(0)
+    else
+        engine.comp_out_level(v)
+    end
+end
+
 local function add_params()
     params:set_action(ID_MASTER_COMP_DRIVE, function(v) engine.comp_gain(v) end)
     params:set_action(ID_MASTER_COMP_AMOUNT, action_comp_amount)
     params:set_action(ID_MASTER_MONO_FREQ, function(v) engine.bass_mono_freq(BASS_MONO_FREQS_INT[v]) end)
+    params:set_action(ID_MASTER_OUTPUT, action_master_output)
 end
 
 function page:render()
@@ -68,6 +77,8 @@ function page:render()
     post_compR_poll:update()
     post_gainL_poll:update()
     post_gainR_poll:update()
+    masterL_poll:update()
+    masterR_poll:update()
 
     master_graphic.drive_amount = params:get_raw(ID_MASTER_COMP_DRIVE)
     master_graphic.out_level = params:get(ID_MASTER_OUTPUT)
@@ -95,6 +106,8 @@ function page:initialize()
     post_compR_poll.callback = function(v) master_graphic.post_comp_levels[2] = amp_to_log(v) end
     post_gainL_poll.callback = function(v) master_graphic.post_gain_levels[1] = amp_to_log(v) end
     post_gainR_poll.callback = function(v) master_graphic.post_gain_levels[2] = amp_to_log(v) end
+    masterL_poll.callback = function(v) master_graphic.out_levels[1] = amp_to_log(v) end
+    masterR_poll.callback = function(v) master_graphic.out_levels[2] = amp_to_log(v) end
 
     window = Window:new({
         x = 0,
@@ -109,6 +122,7 @@ function page:initialize()
         horizontal_separations = 0,
         vertical_separations = 0,
     })
+
     -- graphics
     page.footer = Footer:new({
         button_text = {

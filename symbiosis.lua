@@ -202,16 +202,14 @@ function init()
   env5poll = poll.set("voice5env")
   env6poll = poll.set("voice6env")
 
-  arraypoll = poll.set("array_example")
-  arraypoll.callback = function(v) print("array" .. v) end
-  arraypoll:update()
-  print('finished setting up arraypoll')
   pre_compL_poll = poll.set("pre_compL")
   pre_compR_poll = poll.set("pre_compR")
   post_compL_poll = poll.set("post_compL")
   post_compR_poll = poll.set("post_compR")
   post_gainL_poll = poll.set("post_gainL")
   post_gainR_poll = poll.set("post_gainR")
+  masterL_poll = poll.set("masterL")
+  masterR_poll = poll.set("masterR")
 
   for _, page in ipairs(pages) do
     page:initialize()

@@ -4,8 +4,10 @@ MasterGraphic = {
   hide = false,
   drive_amount = 0,
   input_levels = { 0, 0 },
+  pre_comp_levels = { 0, 0 },
   post_gain_levels = { 0, 0 },
   post_comp_levels = { 0, 0 },
+  out_levels = { 0, 0 },
   out_level = 1.0,
   lissajous_buf = {},
 }
@@ -69,7 +71,7 @@ function MasterGraphic:draw_lissajous()
       local divL = (s / 127) * scale
       local divR = (amp_historyR[i] / 127) * scale
       local x = center_x + divL
-      local y = center_y - divR -1
+      local y = center_y - divR - 1
       screen.pixel(x, y)
       screen.fill()
       prev_frames[1][i] = {}
@@ -150,7 +152,7 @@ function MasterGraphic:render()
   screen.stroke()
 
   -- post levels
-  screen.level(15)
+  screen.level(7)
   local post_hL = self.post_comp_levels[1] * -meters_h
   local post_hR = self.post_comp_levels[2] * -meters_h
   local post_padding = 3
@@ -166,8 +168,8 @@ function MasterGraphic:render()
 
   -- final out level, calculate here, to save a poll to supercollider
   screen.level(15)
-  local master_out_hL = post_hL * self.out_level
-  local master_out_hR = post_hR * self.out_level
+  local master_out_hL = self.out_levels[1] * -meters_h
+  local master_out_hR = self.out_levels[2] * -meters_h
 
   screen.rect(master_out_x, meters_y, meter_width, math.min(-1, master_out_hL))
   screen.fill()
@@ -180,7 +182,7 @@ function MasterGraphic:render()
   screen.line(post_meters_x + 5, center_y - 10)
   screen.stroke()
 
-  -- 0dB line for master out 
+  -- 0dB line for master out
   screen.move(master_out_x, center_y - 10)
   screen.line(master_out_x + 5, center_y - 10)
   screen.stroke()

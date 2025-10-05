@@ -29,11 +29,12 @@ Compressor {
 					// Amplitude after compression and limiting
 					var postCompAmp = LagUD.ar(Peak.ar(limited, Impulse.ar(meteringRate)), 0, 0.1);
 
-					// Send sample values, can be used to plot Lissajous curve
-					SendReply.ar(Impulse.ar(meteringRate), '/amp', [limited[0], limited[1]]);
-
+					// Master out (expects outLevel to be <= 1.0, because no limiter on this bit)
 					var masterOut = limited * outLevel;
 					var masterOutAmp = LagUD.ar(Peak.ar(masterOut, Impulse.ar(meteringRate)), 0, 0.1);
+
+					// Send sample values, can be used to plot Lissajous curve
+					SendReply.ar(Impulse.ar(meteringRate), '/amp', [limited[0], limited[1]]);
 
 					// Audio out
 					Out.ar(out, masterOut);
