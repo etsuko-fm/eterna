@@ -102,9 +102,11 @@ local pre_level_x = 32
 local comp_amount_x = 64 - 17
 local drive_slider_x = 64 - 23
 local post_meters_x = 64 + 13
+local master_out_x = 64 + 20
 local center_y = 29
 local meters_y = center_y + 10
 local meters_h = 20
+local meter_width = 2
 
 function MasterGraphic:render()
   if self.hide then return end
@@ -116,10 +118,9 @@ function MasterGraphic:render()
     local pre_h_left = self.input_levels[1] * -meters_h
     local pre_h_right = self.input_levels[2] * -meters_h
     local pre_padding = 3
-    local pre_meter_width = 2
-    screen.rect(pre_level_x, meters_y, pre_meter_width, math.min(pre_h_left, -1))
+    screen.rect(pre_level_x, meters_y, meter_width, math.min(pre_h_left, -1))
     screen.fill()
-    screen.rect(pre_level_x + pre_padding, meters_y, pre_meter_width, math.min(pre_h_right, -1))
+    screen.rect(pre_level_x + pre_padding, meters_y, meter_width, math.min(pre_h_right, -1))
     screen.fill()
     screen.move(64, 32)
   end
@@ -137,10 +138,9 @@ function MasterGraphic:render()
   local comp_hL = comp_amountL * meters_h
   local comp_hR = comp_amountR * meters_h
   local comp_padding = 3
-  local comp_meter_width = 2
-  screen.rect(comp_amount_x, meters_y - meters_h - 1, comp_meter_width, math.max(1, comp_hL))
+  screen.rect(comp_amount_x, meters_y - meters_h - 1, meter_width, math.max(1, comp_hL))
   screen.fill()
-  screen.rect(comp_amount_x + comp_padding, meters_y - meters_h - 1, comp_meter_width, math.max(1, comp_hR))
+  screen.rect(comp_amount_x + comp_padding, meters_y - meters_h - 1, meter_width, math.max(1, comp_hR))
   screen.fill()
 
   -- -30dB line for comp amount
@@ -154,25 +154,35 @@ function MasterGraphic:render()
   local post_hL = self.post_comp_levels[1] * -meters_h
   local post_hR = self.post_comp_levels[2] * -meters_h
   local post_padding = 3
-  local post_meter_width = 2
-  screen.rect(post_meters_x, meters_y, post_meter_width, math.min(-1, post_hL))
+  screen.rect(post_meters_x, meters_y, meter_width, math.min(-1, post_hL))
   screen.fill()
-  screen.rect(post_meters_x + post_padding, meters_y, post_meter_width, math.min(-1, post_hR))
+  screen.rect(post_meters_x + post_padding, meters_y, meter_width, math.min(-1, post_hR))
   screen.fill()
 
+  -- drive slider
   screen.level(5)
   local slider_h = 21
   draw_slider(drive_slider_x, center_y - 11, 4, slider_h, self.drive_amount)
 
+  -- final out level, calculate here, to save a poll to supercollider
+  screen.level(15)
+  local master_out_hL = post_hL * self.out_level
+  local master_out_hR = post_hR * self.out_level
 
-  -- final out level
-  -- calc client side?
-
+  screen.rect(master_out_x, meters_y, meter_width, math.min(-1, master_out_hL))
+  screen.fill()
+  screen.rect(master_out_x + 3, meters_y, meter_width, math.min(-1, master_out_hR))
+  screen.fill()
 
   -- 0dB line for post level
   screen.level(5)
   screen.move(post_meters_x, center_y - 10)
   screen.line(post_meters_x + 5, center_y - 10)
+  screen.stroke()
+
+  -- 0dB line for master out 
+  screen.move(master_out_x, center_y - 10)
+  screen.line(master_out_x + 5, center_y - 10)
   screen.stroke()
 
   -- lissajous
