@@ -1,10 +1,12 @@
-GlueCompressor {
+Compressor {
 	*initClass {
 		StartUp.add {
 			var s = Server.default;
 			s.waitForBoot {
 				SynthDef("GlueCompressor", {
-					arg in, out, preControlBusL, preControlBusR, postCompControlBusL, postCompControlBusR, postGainBusL, postGainBusR, ratio=3, gain=1.0, meteringRate = 500, threshold=0.25, attack=0.01, release=0.3;
+					arg in, out, preControlBusL, preControlBusR, postCompControlBusL, postCompControlBusR, 
+					postGainBusL, postGainBusR, ratio=3, gain=1.0, meteringRate = 500, 
+					threshold=0.25, attack=0.01, release=0.3, outLevel=1.0;
                     var in_signal = In.ar(in, 2);
 
 					// Measure amplitude of unprocessed input
@@ -27,7 +29,7 @@ GlueCompressor {
 					SendReply.ar(Impulse.ar(meteringRate), '/amp', [limited[0], limited[1]]);
 
 					// Audio out
-					Out.ar(out, limited);
+					Out.ar(out, limited * outLevel);
 
 					// Send amplitudes to control buses
 					Out.kr(preControlBusL, preAmp[0]);

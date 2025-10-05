@@ -97,15 +97,11 @@ Engine_Symbiosis : CroneEngine {
     // Receive amplitude batches for visualization
     OSCFunc({ |msg|
         ampHistoryL.pop;
-        ampHistoryL = ampHistoryL.insert(0, ((msg[3]+1/2)*128).round.asInteger);
         ampHistoryR.pop;
-        ampHistoryR = ampHistoryR.insert(0, ((msg[4]+1/2)*128).round.asInteger);
-
-        // ("SC: ampHistoryL: " ++ ampHistoryL).postln;
+        // Make value positive and between 0 and 255
+        ampHistoryL = ampHistoryL.insert(0, (msg[3] * 127).round.asInteger);
+        ampHistoryR = ampHistoryR.insert(0, (msg[4] * 127).round.asInteger);
     }, '/amp');
-    // OSCFunc({ |msg|
-    //     // ("SC: ampHistoryR: " ++ ampHistoryR).postln;
-    // }, '/ampR');
 
     // Commands for sample voices
     this.addCommand("set_buffer","si", { 

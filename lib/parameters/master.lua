@@ -1,15 +1,18 @@
 local MASTER_DRIVE_MIN = 0.1
-local MASTER_DRIVE_MAX = 20
-local MASTER_RATIO_MIN = 1
-local MASTER_RATIO_MAX = 8
+local MASTER_DRIVE_MAX = 15
 
+local MASTER_OUT_MIN = 0 -- -INF dB
+local MASTER_OUT_MAX = 1 -- unity gain
 
 ID_MASTER_MONO_FREQ = "master_mono_freq"
-ID_MASTER_COMP_RATIO = "master_comp_ratio"
 ID_MASTER_COMP_DRIVE = "master_comp_drive"
+ID_MASTER_COMP_AMOUNT = "master_comp_amount"
 ID_MASTER_OUTPUT = "master_output"
 
-BASS_MONO_FREQS = {"OFF", "50Hz", "100Hz", "200Hz"}
+BASS_MONO_FREQS_STR = {"OFF", "50Hz", "100Hz", "200Hz"}
+BASS_MONO_FREQS_INT = {20, 50, 100, 200}
+
+COMP_AMOUNTS = {"OFF", "SOFT", "MEDIUM", "HARD"}
 
 controlspec_master_drive = controlspec.def {
     min = MASTER_DRIVE_MIN,
@@ -22,29 +25,19 @@ controlspec_master_drive = controlspec.def {
     wrap = false
 }
 
-controlspec_master_ratio = controlspec.def {
-    min = MASTER_RATIO_MIN,
-    max = MASTER_RATIO_MAX,
-    warp = 'lin',
-    step = 0.01,
-    default = 1,
-    units = '',
-    quantum = 0.1 / (MASTER_RATIO_MAX - MASTER_RATIO_MIN),
-    wrap = false
-}
-
 controlspec_master_output = controlspec.def {
-    min = 0,
-    max = 1,
+    min = MASTER_OUT_MIN,
+    max = MASTER_OUT_MAX,
     warp = 'lin',
     step = 0.01,
     default = 1,
     units = '',
-    quantum = 0.01,
+    quantum = 0.01 / (MASTER_OUT_MAX - MASTER_OUT_MIN),
     wrap = false
 }
 
 params:add_separator("MASTER", "MASTER")
+params:add_option(ID_MASTER_MONO_FREQ, "bass mono freq", BASS_MONO_FREQS_STR, 2)
 params:add_control(ID_MASTER_COMP_DRIVE, "compressor drive", controlspec_master_drive)
-params:add_option(ID_MASTER_MONO_FREQ, "bass mono freq", BASS_MONO_FREQS, 2)
+params:add_option(ID_MASTER_COMP_AMOUNT, "compressor amount", COMP_AMOUNTS, 2)
 params:add_control(ID_MASTER_OUTPUT, "output", controlspec_master_output)

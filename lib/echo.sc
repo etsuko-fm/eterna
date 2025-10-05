@@ -36,7 +36,7 @@ Echo {
                     wetSig = SelectX.ar(fade, [delA, delB]);
 
                     allPassDelayTimes.do{|t|
-                        wetSig = AllpassC.ar(wetSig, 0.1, t, 1);
+                        wetSig = LPF.ar(AllpassC.ar(wetSig, 0.1, t, 1), 6000);
                     };
 
                     wetSig = Select.ar(style, [
