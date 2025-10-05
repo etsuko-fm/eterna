@@ -140,7 +140,7 @@ Engine_Symbiosis : CroneEngine {
         // TODO: voices.do(_.free) first, to prevent warning that buf data not found?
         if (voicesEmpty) {
           voices = Array.fill(6, { |i|
-            Synth.before(filter, "tapevoice", [
+            Synth.before(filter, "SampleVoice", [
             \out, filterBus,
             \bufnum, bufnumL, 
             \rate, 1.0,
@@ -345,7 +345,7 @@ Engine_Symbiosis : CroneEngine {
     this.addCommand("comp_gain", "f", { arg msg; compressor.set(\gain, msg[1]); });
     this.addCommand("comp_ratio", "f", { arg msg; compressor.set(\ratio, msg[1]); });
     this.addCommand("comp_threshold", "f", { arg msg; compressor.set(\threshold, msg[1]); });
-    this.addCommand("out_level", "f", { arg msg; compressor.set(\outLevel, msg[1]); });
+    this.addCommand("comp_out_level", "f", { arg msg; compressor.set(\outLevel, msg[1]); });
 
     // Commands for visualization
     this.addCommand("request_waveform", "i", { 

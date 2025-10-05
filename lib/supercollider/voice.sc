@@ -1,10 +1,10 @@
-TapeVoice {
+Voice {
 	var <params;
 	*initClass {
 		StartUp.add {
 			var s = Server.default;
 			s.waitForBoot {
-				SynthDef("tapevoice", {
+				SynthDef("SampleVoice", {
 					// loopStart and loopEnd in seconds
 					// 't_' has a special meaning in SC, resets value to zero after receiving a 1
 					arg out, rate = 0, bufnum=0, loop=0.0, loopStart=0.0, loopEnd=0.0,
