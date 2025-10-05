@@ -345,6 +345,7 @@ Engine_Symbiosis : CroneEngine {
     this.addCommand("comp_gain", "f", { arg msg; compressor.set(\gain, msg[1]); });
     this.addCommand("comp_ratio", "f", { arg msg; compressor.set(\ratio, msg[1]); });
     this.addCommand("comp_threshold", "f", { arg msg; compressor.set(\threshold, msg[1]); });
+    this.addCommand("out_level", "f", { arg msg; compressor.set(\outLevel, msg[1]); });
 
     // Commands for visualization
     this.addCommand("request_waveform", "i", { 
