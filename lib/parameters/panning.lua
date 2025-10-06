@@ -35,11 +35,11 @@ ID_PANNING_LFO_RATE = "panning_lfo_rate"
 ID_PANNING_TWIST = "panning_twist"
 ID_PANNING_SPREAD = "panning_spread"
 -- todo: add tri?
-PANNING_LFO_SHAPES = { "sine", "up", "down", "random" }
+PANNING_LFO_SHAPES = { "up", "down", "random" }
 DEFAULT_PANNING_LFO_RATE_IDX = 16
 
 params:add_separator("PANNING", "PANNING")
-params:add_binary(ID_PANNING_LFO_ENABLED, "LFO enabled", "toggle", 1)
+params:add_binary(ID_PANNING_LFO_ENABLED, "LFO enabled", "toggle", 0)
 params:add_option(ID_PANNING_LFO_SHAPE, "LFO shape", PANNING_LFO_SHAPES, 2)
 params:add_option(ID_PANNING_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, DEFAULT_PANNING_LFO_RATE_IDX)
 params:add_control(ID_PANNING_TWIST, "twist", controlspec_pan_twist)

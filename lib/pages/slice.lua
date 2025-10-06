@@ -205,12 +205,12 @@ end
 
 local function cycle_lfo()
     local p = ID_SLICES_LFO
-    local new_val = util.wrap(params:get(p) + 1, 1, #SLICES_LFO_OPTIONS)
+    local new_val = util.wrap(params:get(p) + 1, 1, #SLICES_LFO_SHAPES)
     params:set(p, new_val)
 end
 
 local function action_lfo(v)
-    local selection = SLICES_LFO_OPTIONS[v]
+    local selection = SLICES_LFO_SHAPES[v]
     print(slice_lfo:get("enabled"))
     if selection == "off" then
         slice_lfo:stop()
@@ -247,7 +247,7 @@ function page:render()
         fileselect:redraw()
         return
     end -- for rendering the fileselect interface
-    local lfo_val = SLICES_LFO_OPTIONS[params:get(ID_SLICES_LFO)]
+    local lfo_val = SLICES_LFO_SHAPES[params:get(ID_SLICES_LFO)]
 
     if selected_sample then
         -- show filename of selecteed sample in title bar

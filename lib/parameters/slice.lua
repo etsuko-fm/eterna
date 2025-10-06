@@ -35,7 +35,7 @@ ID_SLICES_AUDIO_FILE = "slices_audio_file"
 ID_SLICES_NUM_SLICES = "slices_num_slices"
 ID_SLICES_START = "slices_slice_start"
 ID_SLICES_LFO = "slices_lfo"
-SLICES_LFO_OPTIONS = { "off", "sine", "up", "down", "random" }
+SLICES_LFO_SHAPES = { "off", "up", "down", "random" }
 
 ID_SLICES_SECTIONS = {}
 
@@ -56,7 +56,7 @@ end
 
 params:add_separator("SAMPLE_SLICES", "SAMPLE SLICES")
 params:add_file(ID_SLICES_AUDIO_FILE, 'sample', nil)
-params:add_option(ID_SLICES_LFO, "lfo", SLICES_LFO_OPTIONS)
+params:add_option(ID_SLICES_LFO, "lfo", SLICES_LFO_SHAPES)
 params:add_control(ID_SLICES_NUM_SLICES, "slices", controlspec_slices)
 params:add_control(ID_SLICES_START, "start", controlspec_slice_start)
 

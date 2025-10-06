@@ -11,7 +11,7 @@ ID_FILTER_TYPE = page_id.."type"
 ID_FILTER_LFO_ENABLED = page_id.."lfo_enabled"
 ID_FILTER_LFO_SHAPE = page_id.."lfo_shape"
 ID_FILTER_LFO_RATE = page_id.."lfo_rate"
-FILTER_LFO_SHAPES = { "sine", "up", "down", "random" }
+FILTER_LFO_SHAPES = {"up", "down", "random" }
 FILTER_TYPES = { "HP", "LP", "BP", "SWIRL"}
 DRY_WET_TYPES = {"DRY", "50/50", "WET"}
 
