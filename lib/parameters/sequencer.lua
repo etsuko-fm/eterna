@@ -20,6 +20,18 @@ controlspec_perlin = controlspec.def {
     wrap = true
 }
 
+controlspec_perlin_z = controlspec.def {
+    min = 0,
+    max = 100,
+    warp = 'lin',
+    step = .01,
+    default = 1,
+    units = '',
+    quantum = .05,
+    wrap = true
+}
+
+
 controlspec_perlin_y = controlspec.def {
     min = 0,
     max = 25,
@@ -64,8 +76,10 @@ params:add_separator("SEQUENCER", "SEQUENCER")
 params:add_control(ID_SEQ_PERLIN_X, "perlin x", controlspec_perlin)
 params:add_control(ID_SEQ_PERLIN_Y, "perlin y", controlspec_perlin_y)
 params:hide(ID_SEQ_PERLIN_Y)
-params:add_control(ID_SEQ_PERLIN_Z, "perlin z", controlspec_perlin)
+
+params:add_control(ID_SEQ_PERLIN_Z, "perlin z", controlspec_perlin_z)
 params:hide(ID_SEQ_PERLIN_Z)
+
 params:add_control(ID_SEQ_PERLIN_DENSITY, "sequence density", controlspec_perlin_density)
 params:add_option(ID_SEQ_EVOLVE, "evolve", SEQ_EVOLVE_TABLE, 1)
 params:add_option(ID_SEQ_STYLE, "sequence style", SEQUENCE_STYLE_TABLE, 1)

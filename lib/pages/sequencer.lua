@@ -3,7 +3,7 @@ local perlin = include("symbiosis/lib/ext/perlin")
 local page_name = "SEQUENCER"
 local window
 local grid_graphic
-local PERLIN_ZOOM = 10 / 3                          ---4 / 3 -- empirically tuned
+local PERLIN_ZOOM = 10/3                          ---4 / 3 -- empirically tuned
 local SEQ_EVOLVE_RATES = { 2 ^ 15, 2 ^ 14, 2 ^ 13 } -- in quarter notes, but fuzzy concept due to how perlin computes
 local SEQUENCE_STYLE_TABLE_TO_SOFTCUT = { 1, 0 }
 local MAX_STEPS = sequence_util.max_steps
@@ -23,35 +23,29 @@ local perlin_lfo
 local redraw_sequence = false
 
 local function generate_perlin_seq()
+    local velocities = {}
+
     local density = params:get(ID_SEQ_PERLIN_DENSITY)
     local x_seed = params:get(ID_SEQ_PERLIN_X)
     local y_seed = params:get(ID_SEQ_PERLIN_Y)
     local z_seed = params:get(ID_SEQ_PERLIN_Z)
 
     for voice = 1, SEQ_ROWS do
+        local perlin_y = voice * PERLIN_ZOOM + y_seed
         for step = 1, SEQ_COLUMNS do
             local perlin_x = step * PERLIN_ZOOM + x_seed
-            local perlin_y = voice * PERLIN_ZOOM + y_seed
             local pnoise = perlin:noise(perlin_x, perlin_y, z_seed)
-            local v = util.clamp(util.linlin(-1, 1, -0.3, 1.3, pnoise), 0.01, 1)
-
-            if density == 0 then
-                v = 0
-            else
-                -- base density map on a different seed of x/y/z, so that
-                -- not only low or high values are filtered out
-                local density_seed = 11.0
-                -- map to larger range than [0:1], then clamp, because perlin noise leans to the center of the range
-                local mask = util.clamp(
-                    util.linlin(-1, 1, -0.3, 1.3, perlin:noise(perlin_x + density_seed, perlin_y + density_seed, z_seed)),
-                    0,
-                    1)
-                if mask >= density and (mask ~= 1.0 and density ~= 1.0) then
-                    v = 0.0 -- 0.0 is only value not interpreted as an active step
-                end
-            end
-            params:set(ID_SEQ_STEP[voice][step], v)
+            local velocity = util.linlin(-1, 1, 0, 1, pnoise)
+            table.insert(velocities, {value=velocity, voice=voice, step=step})
+            params:set(ID_SEQ_STEP[voice][step], velocity)
         end
+    end
+
+    table.sort(velocities, function(a, b) return a.value > b.value end)
+    local keep_count = math.floor(density * #velocities)
+    for i, v in ipairs(velocities) do
+        local keep = i <= keep_count
+        params:set(ID_SEQ_STEP[v.voice][v.step], keep and v.value or 0)
     end
 end
 
