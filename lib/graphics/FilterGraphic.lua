@@ -15,8 +15,8 @@ local off_db = -32
 local max_db = 0
 local norm_db = -18
 local graph_w = 40
-local graph_h = 32
-local offset_y = 8
+local graph_h = 30
+local offset_y = 11
 local slack_x = 12
 local res_max_db = 12
 local line_w = 2
@@ -151,11 +151,11 @@ function FilterGraphic:render()
     end
     screen.line_width(1)
     screen.level(3)
-    screen.rect(start_x, 12, graph_w + 2 * slack_x, graph_h)
+    screen.rect(start_x, 15, graph_w + 2 * slack_x, graph_h-3)
     screen.stroke()
     -- hide out of range swirl
     screen.level(0)
-    screen.rect(start_x + graph_w + 2 * slack_x, 12, 32, graph_h)
+    screen.rect(start_x + graph_w + 2 * slack_x, 15, 32, graph_h-3)
     screen.fill()
 end
 
