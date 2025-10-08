@@ -10,8 +10,10 @@ Echo {
 					var input = In.ar(in, 2);
 					var wetSig;
                     var output;
-                    var primes = [3, 5, 7, 11, 13, 17, 19, 23];
-                    var allPassDelayTimes = primes.collect { |p| p * 0.001 };
+                    var delayTimesL = [11, 19, 37, 39, 77, 101];
+                    var delayTimesR = [17, 25, 31, 9, 12, 111];	
+                    var allPassDelayTimesL = delayTimesL.collect { |p| p * 0.001 };
+                    var allPassDelayTimesR = delayTimesR.collect { |p| p * 0.001 };
                     var delA, delB, fbSignal;
                     var fadeTime=0.05;
                     
@@ -25,19 +27,45 @@ Echo {
                     // Alternately update delay time A/B
                     var delayTimeA = Latch.kr(delayTime, t_1);
                     var delayTimeB = Latch.kr(delayTime, t_2);
+                    var cross = 0.3;
 
                     // Blur maps to number of allpass filters
-                    allPassDelayTimes = allPassDelayTimes.keep(3);
+                    // allPassDelayTimes = allPassDelayTimes.keep(3);
 
                     fbSignal = input + (LocalIn.ar(2) * feedback);
 
-                    delA = DelayC.ar(fbSignal, 1.0, delayTimeA - ControlDur.ir);
-                    delB = DelayC.ar(fbSignal, 1.0, delayTimeB - ControlDur.ir);
+                    delA = DelayL.ar(fbSignal, 1.0, delayTimeA - ControlDur.ir);
+                    delB = DelayL.ar(fbSignal, 1.0, delayTimeB - ControlDur.ir);
                     wetSig = SelectX.ar(fade, [delA, delB]);
 
-                    allPassDelayTimes.do{|t|
-                        wetSig = LPF.ar(AllpassC.ar(wetSig, 0.1, t, 1), 6000);
+                    allPassDelayTimesL.do { |t|
+                        wetSig[0] = LPF.ar(
+                            AllpassL.ar(
+                                wetSig[0], 
+                                0.3, 
+                                (t - 0.005 + (SinOsc.kr(t) * (t * 0.01))).abs, 
+                                1
+                            ), 
+                            6000
+                        );
                     };
+                    allPassDelayTimesR.do { |t|
+                        wetSig[1] = LPF.ar(
+                            AllpassL.ar(
+                                wetSig[0], 
+                                0.3, 
+                                (t - 0.005 + (SinOsc.kr(t) * (t * 0.01))).abs, 
+                                1
+                            ), 
+                            6000
+                        );
+                    };
+
+                    // crossmix left/right channels
+                    wetSig = [
+                        (1 - cross) * wetSig[0] + (cross * wetSig[1]),
+                        (1 - cross) * wetSig[1] + (cross * wetSig[0])
+                    ];
 
                     wetSig = Select.ar(style, [
                         HPF.ar(wetSig, 25), // neutral 
