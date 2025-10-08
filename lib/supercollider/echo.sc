@@ -24,20 +24,25 @@ Echo {
 
                     var fade = EnvGen.kr(Env([1-which, which],[fadeTime]), t_trig);
 
-                    // Alternately update delay time A/B
+                    // Alternately update delay time A/B, to enable crossfading to prevent click on changing delay time
                     var delayTimeA = Latch.kr(delayTime, t_1);
                     var delayTimeB = Latch.kr(delayTime, t_2);
+
+                    // Amount of crossfeeding between left and right channel
                     var cross = 0.3;
 
-                    // Blur maps to number of allpass filters
-                    // allPassDelayTimes = allPassDelayTimes.keep(3);
-
+                    // Delay line local to this SynthDef
                     fbSignal = input + (LocalIn.ar(2) * feedback);
 
+                    // Create delay lines, compensating time for processing of sample
                     delA = DelayL.ar(fbSignal, 1.0, delayTimeA - ControlDur.ir);
                     delB = DelayL.ar(fbSignal, 1.0, delayTimeB - ControlDur.ir);
+
+                    // Crossfade between delay lines to prevent clicks when switching time param
                     wetSig = SelectX.ar(fade, [delA, delB]);
 
+                    // Modulate each APF's delay time with ±5ms, using an LFO whose frequency is set to the APF's time itself;
+                    // This allows all LFOs to run at a different frequency
                     allPassDelayTimesL.do { |t|
                         wetSig[0] = LPF.ar(
                             AllpassL.ar(
