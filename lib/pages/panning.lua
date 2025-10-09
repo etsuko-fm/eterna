@@ -27,15 +27,10 @@ local function adjust_twist(d)
     params:set(ID_PANNING_TWIST, new_val, false)
 end
 
-local function toggle_lfo()
-    params:set(ID_PANNING_LFO_ENABLED, 1 - panning_lfo:get("enabled"), false)
-end
-
-local function toggle_shape()
-    if panning_lfo:get("enabled") == 0 then return end
-    local index = params:get(ID_PANNING_LFO_SHAPE)
-    local next_index = (index % #PANNING_LFO_SHAPES) + 1
-    params:set(ID_PANNING_LFO_SHAPE, next_index, false)
+local function cycle_lfo()
+    local p = ID_PANNING_LFO
+    local new_val = util.wrap(params:get(p) + 1, 1, #SLICES_LFO_SHAPES)
+    params:set(p, new_val)
 end
 
 local function e2(d)
@@ -50,22 +45,12 @@ local page = Page:create({
     name = page_name,
     e2 = e2,
     e3 = adjust_spread,
-    k2_off = toggle_lfo,
-    k3_off = toggle_shape,
+    k2_off = cycle_lfo,
+    k3_off = nil,
 })
 
-local function action_enable_lfo(v)
-    -- todo: should read v for enbaled or disabled
-    if v == 1 then
-        panning_lfo:start()
-    else
-        panning_lfo:stop()
-    end
-    panning_lfo:set('phase', params:get(ID_PANNING_TWIST))
-end
-
-local function action_lfo_shape(v)
-    panning_lfo:set('shape', params:string(ID_PANNING_LFO_SHAPE))
+local function action_lfo(v)
+    lfo_util.action_lfo(v, panning_lfo, PANNING_LFO_SHAPES, params:get(ID_PANNING_TWIST))
 end
 
 local function action_lfo_rate(v)
@@ -73,8 +58,7 @@ local function action_lfo_rate(v)
 end
 
 local function add_params()
-    params:set_action(ID_PANNING_LFO_ENABLED, action_enable_lfo)
-    params:set_action(ID_PANNING_LFO_SHAPE, action_lfo_shape)
+    params:set_action(ID_PANNING_LFO, action_lfo)
     params:set_action(ID_PANNING_LFO_RATE, action_lfo_rate)
     params:set_action(ID_PANNING_TWIST, calculate_pan_positions)
     params:set_action(ID_PANNING_SPREAD, calculate_pan_positions)
@@ -82,20 +66,18 @@ end
 
 function page:render()
     window:render()
+    local lfo_state = params:get(ID_PANNING_LFO)
     local twist = params:get(ID_PANNING_TWIST)
     local spread = params:get(ID_PANNING_SPREAD)
     panning_graphic:render()
+    page.footer.button_text.k2.value = string.upper(PANNING_LFO_SHAPES[lfo_state])
     if panning_lfo:get("enabled") == 1 then
         -- When LFO is disabled, E2 controls LFO rate
-        page.footer.button_text.k2.value = "ON"
+        
         page.footer.button_text.e2.name = "RATE"
         -- convert period to label representation
         local period = panning_lfo:get('period')
         page.footer.button_text.e2.value = lfo_util.lfo_period_value_labels[period]
-
-        -- Show LFO shape button
-        page.footer.button_text.k3.name = "SHAPE"
-        page.footer.button_text.k3.value = string.upper(params:string(ID_PANNING_LFO_SHAPE))
     else
         -- When LFO is disabled, E2 controls pan position
         page.footer.button_text.k2.value = "OFF"

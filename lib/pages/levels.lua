@@ -19,15 +19,10 @@ local function adjust_sigma(d)
     params:set(ID_LEVELS_AMP, new_val, false)
 end
 
-local function toggle_shape()
-    if levels_lfo:get("enabled") == 0 then return end
-    local index = params:get(ID_LEVELS_LFO_SHAPE)
-    local next_index = (index % #LEVELS_LFO_SHAPES) + 1
-    params:set(ID_LEVELS_LFO_SHAPE, next_index, false)
-end
-
-local function toggle_lfo()
-    params:set(ID_LEVELS_LFO_ENABLED, 1 - levels_lfo:get("enabled"), false)
+local function cycle_lfo()
+    local p = ID_LEVELS_LFO
+    local new_val = util.wrap(params:get(p) + 1, 1, #LEVELS_LFO_SHAPES)
+    params:set(p, new_val)
 end
 
 local function adjust_position(d)
@@ -54,12 +49,8 @@ local page = Page:create({
     e1 = nil,
     e2 = e2,
     e3 = adjust_sigma,
-    k1_hold_on = nil,
-    k1_hold_off = nil,
-    k2_on = nil,
-    k2_off = toggle_lfo,
-    k3_on = nil,
-    k3_off = toggle_shape,
+    k2_off = cycle_lfo,
+    k3_off = nil,
 })
 
 function page:render()
@@ -74,19 +65,16 @@ function page:render()
     local pos = params:get(ID_LEVELS_POS)
     level_graphic.levels = gaussian.calculate_gaussian_levels(pos, sigma)
     level_graphic.scan_val = pos
+    local lfo_state = params:get(ID_LEVELS_LFO)
 
     screen.clear()
     level_graphic:render()
 
+    page.footer.button_text.k2.value = string.upper(LEVELS_LFO_SHAPES[lfo_state])
+
     window:render()
     if levels_lfo:get("enabled") == 1 then
         -- When LFO is disabled, E2 controls LFO rate
-        page.footer.button_text.k2.value = "ON"
-
-        -- Show LFO shape button
-        page.footer.button_text.k3.name = "SHAPE"
-        page.footer.button_text.k3.value = string.upper(params:string(ID_LEVELS_LFO_SHAPE))
-
         -- Switch POS to RATE
         page.footer.button_text.e2.name = "RATE"
 
@@ -99,9 +87,6 @@ function page:render()
         page.footer.button_text.e2.name = "POS"
         -- multiply by 6 because of 6 voices; indicates which voice is fully audible    
         page.footer.button_text.e2.value = misc_util.trim(tostring(pos*6), 4)
-        -- Hide shape button
-        page.footer.button_text.k3.name = ""
-        page.footer.button_text.k3.value = ""
     end
 
     page.footer.button_text.e3.value = misc_util.trim(tostring(params:get(ID_LEVELS_AMP)), 5)
@@ -117,17 +102,8 @@ local function recalculate_levels()
     -- print(levels[1])
 end
 
-local function action_enable_lfo(v)
-    if v == 1 then
-        levels_lfo:start()
-    else
-        levels_lfo:stop()
-    end
-    levels_lfo:set('phase', params:get(ID_LEVELS_POS))
-end
-
-local function action_lfo_shape(v)
-    levels_lfo:set('shape', params:string(ID_LEVELS_LFO_SHAPE))
+local function action_lfo(v)
+    lfo_util.action_lfo(v, levels_lfo, LEVELS_LFO_SHAPES, params:get(ID_LEVELS_POS))
 end
 
 local function action_lfo_rate(v)
@@ -135,8 +111,7 @@ local function action_lfo_rate(v)
 end
 
 local function add_params()
-    params:set_action(ID_LEVELS_LFO_ENABLED, action_enable_lfo)
-    params:set_action(ID_LEVELS_LFO_SHAPE, action_lfo_shape)
+    params:set_action(ID_LEVELS_LFO, action_lfo)
     params:set_action(ID_LEVELS_LFO_RATE, action_lfo_rate)
     params:set_action(ID_LEVELS_POS, recalculate_levels)
     params:set_action(ID_LEVELS_AMP, recalculate_levels)
@@ -195,8 +170,8 @@ function page:initialize()
                 value = "",
             },
             k3 = {
-                name = "SHAPE",
-                value = "Sine",
+                name = "",
+                value = "",
             },
             e2 = {
                 name = "POS",

@@ -210,16 +210,7 @@ local function cycle_lfo()
 end
 
 local function action_lfo(v)
-    local selection = SLICES_LFO_SHAPES[v]
-    print(slice_lfo:get("enabled"))
-    if selection == "off" then
-        slice_lfo:stop()
-    else
-        if slice_lfo:get("enabled") == 0 then slice_lfo:start() end
-        slice_lfo:set('shape', selection)
-    end
-    -- todo: this always needed?
-    slice_lfo:set('phase', params:get(ID_SLICES_START))
+    lfo_util.action_lfo(v, slice_lfo, SLICES_LFO_SHAPES, params:get(ID_SLICES_START))
 end
 
 local function e2(d)

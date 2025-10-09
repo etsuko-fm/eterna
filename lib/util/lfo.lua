@@ -95,6 +95,18 @@ local function toggle_shape(lfo, available_shapes)
     lfo:set('shape', available_shapes[next_index])
 end
 
+local function action_lfo(v, lfo, shapes, phase)
+    local selection = shapes[v]
+    if selection == "off" then
+        lfo:stop()
+    else
+        if lfo:get("enabled") == 0 then lfo:start() end
+        lfo:set('shape', selection)
+    end
+    if phase ~= nil then lfo:set('phase', phase) end
+end
+
+
 
 return {
     lfo_period_values = lfo_period_values,
@@ -103,4 +115,5 @@ return {
     lfo_period_label_values = lfo_period_label_values,
     toggle_shape = toggle_shape,
     adjust_lfo_rate_quant = adjust_lfo_rate_quant,
+    action_lfo=action_lfo,
 }
