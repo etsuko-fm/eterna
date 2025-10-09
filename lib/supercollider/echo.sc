@@ -3,18 +3,18 @@ Echo {
 		StartUp.add {
 			var s = Server.default;
 			s.waitForBoot {
-                // refactor such that can use echo.set(\newDelayTime, time, \t_trig, 1);
-
 				SynthDef("BitsEcho", {
 					arg in, out, wetAmount=0.5, feedback=0.8, delayTime, style=0, blur=3, t_trig;
 					var input = In.ar(in, 2);
-					var wetSig;
                     var output;
                     var delayTimesL = [11, 19, 37, 39, 77, 101];
-                    var delayTimesR = [17, 25, 31, 9, 12, 111];	
+                    var delayTimesR = [17, 25, 31, 13, 12, 111];	
+                    // var delayTimesL = [11, 19, 39, 77, 22];
+                    // var delayTimesR = [17, 25, 31, 9, 12];	
+
                     var allPassDelayTimesL = delayTimesL.collect { |p| p * 0.001 };
                     var allPassDelayTimesR = delayTimesR.collect { |p| p * 0.001 };
-                    var delA, delB, fbSignal;
+                    var delA, delB, delX, fbSignal;
                     var fadeTime=0.05;
                     
                     // Mechanism to allow one t_trig to alternately trigger t_1 and t_2
@@ -30,6 +30,8 @@ Echo {
 
                     // Amount of crossfeeding between left and right channel
                     var cross = 0.3;
+                    var reverbMix = 0.3;
+                    var dryFeedback;
 
                     // Delay line local to this SynthDef
                     fbSignal = input + (LocalIn.ar(2) * feedback);
@@ -39,47 +41,52 @@ Echo {
                     delB = DelayL.ar(fbSignal, 1.0, delayTimeB - ControlDur.ir);
 
                     // Crossfade between delay lines to prevent clicks when switching time param
-                    wetSig = SelectX.ar(fade, [delA, delB]);
+                    delX = SelectX.ar(fade, [delA, delB]);
+
+                    // Filter feedback before going into reverb stage
+                    delX = Select.ar(style, [
+                        HPF.ar(delX, 25), // neutral 
+                        HPF.ar(LPF.ar(delX, 2400), 50), // dark
+                        HPF.ar(delX, 800) // bright
+                    ]);
+
+                    // Reference to the delay line before reverb
+                    dryFeedback = delX;
 
                     // Modulate each APF's delay time with ±5ms, using an LFO whose frequency is set to the APF's time itself;
                     // This allows all LFOs to run at a different frequency
-                    allPassDelayTimesL.do { |t|
-                        wetSig[0] = LPF.ar(
+                    allPassDelayTimesL.do { |t,i|
+                        delX[0] = HPF.ar(LPF.ar(
                             AllpassL.ar(
-                                wetSig[0], 
+                                delX[0], 
                                 0.3, 
-                                (t - 0.005 + (SinOsc.kr(t) * (t * 0.01))).abs, 
+                                (t - 0.01 + (SinOsc.ar(0.1) * (t * 0.02))).abs, 
                                 1
                             ), 
                             6000
-                        );
-                    };
-                    allPassDelayTimesR.do { |t|
-                        wetSig[1] = LPF.ar(
+                        ), 150);
+                        delX[1] = HPF.ar(LPF.ar(
                             AllpassL.ar(
-                                wetSig[0], 
+                                delX[1], 
                                 0.3, 
-                                (t - 0.005 + (SinOsc.kr(t) * (t * 0.01))).abs, 
+                                (allPassDelayTimesR[i] - 0.01 + (SinOsc.ar(0.1) * (allPassDelayTimesR[i] * 0.02))).abs, 
                                 1
                             ), 
                             6000
-                        );
+                        ), 150);
+                        // crossmix left/right channels
+                        delX = [
+                            (1 - cross) * delX[0] + (cross * delX[1]),
+                            (1 - cross) * delX[1] + (cross * delX[0])
+                        ];
                     };
 
-                    // crossmix left/right channels
-                    wetSig = [
-                        (1 - cross) * wetSig[0] + (cross * wetSig[1]),
-                        (1 - cross) * wetSig[1] + (cross * wetSig[0])
-                    ];
+                    // Mix in original delay line
+                    delX = SelectX.ar(reverbMix, [dryFeedback, delX]);
 
-                    wetSig = Select.ar(style, [
-                        HPF.ar(wetSig, 25), // neutral 
-                        HPF.ar(LPF.ar(wetSig, 2400), 50), // dark
-                        HPF.ar(wetSig, 800) // bright
-                    ]);
-                    LocalOut.ar(wetSig);
-                    wetSig = LPF.ar(wetSig, 10000);
-                    output = input + (wetSig * wetAmount); // wet/dry mix
+                    LocalOut.ar(delX);
+                    delX = LPF.ar(delX, 10000);
+                    output = input + (delX * wetAmount); // wet/dry mix
 
 					Out.ar(out, output);
 				}).add;
