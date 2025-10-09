@@ -19,6 +19,7 @@ Voice {
 					var t_2 = Select.kr(playheadId, [0, t_trig]);
 					var percEnv1, percEnv2, ramp, position, ramp1, ramp2, playheadEnv1, playheadEnv2;
 					var amp;
+					var t_env1, t_env2;
 
 					// Convert start from seconds to frames
 					start = loopStart  * BufSampleRate.ir(bufnum);
@@ -64,9 +65,16 @@ Voice {
 						loop: 0,
 						interpolation: 4
 					);
+					
+					// If t2 is triggered, force release t1 (in 0.01s); 
+					// If t1 is triggered, force release t2
+					// t_env1 = Select.kr((t_2 == 1).asInteger, [t_1, -1]);
+					// t_env2 = Select.kr((t_1 == 1).asInteger, [t_2, -1]);
+					percEnv1 = EnvGen.ar(Env.new([0, 0, envLevel, 0], [0, attack, decay], curve), gate: t_1);
+					percEnv2 = EnvGen.ar(Env.new([0, 0, envLevel, 0], [0, attack, decay], curve), gate: t_2);
 
-					percEnv1 = EnvGen.ar(Env.perc(attack, decay, envLevel, curve), gate: t_1);
-					percEnv2 = EnvGen.ar(Env.perc(attack, decay, envLevel, curve), gate: t_2);
+					// percEnv1 = Select.kr((t_2 == 1).asInteger, [EnvGen.ar(Env.perc(attack, decay, envLevel, curve), gate: t_1), 0]);
+					// percEnv2 = Select.kr((t_1 == 1).asInteger, [EnvGen.ar(Env.perc(attack, decay, envLevel, curve), gate: t_2), 0]);
 
 					// If envelopes are disabled, the voice plays continuously with envLevel as optional amplitude modulator
 					percEnv1 = Select.kr(enableEnv, [envLevel, percEnv1]);
@@ -82,7 +90,7 @@ Voice {
 					playback = Pan2.ar(playback, pan);
 					
 					// Tweak spectrum due to all the digital processing
-					playback = HPF.ar(playback, 40);
+					playback = HPF.ar(playback, 30);
 					playback = LPF.ar(playback, 10000); // Harshness
 					playback = BPeakEQ.ar(playback, 3500, 1.0, -2.0); // Presence
 					playback = BPeakEQ.ar(playback, 250, 1.0, 1.5); // Warmth

@@ -152,7 +152,7 @@ Engine_Symbiosis : CroneEngine {
             \numChannels, 1,
             \decay, 4.0,
             \t_trig, 0,
-            \enable_env, 0,
+            \enableEnv, 1,
             \envLevel, 1.0,
             \ampBus, ampBuses[i].index,
             \envBus, envBuses[i].index,
