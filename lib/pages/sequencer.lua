@@ -61,24 +61,12 @@ local function e3(d)
     params:set(ID_SEQ_PERLIN_DENSITY, new, false)
 end
 
-local function toggle_evolve()
-    local p = ID_SEQ_EVOLVE
-    local new = util.wrap(params:get(p) + 1, 1, #SEQ_EVOLVE_TABLE)
-    params:set(p, new)
-end
-
-local function toggle_playback_style()
-    local p = ID_SEQ_STYLE
-    local new = util.wrap(params:get(p) + 1, 1, #SEQUENCE_STYLE_TABLE)
-    params:set(p, new)
-end
-
 local page = Page:create({
     name = page_name,
     e2 = e2,
     e3 = e3,
-    k2_off = toggle_evolve,
-    k3_off = toggle_playback_style,
+    k2_off = nil,
+    k3_off = nil,
 })
 
 function set_cue_step_divider(v)
@@ -300,30 +288,10 @@ function page:render()
 
     grid_graphic:render()
 
-    page.footer.button_text.k2.value = SEQ_EVOLVE_TABLE[params:get(ID_SEQ_EVOLVE)]
-    page.footer.button_text.k3.value = SEQUENCE_STYLE_TABLE[params:get(ID_SEQ_STYLE)]
     page.footer.button_text.e2.value = params:get(ID_SEQ_PERLIN_X)
     page.footer.button_text.e3.value = params:get(ID_SEQ_PERLIN_DENSITY)
     page.footer:render()
     grid_device:refresh()
-end
-
-local function action_evolve(v)
-    -- min one to disregard
-    if v > 1 then
-        perlin_lfo:set('period', SEQ_EVOLVE_RATES[v - 1])
-        if perlin_lfo:get("enabled") == 0 then
-            perlin_lfo:start()
-        end
-    elseif perlin_lfo:get("enabled") == 1 then
-        perlin_lfo:stop()
-    end
-end
-
-local function action_playback_style(v)
-    for voice = 1, 6 do
-        softcut.loop(voice, SEQUENCE_STYLE_TABLE_TO_SOFTCUT[v])
-    end
 end
 
 local function update_grid_step(x, y, v)
@@ -336,9 +304,9 @@ local function update_grid_step(x, y, v)
 end
 
 grid.key = function(x, y, z)
-    if SEQUENCE_STYLE_TABLE[params:get(ID_SEQ_STYLE)] == SEQ_GRID then
-        -- would sequence from grid
-    end
+    -- if SEQUENCE_STYLE_TABLE[params:get(ID_SEQ_STYLE)] == SEQ_GRID then
+    --     -- would sequence from grid
+    -- end
 end
 
 
@@ -351,8 +319,6 @@ local function add_params()
     params:set_action(ID_SEQ_PERLIN_Y, toggle_redraw)
     params:set_action(ID_SEQ_PERLIN_Z, toggle_redraw)
     params:set_action(ID_SEQ_PERLIN_DENSITY, toggle_redraw)
-    params:set_action(ID_SEQ_EVOLVE, action_evolve)
-    params:set_action(ID_SEQ_STYLE, action_playback_style)
     for y = 1, SEQ_ROWS do
         for x = 1, SEQ_COLUMNS do
             params:set_action(ID_SEQ_STEP[y][x], function(v) update_grid_step(x, y, v) end)
@@ -394,11 +360,11 @@ function page:initialize()
     page.footer = Footer:new({
         button_text = {
             k2 = {
-                name = "EVOLV",
+                name = "",
                 value = "",
             },
             k3 = {
-                name = "STYLE",
+                name = "",
                 value = "",
             },
             e2 = {
