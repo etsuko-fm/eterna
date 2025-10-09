@@ -73,7 +73,7 @@ function page:render()
     page.footer.button_text.k2.value = string.upper(PANNING_LFO_SHAPES[lfo_state])
     if panning_lfo:get("enabled") == 1 then
         -- When LFO is disabled, E2 controls LFO rate
-        
+
         page.footer.button_text.e2.name = "RATE"
         -- convert period to label representation
         local period = panning_lfo:get('period')

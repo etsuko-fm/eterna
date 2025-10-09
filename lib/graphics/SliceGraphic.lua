@@ -35,6 +35,7 @@ end
 
 function SliceGraphic:render()
     if self.hide then return end
+    -- local level = 5 --level_bright - 5
 
     for n=0, self.num_slices - 1 do
         local index = n + 1
@@ -48,6 +49,12 @@ function SliceGraphic:render()
         local rect_w = w * self.slice_len - 1
         screen.rect(startx, y,  rect_w, 1)
         screen.fill()
+        if self.num_slices <= 6 and self.num_slices > 1 and index == self.active_slices[1] then
+            screen.level(5)
+            screen.rect(startx + rect_w/2, y,  1, 1)
+        end
+        screen.fill()
+
     end
 end
 
