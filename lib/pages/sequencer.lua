@@ -212,7 +212,7 @@ local function run_sequencer()
         for y = 1, SEQ_ROWS do
             evaluate_step(x, y, is_step_change)
         end
-        clock.sync(1 / 4)
+        clock.sync(1 / 16)
     end
 end
 
