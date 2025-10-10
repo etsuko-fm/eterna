@@ -33,7 +33,7 @@ Echo {
                     var reverbMix = 0.3;
                     var dryFeedback;
 
-                    // Delay line local to this SynthDef
+                    // Delay line with input local to this SynthDef
                     fbSignal = input + (LocalIn.ar(2) * feedback);
 
                     // Create delay lines, compensating time for processing of sample
@@ -42,6 +42,9 @@ Echo {
 
                     // Crossfade between delay lines to prevent clicks when switching time param
                     delX = SelectX.ar(fade, [delA, delB]);
+
+                    // Swap left and right channel (ping-pong)
+                    delX = delX.swap(0, 1);
 
                     // Filter feedback before going into reverb stage
                     delX = Select.ar(style, [
@@ -53,8 +56,9 @@ Echo {
                     // Reference to the delay line before reverb
                     dryFeedback = delX;
 
-                    // Modulate each APF's delay time with ±5ms, using an LFO whose frequency is set to the APF's time itself;
-                    // This allows all LFOs to run at a different frequency
+                    // Reverb - series of allpass filters with different delay times for left and right
+                    // After each pass, the left and right channels are mixed
+                    // Each APF's delay time is modulated with ±10ms, using a 0.1Hz sine LFO
                     allPassDelayTimesL.do { |t,i|
                         delX[0] = HPF.ar(LPF.ar(
                             AllpassL.ar(
@@ -74,14 +78,15 @@ Echo {
                             ), 
                             6000
                         ), 150);
-                        // crossmix left/right channels
+                        
+                        // Crossmix left/right channels
                         delX = [
                             (1 - cross) * delX[0] + (cross * delX[1]),
                             (1 - cross) * delX[1] + (cross * delX[0])
                         ];
                     };
 
-                    // Mix in original delay line
+                    // Mix in original delay line (from before reverb)
                     delX = SelectX.ar(reverbMix, [dryFeedback, delX]);
 
                     LocalOut.ar(delX);
