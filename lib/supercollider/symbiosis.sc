@@ -50,6 +50,17 @@ Engine_Symbiosis : CroneEngine {
     var ampHistoryL = Int8Array.fill(historyLength, 0);
     var ampHistoryR = Int8Array.fill(historyLength, 0);
 
+    // Selected filter: LPF, HPF, BPF, SWIRL
+    // var currentFilter; 
+
+    // Selected echo: CLEAR, DUST, MIST
+    // var echoMap = (
+    //   MIST: "MistEcho",
+    //   DUST: "DustEcho",
+    //   CLEAR: "ClearEcho"
+    // );
+    // var selectedEcho;
+
     // For communicating anything to Lua beyond than polling system
     oscServer = NetAddr("localhost", 10111);
     exampleArray = Int8Array.fill(8, { 12 });
@@ -201,6 +212,8 @@ Engine_Symbiosis : CroneEngine {
 
     this.addCommand("trigger", "i", {
       arg msg;
+      // alternative: check if specific voice is empty
+      // if voices[msg[1]].notNil
       if (voicesEmpty.not) {
         voices[msg[1]].set(\t_trig, 1);
       };
@@ -326,18 +339,24 @@ Engine_Symbiosis : CroneEngine {
       });
     this.addCommand("echo_wet", "f",      { arg msg; echo.set(\wetAmount, msg[1]); });
     this.addCommand("echo_style", "s",    { arg msg; 
-      switch(msg[1].asString)
-      { "NEUTRAL"} {
-        echo.set(\style, 0);
-      }
-      { "DARK" } {
-        echo.set(\style, 1);
-      }
-      { "BRIGHT" } {
-        echo.set(\style, 2);
-      };
-     });
-
+      // selectedEcho = msg[1].asString;
+      // switch(msg[1].asString)
+      // { "MIST"} {
+      //   echo.free;
+      //   echo = Synth.after(filter, "MistEcho", args: [\in, fxBus, \out, bassMonoBus]);
+      //   "Switched to mist echo".postln;
+      // }
+      // { "DUST" } {
+      //   echo.free;
+      //   echo = Synth.after(filter, "DustEcho", args: [\in, fxBus, \out, bassMonoBus]);
+      //   "Switched to dust echo".postln;
+      // }
+      // { "CLEAR" } {
+      //   echo.free;
+      //   echo = Synth.after(filter, "ClearEcho", args: [\in, fxBus, \out, bassMonoBus]);
+      //   "Switched to clear echo".postln;
+      // };
+    });
 
     // Commands for bass mono
     this.addCommand("bass_mono_freq", "f", { arg msg; bassMono.set(\freq, msg[1]); });

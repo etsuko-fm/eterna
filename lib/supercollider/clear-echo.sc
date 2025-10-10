@@ -1,10 +1,10 @@
-CleanEcho {
+ClearEcho {
 	*initClass {
 		StartUp.add {
 			var s = Server.default;
 			s.waitForBoot {
-				SynthDef("CleanEcho", {
-					arg in, out, wetAmount=0.5, feedback=0.8, delayTime, style=0, t_trig;
+				SynthDef("ClearEcho", {
+					arg in, out, wetAmount=0.5, feedback=0.8, delayTime=0.1, t_trig;
 					var input = In.ar(in, 2);
                     var output;
                     var delA, delB, delX, fbSignal;
@@ -35,11 +35,8 @@ CleanEcho {
                     delX = delX.swap(0, 1);
 
                     // Filter feedback before going into reverb stage
-                    delX = Select.ar(style, [
-                        HPF.ar(delX, 25), // neutral 
-                        HPF.ar(LPF.ar(delX, 2400), 50), // dark
-                        HPF.ar(delX, 800) // bright
-                    ]);
+                    delX = HPF.ar(delX, 500); // bright
+
 
                     LocalOut.ar(delX);
                     delX = LPF.ar(delX, 10000);

@@ -1,10 +1,10 @@
-DiffuseEcho {
+MistEcho {
 	*initClass {
 		StartUp.add {
 			var s = Server.default;
 			s.waitForBoot {
-				SynthDef("DiffuseEcho", {
-					arg in, out, wetAmount=0.5, feedback=0.8, delayTime, style=0, t_trig;
+				SynthDef("MistEcho", {
+					arg in, out, wetAmount=0.5, feedback=0.8, delayTime=0.1, t_trig;
 					var input = In.ar(in, 2);
                     var output;
                     var delayTimesL = [11, 19, 37, 39, 77, 101];
@@ -45,11 +45,7 @@ DiffuseEcho {
                     delX = delX.swap(0, 1);
 
                     // Filter feedback before going into reverb stage
-                    delX = Select.ar(style, [
-                        HPF.ar(delX, 25), // neutral 
-                        HPF.ar(LPF.ar(delX, 2400), 50), // dark
-                        HPF.ar(delX, 800) // bright
-                    ]);
+                    delX = HPF.ar(LPF.ar(delX, 4500), 150);
 
                     // Reference to the delay line before reverb
                     dryFeedback = delX;
