@@ -54,12 +54,14 @@ Engine_Symbiosis : CroneEngine {
     // var currentFilter; 
 
     // Selected echo: CLEAR, DUST, MIST
-    // var echoMap = (
-    //   MIST: "MistEcho",
-    //   DUST: "DustEcho",
-    //   CLEAR: "ClearEcho"
-    // );
-    // var selectedEcho;
+    var echoMap = (
+      MIST: "MistEcho",
+      DUST: "DustEcho",
+      CLEAR: "ClearEcho"
+    );
+
+    var echoParams = Dictionary.newFrom([\wet, 0.5, \feedback, 0.7, \time, 0.1]);
+    var currentEcho;
 
     // For communicating anything to Lua beyond than polling system
     oscServer = NetAddr("localhost", 10111);
@@ -89,7 +91,7 @@ Engine_Symbiosis : CroneEngine {
     
     // Setup routing chain
     filter = Synth.new("BitsFilters", target:context.xg, args: [\in, filterBus, \out, fxBus]);    
-    echo = Synth.after(filter, "CleanEcho", args: [\in, fxBus, \out, bassMonoBus]);
+    echo = Synth.after(filter, "ClearEcho", args: [\in, fxBus, \out, bassMonoBus]);
     bassMono = Synth.after(echo, "BassMono", args: [\in, bassMonoBus, \out, compBus]);
     compressor = Synth.after(bassMono, "GlueCompressor", args: [
       \in, compBus, 
@@ -336,26 +338,20 @@ Engine_Symbiosis : CroneEngine {
       arg msg; 
       echo.set(\delayTime, msg[1]); 
       echo.set(\t_trig, 1); 
-      });
+      echoParams.put(\time, msg[1].asFloat);
+    });
     this.addCommand("echo_wet", "f",      { arg msg; echo.set(\wetAmount, msg[1]); });
     this.addCommand("echo_style", "s",    { arg msg; 
-      // selectedEcho = msg[1].asString;
-      // switch(msg[1].asString)
-      // { "MIST"} {
-      //   echo.free;
-      //   echo = Synth.after(filter, "MistEcho", args: [\in, fxBus, \out, bassMonoBus]);
-      //   "Switched to mist echo".postln;
-      // }
-      // { "DUST" } {
-      //   echo.free;
-      //   echo = Synth.after(filter, "DustEcho", args: [\in, fxBus, \out, bassMonoBus]);
-      //   "Switched to dust echo".postln;
-      // }
-      // { "CLEAR" } {
-      //   echo.free;
-      //   echo = Synth.after(filter, "ClearEcho", args: [\in, fxBus, \out, bassMonoBus]);
-      //   "Switched to clear echo".postln;
-      // };
+      if(currentEcho != msg[1].asSymbol) {
+        var echoName = msg[1].asSymbol;
+        var synthDefName = echoMap[echoName];
+        if (synthDefName.notNil) {
+          echo.free;
+          currentEcho = echoName;
+          echo = Synth.after(filter, synthDefName, args: [\in, fxBus, \out, bassMonoBus, \delayTime, echoParams.at(\time), \t_trig, 1]);
+          "Switched to " ++ echoName ++ " echo".postln;
+        };
+      }
     });
 
     // Commands for bass mono

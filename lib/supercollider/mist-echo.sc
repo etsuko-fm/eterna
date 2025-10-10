@@ -9,9 +9,12 @@ MistEcho {
                     var output;
                     var delayTimesL = [11, 19, 37, 39, 77, 101];
                     var delayTimesR = [17, 25, 31, 13, 12, 111];	
+                    var modTimesL = [0.053, 0.097, 0.163, 0.233, 0.307, 0.383];
+                    var modTimesR = [0.067, 0.121, 0.187, 0.257, 0.331, 0.397];
 
                     var allPassDelayTimesL = delayTimesL.collect { |p| p * 0.001 };
                     var allPassDelayTimesR = delayTimesR.collect { |p| p * 0.001 };
+
                     var delA, delB, delX, fbSignal;
                     var fadeTime=0.05;
                     
@@ -25,6 +28,7 @@ MistEcho {
                     // Alternately update delay time A/B, to enable crossfading to prevent click on changing delay time
                     var delayTimeA = Latch.kr(delayTime, t_1);
                     var delayTimeB = Latch.kr(delayTime, t_2);
+                    
 
                     // Amount of crossfeeding between left and right channel
                     var cross = 0.3;
@@ -58,19 +62,19 @@ MistEcho {
                             AllpassL.ar(
                                 delX[0], 
                                 0.3, 
-                                (t - 0.01 + (SinOsc.ar(0.1) * (t * 0.02))).abs, 
+                                (t - 0.01 + (SinOsc.ar(modTimesL[i]) * (t * 0.02))).abs, 
                                 1
                             ), 
-                            6000
+                            5000
                         ), 150);
                         delX[1] = HPF.ar(LPF.ar(
                             AllpassL.ar(
                                 delX[1], 
                                 0.3, 
-                                (allPassDelayTimesR[i] - 0.01 + (SinOsc.ar(0.1) * (allPassDelayTimesR[i] * 0.02))).abs, 
+                                (allPassDelayTimesR[i] - 0.01 + (SinOsc.ar(modTimesR[i]) * (allPassDelayTimesR[i] * 0.02))).abs, 
                                 1
                             ), 
-                            6000
+                            5000
                         ), 150);
                         
                         // Crossmix left/right channels
