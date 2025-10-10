@@ -78,7 +78,7 @@ Engine_Symbiosis : CroneEngine {
     
     // Setup routing chain
     filter = Synth.new("BitsFilters", target:context.xg, args: [\in, filterBus, \out, fxBus]);    
-    echo = Synth.after(filter, "BitsEcho", args: [\in, fxBus, \out, bassMonoBus]);
+    echo = Synth.after(filter, "CleanEcho", args: [\in, fxBus, \out, bassMonoBus]);
     bassMono = Synth.after(echo, "BassMono", args: [\in, bassMonoBus, \out, compBus]);
     compressor = Synth.after(bassMono, "GlueCompressor", args: [
       \in, compBus, 

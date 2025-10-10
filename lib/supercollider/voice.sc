@@ -5,8 +5,6 @@ Voice {
 			var s = Server.default;
 			s.waitForBoot {
 				SynthDef("SampleVoice", {
-					// loopStart and loopEnd in seconds
-					// 't_' has a special meaning in SC, resets value to zero after receiving a 1
 					arg out, 
 					rate = 0, // playback rate
 					bufnum=0, // buffer assigned to voice
@@ -17,7 +15,7 @@ Voice {
 					enableEnv=1, enableLpg=0, 
 					pan=0.0, // panning (-1 to 1)
 					freq=20000, res=0.0,  // filter frequency and resonance, if LPG is enabled
-					 // this SynthDef toggles internally between two voices to prevent clicking; this is xfade time between them
+					 // we toggle internally between two voices to prevent clicking; this is xfade time between them
 					xfade=0.05,
 					ampBus, envBus, // index of control buses that report amp and env levels
 					level=1.0; // final output level 
@@ -50,14 +48,12 @@ Voice {
 					var end1 = Latch.kr(end, t_1);
 					var end2 = Latch.kr(end, t_2);
 
-					var amp; // for reporting amplitude
-
  					// Duration of selected section of buffer, in seconds
 					var duration1 = (end1 - start1).abs / BufSampleRate.ir(bufnum) / rate.abs;
 					var duration2 = (end2 - start2).abs / BufSampleRate.ir(bufnum) / rate.abs;
 
 					// This is a fully open envelope for the duration of the section, 
-					// only useful when the AD envelope is disabled
+					// only useful when the AR envelope is disabled
 					var openEnv1 = Env.new([0, 1, 1, 0], [0, duration1 - 0.01, 0.01], \lin);
 					var openEnv2 = Env.new([0, 1, 1, 0], [0, duration2 - 0.01, 0.01], \lin);
 
@@ -85,9 +81,17 @@ Voice {
 						loop: loop,
 						interpolation: 2
 					);
-					
+
+					// AR env according to env settings
+					// The extra 0 stage is so that a retrigger restarts the env at 0
 					var percEnv1 = EnvGen.ar(Env.new([0, 0, envLevel, 0], [0, attack, decay], curve), gate: t_1);
 					var percEnv2 = EnvGen.ar(Env.new([0, 0, envLevel, 0], [0, attack, decay], curve), gate: t_2);
+
+					// Assign active envelope to, so we can check if the playback is done to save processing
+					var percEnv = Select.kr(intVoiceId, [percEnv1, percEnv2]);
+					var isDone = SetResetFF.kr(Done.kr(percEnv), t_trig);
+
+					var amp; // for reporting amplitude
 
 					// If envelopes are disabled, the voice plays continuously with envLevel as optional amplitude modulator
 					percEnv1 = Select.kr(enableEnv, [envLevel, percEnv1]);
@@ -113,6 +117,7 @@ Voice {
 					Out.kr(envBus, Select.kr(intVoiceId, [percEnv1, percEnv2]));
 
 					// Second "VCA" is level
+					// Out.ar(out, playback * level * (1-isDone));
 					Out.ar(out, playback * level);
 				}).add;
 			}

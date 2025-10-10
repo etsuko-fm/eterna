@@ -1,16 +1,14 @@
-Echo {
+DiffuseEcho {
 	*initClass {
 		StartUp.add {
 			var s = Server.default;
 			s.waitForBoot {
-				SynthDef("BitsEcho", {
-					arg in, out, wetAmount=0.5, feedback=0.8, delayTime, style=0, blur=3, t_trig;
+				SynthDef("DiffuseEcho", {
+					arg in, out, wetAmount=0.5, feedback=0.8, delayTime, style=0, t_trig;
 					var input = In.ar(in, 2);
                     var output;
                     var delayTimesL = [11, 19, 37, 39, 77, 101];
                     var delayTimesR = [17, 25, 31, 13, 12, 111];	
-                    // var delayTimesL = [11, 19, 39, 77, 22];
-                    // var delayTimesR = [17, 25, 31, 9, 12];	
 
                     var allPassDelayTimesL = delayTimesL.collect { |p| p * 0.001 };
                     var allPassDelayTimesR = delayTimesR.collect { |p| p * 0.001 };
