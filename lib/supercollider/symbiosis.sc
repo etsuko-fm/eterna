@@ -60,7 +60,7 @@ Engine_Symbiosis : CroneEngine {
       CLEAR: "ClearEcho"
     );
 
-    var echoParams = Dictionary.newFrom([\wet, 0.5, \feedback, 0.7, \time, 0.1]);
+    var echoParams = Dictionary.newFrom([\wetAmount, 0.5, \feedback, 0.7, \delayTime, 0.1]);
     var currentEcho;
 
     // For communicating anything to Lua beyond than polling system
@@ -333,22 +333,29 @@ Engine_Symbiosis : CroneEngine {
 
 
     // Commands for echo
-    this.addCommand("echo_feedback", "f", { arg msg; echo.set(\feedback, msg[1]); });
+    this.addCommand("echo_feedback", "f", { 
+      arg msg; 
+      echo.set(\feedback, msg[1]);
+      echoParams.put(\feedback, msg[1]);
+    });
     this.addCommand("echo_time", "f",     { 
       arg msg; 
       echo.set(\delayTime, msg[1]); 
       echo.set(\t_trig, 1); 
-      echoParams.put(\time, msg[1].asFloat);
+      echoParams.put(\delayTime, msg[1]);
     });
-    this.addCommand("echo_wet", "f",      { arg msg; echo.set(\wetAmount, msg[1]); });
+    this.addCommand("echo_wet", "f",      { |msg|
+     echo.set(\wetAmount, msg[1]); 
+     echoParams.put(\wetAmount, msg[1]);
+    });
     this.addCommand("echo_style", "s",    { arg msg; 
-      if(currentEcho != msg[1].asSymbol) {
-        var echoName = msg[1].asSymbol;
+      if(currentEcho != msg[1]) {
+        var echoName = msg[1];
         var synthDefName = echoMap[echoName];
         if (synthDefName.notNil) {
           echo.free;
           currentEcho = echoName;
-          echo = Synth.after(filter, synthDefName, args: [\in, fxBus, \out, bassMonoBus, \delayTime, echoParams.at(\time), \t_trig, 1]);
+          echo = Synth.after(filter, synthDefName, args: [\in, fxBus, \out, bassMonoBus, \t_trig, 1] ++ echoParams.asPairs);
           "Switched to " ++ echoName ++ " echo".postln;
         };
       }

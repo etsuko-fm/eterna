@@ -15,14 +15,15 @@ Voice {
 					enableEnv=1, enableLpg=0, 
 					pan=0.0, // panning (-1 to 1)
 					freq=20000, res=0.0,  // filter frequency and resonance, if LPG is enabled
-					 // we toggle internally between two voices to prevent clicking; this is xfade time between them
-					xfade=0.05,
 					ampBus, envBus, // index of control buses that report amp and env levels
 					level=1.0; // final output level 
 					 
+					// we toggle internally between two voices to prevent clicking; this is xfade time between them
+					var xfadeTime = 0.05;
+
 					 // Playback start pos in samples
 					var start = loopStart  * BufSampleRate.ir(bufnum); 
-					
+
 					// Playback end pos in samples; if loopEnd is set, use it; otherwise use entire buffer
 					var end = Select.kr(
 						loopEnd > 0,
@@ -64,7 +65,7 @@ Voice {
 					// `crossfade` is used to fade between internal voice 1 and 2.
 					// The value should be between -1 and 1 (voice 1 -> voice 2); intVoiceId is 0 or 1; 
 					// So we can use Lag.ar() and some simple math to smoothly fade to the active voice
-					var crossfade = -1 + Lag.ar(K2A.ar(intVoiceId*2), xfade);
+					var crossfade = -1 + Lag.ar(K2A.ar(intVoiceId*2), xfadeTime);
 
 					// BufReads of each internal voice
 					var playback1 = BufRd.ar(
