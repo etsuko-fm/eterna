@@ -4,11 +4,11 @@ BitsFilters {
 			var s = Server.default;
 			s.waitForBoot {
 				SynthDef("BitsFilters", {
-					arg in, out, freq=63.0, res = 0.2, gain=1.0, dry=0.0, filterType=0;
+					arg in, out, freq=63.0, res = 0.2, gain=1.0, dry=0.0, filter_type=0;
 					var input = In.ar(in, 2);
 					var safeFreq = Lag.kr(freq.clip(5.0, 24000.0));
 					var safeRes = Lag.kr(res.clip(0.0, 0.999));
-					var filteredSignal = Select.ar(filterType, [
+					var filteredSignal = Select.ar(filter_type, [
 						// 0 - highpass
 						[
 							SVF.ar(input[0], safeFreq, safeRes, 0.0, 0.0, 1.0).tanh,

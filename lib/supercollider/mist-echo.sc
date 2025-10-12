@@ -4,16 +4,16 @@ MistEcho {
 			var s = Server.default;
 			s.waitForBoot {
 				SynthDef("MistEcho", {
-					arg in, out, wetAmount=0.5, feedback=0.8, delayTime=0.1, t_trig;
+					arg in, out, wet_amount=0.5, feedback=0.8, delay_time=0.1, t_trig;
 					var input = In.ar(in, 2);
                     var output;
-                    var delayTimesL = [11, 19, 37, 39, 77, 101];
-                    var delayTimesR = [17, 25, 31, 13, 12, 111];	
+                    var delay_timesL = [11, 19, 37, 39, 77, 101];
+                    var delay_timesR = [17, 25, 31, 13, 12, 111];	
                     var modTimesL = [0.053, 0.097, 0.163, 0.233, 0.307, 0.383];
                     var modTimesR = [0.067, 0.121, 0.187, 0.257, 0.331, 0.397];
 
-                    var allPassDelayTimesL = delayTimesL.collect { |p| p * 0.001 };
-                    var allPassDelayTimesR = delayTimesR.collect { |p| p * 0.001 };
+                    var allPassDelayTimesL = delay_timesL.collect { |p| p * 0.001 };
+                    var allPassDelayTimesR = delay_timesR.collect { |p| p * 0.001 };
 
                     var delA, delB, delX, fbSignal;
                     var fadeTime=0.05;
@@ -26,8 +26,8 @@ MistEcho {
                     var fade = EnvGen.kr(Env([1-which, which],[fadeTime]), t_trig);
 
                     // Alternately update delay time A/B, to enable crossfading to prevent click on changing delay time
-                    var delayTimeA = Latch.kr(delayTime, t_1);
-                    var delayTimeB = Latch.kr(delayTime, t_2);
+                    var delay_timeA = Latch.kr(delay_time, t_1);
+                    var delay_timeB = Latch.kr(delay_time, t_2);
                     
 
                     // Amount of crossfeeding between left and right channel
@@ -39,8 +39,8 @@ MistEcho {
                     fbSignal = input + (LocalIn.ar(2) * feedback);
 
                     // Create delay lines, compensating time for processing of sample
-                    delA = DelayL.ar(fbSignal, 1.0, delayTimeA - ControlDur.ir);
-                    delB = DelayL.ar(fbSignal, 1.0, delayTimeB - ControlDur.ir);
+                    delA = DelayL.ar(fbSignal, 1.0, delay_timeA - ControlDur.ir);
+                    delB = DelayL.ar(fbSignal, 1.0, delay_timeB - ControlDur.ir);
 
                     // Crossfade between delay lines to prevent clicks when switching time param
                     delX = SelectX.ar(fade, [delA, delB]);
@@ -89,7 +89,7 @@ MistEcho {
 
                     LocalOut.ar(delX);
                     delX = LPF.ar(delX, 10000);
-                    output = input + (delX * wetAmount); // wet/dry mix
+                    output = input + (delX * wet_amount); // wet/dry mix
 
 					Out.ar(out, output);
 				}).add;

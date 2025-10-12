@@ -9,12 +9,12 @@ Compressor {
 					postCompControlBusL, postCompControlBusR, 
 					postGainBusL, postGainBusR, 
 					masterOutControlBusL, masterOutControlBusR,
-					ratio=3, gain=1.0, meteringRate = 500, 
-					threshold=0.25, attack=0.01, release=0.3, outLevel=1.0;
+					ratio=3, gain=1.0, metering_rate = 500, 
+					threshold=0.25, attack=0.01, release=0.3, out_level=1.0;
                     var in_signal = In.ar(in, 2);
 
 					// Measure amplitude of unprocessed input
-					var preAmp = LagUD.ar(Peak.ar(in_signal, Impulse.ar(meteringRate)), 0, 0.1);
+					var preAmp = LagUD.ar(Peak.ar(in_signal, Impulse.ar(metering_rate)), 0, 0.1);
 
 					// Apply gain before compression
 					var in_scaled = in_signal * gain;
@@ -24,17 +24,17 @@ Compressor {
                     var limited = compressed.tanh;
 
 					// Amplitude after gain, before compression
-					var postGainAmp = LagUD.ar(Peak.ar(in_scaled, Impulse.ar(meteringRate)), 0, 0.1);
+					var postGainAmp = LagUD.ar(Peak.ar(in_scaled, Impulse.ar(metering_rate)), 0, 0.1);
 
 					// Amplitude after compression and limiting
-					var postCompAmp = LagUD.ar(Peak.ar(limited, Impulse.ar(meteringRate)), 0, 0.1);
+					var postCompAmp = LagUD.ar(Peak.ar(limited, Impulse.ar(metering_rate)), 0, 0.1);
 
-					// Master out (expects outLevel to be <= 1.0, because no limiter on this bit)
-					var masterOut = limited * outLevel;
-					var masterOutAmp = LagUD.ar(Peak.ar(masterOut, Impulse.ar(meteringRate)), 0, 0.1);
+					// Master out (expects out_level to be <= 1.0, because no limiter on this bit)
+					var masterOut = limited * out_level;
+					var masterOutAmp = LagUD.ar(Peak.ar(masterOut, Impulse.ar(metering_rate)), 0, 0.1);
 
 					// Send sample values, can be used to plot Lissajous curve
-					SendReply.ar(Impulse.ar(meteringRate), '/amp', [limited[0], limited[1]]);
+					SendReply.ar(Impulse.ar(metering_rate), '/amp', [limited[0], limited[1]]);
 
 					// Audio out
 					Out.ar(out, masterOut);

@@ -9,10 +9,10 @@ Voice {
 					rate = 0, // playback rate
 					bufnum=0, // buffer assigned to voice
 					loop=1,  // 0 for one-shot, 1 for looping playback
-					loopStart=0.0, loopEnd=0.0, // start/end pos in seconds
+					loop_start=0.0, loop_end=0.0, // start/end pos in seconds
 					t_trig=0, // if 1, triggers the voice; it will then be reset back to zero because it starts with t_
-					attack=0.01, decay=1.0, curve=(-4), envLevel=1.0, // envelope
-					enableEnv=1, enableLpg=0, 
+					attack=0.01, decay=1.0, curve=(-4), env_level=1.0, // envelope
+					enable_env=1, enableLpg=0, 
 					pan=0.0, // panning (-1 to 1)
 					freq=20000, res=0.0,  // filter frequency and resonance, if LPG is enabled
 					ampBus, envBus, // index of control buses that report amp and env levels
@@ -22,14 +22,14 @@ Voice {
 					var xfadeTime = 0.05;
 
 					 // Playback start pos in samples
-					var start = loopStart  * BufSampleRate.ir(bufnum); 
+					var start = loop_start  * BufSampleRate.ir(bufnum); 
 
-					// Playback end pos in samples; if loopEnd is set, use it; otherwise use entire buffer
+					// Playback end pos in samples; if loop_end is set, use it; otherwise use entire buffer
 					var end = Select.kr(
-						loopEnd > 0,
+						loop_end > 0,
 						[
 							BufFrames.kr(bufnum),
-							loopEnd * BufSampleRate.ir(bufnum)
+							loop_end * BufSampleRate.ir(bufnum)
 						]
 					);
 					var playback; // xfaded voice (between playback1 and playback2)
@@ -85,8 +85,8 @@ Voice {
 
 					// AR env according to env settings
 					// The extra 0 stage is so that a retrigger restarts the env at 0
-					var percEnv1 = EnvGen.ar(Env.new([0, 0, envLevel, 0], [0, attack, decay], curve), gate: t_1);
-					var percEnv2 = EnvGen.ar(Env.new([0, 0, envLevel, 0], [0, attack, decay], curve), gate: t_2);
+					var percEnv1 = EnvGen.ar(Env.new([0, 0, env_level, 0], [0, attack, decay], curve), gate: t_1);
+					var percEnv2 = EnvGen.ar(Env.new([0, 0, env_level, 0], [0, attack, decay], curve), gate: t_2);
 
 					// Assign active envelope to, so we can check if the playback is done to save processing
 					var percEnv = Select.kr(intVoiceId, [percEnv1, percEnv2]);
@@ -94,9 +94,9 @@ Voice {
 
 					var amp; // for reporting amplitude
 
-					// If envelopes are disabled, the voice plays continuously with envLevel as optional amplitude modulator
-					percEnv1 = Select.kr(enableEnv, [envLevel, percEnv1]);
-					percEnv2 = Select.kr(enableEnv, [envLevel, percEnv2]);
+					// If envelopes are disabled, the voice plays continuously with env_level as optional amplitude modulator
+					percEnv1 = Select.kr(enable_env, [env_level, percEnv1]);
+					percEnv2 = Select.kr(enable_env, [env_level, percEnv2]);
 
 					playback1 = playback1 * percEnv1 * EnvGen.ar(openEnv1, gate: t_1);
 					playback1 = Select.ar(enableLpg, [playback1, SVF.ar(playback1, percEnv1 * freq, res, 1.0, 0.0, 0.0)]);

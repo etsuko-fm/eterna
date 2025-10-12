@@ -47,8 +47,9 @@ Engine_Symbiosis : CroneEngine {
     var bufnumAmp = 2;
 
     var historyLength = 32;
-    var ampHistoryL = Int8Array.fill(historyLength, 0);
-    var ampHistoryR = Int8Array.fill(historyLength, 0);
+    var amp_history_left = Int8Array.fill(historyLength, 0);
+    var amp_history_right = Int8Array.fill(historyLength, 0);
+    var voiceParams;
 
     // Selected filter: LPF, HPF, BPF, SWIRL
     // var currentFilter; 
@@ -60,7 +61,7 @@ Engine_Symbiosis : CroneEngine {
       CLEAR: "ClearEcho"
     );
 
-    var echoParams = Dictionary.newFrom([\wetAmount, 0.5, \feedback, 0.7, \delayTime, 0.1]);
+    var echoParams = Dictionary.newFrom([\wet_amount, 0.5, \feedback, 0.7, \delay_time, 0.1]);
     var currentEcho;
 
     // For communicating anything to Lua beyond than polling system
@@ -84,6 +85,23 @@ Engine_Symbiosis : CroneEngine {
     postGainBuses = Array.fill(2, { Bus.control(s, 1) });
     postCompControlBuses = Array.fill(2, { Bus.control(s, 1) });
     masterOutControlBuses = Array.fill(2, { Bus.control(s, 1) });
+
+    voiceParams = Array.fill(6, { |i|
+      [
+        \out, filterBus,
+        \bufnum, bufnumL, 
+        \rate, 1.0,
+        \loop_start, 0.0,
+        \loop_end, 4.0,
+        \numChannels, 1,
+        \decay, 4.0,
+        \t_trig, 0,
+        \enable_env, 1,
+        \env_level, 1.0,
+        \ampBus, ampBuses[i].index,
+        \envBus, envBuses[i].index,
+      ]}
+    );  
 
     // Ensure all buses have been created
     context.server.sync;
@@ -112,11 +130,11 @@ Engine_Symbiosis : CroneEngine {
 
     // Receive amplitude batches for visualization
     OSCFunc({ |msg|
-        ampHistoryL.pop;
-        ampHistoryR.pop;
+        amp_history_left.pop;
+        amp_history_right.pop;
         // Make value positive and between 0 and 255
-        ampHistoryL = ampHistoryL.insert(0, (msg[3] * 127).round.asInteger);
-        ampHistoryR = ampHistoryR.insert(0, (msg[4] * 127).round.asInteger);
+        amp_history_left = amp_history_left.insert(0, (msg[3] * 127).round.asInteger);
+        amp_history_right = amp_history_right.insert(0, (msg[4] * 127).round.asInteger);
     }, '/amp');
 
     // Commands for sample voices
@@ -156,20 +174,7 @@ Engine_Symbiosis : CroneEngine {
         // TODO: voices.do(_.free) first, to prevent warning that buf data not found?
         if (voicesEmpty) {
           voices = Array.fill(6, { |i|
-            Synth.before(filter, "SampleVoice", [
-            \out, filterBus,
-            \bufnum, bufnumL, 
-            \rate, 1.0,
-            \loopStart, 0.0,
-            \loopEnd, 4.0,
-            \numChannels, 1,
-            \decay, 4.0,
-            \t_trig, 0,
-            \enableEnv, 1,
-            \envLevel, 1.0,
-            \ampBus, ampBuses[i].index,
-            \envBus, envBuses[i].index,
-            ])}
+            Synth.before(filter, "SampleVoice", voiceParams[i])}
           );  
         };
         voicesEmpty = false;
@@ -194,6 +199,12 @@ Engine_Symbiosis : CroneEngine {
               voice.set(\bufnum, n);
               ("Voice " ++ i ++ "set to buffer " ++ n).postln;
           };
+          voiceParams.do{ |params, i|
+              "Spreading stereo buffer over 6 voices".postln;
+              n = if(i < voiceParams.size.div(2)) { bufnumL } { bufnumR };
+              params.put(\bufnum, n);
+              ("Voice " ++ i ++ "set to buffer " ++ n).postln;
+          };
         } { 
           // if mono, also mark loading as finished
           isLoaded = true;
@@ -201,6 +212,7 @@ Engine_Symbiosis : CroneEngine {
           ("mono buffer normalized").postln;
           // Let all voices use the left buffer
           voices.do {|voice| voice.set(\bufnum, bufnumL)};
+          voiceParams.do {|params| params.put(\bufnum, bufnumL)};
         };
       }.next(); // next() executes routine
     });
@@ -224,7 +236,7 @@ Engine_Symbiosis : CroneEngine {
     this.addCommand("position", "if", {
       arg msg;
       if (voicesEmpty.not) {
-        voices[msg[1]].set(\loopStart, msg[2]);
+        voices[msg[1]].set(\loop_start, msg[2]);
         voices[msg[1]].set(\t_trig, 1);
       };
     });
@@ -267,14 +279,14 @@ Engine_Symbiosis : CroneEngine {
     this.addCommand("loop_start", "if", {
       arg msg;
       if (voicesEmpty.not) {
-        voices[msg[1]].set(\loopStart, msg[2]);
+        voices[msg[1]].set(\loop_start, msg[2]);
       };
     });
 
     this.addCommand("loop_end", "if", {
       arg msg;
       if (voicesEmpty.not) {
-        voices[msg[1]].set(\loopEnd, msg[2]);
+        voices[msg[1]].set(\loop_end, msg[2]);
       };
     });
 
@@ -288,7 +300,7 @@ Engine_Symbiosis : CroneEngine {
     this.addCommand("env_level", "if", {
       arg msg;
       if (voicesEmpty.not) {
-        voices[msg[1]].set(\envLevel, msg[2]);
+        voices[msg[1]].set(\env_level, msg[2]);
       };
     });
 
@@ -302,7 +314,7 @@ Engine_Symbiosis : CroneEngine {
     this.addCommand("enable_env", "if", {
       arg msg;
       if (voicesEmpty.not) {
-        voices[msg[1]].set(\enableEnv, msg[2]);
+        voices[msg[1]].set(\enable_env, msg[2]);
       };
     });
 
@@ -310,19 +322,19 @@ Engine_Symbiosis : CroneEngine {
     this.addCommand("set_filter_type", "s", { arg msg;
       switch(msg[1].asString)
       { "HP"} {
-        filter.set(\filterType, 0);
+        filter.set(\filter_type, 0);
       }
       { "LP" } {
-        filter.set(\filterType, 1);
+        filter.set(\filter_type, 1);
       }
       { "BP" } {
-        filter.set(\filterType, 2);
+        filter.set(\filter_type, 2);
       }
       { "SWIRL" } {
-        filter.set(\filterType, 3);
+        filter.set(\filter_type, 3);
       }
       { "NONE" } {
-        filter.set(\filterType, 4);
+        filter.set(\filter_type, 4);
       };
     });
 
@@ -340,13 +352,13 @@ Engine_Symbiosis : CroneEngine {
     });
     this.addCommand("echo_time", "f",     { 
       arg msg; 
-      echo.set(\delayTime, msg[1]); 
+      echo.set(\delay_time, msg[1]); 
       echo.set(\t_trig, 1); 
-      echoParams.put(\delayTime, msg[1]);
+      echoParams.put(\delay_time, msg[1]);
     });
     this.addCommand("echo_wet", "f",      { |msg|
-     echo.set(\wetAmount, msg[1]); 
-     echoParams.put(\wetAmount, msg[1]);
+     echo.set(\wet_amount, msg[1]); 
+     echoParams.put(\wet_amount, msg[1]);
     });
     this.addCommand("echo_style", "s",    { arg msg; 
       if(currentEcho != msg[1]) {
@@ -370,7 +382,7 @@ Engine_Symbiosis : CroneEngine {
     this.addCommand("comp_gain", "f", { arg msg; compressor.set(\gain, msg[1]); });
     this.addCommand("comp_ratio", "f", { arg msg; compressor.set(\ratio, msg[1]); });
     this.addCommand("comp_threshold", "f", { arg msg; compressor.set(\threshold, msg[1]); });
-    this.addCommand("comp_out_level", "f", { arg msg; compressor.set(\outLevel, msg[1].dbamp); });
+    this.addCommand("comp_out_level", "f", { arg msg; compressor.set(\out_level, msg[1].dbamp); });
 
     // Commands for visualization
     this.addCommand("request_waveform", "i", { 
@@ -378,12 +390,12 @@ Engine_Symbiosis : CroneEngine {
       oscServer.sendBundle(0, ['/waveform', exampleArray]);
     });
 
-    this.addCommand("set_metering_rate", "i", {  arg msg; compressor.set(\meteringRate, msg[1])});
+    this.addCommand("set_metering_rate", "i", {  arg msg; compressor.set(\metering_rate, msg[1])});
 
     this.addCommand("request_amp_history", "", { 
       arg msg; 
-      oscServer.sendBundle(0, ['/ampHistoryL', ampHistoryL]);
-      oscServer.sendBundle(0, ['/ampHistoryR', ampHistoryR]);
+      oscServer.sendBundle(0, ['/amp_history_left', amp_history_left]);
+      oscServer.sendBundle(0, ['/amp_history_right', amp_history_right]);
     });
 
     this.addPoll(\file_loaded, { isLoaded }, periodic:false);

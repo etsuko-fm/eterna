@@ -145,14 +145,14 @@ function osc.event(path, args, from)
     --   print(i, v)
     -- end
   end
-  if path == "/ampHistoryL" then
+  if path == "/amp_history_left" then
     local blob = args[1]
     amp_historyL = blob_to_table(blob)
     -- print("left 1st value: " .. amp_historyL[1])
     -- print("left last value: " .. amp_historyL[#amp_historyL])
     -- print("left table length: " .. #amp_historyL)
   end
-  if path == "/ampHistoryR" then
+  if path == "/amp_history_right" then
     local blob = args[1]
     amp_historyR = blob_to_table(blob)
   end
