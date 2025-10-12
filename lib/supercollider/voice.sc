@@ -14,7 +14,7 @@ Voice {
 					attack=0.01, decay=1.0, curve=(-4), env_level=1.0, // envelope
 					enable_env=1, enableLpg=0, 
 					pan=0.0, // panning (-1 to 1)
-					freq=20000, res=0.0,  // filter frequency and resonance, if LPG is enabled
+					lpg_freq=20000, res=0.0,  // filter frequency and resonance, if LPG is enabled
 					ampBus, envBus, // index of control buses that report amp and env levels
 					level=1.0; // final output level 
 					 
@@ -102,10 +102,10 @@ Voice {
 					percEnv2 = Select.kr(enable_env, [env_level, percEnv2]);
 
 					playback1 = playback1 * percEnv1 * EnvGen.ar(openEnv1, gate: t_1);
-					playback1 = Select.ar(enableLpg, [playback1, SVF.ar(playback1, percEnv1 * freq, res, 1.0, 0.0, 0.0)]);
+					playback1 = Select.ar(enableLpg, [playback1, SVF.ar(playback1, percEnv1 * lpg_freq, res, 1.0, 0.0, 0.0)]);
 
 					playback2 = playback2 * percEnv2 * EnvGen.ar(openEnv2, gate: t_2);
-					playback2 = Select.ar(enableLpg, [playback2, SVF.ar(playback2, percEnv2 * freq, res, 1.0, 0.0, 0.0)]);
+					playback2 = Select.ar(enableLpg, [playback2, SVF.ar(playback2, percEnv2 * lpg_freq, res, 1.0, 0.0, 0.0)]);
 
 					playback = XFade2.ar(playback1, playback2, crossfade);
 					playback = Pan2.ar(playback, pan);

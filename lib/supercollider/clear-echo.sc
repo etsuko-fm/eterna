@@ -4,12 +4,15 @@ ClearEcho {
 			var s = Server.default;
 			s.waitForBoot {
 				SynthDef("ClearEcho", {
-					arg in, out, wet_amount=0.5, feedback=0.8, delay_time=0.1, t_trig;
+					arg in, out, wet=0.5, feedback=0.8, time=0.1;
 					var input = In.ar(in, 2);
                     var output;
                     var delA, delB, delX, fbSignal;
                     var fadeTime=0.05;
-                    
+
+                    // If time changed, trigger
+                    var t_trig = (HPZ1.kr(time) != 0).asInteger;
+
                     // Mechanism to allow one t_trig to alternately trigger t_1 and t_2
                     var which = ToggleFF.kr(t_trig);
                     var t_1 = Select.kr(which, [t_trig, 0]);
@@ -18,15 +21,15 @@ ClearEcho {
                     var fade = EnvGen.kr(Env([1-which, which],[fadeTime]), t_trig);
 
                     // Alternately update delay time A/B, to enable crossfading to prevent click on changing delay time
-                    var delay_timeA = Latch.kr(delay_time, t_1);
-                    var delay_timeB = Latch.kr(delay_time, t_2);
+                    var timeA = Latch.kr(time, t_1);
+                    var timeB = Latch.kr(time, t_2);
 
                     // Delay line with input local to this SynthDef
                     fbSignal = input + (LocalIn.ar(2) * feedback);
 
                     // Create delay lines, compensating time for processing of sample
-                    delA = DelayL.ar(fbSignal, 1.0, delay_timeA - ControlDur.ir);
-                    delB = DelayL.ar(fbSignal, 1.0, delay_timeB - ControlDur.ir);
+                    delA = DelayL.ar(fbSignal, 1.0, timeA - ControlDur.ir);
+                    delB = DelayL.ar(fbSignal, 1.0, timeB - ControlDur.ir);
 
                     // Crossfade between delay lines to prevent clicks when switching time param
                     delX = SelectX.ar(fade, [delA, delB]);
@@ -40,7 +43,7 @@ ClearEcho {
 
                     LocalOut.ar(delX);
                     delX = LPF.ar(delX, 10000);
-                    output = input + (delX * wet_amount); // wet/dry mix
+                    output = input + (delX * wet); // wet/dry mix
 
 					Out.ar(out, output);
 				}).add;

@@ -9,15 +9,10 @@ Engine_Symbiosis : CroneEngine {
 
   // Control buses
   var ampBuses, envBuses, preCompControlBuses, postCompControlBuses, postGainBuses, masterOutControlBuses;
-  
   var waveform;
-
   var oscServer;
-
   var bufValsLeft, bufValsRight;
-
   var n, r;
-
   var bufL, bufR, bufAmp;
 
   *new { arg context, doneCallback;
@@ -51,20 +46,42 @@ Engine_Symbiosis : CroneEngine {
     var amp_history_right = Int8Array.fill(historyLength, 0);
     var voiceParams;
 
-    // Selected filter: LPF, HPF, BPF, SWIRL
-    // var currentFilter; 
+    // Map filter names to corresponding SynthDef
+    var filterMap = (
+      LP: "SymSVF",
+      HP: "SymSVF",
+      BP: "SymSVF",
+      SWIRL: "Swirl",
+    );
+    var currentFilter; 
 
-    // Selected echo: CLEAR, DUST, MIST
+    // Map echo names to corresponding SynthDef
     var echoMap = (
       MIST: "MistEcho",
       DUST: "DustEcho",
       CLEAR: "ClearEcho"
     );
-
-    var echoParams = Dictionary.newFrom([\wet_amount, 0.5, \feedback, 0.7, \delay_time, 0.1]);
     var currentEcho;
 
-    // For communicating anything to Lua beyond than polling system
+    var echoParams = Dictionary.newFrom([\wet, 0.5, \feedback, 0.7, \time, 0.1]);
+    
+    // helper function for adding engine command for any float param of a voice
+    var addVoiceParamCommand = { |param|
+      this.addCommand(param, "if", { |msg|
+        var idx = msg[1].asInteger; // voice index
+        var val = msg[2]; // float value
+        if (voices[idx].notNil) {
+          // if voice exists, set directly
+          voices[idx].set(param.asSymbol, val);
+        };
+        // store value for when voice is recreated
+        voiceParams[idx].put(param.asSymbol, val);
+      });
+    };
+
+    voices = Array.new(6);
+
+    // For communicating to Lua (beyond the polling system)
     oscServer = NetAddr("localhost", 10111);
     waveform = Int8Array.fill(8, { 12 }); // just example for now
 
@@ -87,6 +104,7 @@ Engine_Symbiosis : CroneEngine {
     masterOutControlBuses = Array.fill(2, { Bus.control(s, 1) });
 
     voiceParams = Array.fill(6, { |i|
+      Dictionary.newFrom(
       [
         \out, filterBus,
         \bufnum, bufnumL, 
@@ -100,15 +118,15 @@ Engine_Symbiosis : CroneEngine {
         \env_level, 1.0,
         \ampBus, ampBuses[i].index,
         \envBus, envBuses[i].index,
-      ]}
-    );  
+      ])
+    });    
 
     // Ensure all buses have been created
     context.server.sync;
     "All audio and control buses created".postln;
     
     // Setup routing chain
-    filter = Synth.new("BitsFilters", target:context.xg, args: [\in, filterBus, \out, fxBus]);    
+    filter = Synth.new("SymSVF", target:context.xg, args: [\in, filterBus, \out, fxBus]);    
     echo = Synth.after(filter, "ClearEcho", args: [\in, fxBus, \out, bassMonoBus]);
     bassMono = Synth.after(echo, "BassMono", args: [\in, bassMonoBus, \out, compBus]);
     compressor = Synth.after(bassMono, "GlueCompressor", args: [
@@ -174,7 +192,7 @@ Engine_Symbiosis : CroneEngine {
         // TODO: voices.do(_.free) first, to prevent warning that buf data not found?
         if (voicesEmpty) {
           voices = Array.fill(6, { |i|
-            Synth.before(filter, "SampleVoice", voiceParams[i])}
+            Synth.before(filter, "SampleVoice", voiceParams[i].asPairs)}
           );  
         };
         voicesEmpty = false;
@@ -217,106 +235,30 @@ Engine_Symbiosis : CroneEngine {
       }.next(); // next() executes routine
     });
 
-    this.addCommand("rate", "if", {
-      arg msg;
-      if (voicesEmpty.not) {
-        voices[msg[1]].set(\rate, msg[2]);
-      };
-    });
+    ["attack", "decay", "pan", "loop_start", "loop_end", "level", "env_level", "env_curve", "enable_env", "rate", "lpg_freq", "enable_lpg"].do { |param| addVoiceParamCommand.(param); };
 
     this.addCommand("trigger", "i", {
       arg msg;
-      var idx = msg[1];
+      var idx = msg[1].asInteger; // voice index
       if (voices[idx].notNil) {
         voices[idx].set(\t_trig, 1);
       } {
+        // Create voice if doesn't exist
         voiceParams[idx].put(\t_trig, 1);
-        voices[idx] = Synth.before(filter, "SampleVoice", voiceParams[idx]);
+        voices[idx] = Synth.before(filter, "SampleVoice", voiceParams[idx].asPairs);
       };
     });
 
     this.addCommand("position", "if", {
+      // todo: why not let lua do the trigger?
       arg msg;
-      if (voicesEmpty.not) {
-        voices[msg[1]].set(\loop_start, msg[2]);
-        voices[msg[1]].set(\t_trig, 1);
-      };
-    });
-
-    this.addCommand("attack", "if", {
-      arg msg;
-      if (voicesEmpty.not) {
-        voices[msg[1]].set(\attack, msg[2]);
-      };
-    });
-
-    this.addCommand("decay", "if", {
-      arg msg;
-      if (voicesEmpty.not) {
-        voices[msg[1]].set(\decay, msg[2]);
-      };
-    });
-
-    this.addCommand("enable_lpg", "ii", {
-      arg msg;
-      if (voicesEmpty.not) {
-        voices[msg[1]].set(\enableLpg, msg[2]);
-      };
-    });
-
-    this.addCommand("lpg_freq", "if", {
-      arg msg;
-      if (voicesEmpty.not) {
-        voices[msg[1]].set(\freq, msg[2]);
-      };
-    });
-
-    this.addCommand("pan", "if", {
-      arg msg;
-      if (voicesEmpty.not) {
-        voices[msg[1]].set(\pan, msg[2]);
-      };
-    });
-
-    this.addCommand("loop_start", "if", {
-      arg msg;
-      if (voicesEmpty.not) {
-        voices[msg[1]].set(\loop_start, msg[2]);
-      };
-    });
-
-    this.addCommand("loop_end", "if", {
-      arg msg;
-      if (voicesEmpty.not) {
-        voices[msg[1]].set(\loop_end, msg[2]);
-      };
-    });
-
-    this.addCommand("level", "if", {
-      arg msg;
-      if (voicesEmpty.not) {
-        voices[msg[1]].set(\level, msg[2]);
-      };
-    });
-
-    this.addCommand("env_level", "if", {
-      arg msg;
-      if (voicesEmpty.not) {
-        voices[msg[1]].set(\env_level, msg[2]);
-      };
-    });
-
-    this.addCommand("env_curve", "if", {
-      arg msg;
-      if (voicesEmpty.not) {
-        voices[msg[1]].set(\curve, msg[2]);
-      };
-    });
-
-    this.addCommand("enable_env", "if", {
-      arg msg;
-      if (voicesEmpty.not) {
-        voices[msg[1]].set(\enable_env, msg[2]);
+      var idx = msg[1].asInteger; // voice index
+      var val = msg[2];
+      if (voices[idx].notNil) {
+        voices[idx].set(\loop_start, val);
+        voices[idx].set(\t_trig, 1);
+      } { 
+        voiceParams[idx].put(\loop_start, val);
       };
     });
 
@@ -345,32 +287,39 @@ Engine_Symbiosis : CroneEngine {
     this.addCommand("filter_dry", "f", { arg msg; filter.set(\dry, msg[1]); });
     this.addCommand("filter_gain", "f", { arg msg; filter.set(\gain, msg[1]); });
 
-
     // Commands for echo
-    this.addCommand("echo_feedback", "f", { 
-      arg msg; 
-      echo.set(\feedback, msg[1]);
-      echoParams.put(\feedback, msg[1]);
+    echoParams.keysDo({|key| 
+      this.addCommand("echo_" ++ key.asString, "f", { 
+        arg msg; 
+        var val = msg[1];
+        echo.set(key.asSymbol, val);
+        echoParams.put(key.asSymbol, val);
+      });
     });
-    this.addCommand("echo_time", "f",     { 
-      arg msg; 
-      echo.set(\delay_time, msg[1]); 
-      echo.set(\t_trig, 1); 
-      echoParams.put(\delay_time, msg[1]);
-    });
-    this.addCommand("echo_wet", "f",      { |msg|
-     echo.set(\wet_amount, msg[1]); 
-     echoParams.put(\wet_amount, msg[1]);
-    });
+    // this.addCommand("echo_feedback", "f", { 
+    //   arg msg; 
+    //   echo.set(\feedback, msg[1]);
+    //   echoParams.put(\feedback, msg[1]);
+    // });
+    // this.addCommand("echo_time", "f",     { 
+    //   arg msg; 
+    //   echo.set(\delay_time, msg[1]); 
+    //   echo.set(\t_trig, 1); 
+    //   echoParams.put(\delay_time, msg[1]);
+    // });
+    // this.addCommand("echo_wet", "f",      { |msg|
+    //  echo.set(\wet_amount, msg[1]); 
+    //  echoParams.put(\wet_amount, msg[1]);
+    // });
     this.addCommand("echo_style", "s",    { arg msg; 
-      if(currentEcho != msg[1]) {
-        var echoName = msg[1];
-        var synthDefName = echoMap[echoName];
+      var name = msg[1];
+      if(currentEcho != name) {
+        var synthDefName = echoMap[name];
         if (synthDefName.notNil) {
           echo.free;
-          currentEcho = echoName;
+          currentEcho = name;
           echo = Synth.after(filter, synthDefName, args: [\in, fxBus, \out, bassMonoBus, \t_trig, 1] ++ echoParams.asPairs);
-          "Switched to " ++ echoName ++ " echo".postln;
+          "Switched to " ++ name ++ " echo".postln;
         };
       }
     });
@@ -418,7 +367,6 @@ Engine_Symbiosis : CroneEngine {
         this.addPoll(("voice" ++ (idx+1) ++ "amp").asSymbol, { ampBuses[idx].getSynchronous });
         this.addPoll(("voice" ++ (idx+1) ++ "env").asSymbol, { envBuses[idx].getSynchronous });
     };
-
   }
   
   free {
