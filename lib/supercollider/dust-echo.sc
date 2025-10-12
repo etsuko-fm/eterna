@@ -11,7 +11,7 @@ DustEcho {
                     var fadeTime=0.05;
 
                     // If time changed, trigger
-                    var t_trig = (HPZ1.kr(time) != 0).asInteger;
+                    var t_trig = Changed.kr(time);
                     
                     // Mechanism to allow one t_trig to alternately trigger t_1 and t_2
                     var which = ToggleFF.kr(t_trig);

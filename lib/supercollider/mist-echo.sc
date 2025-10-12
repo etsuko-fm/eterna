@@ -4,7 +4,7 @@ MistEcho {
 			var s = Server.default;
 			s.waitForBoot {
 				SynthDef("MistEcho", {
-					arg in, out, wet=0.5, feedback=0.8, time=0.1, t_trig;
+					arg in, out, wet=0.5, feedback=0.8, time=0.1;
 					var input = In.ar(in, 2);
                     var output;
                     var timesL = [11, 19, 37, 39, 77, 101];
@@ -17,7 +17,10 @@ MistEcho {
 
                     var delA, delB, delX, fbSignal;
                     var fadeTime=0.05;
-                    
+
+                    // If time changed, trigger
+                    var t_trig = Changed.kr(time);
+
                     // Mechanism to allow one t_trig to alternately trigger t_1 and t_2
                     var which = ToggleFF.kr(t_trig);
                     var t_1 = Select.kr(which, [t_trig, 0]);
@@ -28,7 +31,6 @@ MistEcho {
                     // Alternately update delay time A/B, to enable crossfading to prevent click on changing delay time
                     var timeA = Latch.kr(time, t_1);
                     var timeB = Latch.kr(time, t_2);
-                    
 
                     // Amount of crossfeeding between left and right channel
                     var cross = 0.3;
