@@ -71,14 +71,14 @@ function page:render()
     window:render()
     engine.request_amp_history()
 
-    pre_compL_poll:update()
-    pre_compR_poll:update()
-    post_compL_poll:update()
-    post_compR_poll:update()
-    post_gainL_poll:update()
-    post_gainR_poll:update()
-    masterL_poll:update()
-    masterR_poll:update()
+    pre_comp_left_poll:update()
+    pre_comp_right_poll:update()
+    post_comp_left_poll:update()
+    post_comp_right_poll:update()
+    post_gain_left_poll:update()
+    post_gain_right_poll:update()
+    master_left_poll:update()
+    master_right_poll:update()
 
     master_graphic.drive_amount = params:get_raw(ID_MASTER_COMP_DRIVE)
     master_graphic.out_level = params:get(ID_MASTER_OUTPUT)
@@ -98,16 +98,16 @@ end
 function page:initialize()
     add_params()
     master_graphic = MasterGraphic:new()
-    engine.set_metering_rate(1000)
+    engine.metering_rate(1000)
 
-    pre_compL_poll.callback = function(v) master_graphic.pre_comp_levels[1] = amp_to_log(v) end
-    pre_compR_poll.callback = function(v) master_graphic.pre_comp_levels[2] = amp_to_log(v) end
-    post_compL_poll.callback = function(v) master_graphic.post_comp_levels[1] = amp_to_log(v) end
-    post_compR_poll.callback = function(v) master_graphic.post_comp_levels[2] = amp_to_log(v) end
-    post_gainL_poll.callback = function(v) master_graphic.post_gain_levels[1] = amp_to_log(v) end
-    post_gainR_poll.callback = function(v) master_graphic.post_gain_levels[2] = amp_to_log(v) end
-    masterL_poll.callback = function(v) master_graphic.out_levels[1] = amp_to_log(v) end
-    masterR_poll.callback = function(v) master_graphic.out_levels[2] = amp_to_log(v) end
+    pre_comp_left_poll.callback = function(v) master_graphic.pre_comp_levels[1] = amp_to_log(v) end
+    pre_comp_right_poll.callback = function(v) master_graphic.pre_comp_levels[2] = amp_to_log(v) end
+    post_comp_left_poll.callback = function(v) master_graphic.post_comp_levels[1] = amp_to_log(v) end
+    post_comp_right_poll.callback = function(v) master_graphic.post_comp_levels[2] = amp_to_log(v) end
+    post_gain_left_poll.callback = function(v) master_graphic.post_gain_levels[1] = amp_to_log(v) end
+    post_gain_right_poll.callback = function(v) master_graphic.post_gain_levels[2] = amp_to_log(v) end
+    master_left_poll.callback = function(v) master_graphic.out_levels[1] = amp_to_log(v) end
+    master_right_poll.callback = function(v) master_graphic.out_levels[2] = amp_to_log(v) end
 
     window = Window:new({
         x = 0,

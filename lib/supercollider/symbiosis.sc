@@ -10,7 +10,7 @@ Engine_Symbiosis : CroneEngine {
   // Control buses
   var ampBuses, envBuses, preCompControlBuses, postCompControlBuses, postGainBuses, masterOutControlBuses;
   
-  var exampleArray;
+  var waveform;
 
   var oscServer;
 
@@ -66,7 +66,7 @@ Engine_Symbiosis : CroneEngine {
 
     // For communicating anything to Lua beyond than polling system
     oscServer = NetAddr("localhost", 10111);
-    exampleArray = Int8Array.fill(8, { 12 });
+    waveform = Int8Array.fill(8, { 12 }); // just example for now
 
     // Buses for audio routing
     filterBus = Bus.audio(context.server, 2);
@@ -387,10 +387,10 @@ Engine_Symbiosis : CroneEngine {
     // Commands for visualization
     this.addCommand("request_waveform", "i", { 
       arg msg; 
-      oscServer.sendBundle(0, ['/waveform', exampleArray]);
+      oscServer.sendBundle(0, ['/waveform', waveform]);
     });
 
-    this.addCommand("set_metering_rate", "i", {  arg msg; compressor.set(\metering_rate, msg[1])});
+    this.addCommand("metering_rate", "i", {  arg msg; compressor.set(\metering_rate, msg[1])});
 
     this.addCommand("request_amp_history", "", { 
       arg msg; 
@@ -400,17 +400,17 @@ Engine_Symbiosis : CroneEngine {
 
     this.addPoll(\file_loaded, { isLoaded }, periodic:false);
 
-    this.addPoll(\pre_compL, { preCompControlBuses[0].getSynchronous });
-    this.addPoll(\pre_compR, { preCompControlBuses[1].getSynchronous });
+    this.addPoll(\pre_comp_left, { preCompControlBuses[0].getSynchronous });
+    this.addPoll(\pre_comp_right, { preCompControlBuses[1].getSynchronous });
 
-    this.addPoll(\post_compL, { postCompControlBuses[0].getSynchronous });
-    this.addPoll(\post_compR, { postCompControlBuses[1].getSynchronous });
+    this.addPoll(\post_comp_left, { postCompControlBuses[0].getSynchronous });
+    this.addPoll(\post_comp_right, { postCompControlBuses[1].getSynchronous });
 
-    this.addPoll(\post_gainL, { postGainBuses[0].getSynchronous });
-    this.addPoll(\post_gainR, { postGainBuses[1].getSynchronous });
+    this.addPoll(\post_gain_left, { postGainBuses[0].getSynchronous });
+    this.addPoll(\post_gain_right, { postGainBuses[1].getSynchronous });
 
-    this.addPoll(\masterL, { masterOutControlBuses[0].getSynchronous });
-    this.addPoll(\masterR, { masterOutControlBuses[1].getSynchronous });
+    this.addPoll(\master_left, { masterOutControlBuses[0].getSynchronous });
+    this.addPoll(\master_right, { masterOutControlBuses[1].getSynchronous });
 
     6.do { |idx|
         this.addPoll(("voice" ++ (idx+1) ++ "amp").asSymbol, { ampBuses[idx].getSynchronous });
@@ -451,7 +451,7 @@ Engine_Symbiosis : CroneEngine {
     masterOutControlBuses.do(_.free);
     masterOutControlBuses.free;
     
-    exampleArray.free;
+    waveform.free;
     oscServer.free;
   }
 }
