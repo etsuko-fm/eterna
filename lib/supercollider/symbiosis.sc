@@ -155,12 +155,6 @@ Engine_Symbiosis : CroneEngine {
         amp_history_right = amp_history_right.insert(0, (msg[4] * 127).round.asInteger);
     }, '/amp');
 
-    // Commands for sample voices
-    this.addCommand("set_buffer","si", { 
-      arg msg;
-      voices[msg[1]].set(\bufnum, msg[2]);
-    });
-
   	this.addCommand("load_file","s", {
       arg msg;
 
@@ -194,6 +188,7 @@ Engine_Symbiosis : CroneEngine {
           voices = Array.fill(6, { |i|
             Synth.before(filter, "SampleVoice", voiceParams[i].asPairs)}
           );  
+          // voices[i].onFree({"voice was freed".postln});
         };
         voicesEmpty = false;
 
@@ -201,6 +196,7 @@ Engine_Symbiosis : CroneEngine {
           // Normalize based on loudest sample across channels
           bufValsLeft = bufL.loadToFloatArray(action: { |array| peakL = array.maxItem; });
           bufValsRight = bufR.loadToFloatArray(action: { |array| peakR = array.maxItem; });
+          // TODO: perfect moment to send the waveform to lua.. 
           context.server.sync();
           ("Max of left/right channel: " ++ max(peakL, peakR)).postln;
           maxAmp = max(peakL, peakR);
@@ -217,7 +213,7 @@ Engine_Symbiosis : CroneEngine {
               voice.set(\bufnum, n);
               ("Voice " ++ i ++ "set to buffer " ++ n).postln;
           };
-          voiceParams.do{ |params, i|
+          voiceParams.do{ |params, i|§
               "Spreading stereo buffer over 6 voices".postln;
               n = if(i < voiceParams.size.div(2)) { bufnumL } { bufnumR };
               params.put(\bufnum, n);
@@ -242,10 +238,12 @@ Engine_Symbiosis : CroneEngine {
       var idx = msg[1].asInteger; // voice index
       if (voices[idx].notNil) {
         voices[idx].set(\t_trig, 1);
+        "voice exists".postln;
       } {
         // Create voice if doesn't exist
-        voiceParams[idx].put(\t_trig, 1);
+        // voiceParams[idx].put(\t_trig, 1);
         voices[idx] = Synth.before(filter, "SampleVoice", voiceParams[idx].asPairs);
+        "new voice".postln;
       };
     });
 
@@ -296,21 +294,7 @@ Engine_Symbiosis : CroneEngine {
         echoParams.put(key.asSymbol, val);
       });
     });
-    // this.addCommand("echo_feedback", "f", { 
-    //   arg msg; 
-    //   echo.set(\feedback, msg[1]);
-    //   echoParams.put(\feedback, msg[1]);
-    // });
-    // this.addCommand("echo_time", "f",     { 
-    //   arg msg; 
-    //   echo.set(\delay_time, msg[1]); 
-    //   echo.set(\t_trig, 1); 
-    //   echoParams.put(\delay_time, msg[1]);
-    // });
-    // this.addCommand("echo_wet", "f",      { |msg|
-    //  echo.set(\wet_amount, msg[1]); 
-    //  echoParams.put(\wet_amount, msg[1]);
-    // });
+
     this.addCommand("echo_style", "s",    { arg msg; 
       var name = msg[1];
       if(currentEcho != name) {

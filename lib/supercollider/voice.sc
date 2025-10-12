@@ -10,7 +10,7 @@ Voice {
 					bufnum=0, // buffer assigned to voice
 					loop=1,  // 0 for one-shot, 1 for looping playback
 					loop_start=0.0, loop_end=0.0, // start/end pos in seconds
-					t_trig=0, // if 1, triggers the voice; it will then be reset back to zero because it starts with t_
+					t_trig=1, // if 1, triggers the voice; it will then be reset back to zero because it starts with t_. Defaults to 1, because assumed voice is created only when it should be triggered
 					attack=0.01, decay=1.0, curve=(-4), env_level=1.0, // envelope
 					enable_env=1, enableLpg=0, 
 					pan=0.0, // panning (-1 to 1)
@@ -90,7 +90,9 @@ Voice {
 
 					// Assign active envelope, so we can check if the playback is done
 					var percEnv = Select.kr(intVoiceId, [percEnv1, percEnv2]);
-					var isDone = SetResetFF.kr(Done.kr(percEnv), t_trig);
+					var done1 = Done.kr(percEnv1);
+					var done2 = Done.kr(percEnv2);
+					var isDone = Select.kr(intVoiceId, [done1, done2]);
 
 					var amp; // for reporting amplitude
 
