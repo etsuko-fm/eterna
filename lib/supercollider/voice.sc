@@ -88,11 +88,14 @@ Voice {
 					var percEnv1 = EnvGen.ar(Env.new([0, 0, env_level, 0], [0, attack, decay], curve), gate: t_1);
 					var percEnv2 = EnvGen.ar(Env.new([0, 0, env_level, 0], [0, attack, decay], curve), gate: t_2);
 
-					// Assign active envelope to, so we can check if the playback is done to save processing
+					// Assign active envelope, so we can check if the playback is done
 					var percEnv = Select.kr(intVoiceId, [percEnv1, percEnv2]);
 					var isDone = SetResetFF.kr(Done.kr(percEnv), t_trig);
 
 					var amp; // for reporting amplitude
+
+					// Free synth when playback done
+					FreeSelf.kr(isDone);
 
 					// If envelopes are disabled, the voice plays continuously with env_level as optional amplitude modulator
 					percEnv1 = Select.kr(enable_env, [env_level, percEnv1]);

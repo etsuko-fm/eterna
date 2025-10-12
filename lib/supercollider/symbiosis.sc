@@ -226,10 +226,12 @@ Engine_Symbiosis : CroneEngine {
 
     this.addCommand("trigger", "i", {
       arg msg;
-      // alternative: check if specific voice is empty
-      // if voices[msg[1]].notNil
-      if (voicesEmpty.not) {
-        voices[msg[1]].set(\t_trig, 1);
+      var idx = msg[1];
+      if (voices[idx].notNil) {
+        voices[idx].set(\t_trig, 1);
+      } {
+        voiceParams[idx].put(\t_trig, 1);
+        voices[idx] = Synth.before(filter, "SampleVoice", voiceParams[idx]);
       };
     });
 
