@@ -164,6 +164,12 @@ Engine_Symbiosis : CroneEngine {
         bufR.free;
         isLoaded = false; 
 
+        // Free voices
+        voices.do { |voice, i| voice.free; };
+
+        // Wait until voices freed
+        context.server.sync();
+
         // Get file metadata 
         f = SoundFile.new;
         f.openRead(msg[1].asString);
@@ -178,8 +184,9 @@ Engine_Symbiosis : CroneEngine {
           "Loading channel 2".postln;
           bufR = Buffer.readChannel(context.server, msg[1].asString, channels:[1], bufnum: bufnumR, action: {|b| ("Channel 2 loaded to buffer " ++ bufnumR).postln;});
         };
+
+        // Wait until buffers are loaded
         context.server.sync();
-        isLoaded = true;
 
         if (f.numChannels > 1) {
           // Normalize based on loudest sample across channels
@@ -221,6 +228,10 @@ Engine_Symbiosis : CroneEngine {
           };};
           voiceParams.do {|params| params.put(\bufnum, bufnumL)};
         };
+
+        // Wait until normalization complete and voices loaded
+        context.server.sync();
+        isLoaded = true;
       }.next(); // next() executes routine
     });
 
@@ -230,19 +241,23 @@ Engine_Symbiosis : CroneEngine {
       arg msg;
       var idx = msg[1]; // voice index
       var rout = Routine {
-        if (voices[idx].notNil) {
-          "voice " ++ idx ++ " exists".postln;
-          voices[idx].set(\t_trig, 1);
-        } {
-          // Create voice if doesn't exist
-          "voice " ++ idx ++ " will be created".postln;
-          voices[idx] = Synth.before(filter, "SampleVoice", voiceParams[idx].asPairs);
-          context.server.sync();
-          voices[idx].onFree { 
-            "voice freed".postln;
-            // voices[idx].free;
-            voices[idx] = nil;
+        if (isLoaded) {
+          if (voices[idx].notNil) {
+            "voice " ++ idx ++ " exists".postln;
+            voices[idx].set(\t_trig, 1);
+          } {
+            // Create voice if doesn't exist
+            "voice " ++ idx ++ " will be created".postln;
+            voices[idx] = Synth.before(filter, "SampleVoice", voiceParams[idx].asPairs);
+            context.server.sync();
+            voices[idx].onFree { 
+              "voice freed".postln;
+              // voices[idx].free;
+              voices[idx] = nil;
+            };
           };
+        } { 
+          "new sample still loading, trigger skipped...".postln;
         };
       }.next();
 
