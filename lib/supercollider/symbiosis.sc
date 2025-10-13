@@ -32,7 +32,7 @@ Engine_Symbiosis : CroneEngine {
     var peakL, peakR, normalizeFactor, maxAmp;
     
     // For checking if voices have been allocated yet; TODO: might just check for nil
-    var voicesEmpty = true;
+    // var voicesEmpty = true;
     
     // Bufnums for user sample
     var bufnumL = 0;
@@ -79,7 +79,7 @@ Engine_Symbiosis : CroneEngine {
       });
     };
 
-    voices = Array.new(6);
+    voices = Array.fill(6, {|i| nil});
 
     // For communicating to Lua (beyond the polling system)
     oscServer = NetAddr("localhost", 10111);
@@ -113,7 +113,6 @@ Engine_Symbiosis : CroneEngine {
         \loop_end, 4.0,
         \numChannels, 1,
         \decay, 4.0,
-        \t_trig, 0,
         \enable_env, 1,
         \env_level, 1.0,
         \ampBus, ampBuses[i].index,
@@ -182,16 +181,6 @@ Engine_Symbiosis : CroneEngine {
         context.server.sync();
         isLoaded = true;
 
-        // Instantiate voices
-        // TODO: voices.do(_.free) first, to prevent warning that buf data not found?
-        if (voicesEmpty) {
-          voices = Array.fill(6, { |i|
-            Synth.before(filter, "SampleVoice", voiceParams[i].asPairs)}
-          );  
-          // voices[i].onFree({"voice was freed".postln});
-        };
-        voicesEmpty = false;
-
         if (f.numChannels > 1) {
           // Normalize based on loudest sample across channels
           bufValsLeft = bufL.loadToFloatArray(action: { |array| peakL = array.maxItem; });
@@ -208,16 +197,17 @@ Engine_Symbiosis : CroneEngine {
 
           // Spread 2 channels over 6 voices
           voices.do { |voice, i|
-              "Spreading stereo buffer over 6 voices".postln;
-              n = if(i < voices.size.div(2)) { bufnumL } { bufnumR };
-              voice.set(\bufnum, n);
-              ("Voice " ++ i ++ "set to buffer " ++ n).postln;
+              if (voice.notNil) {
+                n = if(i < voices.size.div(2)) { bufnumL } { bufnumR };
+                voice.set(\bufnum, n);
+                ("Voice " ++ i ++ " set to buffer " ++ n).postln;
+              };
           };
-          voiceParams.do{ |params, i|§
+          voiceParams.do{ |params, i|
               "Spreading stereo buffer over 6 voices".postln;
               n = if(i < voiceParams.size.div(2)) { bufnumL } { bufnumR };
               params.put(\bufnum, n);
-              ("Voice " ++ i ++ "set to buffer " ++ n).postln;
+              ("Voice " ++ i ++ " set to buffer " ++ n).postln;
           };
         } { 
           // if mono, also mark loading as finished
@@ -225,7 +215,10 @@ Engine_Symbiosis : CroneEngine {
           bufL.normalize();
           ("mono buffer normalized").postln;
           // Let all voices use the left buffer
-          voices.do {|voice| voice.set(\bufnum, bufnumL)};
+          voices.do {|voice| 
+          if (voice.notNil) {
+            voice.set(\bufnum, bufnumL)
+          };};
           voiceParams.do {|params| params.put(\bufnum, bufnumL)};
         };
       }.next(); // next() executes routine
@@ -235,16 +228,24 @@ Engine_Symbiosis : CroneEngine {
 
     this.addCommand("trigger", "i", {
       arg msg;
-      var idx = msg[1].asInteger; // voice index
-      if (voices[idx].notNil) {
-        voices[idx].set(\t_trig, 1);
-        "voice exists".postln;
-      } {
-        // Create voice if doesn't exist
-        // voiceParams[idx].put(\t_trig, 1);
-        voices[idx] = Synth.before(filter, "SampleVoice", voiceParams[idx].asPairs);
-        "new voice".postln;
-      };
+      var idx = msg[1]; // voice index
+      var rout = Routine {
+        if (voices[idx].notNil) {
+          "voice " ++ idx ++ " exists".postln;
+          voices[idx].set(\t_trig, 1);
+        } {
+          // Create voice if doesn't exist
+          "voice " ++ idx ++ " will be created".postln;
+          voices[idx] = Synth.before(filter, "SampleVoice", voiceParams[idx].asPairs);
+          context.server.sync();
+          voices[idx].onFree { 
+            "voice freed".postln;
+            // voices[idx].free;
+            voices[idx] = nil;
+          };
+        };
+      }.next();
+
     });
 
     this.addCommand("position", "if", {
