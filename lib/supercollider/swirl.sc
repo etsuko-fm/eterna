@@ -8,10 +8,6 @@ Swirl {
 					var input = In.ar(in, 2);
 					var safeFreq = Lag.kr(freq.clip(5.0, 24000.0));
 					var safeRes = Lag.kr(res.clip(0.0, 0.999));
-					//filter_type -> 0: highpass, 1: lowpass, 2: bandpass
-					var hp = Select.kr(filter_type, [1.0, 0.0, 0.0]);
-					var lp = Select.kr(filter_type, [0.0, 1.0, 0.0]);
-					var bp = Select.kr(filter_type, [0.0, 0.0, 1.0]);
 
 					var filtered = [
 							Mix.ar([

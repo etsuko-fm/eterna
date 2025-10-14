@@ -44,9 +44,9 @@ local function action_wet(v)
 end
 
 local function add_params()
-    params:set_action(ID_FILTER_FREQ, function(v) engine.freq(v) end)
-    params:set_action(ID_FILTER_TYPE, function(v) engine.set_filter_type(FILTER_TYPES[v]) end)
-    params:set_action(ID_FILTER_RES, function(v) engine.res(v) end)
+    params:set_action(ID_FILTER_FREQ, function(v) engine.filter_freq(v) end)
+    params:set_action(ID_FILTER_TYPE, function(v) engine.filter_type(FILTER_TYPES[v]) end)
+    params:set_action(ID_FILTER_RES, function(v) engine.filter_res(v) end)
     params:set_action(ID_FILTER_WET, action_wet)
 end
 

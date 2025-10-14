@@ -53,7 +53,7 @@ Engine_Symbiosis : CroneEngine {
       BP: "SymSVF",
       SWIRL: "Swirl",
     );
-    var currentFilter; 
+    var currentFilter = "HP"; 
 
     // Map echo names to corresponding SynthDef
     var echoMap = (
@@ -125,7 +125,7 @@ Engine_Symbiosis : CroneEngine {
     "All audio and control buses created".postln;
     
     // Setup routing chain
-    filter = Synth.new("SymSVF", target:context.xg, args: [\in, filterBus, \out, fxBus]);    
+    filter = Synth.new("SymSVF", target:context.xg, args: [\in, filterBus, \out, fxBus, \filter_type, 0]);    
     echo = Synth.after(filter, "ClearEcho", args: [\in, fxBus, \out, bassMonoBus]);
     bassMono = Synth.after(echo, "BassMono", args: [\in, bassMonoBus, \out, compBus]);
     compressor = Synth.after(bassMono, "GlueCompressor", args: [
@@ -218,7 +218,6 @@ Engine_Symbiosis : CroneEngine {
           };
         } { 
           // if mono, also mark loading as finished
-          isLoaded = true;
           bufL.normalize();
           ("mono buffer normalized").postln;
           // Let all voices use the left buffer
@@ -232,7 +231,8 @@ Engine_Symbiosis : CroneEngine {
         // Wait until normalization complete and voices loaded
         context.server.sync();
         isLoaded = true;
-      }.next(); // next() executes routine
+        "Normalizing completed".postln;
+      }.play;
     });
 
     ["attack", "decay", "pan", "loop_start", "loop_end", "level", "env_level", "env_curve", "enable_env", "rate", "lpg_freq", "enable_lpg"].do { |param| addVoiceParamCommand.(param); };
@@ -243,16 +243,12 @@ Engine_Symbiosis : CroneEngine {
       var rout = Routine {
         if (isLoaded) {
           if (voices[idx].notNil) {
-            "voice " ++ idx ++ " exists".postln;
             voices[idx].set(\t_trig, 1);
           } {
             // Create voice if doesn't exist
-            "voice " ++ idx ++ " will be created".postln;
             voices[idx] = Synth.before(filter, "SampleVoice", voiceParams[idx].asPairs);
             context.server.sync();
             voices[idx].onFree { 
-              "voice freed".postln;
-              // voices[idx].free;
               voices[idx] = nil;
             };
           };
@@ -277,27 +273,40 @@ Engine_Symbiosis : CroneEngine {
     });
 
     // Commands for filter
-    this.addCommand("set_filter_type", "s", { arg msg;
-      switch(msg[1].asString)
-      { "HP"} {
+    this.addCommand("filter_type", "s", { arg msg;
+      var name = msg[1];
+      if(filterMap[name.asString] != currentFilter) {
+        filter.free;
+        filter = Synth.new(filterMap[name], target:context.xg, args: [\in, filterBus, \out, fxBus]);
+      };
+      if(name != \SWIRL && currentFilter == "SWIRL") {
+        filter.free;
+        "Initialized SymSVF".postln;
+        filter = Synth.new("SymSVF", target:context.xg, args: [\in, filterBus, \out, fxBus]);
+      };
+      ("Switched to " ++ name ++ " filter").postln;
+      switch(name)
+      { \HP } {
         filter.set(\filter_type, 0);
       }
-      { "LP" } {
+      { \LP } {
         filter.set(\filter_type, 1);
       }
-      { "BP" } {
+      { \BP } {
         filter.set(\filter_type, 2);
       }
-      { "SWIRL" } {
-        filter.set(\filter_type, 3);
-      }
-      { "NONE" } {
-        filter.set(\filter_type, 4);
+      { \SWIRL } {
+        if (currentFilter != "SWIRL") {
+          "Initialized Swirl".postln;
+          filter.free;
+          filter = Synth.new("Swirl", target:context.xg, args: [\in, filterBus, \out, fxBus]);
+        };
       };
+      currentFilter = filterMap[name];
     });
 
-    this.addCommand("freq", "f", { arg msg; filter.set(\freq, msg[1]); });
-    this.addCommand("res", "f", { arg msg; filter.set(\res, msg[1]); });
+    this.addCommand("filter_freq", "f", { arg msg; filter.set(\freq, msg[1]); });
+    this.addCommand("filter_res", "f", { arg msg; filter.set(\res, msg[1]); });
     this.addCommand("filter_dry", "f", { arg msg; filter.set(\dry, msg[1]); });
     this.addCommand("filter_gain", "f", { arg msg; filter.set(\gain, msg[1]); });
 
@@ -320,6 +329,7 @@ Engine_Symbiosis : CroneEngine {
           currentEcho = name;
           echo = Synth.after(filter, synthDefName, args: [\in, fxBus, \out, bassMonoBus, \t_trig, 1] ++ echoParams.asPairs);
           "Switched to " ++ name ++ " echo".postln;
+          ("echo params: " ++ echoParams.asPairs).postln;
         };
       }
     });

@@ -9,8 +9,10 @@ MistEcho {
                     var output;
                     var timesL = [11, 19, 37, 39, 77, 101];
                     var timesR = [17, 25, 31, 13, 12, 111];	
-                    var modTimesL = [0.053, 0.097, 0.163, 0.233, 0.307, 0.383];
-                    var modTimesR = [0.067, 0.121, 0.187, 0.257, 0.331, 0.397];
+                    // var modTimesL = [0.053, 0.097, 0.163, 0.233, 0.307, 0.383];
+                    // var modTimesR = [0.067, 0.121, 0.187, 0.257, 0.331, 0.397];
+                    var modTimesL = [10.053, 10.097, 10.163, 10.233, 10.307, 10.383];
+                    var modTimesR = [10.067, 10.121, 10.187, 10.257, 10.331, 10.397];
 
                     var allPassDelayTimesL = timesL.collect { |p| p * 0.001 };
                     var allPassDelayTimesR = timesR.collect { |p| p * 0.001 };
@@ -18,8 +20,10 @@ MistEcho {
                     var delA, delB, delX, fbSignal;
                     var fadeTime=0.05;
 
-                    // If time changed, trigger
-                    var t_trig = Changed.kr(time);
+                    var first = Impulse.kr(0);
+
+                    // If time changed, or first run, trigger
+                    var t_trig = Changed.kr(time) + first;
 
                     // Mechanism to allow one t_trig to alternately trigger t_1 and t_2
                     var which = ToggleFF.kr(t_trig);
@@ -64,20 +68,20 @@ MistEcho {
                             AllpassL.ar(
                                 delX[0], 
                                 0.3, 
-                                (t - 0.01 + (SinOsc.ar(modTimesL[i]) * (t * 0.02))).abs, 
-                                1
+                                (t + (SinOsc.ar(modTimesL[i], LFNoise0.kr(10)) * (t * 0.005))).abs, 
+                                0.5
                             ), 
-                            5000
-                        ), 150);
+                            4000
+                        ), 200);
                         delX[1] = HPF.ar(LPF.ar(
                             AllpassL.ar(
                                 delX[1], 
                                 0.3, 
-                                (allPassDelayTimesR[i] - 0.01 + (SinOsc.ar(modTimesR[i]) * (allPassDelayTimesR[i] * 0.02))).abs, 
-                                1
+                                (allPassDelayTimesR[i] + (SinOsc.ar(modTimesR[i], LFNoise0.kr(10)) * (allPassDelayTimesR[i] * 0.005))).abs, 
+                                0.5
                             ), 
-                            5000
-                        ), 150);
+                            4000
+                        ), 200);
                         
                         // Crossmix left/right channels
                         delX = [

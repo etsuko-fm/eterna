@@ -10,8 +10,10 @@ DustEcho {
                     var delA, delB, delX, fbSignal;
                     var fadeTime=0.05;
 
-                    // If time changed, trigger
-                    var t_trig = Changed.kr(time);
+                    var first = Impulse.kr(0);
+
+                    // If time changed, or first run, trigger
+                    var t_trig = Changed.kr(time) + first;
                     
                     // Mechanism to allow one t_trig to alternately trigger t_1 and t_2
                     var which = ToggleFF.kr(t_trig);
