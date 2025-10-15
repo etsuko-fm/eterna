@@ -152,14 +152,16 @@ Engine_Symbiosis : CroneEngine {
       r = Routine {
         |inval|
         bufL.free;
+        bufL = nil;
         bufR.free;
+        bufR = nil;
+        bufValsLeft.free;
+        bufValsRight.free;
         isLoaded = false; 
 
         // Free voices
         voices.do { |voice, i| voice.free; };
 
-        // // Wait until voices freed
-        // context.server.sync;
 
         // Get file metadata
         f.free;
@@ -169,8 +171,13 @@ Engine_Symbiosis : CroneEngine {
         ("file" + path + "has" + f.numChannels + "channels").postln;
 
         // Limit buffer read to 2^24 samples because of Phasor resolution
-        numFrames = f.numFrames.min(16777216);
+        numFrames = f.numFrames.min(48000*60);
         f.close;
+
+        // // Wait until voices freed
+        context.server.sync;
+
+        s.bufferAllocator.dump;
 
         ("Loading " ++ numFrames ++ " frames").postln;
 
@@ -181,11 +188,11 @@ Engine_Symbiosis : CroneEngine {
         context.server.sync;
 
         if (f.numChannels > 1) {
-          // It may be quadraphonic or surround, but that's not supported right now
           "Loading channel 2".postln;
-          bufR = Buffer.readChannel(context.server, msg[1].asString, channels:[1], bufnum: bufnumR, action: {|b| ("Channel 2 loaded to buffer " ++ bufnumR).postln;});
-          context.server.sync;
+          bufR = Buffer.readChannel(context.server, path, numFrames: numFrames, channels:[1], bufnum: bufnumR, action: {|b| ("Channel 2 loaded to buffer " ++ bufnumR).postln;});
         };
+
+        context.server.sync;
 
         if (f.numChannels > 1) {
           // Normalize based on loudest sample across channels
@@ -193,7 +200,7 @@ Engine_Symbiosis : CroneEngine {
           bufValsLeft = bufL.loadToFloatArray(action: { |array| peakL = array.maxItem; });
           bufValsRight = bufR.loadToFloatArray(action: { |array| peakR = array.maxItem; });
           // TODO: perfect moment to send the waveform to lua.. 
-          context.server.sync;
+          
           ("Max of left/right channel: " ++ max(peakL, peakR)).postln;
           maxAmp = max(peakL, peakR);
           normalizeFactor = 1.0 / maxAmp;
@@ -211,7 +218,6 @@ Engine_Symbiosis : CroneEngine {
               };
           };
           voiceParams.do{ |params, i|
-              "Spreading stereo buffer over 6 voices".postln;
               n = if(i < voiceParams.size.div(2)) { bufnumL } { bufnumR };
               params.put(\bufnum, n);
               ("Voice " ++ i ++ " set to buffer " ++ n).postln;
@@ -381,7 +387,8 @@ Engine_Symbiosis : CroneEngine {
     filter.free;
     voices.do(_.free);
     filterBus.free;
-    
+    bufValsLeft.free;
+    bufValsRight.free;
     bassMonoBus.free;
     bassMono.free;
 
