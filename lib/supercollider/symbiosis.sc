@@ -70,7 +70,7 @@ Engine_Symbiosis : CroneEngine {
       this.addCommand(param, "if", { |msg|
         var idx = msg[1].asInteger; // voice index
         var val = msg[2]; // float value
-        if (voices[idx].notNil) {
+        if (voices[idx].isPlaying) {
           // if voice exists, set directly
           voices[idx].set(param.asSymbol, val);
         };
@@ -167,8 +167,8 @@ Engine_Symbiosis : CroneEngine {
         // Free voices
         voices.do { |voice, i| voice.free; };
 
-        // Wait until voices freed
-        context.server.sync();
+        // // Wait until voices freed
+        // context.server.sync;
 
         // Get file metadata 
         f = SoundFile.new;
@@ -179,6 +179,8 @@ Engine_Symbiosis : CroneEngine {
         // todo: limit buffer read to 2^24 samples because of Phasor resolution
         "Loading channel 1".postln;
         bufL = Buffer.readChannel(context.server, msg[1].asString, channels:[0], bufnum: bufnumL, action: {|b| ("Channel 1 loaded to buffer " ++ bufnumL).postln;});
+        context.server.sync;
+
         if (f.numChannels > 1) {
           // It may be quadraphonic or surround, but that's not supported right now
           "Loading channel 2".postln;
@@ -186,14 +188,14 @@ Engine_Symbiosis : CroneEngine {
         };
 
         // Wait until buffers are loaded
-        context.server.sync();
+        context.server.sync;
 
         if (f.numChannels > 1) {
           // Normalize based on loudest sample across channels
           bufValsLeft = bufL.loadToFloatArray(action: { |array| peakL = array.maxItem; });
           bufValsRight = bufR.loadToFloatArray(action: { |array| peakR = array.maxItem; });
           // TODO: perfect moment to send the waveform to lua.. 
-          context.server.sync();
+          context.server.sync;
           ("Max of left/right channel: " ++ max(peakL, peakR)).postln;
           maxAmp = max(peakL, peakR);
           normalizeFactor = 1.0 / maxAmp;
@@ -229,7 +231,7 @@ Engine_Symbiosis : CroneEngine {
         };
 
         // Wait until normalization complete and voices loaded
-        context.server.sync();
+        context.server.sync;
         isLoaded = true;
         "Normalizing completed".postln;
       }.play;
@@ -240,23 +242,17 @@ Engine_Symbiosis : CroneEngine {
     this.addCommand("trigger", "i", {
       arg msg;
       var idx = msg[1]; // voice index
-      var rout = Routine {
-        if (isLoaded) {
-          if (voices[idx].notNil) {
-            voices[idx].set(\t_trig, 1);
-          } {
-            // Create voice if doesn't exist
-            voices[idx] = Synth.before(filter, "SampleVoice", voiceParams[idx].asPairs);
-            context.server.sync();
-            voices[idx].onFree { 
-              voices[idx] = nil;
-            };
-          };
-        } { 
-          "new sample still loading, trigger skipped...".postln;
-        };
-      }.next();
 
+      if (isLoaded) {
+        if (voices[idx].isPlaying) {
+          voices[idx].set(\t_trig, 1);
+        } {
+          // Create voice if doesn't exist
+          voices[idx] = Synth.before(filter, "SampleVoice", voiceParams[idx].asPairs);
+        };
+      } { 
+        // "new sample still loading, trigger skipped...".postln;
+      };
     });
 
     this.addCommand("position", "if", {

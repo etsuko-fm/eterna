@@ -42,6 +42,7 @@ end
 
 local function path_to_file_name(file_path)
     -- strips '/foo/bar/audio.wav' to 'audio.wav'
+    print("file path: " .. file_path)
     local split_at = string.match(file_path, "^.*()/")
     return string.sub(file_path, split_at + 1)
 end
@@ -159,7 +160,6 @@ local function select_sample()
     local function callback(file_path)
         if file_path ~= 'cancel' then
             params:set(ID_SLICES_AUDIO_FILE, file_path)
-            filename = to_sample_name(file_path)
         end
         page_disabled = false -- proceed with rendering page instead of file menu
         page_indicator_disabled = false
@@ -267,7 +267,6 @@ function page:render()
             page.footer.button_text.e2.name = "START"
             -- page.footer.button_text.e2.value = misc_util.trim(tostring(), 5)
         end
-
     else
         screen.level(3)
         screen.font_face(DEFAULT_FONT)
@@ -276,15 +275,20 @@ function page:render()
         screen.text_center("PRESS K2 TO LOAD SAMPLE")
     end
 
-
-
     window:render()
     page.footer:render()
 end
 
 local function add_params()
     -- file selection
-    params:set_action(ID_SLICES_AUDIO_FILE, function(file) load_sample(file) end)
+    params:set_action(ID_SLICES_AUDIO_FILE,
+        function(file)
+            if file ~= "-" then
+                filename = to_sample_name(file)
+                load_sample(file)
+            end
+        end
+    )
 
     -- number of slices
     params:set_action(ID_SLICES_NUM_SLICES, action_num_slices)
