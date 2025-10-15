@@ -249,6 +249,9 @@ Engine_Symbiosis : CroneEngine {
         } {
           // Create voice if doesn't exist
           voices[idx] = Synth.before(filter, "SampleVoice", voiceParams[idx].asPairs);
+          voices[idx].onFree { 
+              voices[idx] = nil;
+          };
         };
       } { 
         // "new sample still loading, trigger skipped...".postln;

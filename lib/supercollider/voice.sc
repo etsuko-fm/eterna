@@ -93,7 +93,7 @@ Voice {
 					var done1 = Done.kr(percEnv1);
 					var done2 = Done.kr(percEnv2);
 					var isDone = Select.kr(intVoiceId, [done1, done2]);
-					var delayedDone = DelayN.kr(isDone);
+					var delayedDone = DelayN.kr(isDone, 1, 1);
 
 					var amp; // for reporting amplitude
 
