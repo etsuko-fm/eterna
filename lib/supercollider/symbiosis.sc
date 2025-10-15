@@ -53,7 +53,8 @@ Engine_Symbiosis : CroneEngine {
       BP: "SymSVF",
       SWIRL: "Swirl",
     );
-    var currentFilter = "HP"; 
+    var currentFilter = filterMap["HP"]; 
+    var filterParams = Dictionary.newFrom([\freq, 1000, \res, 0.1, \dry, 0, \gain, 1.0]);
 
     // Map echo names to corresponding SynthDef
     var echoMap = (
@@ -66,18 +67,7 @@ Engine_Symbiosis : CroneEngine {
     var echoParams = Dictionary.newFrom([\wet, 0.5, \feedback, 0.7, \time, 0.1]);
     
     // helper function for adding engine command for any float param of a voice
-    var addVoiceParamCommand = { |param|
-      this.addCommand(param, "if", { |msg|
-        var idx = msg[1].asInteger; // voice index
-        var val = msg[2]; // float value
-        if (voices[idx].isPlaying) {
-          // if voice exists, set directly
-          voices[idx].set(param.asSymbol, val);
-        };
-        // store value for when voice is recreated
-        voiceParams[idx].put(param.asSymbol, val);
-      });
-    };
+    var voiceCommands = ["attack", "decay", "pan", "loop_start", "loop_end", "level", "env_level", "env_curve", "enable_env", "rate", "lpg_freq", "enable_lpg"];
 
     voices = Array.fill(6, {|i| nil});
 
@@ -156,6 +146,7 @@ Engine_Symbiosis : CroneEngine {
 
   	this.addCommand("load_file","s", {
       arg msg;
+      var path, numFrames;
 
       // Routine to allow server.sync
       r = Routine {
@@ -170,28 +161,35 @@ Engine_Symbiosis : CroneEngine {
         // // Wait until voices freed
         // context.server.sync;
 
-        // Get file metadata 
+        // Get file metadata
+        f.free;
         f = SoundFile.new;
-        f.openRead(msg[1].asString);
-        ("file" + msg[1].asString + "has" + f.numChannels + "channels").postln;
+        path = msg[1].asString;
+        f.openRead(path);
+        ("file" + path + "has" + f.numChannels + "channels").postln;
+
+        // Limit buffer read to 2^24 samples because of Phasor resolution
+        numFrames = f.numFrames.min(16777216);
         f.close;
 
-        // todo: limit buffer read to 2^24 samples because of Phasor resolution
+        ("Loading " ++ numFrames ++ " frames").postln;
+
         "Loading channel 1".postln;
-        bufL = Buffer.readChannel(context.server, msg[1].asString, channels:[0], bufnum: bufnumL, action: {|b| ("Channel 1 loaded to buffer " ++ bufnumL).postln;});
+        bufL = Buffer.readChannel(context.server, path, numFrames: numFrames, channels:[0], bufnum: bufnumL, action: {|b| ("Channel 1 loaded to buffer " ++ bufnumL).postln;});
+        
+        // Load buffers sequentially to prevent hanging
         context.server.sync;
 
         if (f.numChannels > 1) {
           // It may be quadraphonic or surround, but that's not supported right now
           "Loading channel 2".postln;
           bufR = Buffer.readChannel(context.server, msg[1].asString, channels:[1], bufnum: bufnumR, action: {|b| ("Channel 2 loaded to buffer " ++ bufnumR).postln;});
+          context.server.sync;
         };
-
-        // Wait until buffers are loaded
-        context.server.sync;
 
         if (f.numChannels > 1) {
           // Normalize based on loudest sample across channels
+          "Starting normalization".postln;
           bufValsLeft = bufL.loadToFloatArray(action: { |array| peakL = array.maxItem; });
           bufValsRight = bufR.loadToFloatArray(action: { |array| peakR = array.maxItem; });
           // TODO: perfect moment to send the waveform to lua.. 
@@ -237,7 +235,17 @@ Engine_Symbiosis : CroneEngine {
       }.play;
     });
 
-    ["attack", "decay", "pan", "loop_start", "loop_end", "level", "env_level", "env_curve", "enable_env", "rate", "lpg_freq", "enable_lpg"].do { |param| addVoiceParamCommand.(param); };
+    voiceCommands.do { |param| 
+      this.addCommand(param, "if", { |msg|
+        var idx = msg[1].asInteger; // voice index
+        var val = msg[2]; // float value
+        if (voices[idx].isPlaying) {
+          // if voice exists, set directly
+          voices[idx].set(param.asSymbol, val);
+        };
+        // store value for when voice is recreated
+        voiceParams[idx].put(param.asSymbol, val);
+      }); };
 
     this.addCommand("trigger", "i", {
       arg msg;
@@ -273,17 +281,12 @@ Engine_Symbiosis : CroneEngine {
 
     // Commands for filter
     this.addCommand("filter_type", "s", { arg msg;
-      var name = msg[1];
-      if(filterMap[name.asString] != currentFilter) {
+      var name = msg[1]; // Expects LP, HP, BP or SWIRL
+      if(filterMap[name] != currentFilter) {
+        ("Swapping filter synthdef to " ++ filterMap[name] ++ " to set type " ++ name).postln;
         filter.free;
-        filter = Synth.new(filterMap[name], target:context.xg, args: [\in, filterBus, \out, fxBus]);
+        filter = Synth.before(echo, filterMap[name], args: [\in, filterBus, \out, fxBus] ++ filterParams.asPairs);
       };
-      if(name != \SWIRL && currentFilter == "SWIRL") {
-        filter.free;
-        "Initialized SymSVF".postln;
-        filter = Synth.new("SymSVF", target:context.xg, args: [\in, filterBus, \out, fxBus]);
-      };
-      ("Switched to " ++ name ++ " filter").postln;
       switch(name)
       { \HP } {
         filter.set(\filter_type, 0);
@@ -293,26 +296,22 @@ Engine_Symbiosis : CroneEngine {
       }
       { \BP } {
         filter.set(\filter_type, 2);
-      }
-      { \SWIRL } {
-        if (currentFilter != "SWIRL") {
-          "Initialized Swirl".postln;
-          filter.free;
-          filter = Synth.new("Swirl", target:context.xg, args: [\in, filterBus, \out, fxBus]);
-        };
       };
       currentFilter = filterMap[name];
     });
 
-    this.addCommand("filter_freq", "f", { arg msg; filter.set(\freq, msg[1]); });
-    this.addCommand("filter_res", "f", { arg msg; filter.set(\res, msg[1]); });
-    this.addCommand("filter_dry", "f", { arg msg; filter.set(\dry, msg[1]); });
-    this.addCommand("filter_gain", "f", { arg msg; filter.set(\gain, msg[1]); });
+    // Commands for filter
+    filterParams.keysDo({|key| 
+      this.addCommand("filter_" ++ key.asString, "f", { |msg|
+        var val = msg[1];
+        filter.set(key.asSymbol, val);
+        filterParams.put(key.asSymbol, val);
+      });
+    });
 
     // Commands for echo
     echoParams.keysDo({|key| 
-      this.addCommand("echo_" ++ key.asString, "f", { 
-        arg msg; 
+      this.addCommand("echo_" ++ key.asString, "f", { |msg|
         var val = msg[1];
         echo.set(key.asSymbol, val);
         echoParams.put(key.asSymbol, val);
@@ -327,8 +326,7 @@ Engine_Symbiosis : CroneEngine {
           echo.free;
           currentEcho = name;
           echo = Synth.after(filter, synthDefName, args: [\in, fxBus, \out, bassMonoBus, \t_trig, 1] ++ echoParams.asPairs);
-          "Switched to " ++ name ++ " echo".postln;
-          ("echo params: " ++ echoParams.asPairs).postln;
+          ("Switched to " ++ name ++ " echo").postln;
         };
       }
     });

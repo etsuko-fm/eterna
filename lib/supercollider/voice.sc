@@ -88,17 +88,7 @@ Voice {
 					var percEnv1 = EnvGen.ar(Env.new([0, 0, env_level, 0], [0, attack, decay], curve), gate: t_1);
 					var percEnv2 = EnvGen.ar(Env.new([0, 0, env_level, 0], [0, attack, decay], curve), gate: t_2);
 
-					// Assign active envelope, so we can check if the playback is done
-					var percEnv = Select.kr(intVoiceId, [percEnv1, percEnv2]);
-					var done1 = Done.kr(percEnv1);
-					var done2 = Done.kr(percEnv2);
-					var isDone = Select.kr(intVoiceId, [done1, done2]);
-					var delayedDone = DelayN.kr(isDone, 1, 1);
-
 					var amp; // for reporting amplitude
-
-					// Free synth when playback done
-					FreeSelf.kr(delayedDone);
 
 					// If envelopes are disabled, the voice plays continuously with env_level as optional amplitude modulator
 					percEnv1 = Select.kr(enable_env, [env_level, percEnv1]);
@@ -113,11 +103,8 @@ Voice {
 					playback = XFade2.ar(playback1, playback2, crossfade);
 					playback = Pan2.ar(playback, pan);
 					
-					// Tweak spectrum due to all the digital processing
-					playback = HPF.ar(playback, 30);
-					playback = LPF.ar(playback, 10000); // Harshness
-					playback = BPeakEQ.ar(playback, 3500, 1.0, -2.0); // Presence
-					playback = BPeakEQ.ar(playback, 250, 1.0, 1.5); // Warmth
+					// Remove digital harshness
+					playback = LPF.ar(playback, 10000);
 
 					amp =  Amplitude.ar(Mix.ar(playback), 0, 0.2);
 					Out.kr(ampBus, amp);

@@ -1,6 +1,6 @@
 function calculate_gaussian_levels(skew, sigma)
     -- skew = the current center of the graph (0-1, 0.5 = symmetrical)
-    -- convert state.scan_val to levels for each softcut voice
+    -- convert sigma to levels for each voice
     num_vals = 6
     levels = {}
     for i = 1, num_vals do

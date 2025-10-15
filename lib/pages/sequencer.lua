@@ -95,7 +95,7 @@ function voice_position_to_phase(voice, phase)
     local slice_end = params:get(get_slice_end_param_id(voice))
     local slice_length = slice_end - slice_start
 
-    -- move softcut position to provided phase
+    -- move position to provided phase
     local rel_pos = phase * slice_length
     local abs_pos = slice_start + rel_pos
     engine.position(voice, abs_pos)
@@ -264,10 +264,6 @@ function clock.transport.stop()
     print("stop transport")
     transport_on = false
     clock.cancel(main_seq_clock_id)
-    for voice = 1, 6 do
-        -- stop softcut voices
-        softcut.play(voice, 0)
-    end
     current_step = 1
 end
 
@@ -381,8 +377,6 @@ function page:initialize()
 
     -- start sequencer
     main_seq_clock_id = clock.run(run_sequencer)
-    -- for softcut updates
-    -- softcut.event_position(report_softcut)
 
     perlin_lfo = _lfos:add {
         shape = 'tri',

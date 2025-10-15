@@ -92,7 +92,7 @@ local function update_loop_ranges()
     -- 6 consecutive slices are assigned to voice 1-6
     local start = params:get(ID_SLICES_START)
 
-    -- edit buffer ranges per softcut voice
+    -- edit buffer ranges per voice
     local slice_start_timestamps = {} -- start position of each slice, in seconds
     local slice_length = get_slice_length()
     if not slice_length then return end
@@ -128,30 +128,17 @@ local function update_loop_ranges()
 end
 
 local function load_sample(file)
-    -- use specified `file` as a sample and store enabled length of softcut buffer in state
+    -- use specified `file` as a sample and store enabled length of buffer in state
     if not file or file == "-" then return end
-    sample_length, is_stereo = audio_util.load_sample(file, false)
+    local num_channels = audio_util.num_channels(file)
     selected_sample = file
-    softcut.render_buffer(1, 0, sample_length, waveform_width)
-    if is_stereo then
-        softcut.render_buffer(2, 0, sample_length, waveform_width)
-    end
     engine.load_file(file)
-    if is_stereo then
+    if num_channels > 1 then
         waveform_h = 5
         waveform_graphics[1].y = 20
-        for voice = 1, 3 do
-            softcut.buffer(voice, 1)
-        end
-        for voice = 4, 6 do
-            softcut.buffer(voice, 2)
-        end
     else
         waveform_h = 10
         waveform_graphics[1].y = 26
-        for voice = 1, 6 do
-            softcut.buffer(voice, 1)
-        end
     end
     update_loop_ranges()
 end
@@ -350,19 +337,9 @@ function page:initialize()
         render_samples = waveform_width,
     })
 
-    local function on_render(ch, start, i, s)
-        -- this is a callback, for every softcut.render_buffer() invocation
-        waveform_samples[ch] = as_abs_values(s)
-        state.interval = i -- represents the interval at which the waveform is sampled for rendering
-        update_waveform(ch)
-    end
-    -- setup callback
-    softcut.event_render(on_render)
-
     if selected_sample then
         filename = to_sample_name(selected_sample)
         if debug_mode then load_sample(_path.dust .. selected_sample) end
-        softcut.render_buffer(1, 0, sample_length, waveform_width)
     end
 
     window = Window:new({

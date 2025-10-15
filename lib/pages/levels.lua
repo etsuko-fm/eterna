@@ -155,7 +155,6 @@ function page:initialize()
         brightness = 15,
     })
 
-    -- initialize softcut levels according to mixer levels
     adjust_sigma(0)
 
     local sigma = amp_to_sigma(params:get(ID_LEVELS_AMP))
