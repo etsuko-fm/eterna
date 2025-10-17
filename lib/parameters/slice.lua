@@ -4,7 +4,7 @@
 
 SLICES_MIN = 1
 SLICES_MAX = 32
-SLICES_DEFAULT = 6
+SLICES_DEFAULT = 16
 
 controlspec_slices = controlspec.def {
     min = SLICES_MIN,

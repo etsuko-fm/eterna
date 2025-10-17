@@ -37,6 +37,6 @@ controlspec_echo_feedback = controlspec.def {
 
 params:add_separator("ECHO", "ECHO")
 params:add_option(ID_ECHO_STYLE, "style", ECHO_STYLES)
-params:add_option(ID_ECHO_TIME, "time", ECHO_TIME_NAMES)
+params:add_option(ID_ECHO_TIME, "time", ECHO_TIME_NAMES, 4)
 params:add_control(ID_ECHO_DRYWET, "drywet", controlspec_echo_drywet)
 params:add_control(ID_ECHO_FEEDBACK, "feedback", controlspec_echo_feedback)

@@ -122,7 +122,7 @@ local function set_current_step()
 end
 
 local function calculate_envelope(enable_mod, step_val)
-        local max_time = params:get(ID_ENVELOPES_TIME)
+    local max_time = params:get(ID_ENVELOPES_TIME)
     local max_shape = params:get(ID_ENVELOPES_SHAPE)
 
     local mod_amt

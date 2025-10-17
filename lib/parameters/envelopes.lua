@@ -25,7 +25,7 @@ controlspec_env_time = controlspec.def {
     max = ENV_TIME_MAX,
     warp = 'exp',
     step = 0.002,
-    default = 1.0,
+    default = 0.5,
     units = '',
     quantum = 0.005,
     wrap = false
@@ -36,7 +36,7 @@ controlspec_env_shape = controlspec.def {
     max = 1,
     warp = 'lin',
     step = 0.001,
-    default = 0,
+    default = 0.25,
     units = '',
     quantum = 0.01,
     wrap = false
@@ -55,7 +55,7 @@ controlspec_env_filter = controlspec.def {
 }
 
 params:add_separator("ENVELOPE", "ENVELOPE")
-params:add_option(ID_ENVELOPES_MOD, "mod", ENVELOPE_MOD_OPTIONS)
+params:add_option(ID_ENVELOPES_MOD, "mod", ENVELOPE_MOD_OPTIONS, 2)
 params:add_control(ID_ENVELOPES_TIME, "time", controlspec_env_time)
 params:add_control(ID_ENVELOPES_SHAPE, "shape", controlspec_env_shape)
 params:add_option(ID_ENVELOPES_CURVE, "curve", ENVELOPE_CURVES)
