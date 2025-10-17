@@ -7,7 +7,7 @@ local page_disabled = false
 
 local waveform_graphics = {}
 local window
-local waveform_width = 63
+local waveform_width = 64
 local waveform_h = 6
 local is_stereo
 
@@ -125,11 +125,14 @@ function page:load_sample(file)
     selected_sample = file
     engine.load_file(file)
     if num_channels > 1 then
-        waveform_h = 5
+        is_stereo = true
         waveform_graphics[1].y = 20
+        waveform_graphics[1].vertical_scale = 5
+        waveform_graphics[2].vertical_scale = 5
     else
-        waveform_h = 10
+        is_stereo = false
         waveform_graphics[1].y = 26
+        waveform_graphics[1].vertical_scale = 10
     end
     self:update_loop_ranges()
 end
@@ -302,7 +305,6 @@ function page:initialize()
 
     self:add_params()
 
-    -- engine.load_file("/home/we/dust/"..selected_sample)
     loaded_poll:update()
 
     -- add waveform
@@ -310,12 +312,14 @@ function page:initialize()
         x = 33,
         y = 20,
         waveform_width = waveform_width,
+        vertical_scale = 9,
     })
 
     waveform_graphics[2] = Waveform:new({
         x = 33,
         y = 32,
         waveform_width = waveform_width,
+        vertical_scale = 9,
     })
 
     if selected_sample then

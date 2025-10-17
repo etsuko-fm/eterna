@@ -67,11 +67,19 @@ Engine_Symbiosis : CroneEngine {
     // helper function for adding engine command for any float param of a voice
     var voiceCommands = ["attack", "decay", "pan", "loop_start", "loop_end", "level", "env_level", "env_curve", "enable_env", "rate", "lpg_freq", "enable_lpg"];
 
-    var getWaveform = { |array, numDisplayPoints = 64 |
-      var step, waveform;
-      step = (array.size / numDisplayPoints).floor.max(1);
+    var getWaveform = { |samples, numDisplayPoints = 64 |
+      var waveform, chunkSize, maxPerChunk;
+      var resolution = 1024;
+      if (samples.size > resolution) {
+        var step = samples.size / resolution;
+        samples = Array.fill(resolution, { |i| samples[(i * step).floor] });
+      };
+      chunkSize = (samples.size / numDisplayPoints).floor.max(1);
+      maxPerChunk = samples.clump(chunkSize).collect { |chunk|
+        chunk.maxItem
+      };
       waveform = Int8Array.fill(numDisplayPoints, { |i|
-        (array.at(i * step) * 127).abs.floor.asInteger
+        (maxPerChunk.at(i) * 127).abs.floor.asInteger
       });
       waveform
     };

@@ -6,7 +6,7 @@ Waveform = {
     vertical_scale = 18,
     fill_selected = 15,
     fill_default = 5,
-    waveform_width = 16,
+    waveform_width = 64,
 }
 
 function Waveform:new(o)
