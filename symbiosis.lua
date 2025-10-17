@@ -139,11 +139,16 @@ function osc.event(path, args, from)
   if path == "/waveform" then
     print("Lua: /waveform received from SC")
     local blob = args[1] -- the int8 array from OSC
-    local unblob = blob_to_table(blob)
-    -- print the result
-    -- for i, v in ipairs(unblob) do
-    --   print(i, v)
-    -- end
+    local channel = args[2] -- 0 or 1 for left, right
+    print('channel: '.. tonumber(channel))
+    local waveform = blob_to_table(blob)
+    for i, v in ipairs(waveform) do
+      -- convert int8 array to floats
+      waveform[i] = waveform[i] / 127
+    end
+    update_waveform(waveform, channel+1)
+    -- -- print the result
+
   end
   if path == "/amp_history_left" then
     local blob = args[1]
@@ -184,8 +189,6 @@ function init()
     norns.enc.sens(i, 1)
     norns.enc.accel(i, false)
   end
-  engine.request_waveform(0)
-
 
   loaded_poll = poll.set("file_loaded")
   amp1poll = poll.set("voice1amp")

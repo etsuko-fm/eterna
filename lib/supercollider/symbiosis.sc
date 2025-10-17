@@ -69,6 +69,14 @@ Engine_Symbiosis : CroneEngine {
     // helper function for adding engine command for any float param of a voice
     var voiceCommands = ["attack", "decay", "pan", "loop_start", "loop_end", "level", "env_level", "env_curve", "enable_env", "rate", "lpg_freq", "enable_lpg"];
 
+    var getWaveform = { |array, numDisplayPoints = 64 |
+      var step, waveform;
+      step = (array.size / numDisplayPoints).floor.max(1);
+      waveform = Int8Array.fill(numDisplayPoints, { |i|
+        (array.at(i * step) * 127).abs.floor.asInteger
+      });
+      waveform
+    };
     voices = Array.fill(6, {|i| nil});
 
     // For communicating to Lua (beyond the polling system)
@@ -146,7 +154,8 @@ Engine_Symbiosis : CroneEngine {
 
   	this.addCommand("load_file","s", {
       arg msg;
-      var path, numFrames;
+      var path, numFrames, step;
+      var numDisplayPoints = 128;
 
       // Routine to allow server.sync
       r = Routine {
@@ -161,7 +170,6 @@ Engine_Symbiosis : CroneEngine {
 
         // Free voices
         voices.do { |voice, i| voice.free; };
-
 
         // Get file metadata
         f.free;
@@ -222,10 +230,20 @@ Engine_Symbiosis : CroneEngine {
               params.put(\bufnum, n);
               ("Voice " ++ i ++ " set to buffer " ++ n).postln;
           };
+          
         } { 
           // if mono, also mark loading as finished
           bufL.normalize();
           ("mono buffer normalized").postln;
+
+          // Send waveform to Lua
+          bufValsLeft = bufL.loadToFloatArray(action: { |array|
+              var waveform = getWaveform.(array);
+              oscServer.sendBundle(0, ['/waveform', waveform, 0]);
+              "waveform sent".postln;
+           });
+          context.server.sync;
+
           // Let all voices use the left buffer
           voices.do {|voice| 
           if (voice.notNil) {
@@ -238,6 +256,10 @@ Engine_Symbiosis : CroneEngine {
         context.server.sync;
         isLoaded = true;
         "Normalizing completed".postln;
+        bufValsLeft.free;
+        bufValsRight.free;
+        f.free;
+        waveform.free;
       }.play;
     });
 

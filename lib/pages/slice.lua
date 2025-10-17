@@ -6,7 +6,6 @@ local fileselect = require('fileselect')
 local page_disabled = false
 
 local waveform_graphics = {}
-local waveform_samples = {}
 local window
 local waveform_width = 63
 local waveform_h = 6
@@ -55,15 +54,9 @@ function table.slice(tbl, first, last)
     return result
 end
 
-local function update_waveform(ch)
-    local scale_waveform = 1
-    if waveform_samples[ch][1] then
-        -- adjust scale so scale at peak == 1, is waveform_h; lower amp is higher scaling
-        scale_waveform = waveform_h / math.max(table.unpack(waveform_samples[ch]))
-    end
-
-    waveform_graphics[ch].samples = waveform_samples[ch]
-    waveform_graphics[ch].vertical_scale = scale_waveform
+function update_waveform(waveform, ch)
+    -- called by root module when OSC event received for updating waveform
+    waveform_graphics[ch].samples = waveform
 end
 
 local function get_slice_length()
@@ -320,21 +313,15 @@ function page:initialize()
     waveform_graphics[1] = Waveform:new({
         x = 33,
         y = 20,
-        highlight = false,
         sample_length = sample_length,
-        vertical_scale = 1,
-        samples = {},
-        render_samples = waveform_width,
+        waveform_width = waveform_width,
     })
 
     waveform_graphics[2] = Waveform:new({
         x = 33,
         y = 32,
-        highlight = false,
         sample_length = sample_length,
-        vertical_scale = 1,
-        samples = {},
-        render_samples = waveform_width,
+        waveform_width = waveform_width,
     })
 
     if selected_sample then

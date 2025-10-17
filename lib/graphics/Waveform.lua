@@ -2,12 +2,11 @@ Waveform = {
     x = 0,
     y = 0,
     hide = false,
-    highlight = true,
     samples = {},
-    vertical_scale = 1,
+    vertical_scale = 18,
     fill_selected = 15,
     fill_default = 5,
-    render_samples = 16,
+    waveform_width = 16,
 }
 
 function Waveform:new(o)
@@ -22,19 +21,13 @@ function Waveform:render()
     if #self.samples == 0 then return end
     local x_pos = self.x
 
-    -- draw lines
-    -- local offset = 8
-    -- local line_width = self.render_samples
-
-    -- screen.rect(x_pos - 2, self.y - offset + 1, line_width + 3, offset * 2 - 1)
-    -- screen.stroke()
     -- draw waveform
     local total_samples = #self.samples
-    local iter_size = math.floor(total_samples / self.render_samples)
+    local iter_size = math.floor(total_samples / self.waveform_width)
     -- if it needs to go to 1, you might need to interpolate the table so # samples fits.. 
     local c = 0
     for i = 1, #self.samples, iter_size do
-        if c < self.render_samples then
+        if c < self.waveform_width then
             -- sometimes iter step is .8 because not enough samples..?
             local height = math.max(1, util.round(math.abs(self.samples[i]) * self.vertical_scale))
             local brightness = math.max(1, util.round(math.abs(self.samples[i]) * self.vertical_scale)) * 2
