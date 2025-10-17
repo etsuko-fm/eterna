@@ -30,7 +30,7 @@ include("symbiosis/lib/parameters/master")
 include("symbiosis/lib/tests")
 
 local page_slice = include("symbiosis/lib/pages/slice")
-local page_sequencer = include("symbiosis/lib/pages/sequencer")
+page_sequencer = include("symbiosis/lib/pages/sequencer")
 local page_envelopes = include("symbiosis/lib/pages/envelopes")
 local page_filter = include("symbiosis/lib/pages/filter")
 local page_echo = include("symbiosis/lib/pages/echo")

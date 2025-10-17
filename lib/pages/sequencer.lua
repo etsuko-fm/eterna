@@ -1,50 +1,39 @@
 local GridGraphic = include("symbiosis/lib/graphics/Grid")
-local perlin = include("symbiosis/lib/ext/perlin")
 local page_name = "SEQUENCER"
 local window
 local grid_graphic
-local PERLIN_ZOOM = 10/3                          ---4 / 3 -- empirically tuned
-local SEQ_EVOLVE_RATES = { 2 ^ 15, 2 ^ 14, 2 ^ 13 } -- in quarter notes, but fuzzy concept due to how perlin computes
+local PERLIN_ZOOM = 10 / 3 ---4 / 3 -- empirically tuned
 local MAX_STEPS = sequence_util.max_steps
-
-local transport_on = true
-local holding_step = false
 
 -- todo: add in bits.lua? otherwise dependent on order of pages loaded
 
 local main_seq_clock_id
-local current_step = 1
-local current_global_step = 1 -- holds values of 1 to MAX_STEPS, even if sequence length is shorter
 local sequence_steps = SEQ_COLUMNS
-local step_divider = 1 -- 1 means 1 step = 1 1/16th note
-local cue_step_divider = nil
-local perlin_lfo
 local redraw_sequence = false
 
-local function generate_perlin_seq()
-    local velocities = {}
+local page = Page:create({
+    name = page_name,
+    --
+    hold = false,
+    resume_from = nil,
+    current_step = 1,
+    current_substep = 1, -- holds values of 1 to MAX_STEPS, even if sequence length is shorter
+    cue_step_divider = nil,
+    step_divider = 1,
+    transport_on = true,
+})
 
+
+local function generate_perlin_seq()
     local density = params:get(ID_SEQ_PERLIN_DENSITY)
     local x_seed = params:get(ID_SEQ_PERLIN_X)
     local y_seed = params:get(ID_SEQ_PERLIN_Y)
     local z_seed = params:get(ID_SEQ_PERLIN_Z)
 
-    for voice = 1, SEQ_ROWS do
-        local perlin_y = voice * PERLIN_ZOOM + y_seed
-        for step = 1, SEQ_COLUMNS do
-            local perlin_x = step * PERLIN_ZOOM + x_seed
-            local pnoise = perlin:noise(perlin_x, perlin_y, z_seed)
-            local velocity = util.linlin(-1, 1, 0, 1, pnoise)
-            table.insert(velocities, {value=velocity, voice=voice, step=step})
-            params:set(ID_SEQ_STEP[voice][step], velocity)
-        end
-    end
-
-    table.sort(velocities, function(a, b) return a.value > b.value end)
-    local keep_count = math.floor(density * #velocities)
-    for i, v in ipairs(velocities) do
-        local keep = i <= keep_count
-        params:set(ID_SEQ_STEP[v.voice][v.step], keep and v.value or 0)
+    local sequence = sequence_util.generate_perlin_seq(SEQ_ROWS, SEQ_COLUMNS, x_seed, y_seed, z_seed, density,
+        PERLIN_ZOOM)
+    for i, v in ipairs(sequence) do
+        params:set(ID_SEQ_STEP[v.voice][v.step], v.value)
     end
 end
 
@@ -60,24 +49,6 @@ local function e3(d)
     params:set(ID_SEQ_PERLIN_DENSITY, new, false)
 end
 
-local page = Page:create({
-    name = page_name,
-    e2 = e2,
-    e3 = e3,
-    k2_off = nil,
-    k3_off = nil,
-})
-
-function set_cue_step_divider(v)
-    -- cue up a change in sequence step length
-    cue_step_divider = v
-end
-
-function get_cue_step_divider()
-    return cue_step_divider
-end
-
-local hold_step = nil
 
 local function update_slices()
     if UPDATE_SLICES then
@@ -89,156 +60,116 @@ local function update_slices()
     end
 end
 
-local function update_step_divider()
-    if cue_step_divider then
-        -- wait until the current_global_step aligns with the new step_size
-        if current_global_step % cue_step_divider == 0 then
+function page:update_step_divider()
+    if self.cue_step_divider then
+        -- wait until the current_substep aligns with the new step_size
+        if self.current_substep % self.cue_step_divider == 0 then
             -- align the current global step with the new step divider, to prevent jumping
-            current_global_step = current_step * cue_step_divider
-            step_divider = cue_step_divider
-            cue_step_divider = nil
+            self.current_substep = self.current_step * self.cue_step_divider
+            self.step_divider = self.cue_step_divider
+            self.cue_step_divider = nil
         end
     end
 end
 
-local function set_current_step()
+function page:set_current_step()
     -- hold step feature, UI available on seq-ctrl page
-    if not holding_step then
-        if hold_step then
-            -- means step was held, but resumed this step
-            -- current_global_step ticked on meanwhile; but we don't want to jump to another step;
-            -- shold always go on neatly to the n+1 sequence step
-            print("resumed at " .. current_global_step)
-            current_global_step = current_step * step_divider + (current_step - hold_step)
-            hold_step = nil
+    if self.hold then
+        if self.resume_from == nil then
+            print("Frozen at " .. self.current_step)
+            self.resume_from = self.current_step
         end
-        current_step = util.wrap(math.ceil(current_global_step / step_divider), 1, sequence_steps)
     else
-        if hold_step == nil then
-            print("Frozen at " .. current_step)
-            hold_step = current_step
+        if self.resume_from then
+            -- means step was held, but resumed this step
+            -- current_substep ticked on meanwhile; but we don't want to jump to another step;
+            -- should always go on neatly to the n+1 sequence step
+            print("resumed at " .. self.current_substep)
+            -- TODO: should be a function reset_substep?
+            self.current_substep = self.current_step * self.step_divider + (self.current_step - self.resume_from)
+            self.resume_from = nil
         end
+        self.current_step = util.wrap(math.ceil(self.current_substep / self.step_divider), 1, sequence_steps)
     end
 end
 
-local function calculate_envelope(enable_mod, step_val)
+local function get_step_envelope(enable_mod, velocity)
     local max_time = params:get(ID_ENVELOPES_TIME)
     local max_shape = params:get(ID_ENVELOPES_SHAPE)
-
-    local mod_amt
-    if enable_mod ~= "OFF" then
-        -- use half of sequencer val for modulation
-        mod_amt = 0.5 + step_val / 2
-    else
-        mod_amt = 1
-    end
-
-    -- modulate time and shape
-    local time = max_time * mod_amt
-    local shape = max_shape * mod_amt
-    local attack = get_attack(time, shape)
-    local decay = get_decay(time, shape)
-
-    return attack, decay
+    return sequence_util.get_step_envelope(max_time, max_shape, enable_mod, velocity)
 end
 
 
-local function evaluate_step(x, y, is_step_change)
-    local voice = y - 1 -- for 0-based supercollider arrays
+function page:evaluate_step(x, y)
+    local sc_voice_id = y - 1 -- for 0-based supercollider arrays
     local enable_mod = ENVELOPE_MOD_OPTIONS[params:get(ID_ENVELOPES_MOD)]
-    local perlin_val = params:get(ID_SEQ_STEP[y][x])
-    local a = math.abs(perlin_val)
-    local on = a > 0.0
-    local attack, decay = calculate_envelope(enable_mod, a)
+    local velocity = params:get(ID_SEQ_STEP[y][x])
+    local on = velocity > 0
+    local attack, decay = get_step_envelope(enable_mod, velocity)
     if on then
         -- using modulo check to prevent triggering every 1/16 when step size is larger
-        if is_step_change then
-            grid_graphic.current_step = current_step
-            engine.env_level(voice, a)
-            engine.trigger(voice)
-            if enable_mod == "LPG" then
-                -- applies envelope to a lowpass filter
-                engine.lpg_freq(voice, misc_util.linexp(0, 1, 80, 20000, a, 1))
-            end
-            if enable_mod ~= "OFF" then
-                engine.attack(voice, attack)
-                engine.decay(voice, decay)
-            end
+        grid_graphic.current_step = self.current_step
+        engine.env_level(sc_voice_id, velocity)
+        if enable_mod == "LPG" then
+            -- applies envelope to a lowpass filter
+            engine.lpg_freq(sc_voice_id, misc_util.linexp(0, 1, 80, 20000, velocity, 1))
         end
+        if enable_mod ~= "OFF" then
+            engine.attack(sc_voice_id, attack)
+            engine.decay(sc_voice_id, decay)
+        end
+        engine.trigger(sc_voice_id)
     end
 end
 
-local function run_sequencer()
+function page:run_sequencer()
     -- runs every 1/16th note of current clock bpm (based on a 4/4 time signature); e.g. every 125ms for 120bpm
     while true do
+        -- updates playback range of each sample prior to trigger
         update_slices()
-        update_step_divider()
-        current_global_step = util.wrap(current_global_step + 1, 1, MAX_STEPS)
-        set_current_step()
-        -- grid_graphic.current_step = current_step
-        local x = current_step -- x pos of sequencer, i.e. current step
+        self:update_step_divider()
+        self.current_substep = util.wrap(self.current_substep + 1, 1, MAX_STEPS)
+        self:set_current_step()
+        local x = self.current_step -- x pos of sequencer, i.e. current step
 
         -- true when switching from previous step to the current step
-        local is_step_change = current_global_step % step_divider == 0
+        local next = self.current_substep % self.step_divider == 0
 
-        if is_step_change then
-            grid_graphic.current_step = current_step
+        if next then
+            grid_graphic.current_step = self.current_step
+            for y = 1, SEQ_ROWS do
+                self:evaluate_step(x, y)
+            end
         end
-
-        for y = 1, SEQ_ROWS do
-            evaluate_step(x, y, is_step_change)
-        end
-        clock.sync(1 / 16)
+        clock.sync(1 / 16) -- sync on 1/16th of a beat, so each 1/64th note
     end
 end
 
-function toggle_transport()
-    if transport_on then
+function page:toggle_transport()
+    if self.transport_on then
         clock.transport.stop()
         grid_graphic.is_playing = false
-        current_global_step = 1
-        current_step = 1
+        self.current_substep = 1
+        self.current_step = 1
     else
         clock.transport.start()
         grid_graphic.is_playing = true
     end
 end
 
-function report_transport()
-    return transport_on
-end
-
-function report_hold()
-    return holding_step
-end
-
-function report_current_global_step()
-    return current_global_step
-end
-
-function report_current_step()
-    return current_step
-end
-
-function toggle_hold_step()
-    if holding_step then
-        holding_step = false
-        print('releasing')
-    else
-        holding_step = true
-        print('holding')
-    end
+function page:toggle_hold_step()
+    self.hold = not self.hold
 end
 
 function clock.transport.start()
     print("start transport")
-    transport_on = true
-    main_seq_clock_id = clock.run(run_sequencer)
+    page.transport_on = true
+    main_seq_clock_id = clock.run(function() page:run_sequencer() end)
 end
 
 function clock.transport.stop()
     print("stop transport")
-    transport_on = false
+    page.transport_on = false
     clock.cancel(main_seq_clock_id)
     current_step = 1
 end
@@ -303,16 +234,18 @@ local function env_callback(voice, val)
 end
 
 function page:initialize()
+    page.e2 = e2
+    page.e3 = e3
     -- allows value to be modified by other pages
     page.sequence_speed = sequence_util.convert_sequence_speed[sequence_util.default_speed_idx]
     add_params()
+
     env1poll.callback = function(v) env_callback(1, v) end
     env2poll.callback = function(v) env_callback(2, v) end
     env3poll.callback = function(v) env_callback(3, v) end
     env4poll.callback = function(v) env_callback(4, v) end
     env5poll.callback = function(v) env_callback(5, v) end
     env6poll.callback = function(v) env_callback(6, v) end
-
 
     window = Window:new({
         x = 0,
@@ -352,21 +285,7 @@ function page:initialize()
     })
 
     -- start sequencer
-    main_seq_clock_id = clock.run(run_sequencer)
-
-    perlin_lfo = _lfos:add {
-        shape = 'tri',
-        min = 0,
-        max = 1,
-        depth = 1,
-        mode = 'clocked',
-        period = SEQ_EVOLVE_RATES[1],
-        phase = 0,
-        action = function(scaled, raw)
-            params:set(ID_SEQ_PERLIN_Y, controlspec_perlin:map(scaled))
-        end
-    }
-    perlin_lfo:set('reset_target', 'mid: rising')
+    main_seq_clock_id = clock.run(function() page:run_sequencer() end)
     generate_perlin_seq()
 end
 

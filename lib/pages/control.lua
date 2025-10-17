@@ -20,14 +20,14 @@ local page = Page:create({
     name = page_name,
     e2 = adjust_bpm,
     e3 = adjust_step_size,
-    k2_off = toggle_transport,
-    k3_on = toggle_hold_step,
+    k2_off = function() page_sequencer:toggle_transport() end,
+    k3_on = function() page_sequencer:toggle_hold_step() end,
 })
 
 local function action_sequence_speed(v)
     -- convert table index of human-readable options to value for clock.sync
     -- calls global function defined on sequencer page
-    set_cue_step_divider(sequence_util.convert_sequence_speed[v])
+    page_sequencer.cue_step_divider = sequence_util.convert_sequence_speed[v]
 end
 
 local function add_params()
@@ -39,16 +39,16 @@ end
 function page:render()
     window:render()
     local tempo_trimmed = misc_util.trim(tostring(clock.get_tempo()), 5)
-    local is_playing = report_transport()
+    local is_playing = page_sequencer.transport_on
     page.footer.button_text.e2.value = tempo_trimmed
     page.footer.button_text.k2.value = is_playing and "ON" or "OFF"
-    page.footer.button_text.k3.value = report_hold() and "ON" or "OFF"
+    page.footer.button_text.k3.value = page_sequencer.hold and "ON" or "OFF"
     page.footer.button_text.e3.value = sequence_util.sequence_speeds[params:get(PARAM_ID_SEQUENCE_SPEED)]
     control_graphic.bpm = tempo_trimmed
     control_graphic.is_playing = is_playing
-    control_graphic.current_step = report_current_step()
-    control_graphic.current_quarter = util.wrap(math.ceil(report_current_global_step()/4), 1, 4)
-    control_graphic.cue = get_cue_step_divider()
+    control_graphic.current_step = page_sequencer.current_step
+    control_graphic.current_quarter = util.wrap(math.ceil(page_sequencer.current_substep/4), 1, 4) --TODO: adjust so configurable if 1/64 is default
+    control_graphic.cue = page_sequencer.cue_step_divider
     control_graphic:render()
     page.footer:render()
 end
