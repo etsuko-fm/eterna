@@ -9,9 +9,7 @@ Engine_Symbiosis : CroneEngine {
 
   // Control buses
   var ampBuses, envBuses, preCompControlBuses, postCompControlBuses, postGainBuses, masterOutControlBuses;
-  var waveform;
   var oscServer;
-  var bufValsLeft, bufValsRight;
   var n, r;
   var bufL, bufR, bufAmp;
 
@@ -81,7 +79,6 @@ Engine_Symbiosis : CroneEngine {
 
     // For communicating to Lua (beyond the polling system)
     oscServer = NetAddr("localhost", 10111);
-    waveform = Int8Array.fill(8, { 12 }); // just example for now
 
     // Buses for audio routing
     filterBus = Bus.audio(context.server, 2);
@@ -164,8 +161,6 @@ Engine_Symbiosis : CroneEngine {
         bufL = nil;
         bufR.free;
         bufR = nil;
-        bufValsLeft.free;
-        bufValsRight.free;
         isLoaded = false; 
 
         // Free voices
@@ -185,12 +180,13 @@ Engine_Symbiosis : CroneEngine {
         // // Wait until voices freed
         context.server.sync;
 
-        s.bufferAllocator.dump;
-
         ("Loading " ++ numFrames ++ " frames").postln;
 
         "Loading channel 1".postln;
-        bufL = Buffer.readChannel(context.server, path, numFrames: numFrames, channels:[0], bufnum: bufnumL, action: {|b| ("Channel 1 loaded to buffer " ++ bufnumL).postln;});
+        bufL = Buffer.readChannel(context.server, path, numFrames: numFrames, channels:[0], bufnum: bufnumL, action: {|b| 
+          ("Channel 1 loaded to buffer " ++ bufnumL).postln;
+          oscServer.sendBundle(0, ['/duration', b.duration]);
+        });
         
         // Load buffers sequentially to prevent hanging
         context.server.sync;
@@ -205,8 +201,20 @@ Engine_Symbiosis : CroneEngine {
         if (f.numChannels > 1) {
           // Normalize based on loudest sample across channels
           "Starting normalization".postln;
-          bufValsLeft = bufL.loadToFloatArray(action: { |array| peakL = array.maxItem; });
-          bufValsRight = bufR.loadToFloatArray(action: { |array| peakR = array.maxItem; });
+          bufL.loadToFloatArray(action: { |array| 
+            var waveform = getWaveform.(array);
+            peakL = array.maxItem; 
+            oscServer.sendBundle(0, ['/waveform', waveform, 0]);
+            "waveform L sent".postln;
+            array.free;
+          });
+          bufR.loadToFloatArray(action: { |array| 
+            var waveform = getWaveform.(array);
+            peakR = array.maxItem; 
+            oscServer.sendBundle(0, ['/waveform', waveform, 1]);
+            "waveform R sent".postln;
+            array.free;
+          });
           // TODO: perfect moment to send the waveform to lua.. 
           
           ("Max of left/right channel: " ++ max(peakL, peakR)).postln;
@@ -236,30 +244,32 @@ Engine_Symbiosis : CroneEngine {
           bufL.normalize();
           ("mono buffer normalized").postln;
 
-          // Send waveform to Lua
-          bufValsLeft = bufL.loadToFloatArray(action: { |array|
+          // Send waveform
+          bufL.loadToFloatArray(action: { |array|
               var waveform = getWaveform.(array);
               oscServer.sendBundle(0, ['/waveform', waveform, 0]);
               "waveform sent".postln;
+              array.free;
            });
           context.server.sync;
 
           // Let all voices use the left buffer
-          voices.do {|voice| 
-          if (voice.notNil) {
-            voice.set(\bufnum, bufnumL)
-          };};
-          voiceParams.do {|params| params.put(\bufnum, bufnumL)};
+          voices.do {|voice, i| 
+            if (voice.notNil) {
+              voice.set(\bufnum, bufnumL);
+              ("Voice " ++ i ++ " set to buffer " ++ bufnumL).postln;
+            };
+          };
+          voiceParams.do { |params, i| 
+            params.put(\bufnum, bufnumL);
+            ("Voice " ++ i ++ " set to buffer " ++ bufnumL).postln;
+          };
         };
 
         // Wait until normalization complete and voices loaded
         context.server.sync;
         isLoaded = true;
         "Normalizing completed".postln;
-        bufValsLeft.free;
-        bufValsRight.free;
-        f.free;
-        waveform.free;
       }.play;
     });
 
@@ -371,11 +381,6 @@ Engine_Symbiosis : CroneEngine {
     this.addCommand("comp_out_level", "f", { arg msg; compressor.set(\out_level, msg[1].dbamp); });
 
     // Commands for visualization
-    this.addCommand("request_waveform", "i", { 
-      arg msg; 
-      oscServer.sendBundle(0, ['/waveform', waveform]);
-    });
-
     this.addCommand("metering_rate", "i", {  arg msg; compressor.set(\metering_rate, msg[1])});
 
     this.addCommand("request_amp_history", "", { 
@@ -409,8 +414,6 @@ Engine_Symbiosis : CroneEngine {
     filter.free;
     voices.do(_.free);
     filterBus.free;
-    bufValsLeft.free;
-    bufValsRight.free;
     bassMonoBus.free;
     bassMono.free;
 
@@ -437,7 +440,6 @@ Engine_Symbiosis : CroneEngine {
     masterOutControlBuses.do(_.free);
     masterOutControlBuses.free;
     
-    waveform.free;
     oscServer.free;
   }
 }

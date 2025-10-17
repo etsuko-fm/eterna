@@ -78,34 +78,14 @@ function get_cue_step_divider()
     return cue_step_divider
 end
 
-function voice_position_to_start(voice)
-    if params:get(get_voice_dir_param_id(voice)) == 1 then
-        -- play forward
-        -- query position
-        engine.position(voice, params:get(get_slice_start_param_id(voice)))
-    else
-        -- play reverse, start at end
-        engine.position(voice, params:get(get_slice_end_param_id(voice)))
-    end
-end
-
-function voice_position_to_phase(voice, phase)
-    -- get slice length
-    local slice_start = params:get(get_slice_start_param_id(voice))
-    local slice_end = params:get(get_slice_end_param_id(voice))
-    local slice_length = slice_end - slice_start
-
-    -- move position to provided phase
-    local rel_pos = phase * slice_length
-    local abs_pos = slice_start + rel_pos
-    engine.position(voice, abs_pos)
-end
-
 local hold_step = nil
 
 local function update_slices()
     if UPDATE_SLICES then
+        print("updating slices")
         for voice = 0, 5 do
+            print('loop start set to ' .. params:get(ID_SLICES_SECTIONS[voice + 1].loop_start))
+            print('loop end set to ' .. params:get(ID_SLICES_SECTIONS[voice + 1].loop_end))
             engine.loop_start(voice, params:get(ID_SLICES_SECTIONS[voice + 1].loop_start))
             engine.loop_end(voice, params:get(ID_SLICES_SECTIONS[voice + 1].loop_end))
         end

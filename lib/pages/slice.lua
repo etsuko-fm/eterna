@@ -13,10 +13,15 @@ local is_stereo
 
 local filename = ""
 selected_sample = "audio/etsuko/chris/play-safe.wav"
-local sample_length
 
 local slice_lfo
 local debug_mode = true
+local page = Page:create({
+    name = page_name,
+    -- 
+    sample_duration = nil,
+})
+
 
 --[[
 Sample select page
@@ -30,14 +35,6 @@ Interactions:
  E2: select global loop position
  E3: select global loop length
 ]]
-
-local function as_abs_values(tbl)
-    -- used for waveform rendering
-    for i = 1, #tbl do
-        tbl[i] = math.abs(tbl[i])
-    end
-    return tbl
-end
 
 local function path_to_file_name(file_path)
     -- strips '/foo/bar/audio.wav' to 'audio.wav'
@@ -54,20 +51,11 @@ function table.slice(tbl, first, last)
     return result
 end
 
-function update_waveform(waveform, ch)
+function page:update_waveform(waveform, ch)
     -- called by root module when OSC event received for updating waveform
     waveform_graphics[ch].samples = waveform
 end
 
-local function get_slice_length()
-    -- returns slice length in seconds
-    local n_slices = params:get(ID_SLICES_NUM_SLICES)
-    if n_slices and sample_length then
-        return (1 / n_slices) * sample_length
-    else
-        return nil
-    end
-end
 
 local function remove_extension(filename)
     return filename:match("^(.*)%.[^%.]+$") or filename
@@ -78,7 +66,18 @@ local function to_sample_name(path)
     return util.trim_string_to_width(s, 100)
 end
 
-local function update_loop_ranges()
+function page:get_slice_length()
+    -- returns slice length in seconds
+    local n_slices = params:get(ID_SLICES_NUM_SLICES)
+    if n_slices and self.sample_duration then
+        return (1 / n_slices) * self.sample_duration
+    else
+        return nil
+    end
+end
+
+function page:update_loop_ranges()
+    -- updates the playback range of each voice in params, based on num_slices, slices_start, and sample duration
     local n_slices = params:get(ID_SLICES_NUM_SLICES)
 
     -- if slices > num_voices, not all slices can be assigned to a voice
@@ -87,7 +86,7 @@ local function update_loop_ranges()
 
     -- edit buffer ranges per voice
     local slice_start_timestamps = {} -- start position of each slice, in seconds
-    local slice_length = get_slice_length()
+    local slice_length = self:get_slice_length()
     if not slice_length then return end
 
     for i = 1, n_slices do
@@ -106,7 +105,7 @@ local function update_loop_ranges()
         --- this works fine for n_slices > 6; else, voices need to recycle slices;
         --- hence the modulo.
         local slice_index = util.wrap(start + i, 1, n_slices)
-        slice_graphic.active_slices[voice] = slice_index --update slice graphic
+        slice_graphic.active_slices[voice] = slice_index -- update slice graphic
         local start_pos = slice_start_timestamps[slice_index]
         -- loop start/end works as buffer range when loop not enabled
         -- end point is where the next slice starts
@@ -115,12 +114,11 @@ local function update_loop_ranges()
         -- save in params, so waveforms can render correctly
         params:set(ID_SLICES_SECTIONS[voice].loop_start, start_pos)
         params:set(ID_SLICES_SECTIONS[voice].loop_end, end_pos)
-        -- voice_position_to_start(voice) --todo: fix, order of initalization bug
     end
-    -- reflect changes in graphic (it'll get params from state)
+    print("loop ranges updated")
 end
 
-local function load_sample(file)
+function page:load_sample(file)
     -- use specified `file` as a sample and store enabled length of buffer in state
     if not file or file == "-" then return end
     local num_channels = audio_util.num_channels(file)
@@ -133,7 +131,7 @@ local function load_sample(file)
         waveform_h = 10
         waveform_graphics[1].y = 26
     end
-    update_loop_ranges()
+    self:update_loop_ranges()
 end
 
 local function select_sample()
@@ -155,16 +153,16 @@ local function constrain_max_start(num_slices)
     controlspec_slice_start.maxval = num_slices
 end
 
-local function action_num_slices(v)
+function page:action_num_slices(v)
     -- update max start based on number of slices
     constrain_max_start(v)
     slice_graphic.slice_len = 1 / v
     slice_graphic.num_slices = v
-    update_loop_ranges()
+    self:update_loop_ranges()
 end
 
-local function action_slice_start(v)
-    update_loop_ranges()
+function page:action_slice_start(v)
+    self:update_loop_ranges()
 end
 
 local function adjust_num_slices(d)
@@ -203,16 +201,6 @@ local function e2(d)
 end
 
 
-local page = Page:create({
-    name = page_name,
-    e2 = e2,
-    e3 = adjust_num_slices,
-    k1_hold_on = nil,
-    k1_hold_off = nil,
-    k2_off = cycle_lfo,
-    k3_off = select_sample,
-})
-
 function page:render()
     if page_disabled then
         fileselect:redraw()
@@ -231,8 +219,6 @@ function page:render()
 
         page.footer.button_text.e2.value = params:get(ID_SLICES_START)
         page.footer.button_text.e3.value = params:get(ID_SLICES_NUM_SLICES)
-
-
         page.footer.button_text.k2.value = string.upper(lfo_val)
 
         if slice_lfo:get("enabled") == 1 then
@@ -259,22 +245,22 @@ function page:render()
     page.footer:render()
 end
 
-local function add_params()
+function page:add_params()
     -- file selection
     params:set_action(ID_SLICES_AUDIO_FILE,
         function(file)
             if file ~= "-" then
                 filename = to_sample_name(file)
-                load_sample(file)
+                self:load_sample(file)
             end
         end
     )
 
     -- number of slices
-    params:set_action(ID_SLICES_NUM_SLICES, action_num_slices)
+    params:set_action(ID_SLICES_NUM_SLICES, function(v) self:action_num_slices(v) end)
 
     -- starting slice
-    params:set_action(ID_SLICES_START, action_slice_start)
+    params:set_action(ID_SLICES_START, function(v) self:action_slice_start(v) end)
     constrain_max_start(SLICES_DEFAULT)
     for voice = 1, 6 do
         params:set_action(ID_SLICES_SECTIONS[voice].loop_start, function(v) UPDATE_SLICES = true end)
@@ -286,8 +272,18 @@ local function add_params()
     params:bang()
 end
 
+function page:set_sample_duration(v)
+    print('received duration '..v)
+    self.sample_duration = v
+    self:update_loop_ranges()
+end
+
 function page:initialize()
     slice_graphic = SliceGraphic:new()
+    self.e2 = e2
+    self.e3 = adjust_num_slices
+    self.k2_off = cycle_lfo
+    self.k3_off = select_sample
 
     -- lfo
     slice_lfo = _lfos:add {
@@ -304,7 +300,7 @@ function page:initialize()
     }
     slice_lfo:set('reset_target', 'mid: rising')
 
-    add_params()
+    self:add_params()
 
     -- engine.load_file("/home/we/dust/"..selected_sample)
     loaded_poll:update()
@@ -313,20 +309,18 @@ function page:initialize()
     waveform_graphics[1] = Waveform:new({
         x = 33,
         y = 20,
-        sample_length = sample_length,
         waveform_width = waveform_width,
     })
 
     waveform_graphics[2] = Waveform:new({
         x = 33,
         y = 32,
-        sample_length = sample_length,
         waveform_width = waveform_width,
     })
 
     if selected_sample then
         filename = to_sample_name(selected_sample)
-        if debug_mode then load_sample(_path.dust .. selected_sample) end
+        if debug_mode then self:load_sample(_path.dust .. selected_sample) end
     end
 
     window = Window:new({

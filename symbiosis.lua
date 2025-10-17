@@ -146,18 +146,15 @@ function osc.event(path, args, from)
       -- convert int8 array to floats
       waveform[i] = waveform[i] / 127
     end
-    update_waveform(waveform, channel+1)
-    -- -- print the result
-
-  end
-  if path == "/amp_history_left" then
+    page_slice:update_waveform(waveform, channel+1)
+  elseif path == "/duration" then
+    local duration = tonumber(args[1])
+    print('received duration: ' .. duration)
+    page_slice:set_sample_duration(duration)
+  elseif path == "/amp_history_left" then
     local blob = args[1]
     amp_historyL = blob_to_table(blob)
-    -- print("left 1st value: " .. amp_historyL[1])
-    -- print("left last value: " .. amp_historyL[#amp_historyL])
-    -- print("left table length: " .. #amp_historyL)
-  end
-  if path == "/amp_history_right" then
+  elseif path == "/amp_history_right" then
     local blob = args[1]
     amp_historyR = blob_to_table(blob)
   end

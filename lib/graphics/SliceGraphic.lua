@@ -35,8 +35,7 @@ end
 
 function SliceGraphic:render()
     if self.hide then return end
-    -- local level = 5 --level_bright - 5
-
+    -- print(self.active_slices[1])
     for n=0, self.num_slices - 1 do
         local index = n + 1
         if contains(self.active_slices, index) then
