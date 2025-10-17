@@ -5,7 +5,6 @@ local window
 local grid_graphic
 local PERLIN_ZOOM = 10/3                          ---4 / 3 -- empirically tuned
 local SEQ_EVOLVE_RATES = { 2 ^ 15, 2 ^ 14, 2 ^ 13 } -- in quarter notes, but fuzzy concept due to how perlin computes
-local SEQUENCE_STYLE_TABLE_TO_SOFTCUT = { 1, 0 }
 local MAX_STEPS = sequence_util.max_steps
 
 local transport_on = true
@@ -82,10 +81,7 @@ local hold_step = nil
 
 local function update_slices()
     if UPDATE_SLICES then
-        print("updating slices")
         for voice = 0, 5 do
-            print('loop start set to ' .. params:get(ID_SLICES_SECTIONS[voice + 1].loop_start))
-            print('loop end set to ' .. params:get(ID_SLICES_SECTIONS[voice + 1].loop_end))
             engine.loop_start(voice, params:get(ID_SLICES_SECTIONS[voice + 1].loop_start))
             engine.loop_end(voice, params:get(ID_SLICES_SECTIONS[voice + 1].loop_end))
         end

@@ -34,7 +34,6 @@ ID_PANNING_LFO = "panning_lfo_enabled"
 ID_PANNING_LFO_RATE = "panning_lfo_rate"
 ID_PANNING_TWIST = "panning_twist"
 ID_PANNING_SPREAD = "panning_spread"
--- todo: add tri?
 PANNING_LFO_SHAPES = { "off", "up", "down", "random" }
 DEFAULT_PANNING_LFO_RATE_IDX = 16
 

@@ -28,10 +28,7 @@ Engine_Symbiosis : CroneEngine {
 
     // For normalizing user sample
     var peakL, peakR, normalizeFactor, maxAmp;
-    
-    // For checking if voices have been allocated yet; TODO: might just check for nil
-    // var voicesEmpty = true;
-    
+        
     // Bufnums for user sample
     var bufnumL = 0;
     var bufnumR = 1;
@@ -223,7 +220,6 @@ Engine_Symbiosis : CroneEngine {
             "waveform R sent".postln;
             array.free;
           });
-          // TODO: perfect moment to send the waveform to lua.. 
           
           ("Max of left/right channel: " ++ max(peakL, peakR)).postln;
           maxAmp = max(peakL, peakR);
@@ -309,19 +305,6 @@ Engine_Symbiosis : CroneEngine {
         };
       } { 
         // "new sample still loading, trigger skipped...".postln;
-      };
-    });
-
-    this.addCommand("position", "if", {
-      // todo: why not let lua do the trigger?
-      arg msg;
-      var idx = msg[1].asInteger; // voice index
-      var val = msg[2];
-      if (voices[idx].notNil) {
-        voices[idx].set(\loop_start, val);
-        voices[idx].set(\t_trig, 1);
-      } { 
-        voiceParams[idx].put(\loop_start, val);
       };
     });
 

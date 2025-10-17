@@ -115,7 +115,6 @@ function page:update_loop_ranges()
         params:set(ID_SLICES_SECTIONS[voice].loop_start, start_pos)
         params:set(ID_SLICES_SECTIONS[voice].loop_end, end_pos)
     end
-    print("loop ranges updated")
 end
 
 function page:load_sample(file)
