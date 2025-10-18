@@ -1,4 +1,4 @@
-Grid = {
+SequencerGraphic = {
     x = 32,
     y = 16,
     rows = 10,
@@ -20,7 +20,7 @@ Grid = {
     hide = false,
 }
 
-function Grid:new(o)
+function SequencerGraphic:new(o)
     -- create state if not provided
     o = o or {}
 
@@ -48,7 +48,7 @@ local indicator_h = 3
 local indicator_vmargin = indicator_h + margin_h
 local faint_fill = 1
 
-function Grid:draw_track_indicator(voice)
+function SequencerGraphic:draw_track_indicator(voice)
     if self.voice_env[voice] == nil then return end
     local zero_idx = voice - 1
 
@@ -69,7 +69,7 @@ function Grid:draw_track_indicator(voice)
     end
 end
 
-function Grid:render()
+function SequencerGraphic:render()
     if self.hide then return end
     local voice
     for row = 0, rows - 1 do
@@ -116,4 +116,4 @@ function Grid:render()
     end
 end
 
-return Grid
+return SequencerGraphic
