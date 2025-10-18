@@ -64,8 +64,7 @@ function ControlGraphic:render()
 
     -- 1/4 report
     for i = 0, 3 do
-        local q = i + 1
-        if q == self.current_quarter then
+        if i == self.current_quarter then
             screen.level(bright_level)
         else
             screen.level(faint_level)
@@ -75,22 +74,21 @@ function ControlGraphic:render()
     end
 
     -- sequence steps
-    for i = 0, 15 do
-        local step = i + 1
+    for step = 0, 15 do
         if step == self.current_step then
             screen.level(bright_level)
         else
             screen.level(faint_level)
         end
         local step_y = seq_y
-        if i % 4 == 0 then
+        if step % 4 == 0 then
             h = seq_h + 1
             step_y = seq_y - 1
         else
             h = seq_h
             step_y = seq_y
         end
-        screen.rect(x + i * 4, step_y, 3, h)
+        screen.rect(x + step * 4, step_y, 3, h)
         screen.fill()
     end
 

@@ -41,7 +41,6 @@ function recalculate_echo_time(bpm, time_fraction)
         time_fraction = ECHO_TIME_AMOUNTS[params:get(ID_ECHO_TIME)]
     end
     local duration = (60 / bpm) * time_fraction
-    print('new echo duration: '.. duration)
     engine.echo_time(duration)
 end
 
