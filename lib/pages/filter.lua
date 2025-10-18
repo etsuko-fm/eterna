@@ -73,19 +73,7 @@ end
 
 function page:initialize()
     add_params()
-    window = Window:new({
-        x = 0,
-        y = 0,
-        w = 128,
-        h = 64,
-        title = "FILTER",
-        font_face = TITLE_FONT,
-        brightness = 15,
-        border = false,
-        selected = true,
-        horizontal_separations = 0,
-        vertical_separations = 0,
-    })
+    window = Window:new({ title = page_name, font_face = TITLE_FONT })
     -- graphics
     filter_graphic = FilterGraphic:new()
 

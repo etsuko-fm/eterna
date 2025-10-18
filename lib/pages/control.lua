@@ -55,39 +55,15 @@ end
 
 function page:initialize()
     add_params()
-    window = Window:new({
-        x = 0,
-        y = 0,
-        w = 128,
-        h = 64,
-        title = page_name,
-        font_face = TITLE_FONT,
-        brightness = 15,
-        border = false,
-        selected = true,
-        horizontal_separations = 0,
-        vertical_separations = 0,
-    })
+    window = Window:new({ title = page_name, font_face = TITLE_FONT })
     -- graphics
     control_graphic = ControlGraphic:new()
     page.footer = Footer:new({
         button_text = {
-            k2 = {
-                name = "PLAY",
-                value = "",
-            },
-            k3 = {
-                name = "HOLD",
-                value = "",
-            },
-            e2 = {
-                name = "BPM",
-                value = "",
-            },
-            e3 = {
-                name = "STEP",
-                value = "",
-            },
+            k2 = { name = "PLAY", value = "" },
+            k3 = { name = "HOLD", value = "" },
+            e2 = { name = "BPM", value = "" },
+            e3 = { name = "STEP", value = "" },
         },
         font_face = FOOTER_FONT,
     })

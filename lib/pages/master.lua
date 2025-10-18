@@ -109,19 +109,7 @@ function page:initialize()
     master_left_poll.callback = function(v) master_graphic.out_levels[1] = amp_to_log(v) end
     master_right_poll.callback = function(v) master_graphic.out_levels[2] = amp_to_log(v) end
 
-    window = Window:new({
-        x = 0,
-        y = 0,
-        w = 128,
-        h = 64,
-        title = "MASTER",
-        font_face = TITLE_FONT,
-        brightness = 15,
-        border = false,
-        selected = true,
-        horizontal_separations = 0,
-        vertical_separations = 0,
-    })
+    window = Window:new({ title = page_name, font_face = TITLE_FONT })
 
     -- graphics
     page.footer = Footer:new({

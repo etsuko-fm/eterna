@@ -4,17 +4,6 @@ local page_name = "ENVELOPES"
 local window
 local envelope_graphic
 
--- local function calculate_env_positions()
---     local DECAY = params:get(ID_ENVELOPES_DECAY)
---     local ATTACK = params:get(ID_ENVELOPES_ATTACK)
---     for i = 0, 5 do
---         local voice = i + 1
---         local angle = (DECAY + i / 6) * (math.pi * 2) -- Divide the range of radians into 6 equal parts, add offset
---         local pan =  ATTACK * math.cos(angle)
---         engine.pan(i, pan)
---     end
--- end
-
 local function adjust_shape(d)
     local p = ID_ENVELOPES_SHAPE
     local new_val = params:get_raw(p) + d * controlspec_env_shape.quantum
@@ -122,20 +111,7 @@ end
 
 function page:initialize()
     add_params()
-    window = Window:new({
-        x = 0,
-        y = 0,
-        w = 128,
-        h = 64,
-        title = "ENVELOPES",
-        font_face = TITLE_FONT,
-        brightness = 15,
-        border = false,
-        selected = true,
-        horizontal_separations = 0,
-        vertical_separations = 0,
-    })
-
+    window = Window:new({ title = page_name, font_face = TITLE_FONT })
 
     -- graphics
     envelope_graphic = EnvGraphic:new()

@@ -182,12 +182,9 @@ function page:render()
         redraw_sequence = false
     end
 
-    env1poll:update()
-    env2poll:update()
-    env3poll:update()
-    env4poll:update()
-    env5poll:update()
-    env6poll:update()
+    for i = 1,6 do
+        env_polls[i]:update()
+    end
 
     grid_graphic:render()
 
@@ -229,10 +226,6 @@ local function add_params()
     end
 end
 
-local function env_callback(voice, val)
-    grid_graphic.voice_env[voice] = val
-end
-
 function page:initialize()
     page.e2 = e2
     page.e3 = e3
@@ -240,46 +233,19 @@ function page:initialize()
     page.sequence_speed = sequence_util.convert_sequence_speed[sequence_util.default_speed_idx]
     add_params()
 
-    env1poll.callback = function(v) env_callback(1, v) end
-    env2poll.callback = function(v) env_callback(2, v) end
-    env3poll.callback = function(v) env_callback(3, v) end
-    env4poll.callback = function(v) env_callback(4, v) end
-    env5poll.callback = function(v) env_callback(5, v) end
-    env6poll.callback = function(v) env_callback(6, v) end
+    for i = 1,6 do
+        env_polls[i].callback = function(v) grid_graphic.voice_env[i] = v end
+    end
 
-    window = Window:new({
-        x = 0,
-        y = 0,
-        w = 128,
-        h = 64,
-        title = "SEQUENCER",
-        font_face = TITLE_FONT,
-        brightness = 15,
-        border = false,
-        selected = true,
-        horizontal_separations = 0,
-        vertical_separations = 0,
-    })
+    window = Window:new({ title = "SEQUENCER", font_face = TITLE_FONT })
     grid_graphic = GridGraphic:new()
     -- graphics
     page.footer = Footer:new({
         button_text = {
-            k2 = {
-                name = "",
-                value = "",
-            },
-            k3 = {
-                name = "",
-                value = "",
-            },
-            e2 = {
-                name = "SEED",
-                value = "",
-            },
-            e3 = {
-                name = "DENS",
-                value = "",
-            },
+            k2 = { name = "", value = "" },
+            k3 = { name = "", value = "" },
+            e2 = { name = "SEED", value = "" },
+            e3 = { name = "DENS", value = "" },
         },
         font_face = FOOTER_FONT,
     })

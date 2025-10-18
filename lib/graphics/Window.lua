@@ -7,12 +7,13 @@ Window = {
     font_face = 1,
     brightness = 15,
     deselected_brightness = 4,
-    border = true,
+    border = false,
     selected = true,
     horizontal_separations = 0,
     vertical_separations = 0,
     bar_height = 7
 }
+
 
 
 function Window:new(o)

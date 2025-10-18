@@ -1,5 +1,5 @@
 local PitchGraph = include("symbiosis/lib/graphics/PitchGraph")
-local page_name = "Playback"
+local page_name = "PLAYBACK RATES"
 local page
 
 local function calculate_rates()
@@ -140,19 +140,7 @@ end
 
 function page:initialize()
     add_params()
-    page.window = Window:new({
-        x = 0,
-        y = 0,
-        w = 128,
-        h = 64,
-        title = "PLAYBACK RATES",
-        font_face = TITLE_FONT,
-        brightness = 15,
-        border = false,
-        selected = true,
-        horizontal_separations = 0,
-        vertical_separations = 0,
-    })
+    page.window = Window:new({ title = page_name, font_face = TITLE_FONT })
 
     page.pitch_graph = PitchGraph:new()
     update_playback_dir(1)

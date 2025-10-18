@@ -53,10 +53,6 @@ page_indicator_disabled = false
 DEFAULT_FONT = 68
 TITLE_FONT = 68
 FOOTER_FONT = 68
-state = {
-  -- time controls
-  fade_time = 256 / 48000, -- crossfade when looping playback
-}
 
 local pages = {
   -- 1
@@ -162,6 +158,9 @@ end
 
 DB_FLOOR = -60
 
+env_polls = {}
+amp_polls = {}
+
 function to_dBFS(x)
   -- x: 0 to 1
   local floor = DB_FLOOR
@@ -188,19 +187,9 @@ function init()
   end
 
   loaded_poll = poll.set("file_loaded")
-  amp1poll = poll.set("voice1amp")
-  amp2poll = poll.set("voice2amp")
-  amp3poll = poll.set("voice3amp")
-  amp4poll = poll.set("voice4amp")
-  amp5poll = poll.set("voice5amp")
-  amp6poll = poll.set("voice6amp")
 
-  env1poll = poll.set("voice1env")
-  env2poll = poll.set("voice2env")
-  env3poll = poll.set("voice3env")
-  env4poll = poll.set("voice4env")
-  env5poll = poll.set("voice5env")
-  env6poll = poll.set("voice6env")
+  for i = 1,6 do amp_polls[i] = poll.set("voice" .. i .. "amp") end
+  for i = 1,6 do env_polls[i] = poll.set("voice" .. i .. "env") end
 
   pre_comp_left_poll = poll.set("pre_comp_left")
   pre_comp_right_poll = poll.set("pre_comp_right")
