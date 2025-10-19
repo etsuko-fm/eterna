@@ -1,14 +1,13 @@
 local SequencerGraphic = include("symbiosis/lib/graphics/SequencerGraphic")
 local page_name = "SEQUENCER"
 local window
-local grid_graphic
+local graphic
 local PERLIN_ZOOM = 10 / 3 ---4 / 3 -- empirically tuned
 -- todo: add in bits.lua? otherwise dependent on order of pages loaded
 
 local main_seq_clock_id
 local redraw_sequence = false
 local PLAY = "PLAY"
-local STOP = "STOP"
 local AWAIT_RESUME = "AWAIT_RESUME"
 local HOLD = "HOLD"
 local RESOLUTION = 16 -- 1/16th of a quarter note
@@ -58,9 +57,10 @@ end
 
 local function update_slices()
     if UPDATE_SLICES then
-        for voice = 0, 5 do
-            engine.loop_start(voice, params:get(ID_SLICES_SECTIONS[voice + 1].loop_start))
-            engine.loop_end(voice, params:get(ID_SLICES_SECTIONS[voice + 1].loop_end))
+        for voice = 1, 6 do
+            local sc_voice = voice - 1
+            engine.loop_start(sc_voice, params:get(ID_SLICES_SECTIONS[voice].loop_start))
+            engine.loop_end(sc_voice, params:get(ID_SLICES_SECTIONS[voice].loop_end))
         end
         UPDATE_SLICES = false
     end
@@ -82,101 +82,101 @@ function page:evaluate_step(x, y)
     local attack, decay = get_step_envelope(enable_mod, velocity)
     if on then
         -- using modulo check to prevent triggering every 1/16 when step size is larger
-        grid_graphic.current_step = self.current_step
+        graphic.current_step = self.current_step
         engine.env_level(sc_voice_id, velocity)
         if enable_mod == "LPG" then
             -- applies envelope to a lowpass filter
             engine.lpg_freq(sc_voice_id, misc_util.linexp(0, 1, 80, 20000, velocity, 1))
-        elseif enable_mod ~= "OFF" then
+        end
+        if enable_mod ~= "OFF" then
             engine.attack(sc_voice_id, attack)
             engine.decay(sc_voice_id, decay)
         end
+        engine.level(sc_voice_id, velocity)
         engine.trigger(sc_voice_id)
     end
 end
 
 function page:reset_counter()
+    self.current_substep = 0
     self.current_master_step = 0
     self.current_step = 0
+    self.current_beat = 0
 end
+
+function page:next_step()
+    local beat_div = self.beat_div
+
+    if self.cued_step_divider then
+        -- execute on first beat
+        if self.current_substep == 0 then
+            print("step div change executed: from " ..
+            self.step_divider .. " to " .. self.cued_step_divider .. " on master step " .. self.current_master_step)
+            self.step_divider = self.cued_step_divider
+            self.cued_step_divider = nil
+            self.substeps_per_step = self.step_divider
+            self:reset_counter()
+            print("new substeps per step: " .. self.substeps_per_step)
+        end
+    end
+
+    -- substep can always go on in a 1/64th speed with no recalcaultions upon step division change
+    self.current_substep = (self.current_substep + 1) % (self.beat_div * 4) -- keep track of upto 4 quarter notes
+    self.current_beat = math.floor(self.current_substep / self.beat_div)
+
+    -- next step in sequence is triggered when enough substeps elapsed
+    if self.current_substep % self.step_divider == 0 then
+        -- master step is updated regardless of playback state
+        self.current_master_step = (self.current_master_step + 1) % beat_div
+
+        if self.playback == HOLD then
+            -- stay still
+        elseif self.playback == AWAIT_RESUME then
+            print('waiting correct step to resume')
+            -- wait until current step is equal to the master step
+            if self.current_master_step == self.current_step then
+                -- on next iteration, playback will be picked up again
+                self.playback = PLAY
+            end
+        else
+            -- TODO: self.playback is STOP or PLAY; in practice only PLAY otherwise sequencer wouldn't run. maybe remove stop?
+            self.current_step = (self.current_step + 1) % self.sequence_steps
+            graphic.current_step = self.current_step
+        end
+
+        -- evaluate current step, send commands to supercollider accordingly
+        for y = 1, SEQ_ROWS do
+            self:evaluate_step(self.current_step, y)
+        end
+    end
+end
+
 
 function page:run_sequencer()
     while true do
-        local beat_div = self.beat_div
         -- updates playback range of each voice prior to trigger
         update_slices()
-
-        if self.cued_step_divider then
-            -- execute on first beat
-            if self.current_substep == 0 then
-                print("step div change executed: from " ..
-                self.step_divider .. " to " .. self.cued_step_divider .. " on master step " .. self.current_master_step)
-                self.step_divider = self.cued_step_divider
-                self.cued_step_divider = nil
-                self.substeps_per_step = self.step_divider
-                self:reset_counter()
-                print("new substeps per step: " .. self.substeps_per_step)
-            end
-        end
-
-        -- substep can always go on in a 1/64th speed with no recalcaultions upon step division change
-        self.current_substep = (self.current_substep + 1) % (self.beat_div * 4) -- keep track of upto 4 quarter notes
-        self.current_beat = math.floor(self.current_substep / self.beat_div)
-
-        -- next step in sequence is triggered when enough substeps elapsed
-        if self.current_substep % self.step_divider == 0 then
-            -- master step is updated regardless of playback state
-            self.current_master_step = (self.current_master_step + 1) % beat_div
-
-            if self.playback == HOLD then
-                -- stay still
-            elseif self.playback == AWAIT_RESUME then
-                print('waiting correct step to resume')
-                -- wait until current step is equal to the master step
-                if self.current_master_step == self.current_step then
-                    -- on next iteration, playback will be picked up again
-                    self.playback = PLAY
-                end
-            else
-                -- TODO: self.playback is STOP or PLAY; in practice only PLAY otherwise sequencer wouldn't run. maybe remove stop?
-                self.current_step = (self.current_step + 1) % self.sequence_steps
-                grid_graphic.current_step = self.current_step
-            end
-
-            -- evaluate current step, send commands to supercollider accordingly
-            for y = 1, SEQ_ROWS do
-                self:evaluate_step(self.current_step, y)
-            end
-        end
-        clock.sync(1 / beat_div) -- sync on 1/16th of a beat, so each 1/64th note
+        self:next_step()
+        clock.sync(1 / self.beat_div) -- sync on 1/16th of a beat, so each 1/64th note
     end
 end
 
 function page:toggle_transport()
     if self.transport_on then
         clock.transport.stop()
-        self.playback = STOP
-        self.current_substep = 0
-        self.current_step = 0
-        self.current_beat = 0
-        grid_graphic.is_playing = false
+        self:reset_counter()
+        graphic.is_playing = false
     else
         clock.transport.start()
-        self.playback = PLAY
-        grid_graphic.is_playing = true
+        graphic.is_playing = true
     end
 end
 
 function page:toggle_hold_step()
-    if self.playback ~= HOLD then
+    if self.playback == PLAY then
         self.playback = HOLD
-    else
-        -- wait with resuming until the sequencer is at the current step again
-        if page.transport_on then
-            self.playback = AWAIT_RESUME
-        else
-            self.playback = STOP
-        end
+    elseif self.playback == HOLD then
+        self.playback = AWAIT_RESUME
     end
 end
 
@@ -184,19 +184,12 @@ function clock.transport.start()
     print("start transport")
     page.transport_on = true
     main_seq_clock_id = clock.run(function() page:run_sequencer() end)
-    if page.playback == STOP then
-        page.playback = PLAY
-    end
 end
 
 function clock.transport.stop()
     print("stop transport")
     page.transport_on = false
     clock.cancel(main_seq_clock_id)
-    if page.playback == PLAY then
-        page.playback = STOP
-    end
-
     current_step = 1
 end
 
@@ -212,11 +205,7 @@ function page:render()
         env_polls[i]:update()
     end
 
-    grid_graphic:render()
-    screen.level(15)
-    screen.move(16, 32)
-    screen.text_center(self.current_substep)
-
+    graphic:render()
     page.footer.button_text.e2.value = params:get(ID_SEQ_PERLIN_X)
     page.footer.button_text.e3.value = params:get(ID_SEQ_PERLIN_DENSITY)
     page.footer:render()
@@ -262,7 +251,7 @@ function page:initialize()
     self.substeps_per_step = self.beat_div / self.step_divider
 
     for i = 1, 6 do
-        env_polls[i].callback = function(v) grid_graphic.voice_env[i] = v end
+        env_polls[i].callback = function(v) graphic.voice_env[i] = v end
     end
 
     window = Window:new({ title = "SEQUENCER", font_face = TITLE_FONT })

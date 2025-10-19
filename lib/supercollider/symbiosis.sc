@@ -1,16 +1,13 @@
-Engine_Symbiosis : CroneEngine {  
-  var voices;
-
+Engine_Symbiosis : CroneEngine {
   // Audio buses
-  var filterBus, fxBus, bassMonoBus, compBus, maxBus;
+  var filterBus, fxBus, bassMonoBus, compBus;
 
-  // Synths
-  var filter, compressor, echo, bassMono, maximizer;
+  // SynthDefs
+  var voices, filter, compressor, echo, bassMono;
 
   // Control buses
   var ampBuses, envBuses, preCompControlBuses, postCompControlBuses, postGainBuses, masterOutControlBuses;
   var oscServer;
-  var n, r;
   var bufL, bufR, bufAmp;
 
   *new { arg context, doneCallback;
@@ -64,16 +61,19 @@ Engine_Symbiosis : CroneEngine {
     // helper function for adding engine command for any float param of a voice
     var voiceCommands = ["attack", "decay", "pan", "loop_start", "loop_end", "level", "env_level", "env_curve", "enable_env", "rate", "lpg_freq", "enable_lpg"];
 
-    var getWaveform = { |samples, numDisplayPoints = 64 |
+    var getWaveform = { |samples, scale=1.0, numDisplayPoints = 64 |
+      // scale can be used to normalize the waveform
       var waveform, chunkSize, maxPerChunk;
+      // Number of samples to base waveform on (using all samples takes long)
       var resolution = 1024;
       if (samples.size > resolution) {
         var step = samples.size / resolution;
         samples = Array.fill(resolution, { |i| samples[(i * step).floor] });
       };
+      // In each chunk, the maximum value will be used as waveform point
       chunkSize = (samples.size / numDisplayPoints).floor.max(1);
       maxPerChunk = samples.clump(chunkSize).collect { |chunk|
-        chunk.maxItem
+        chunk.maxItem * scale
       };
       waveform = Int8Array.fill(numDisplayPoints, { |i|
         (maxPerChunk.at(i) * 127).abs.floor.asInteger
@@ -160,8 +160,9 @@ Engine_Symbiosis : CroneEngine {
       var numDisplayPoints = 128;
 
       // Routine to allow server.sync
-      r = Routine {
+      var r = Routine {
         |inval|
+        var left, right, waveform_left, waveform_right;
         bufL.free;
         bufL = nil;
         bufR.free;
@@ -206,31 +207,35 @@ Engine_Symbiosis : CroneEngine {
         if (f.numChannels > 1) {
           // Normalize based on loudest sample across channels
           "Starting normalization".postln;
-          bufL.loadToFloatArray(action: { |array| 
-            var waveform = getWaveform.(array);
+          left = bufL.loadToFloatArray(action: { |array| 
             peakL = array.maxItem; 
-            oscServer.sendBundle(0, ['/waveform', waveform, 0]);
-            "waveform L sent".postln;
-            array.free;
           });
-          bufR.loadToFloatArray(action: { |array| 
-            var waveform = getWaveform.(array);
+          right = bufR.loadToFloatArray(action: { |array| 
             peakR = array.maxItem; 
-            oscServer.sendBundle(0, ['/waveform', waveform, 1]);
-            "waveform R sent".postln;
-            array.free;
           });
           
+          context.server.sync;
+
           ("Max of left/right channel: " ++ max(peakL, peakR)).postln;
           maxAmp = max(peakL, peakR);
           normalizeFactor = 1.0 / maxAmp;
           ("Normalize factor: " ++ normalizeFactor).postln;
-          bufL.normalize(peakL * normalizeFactor); 
-          bufR.normalize(peakR * normalizeFactor); 
+
+          waveform_left = getWaveform.(left, normalizeFactor);
+          waveform_right = getWaveform.(right, normalizeFactor);
+          oscServer.sendBundle(0, ['/waveform', waveform_left, 0]);
+          oscServer.sendBundle(0, ['/waveform', waveform_right, 1]);
+          "waveforms sent".postln;
+
+          bufL.normalize(newmax: peakL * normalizeFactor); 
+          bufR.normalize(newmax: peakR * normalizeFactor); 
+          context.server.sync;
+
           ("left and right buffer normalized by scaling both with factor " + normalizeFactor).postln;
 
           // Spread 2 channels over 6 voices
           voices.do { |voice, i|
+              var n;
               if (voice.notNil) {
                 n = if(i < voices.size.div(2)) { bufnumL } { bufnumR };
                 voice.set(\bufnum, n);
@@ -238,6 +243,7 @@ Engine_Symbiosis : CroneEngine {
               };
           };
           voiceParams.do{ |params, i|
+              var n;
               n = if(i < voiceParams.size.div(2)) { bufnumL } { bufnumR };
               params.put(\bufnum, n);
               ("Voice " ++ i ++ " set to buffer " ++ n).postln;
@@ -402,26 +408,27 @@ Engine_Symbiosis : CroneEngine {
   
   free {
     Buffer.freeAll;
-    filter.free;
-    voices.do(_.free);
+
+    // Audio buses
     filterBus.free;
     bassMonoBus.free;
-    bassMono.free;
-
-    fxBus.free;
-    echo.free;
-
     compBus.free;
+    fxBus.free;
+
+    // SynthDefs
+    voices.do(_.free);
+    voices.free;
+    filter.free;
+    echo.free;
+    bassMono.free;
     compressor.free;
     
-    maxBus.free;
-    maximizer.free;
-
     ampBuses.do(_.free);
     ampBuses.free;
     envBuses.do(_.free);
     envBuses.free;
 
+    // Control buses
     preCompControlBuses.do(_.free);
     preCompControlBuses.free;
     postCompControlBuses.do(_.free);

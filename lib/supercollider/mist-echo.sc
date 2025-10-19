@@ -14,8 +14,8 @@ MistEcho {
                     var modTimesL = [10.053, 10.097, 10.163, 10.233, 10.307, 10.383];
                     var modTimesR = [10.067, 10.121, 10.187, 10.257, 10.331, 10.397];
 
-                    var allPassDelayTimesL = timesL.collect { |p| p * 0.001 };
-                    var allPassDelayTimesR = timesR.collect { |p| p * 0.001 };
+                    var allPassDelayTimesL = timesL.collect { |p| p * 0.01 };
+                    var allPassDelayTimesR = timesR.collect { |p| p * 0.01 };
 
                     var delA, delB, delX, fbSignal;
                     var fadeTime=0.05;
@@ -68,8 +68,8 @@ MistEcho {
                             AllpassL.ar(
                                 delX[0], 
                                 0.3, 
-                                (t + (SinOsc.ar(modTimesL[i], LFNoise0.kr(10)) * (t * 0.005))).abs, 
-                                0.5
+                                LFNoise1.kr(0.1, mul: 0.01, add: t), 
+                                0.7
                             ), 
                             4000
                         ), 200);
@@ -77,8 +77,8 @@ MistEcho {
                             AllpassL.ar(
                                 delX[1], 
                                 0.3, 
-                                (allPassDelayTimesR[i] + (SinOsc.ar(modTimesR[i], LFNoise0.kr(10)) * (allPassDelayTimesR[i] * 0.005))).abs, 
-                                0.5
+                                LFNoise1.kr(0.1, mul: 0.01, add: allPassDelayTimesR[i]), 
+                                0.7
                             ), 
                             4000
                         ), 200);
@@ -94,7 +94,7 @@ MistEcho {
                     delX = SelectX.ar(reverbMix, [dryFeedback, delX]);
 
                     LocalOut.ar(delX);
-                    delX = LPF.ar(delX, 10000);
+                    // delX = LPF.ar(delX, 10000);
                     output = input + (delX * wet); // wet/dry mix
 
 					Out.ar(out, output);

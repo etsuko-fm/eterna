@@ -109,7 +109,7 @@ end
 function midi_cb(data)
   local d = midi.to_msg(data)
   if d.type == "note_on" then
-    engine.freq(midi_to_hz(d.note))
+    engine.filter_freq(midi_to_hz(d.note))
   end
 end
 

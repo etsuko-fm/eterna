@@ -46,12 +46,12 @@ end
 
 local function recalculate_time(time, shape)
     if ENVELOPE_MOD_OPTIONS[params:get(ID_ENVELOPES_MOD)] == "OFF" then
-        -- only modify env if global mod is off
+        -- only modify envelopes if env modulation is off; otherwise delegated to sequencer
         local attack = get_attack(time, shape)
         local decay = get_decay(time, shape)
-        for i = 0, 5 do
-            engine.attack(i, attack)
-            engine.decay(i, decay)
+        for sc_voice_id = 0, 5 do
+            engine.attack(sc_voice_id, attack)
+            engine.decay(sc_voice_id, decay)
         end
     end
 end
