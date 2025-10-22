@@ -10,19 +10,19 @@ local redraw_sequence = false
 local PLAY = "PLAY"
 local AWAIT_RESUME = "AWAIT_RESUME"
 local HOLD = "HOLD"
-local RESOLUTION = 16 -- 1/16th of a quarter note
+local RESOLUTION = 8 -- quarter note divided by 8, so 1/32nd
 -- todo: page creation could now actually be done from root module, to ensure all state params are available to all pages before page:init()
 local page = Page:create({
     name = page_name,
     --
-    playback = nil,          -- PLAY/STOP/AWAIT_RESUME/HOLD
+    hold_status = PLAY,      -- PLAY / AWAIT RESUME / HOLD
     current_master_step = 0, -- always runs, even if playback == HOLD
     current_step = 0,        -- reflects actual step played back by sequencer
     current_substep = 0,     -- holds values of 1 to MAX_STEPS, even if sequence length is shorter
     cued_step_divider = nil,
     substeps_per_step = nil, -- 4 1/64ths in a 1/16th note
     current_beat = 0,
-    step_divider = 4,        -- TODO: Should be set by add_params action
+    step_divider = 2,        -- TODO: Should be set by add_params action
     transport_on = true,     -- TODO should be set by params
     sequence_steps = SEQ_COLUMNS,
     beat_div = RESOLUTION
@@ -82,7 +82,6 @@ function page:evaluate_step(x, y)
     local attack, decay = get_step_envelope(enable_mod, velocity)
     if on then
         -- using modulo check to prevent triggering every 1/16 when step size is larger
-        graphic.current_step = self.current_step
         engine.env_level(sc_voice_id, velocity)
         if enable_mod == "LPG" then
             -- applies envelope to a lowpass filter
@@ -120,35 +119,36 @@ function page:next_step()
         end
     end
 
-    -- substep can always go on in a 1/64th speed with no recalcaultions upon step division change
-    self.current_substep = (self.current_substep + 1) % (self.beat_div * 4) -- keep track of upto 4 quarter notes
-    self.current_beat = math.floor(self.current_substep / self.beat_div)
-
     -- next step in sequence is triggered when enough substeps elapsed
     if self.current_substep % self.step_divider == 0 then
         -- master step is updated regardless of playback state
         self.current_master_step = (self.current_master_step + 1) % beat_div
 
-        if self.playback == HOLD then
+        if self.hold_status == HOLD then
             -- stay still
-        elseif self.playback == AWAIT_RESUME then
+        elseif self.hold_status == AWAIT_RESUME then
             print('waiting correct step to resume')
             -- wait until current step is equal to the master step
             if self.current_master_step == self.current_step then
                 -- on next iteration, playback will be picked up again
-                self.playback = PLAY
+                self.hold_status = PLAY
             end
         else
-            -- TODO: self.playback is STOP or PLAY; in practice only PLAY otherwise sequencer wouldn't run. maybe remove stop?
+            -- TODO: self.hold_status is STOP or PLAY; in practice only PLAY otherwise sequencer wouldn't run. maybe remove stop?
             self.current_step = (self.current_step + 1) % self.sequence_steps
-            graphic.current_step = self.current_step
         end
+        graphic.current_step = self.current_step
 
         -- evaluate current step, send commands to supercollider accordingly
         for y = 1, SEQ_ROWS do
             self:evaluate_step(self.current_step, y)
         end
     end
+
+    -- forward sequencer
+    -- substep can always go on in a 1/64th speed with no recalcaultions upon step division change
+    self.current_substep = (self.current_substep + 1) % (self.beat_div * 4) -- keep track of upto 4 quarter notes
+    self.current_beat = math.floor(self.current_substep / self.beat_div)
 end
 
 
@@ -173,10 +173,12 @@ function page:toggle_transport()
 end
 
 function page:toggle_hold_step()
-    if self.playback == PLAY then
-        self.playback = HOLD
-    elseif self.playback == HOLD then
-        self.playback = AWAIT_RESUME
+    if self.hold_status == PLAY then
+        print('switch to HOLD')
+        self.hold_status = HOLD
+    elseif self.hold_status == HOLD then
+        print('switch to AWAIT_RESUME')
+        self.hold_status = AWAIT_RESUME
     end
 end
 

@@ -16,11 +16,16 @@ local function adjust_step_size(d)
     params:set(p, new)
 end
 
+local function toggle_transport(v)
+    page_sequencer:toggle_transport()
+end
+
+
 local page = Page:create({
     name = page_name,
     e2 = adjust_bpm,
     e3 = adjust_step_size,
-    k2_off = function() page_sequencer:toggle_transport() end,
+    k2_off = toggle_transport,
     k3_on = function() page_sequencer:toggle_hold_step() end,
 })
 
@@ -38,11 +43,17 @@ end
 
 function page:render()
     window:render()
-    local tempo_trimmed = misc_util.trim(tostring(clock.get_tempo()), 5)
+    local tempo_trimmed = util.round(clock.get_tempo())
     local is_playing = page_sequencer.transport_on
     page.footer.button_text.e2.value = tempo_trimmed
     page.footer.button_text.k2.value = is_playing and "ON" or "OFF"
-    page.footer.button_text.k3.value = (page_sequencer.playback == "HOLD" or page.playback == "AWAIT_RESUME") and "ON" or "OFF"
+    local hold_text
+    local s = page_sequencer.hold_status
+    if s == "HOLD" or s == "AWAIT_RESUME" then hold_text = "ON"
+    else hold_text = "OFF"
+    end
+
+    page.footer.button_text.k3.value = hold_text
     page.footer.button_text.e3.value = sequence_util.sequence_speeds[params:get(PARAM_ID_SEQUENCE_SPEED)]
     control_graphic.bpm = tempo_trimmed
     control_graphic.is_playing = is_playing

@@ -73,10 +73,10 @@ Engine_Symbiosis : CroneEngine {
       // In each chunk, the maximum value will be used as waveform point
       chunkSize = (samples.size / numDisplayPoints).floor.max(1);
       maxPerChunk = samples.clump(chunkSize).collect { |chunk|
-        chunk.maxItem * scale
+        chunk.maxItem
       };
       waveform = Int8Array.fill(numDisplayPoints, { |i|
-        (maxPerChunk.at(i) * 127).abs.floor.asInteger
+        (maxPerChunk.at(i) * 127 * scale).abs.floor.asInteger
       });
       waveform
     };
@@ -207,11 +207,13 @@ Engine_Symbiosis : CroneEngine {
         if (f.numChannels > 1) {
           // Normalize based on loudest sample across channels
           "Starting normalization".postln;
-          left = bufL.loadToFloatArray(action: { |array| 
+          bufL.loadToFloatArray(action: { |array| 
             peakL = array.maxItem; 
+            left = array;
           });
-          right = bufR.loadToFloatArray(action: { |array| 
+          bufR.loadToFloatArray(action: { |array| 
             peakR = array.maxItem; 
+            right = array;
           });
           
           context.server.sync;
@@ -230,6 +232,8 @@ Engine_Symbiosis : CroneEngine {
           bufL.normalize(newmax: peakL * normalizeFactor); 
           bufR.normalize(newmax: peakR * normalizeFactor); 
           context.server.sync;
+          left.free;
+          right.free;
 
           ("left and right buffer normalized by scaling both with factor " + normalizeFactor).postln;
 

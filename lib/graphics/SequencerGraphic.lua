@@ -7,14 +7,7 @@ SequencerGraphic = {
     active_fill = 6,
     flash_fill = 15,
     current_step = nil,
-    sequences = {
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },
-    },
+    sequences = {{},{},{},{},{},{}},
     voice_env = { 0, 0, 0, 0, 0, 0, },
     is_playing = true,
     hide = false,
@@ -77,13 +70,13 @@ function SequencerGraphic:render()
         self:draw_track_indicator(voice)
         for column = 0, columns - 1 do
             -- iterate over entire grid
-            local idx = column + 1 -- step index in for loop
+            local column_idx = column + 1
             local x = basex + (block_w + margin_w) * column
             local y = basey + (block_h + margin_h) * row
-            local step_active = self.sequences[voice][idx] ~= 0.0
+            local step_active = self.sequences[voice][column_idx] ~= 0.0
 
             -- draw sequence step indicator
-            if self.current_step == idx and self.is_playing then
+            if self.current_step == column and self.is_playing then
                 screen.level(6)
             else
                 screen.level(faint_fill)
@@ -94,14 +87,14 @@ function SequencerGraphic:render()
 
             if step_active then
                 -- brighten if active
-                if self.current_step == idx and self.is_playing then
+                if self.current_step == column and self.is_playing then
                     -- step triggered, flash block brightly
                     screen.level(self.flash_fill)
                     screen.rect(x, y, block_w, block_h)
                     screen.fill()
                 else
                     -- step not triggered, but it is an active step in the sequence
-                    local v = self.sequences[voice][idx]
+                    local v = self.sequences[voice][column_idx]
                     screen.level(math.floor(2 + math.abs(v) * 13))
                     screen.rect(x, y, block_w, block_h)
                     screen.fill()
