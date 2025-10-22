@@ -88,7 +88,7 @@ local function add_params()
 end
 
 function page:render()
-    window:render()
+    self.window:render()
 
     local time = params:get(ID_ENVELOPES_TIME)
     local shape = params:get(ID_ENVELOPES_SHAPE)
@@ -111,7 +111,7 @@ end
 
 function page:initialize()
     add_params()
-    window = Window:new({ title = page_name, font_face = TITLE_FONT })
+    self.window = Window:new({ title = page_name, font_face = TITLE_FONT })
 
     -- graphics
     envelope_graphic = EnvGraphic:new()

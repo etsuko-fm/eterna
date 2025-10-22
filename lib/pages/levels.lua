@@ -68,7 +68,7 @@ function page:render()
 
     page.footer.button_text.k2.value = string.upper(LEVELS_LFO_SHAPES[lfo_state])
 
-    window:render()
+    self.window:render()
     if levels_lfo:get("enabled") == 1 then
         -- When LFO is disabled, E2 controls LFO rate
         -- Switch POS to RATE
@@ -119,7 +119,7 @@ function page:initialize()
         amp_polls[i].callback = function(v) level_graphic.voice_amp[i] = amp_to_log(v) end
     end
 
-    window = Window:new({ title = "LEVELS", font_face = TITLE_FONT })
+    self.window = Window:new({ title = "LEVELS", font_face = TITLE_FONT })
 
     -- graphics
     level_graphic = LevelsGraphic:new({

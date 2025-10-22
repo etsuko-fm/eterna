@@ -64,7 +64,7 @@ local function add_params()
 end
 
 function page:render()
-    window:render()
+    self.window:render()
     local lfo_state = params:get(ID_PANNING_LFO)
     local twist = params:get(ID_PANNING_TWIST)
     local spread = params:get(ID_PANNING_SPREAD)
@@ -93,7 +93,7 @@ end
 
 function page:initialize()
     add_params()
-    window = Window:new({ title = page_name, font_face = TITLE_FONT })
+    self.window = Window:new({ title = page_name, font_face = TITLE_FONT })
     -- graphics
     panning_graphic = PanningGraphic:new()
     calculate_pan_positions()

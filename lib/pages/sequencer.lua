@@ -196,7 +196,7 @@ function clock.transport.stop()
 end
 
 function page:render()
-    window:render()
+    self.window:render()
     if redraw_sequence then
         -- condition prevents updating perlin values more often than the screen refreshes.
         generate_perlin_seq()
@@ -256,7 +256,7 @@ function page:initialize()
         env_polls[i].callback = function(v) graphic.voice_env[i] = v end
     end
 
-    window = Window:new({ title = "SEQUENCER", font_face = TITLE_FONT })
+    self.window = Window:new({ title = "SEQUENCER", font_face = TITLE_FONT })
     graphic = SequencerGraphic:new()
     page.footer = Footer:new({
         button_text = {

@@ -48,9 +48,11 @@ function SliceGraphic:render()
         local rect_w = w * self.slice_len - 1
         screen.rect(startx, y,  rect_w, 1)
         screen.fill()
+
+        -- indicate starting slice if between 2 and 6 slices
         if self.num_slices <= 6 and self.num_slices > 1 and index == self.active_slices[1] then
             screen.level(5)
-            screen.rect(startx + rect_w/2, y,  1, 1)
+            screen.rect(startx, y,  1, 1)
         end
         screen.fill()
 

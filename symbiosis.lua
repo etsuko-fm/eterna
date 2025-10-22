@@ -256,13 +256,17 @@ function key(n, z)
   end
 end
 
+local enc1n = 0
 function enc(n, d)
   -- E1 cycles pages
   if n == 1 then
-    if d > 0 then
+    enc1n = enc1n + d
+    if enc1n > 5 then
       page_forward()
-    else
+      enc1n = 0
+    elseif enc1n < -5 then
       page_backward()
+      enc1n = 0
     end
   end
 
@@ -305,6 +309,7 @@ function refresh()
     ready = false
     screen.clear()
     current_page:render()
+    -- todo: move this rendering to the Window class
     if not page_indicator_disabled then
       draw_page_indicator()
     end

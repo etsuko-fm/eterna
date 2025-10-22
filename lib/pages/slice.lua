@@ -212,7 +212,7 @@ function page:render()
 
     if selected_sample then
         -- show filename of selecteed sample in title bar
-        window.title = filename
+        self.window.title = filename
         waveform_graphics[1]:render()
         if is_stereo then
             waveform_graphics[2]:render()
@@ -243,7 +243,7 @@ function page:render()
         screen.text_center("PRESS K2 TO LOAD SAMPLE")
     end
 
-    window:render()
+    self.window:render()
     page.footer:render()
 end
 
@@ -326,19 +326,7 @@ function page:initialize()
         if debug_mode then self:load_sample(_path.dust .. selected_sample) end
     end
 
-    window = Window:new({
-        x = 0,
-        y = 0,
-        w = 128,
-        h = 64,
-        title = "SAMPLING",
-        font_face = TITLE_FONT,
-        brightness = 15,
-        border = false,
-        selected = true,
-        horizontal_separations = 0,
-        vertical_separations = 0,
-    })
+    self.window = Window:new({title = "SAMPLING"})
 
     page.footer = Footer:new({
         button_text = {

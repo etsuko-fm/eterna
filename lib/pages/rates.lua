@@ -122,29 +122,29 @@ page = Page:create({
 })
 
 function page:render()
-    page.window:render()
-    page.footer.button_text.k2.value = PLAYBACK_TABLE[params:get(ID_RATES_DIRECTION)]
-    page.footer.button_text.k3.value = RANGE_TABLE[params:get(ID_RATES_RANGE)]
+    self.window:render()
+    self.footer.button_text.k2.value = PLAYBACK_TABLE[params:get(ID_RATES_DIRECTION)]
+    self.footer.button_text.k3.value = RANGE_TABLE[params:get(ID_RATES_RANGE)]
 
-    page.footer.button_text.e2.value = misc_util.trim(tostring(
+    self.footer.button_text.e2.value = misc_util.trim(tostring(
         params:get(ID_RATES_CENTER)
     ), 5)
 
-    page.footer.button_text.e3.value = misc_util.trim(tostring(
+    self.footer.button_text.e3.value = misc_util.trim(tostring(
         params:get(ID_RATES_SPREAD)
     ), 5)
 
-    page.pitch_graph:render()
-    page.footer:render()
+    self.pitch_graph:render()
+    self.footer:render()
 end
 
 function page:initialize()
     add_params()
-    page.window = Window:new({ title = page_name, font_face = TITLE_FONT })
+    self.window = Window:new({ title = page_name, font_face = TITLE_FONT })
 
-    page.pitch_graph = PitchGraph:new()
+    self.pitch_graph = PitchGraph:new()
     update_playback_dir(1)
-    page.footer = Footer:new({
+    self.footer = Footer:new({
         button_text = {
             k2 = {
                 name = "DIR",

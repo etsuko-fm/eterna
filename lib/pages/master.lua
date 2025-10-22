@@ -68,7 +68,7 @@ local function add_params()
 end
 
 function page:render()
-    window:render()
+    self.window:render()
     engine.request_amp_history()
 
     pre_comp_left_poll:update()
@@ -109,7 +109,7 @@ function page:initialize()
     master_left_poll.callback = function(v) master_graphic.out_levels[1] = amp_to_log(v) end
     master_right_poll.callback = function(v) master_graphic.out_levels[2] = amp_to_log(v) end
 
-    window = Window:new({ title = page_name, font_face = TITLE_FONT })
+    self.window = Window:new({ title = page_name, font_face = TITLE_FONT })
 
     -- graphics
     page.footer = Footer:new({

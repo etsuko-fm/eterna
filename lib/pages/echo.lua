@@ -78,12 +78,12 @@ function page:render()
     page.footer.button_text.e2.value = feedback
     page.footer.button_text.e3.value = wet
     page.footer:render()
-    window:render()
+    self.window:render()
 end
 
 function page:initialize()
     add_params()
-    window = Window:new({ title = page_name, font_face = TITLE_FONT })
+    self.window = Window:new({ title = page_name, font_face = TITLE_FONT })
 
     echo_graphic = EchoGraphic:new()
 

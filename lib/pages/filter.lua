@@ -51,7 +51,7 @@ local function add_params()
 end
 
 function page:render()
-    window:render()
+    self.window:render()
     local freq = params:get(ID_FILTER_FREQ)
     local res = params:get(ID_FILTER_RES)
     local filter_type = params:get(ID_FILTER_TYPE)
@@ -73,7 +73,7 @@ end
 
 function page:initialize()
     add_params()
-    window = Window:new({ title = page_name, font_face = TITLE_FONT })
+    self.window = Window:new({ title = page_name, font_face = TITLE_FONT })
     -- graphics
     filter_graphic = FilterGraphic:new()
 
