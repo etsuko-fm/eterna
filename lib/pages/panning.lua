@@ -1,6 +1,5 @@
 local PanningGraphic = include("symbiosis/lib/graphics/PanningGraphic")
 local page_name = "PANNING"
-local window
 local panning_graphic
 local panning_lfo
 

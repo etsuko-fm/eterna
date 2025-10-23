@@ -49,7 +49,7 @@ controlspec_perlin_density = controlspec.def {
     max = 1,
     warp = 'lin',
     step = .001,
-    default = 0.0, -- default value
+    default = 0.0,
     units = '',
     quantum = .01,
     wrap = false
@@ -58,10 +58,12 @@ controlspec_perlin_density = controlspec.def {
 ID_SEQ_PERLIN_X = "sequencer_perlin_x"
 ID_SEQ_PERLIN_Y = "sequencer_perlin_y"
 ID_SEQ_PERLIN_Z = "sequencer_perlin_z"
-ID_SEQ_EVOLVE = "sequencer_evolve"
+-- ID_SEQ_EVOLVE = "sequencer_evolve"
 ID_SEQ_PERLIN_DENSITY = "sequencer_perlin_density"
 ID_SEQ_STYLE = "sequencer_style"
+ID_SEQ_VELOCITY = "sequencer_velocity"
 
+SEQ_VELOCITY_TABLE = {"LOW", "MID", "HIGH"}
 -- SEQ_EVOLVE_TABLE = { "OFF", "SLOW", "MED", "FAST" }
 -- SEQ_STREAM = "STREA"
 -- SEQ_GRID = "MANUA"
@@ -81,6 +83,7 @@ params:add_control(ID_SEQ_PERLIN_Z, "perlin z", controlspec_perlin_z)
 params:hide(ID_SEQ_PERLIN_Z)
 
 params:add_control(ID_SEQ_PERLIN_DENSITY, "sequence density", controlspec_perlin_density)
+params:add_option(ID_SEQ_VELOCITY, "evolve", SEQ_VELOCITY_TABLE, 3)
 -- params:add_option(ID_SEQ_EVOLVE, "evolve", SEQ_EVOLVE_TABLE, 1)
 -- params:add_option(ID_SEQ_STYLE, "sequence style", SEQUENCE_STYLE_TABLE, 1)
 
@@ -89,7 +92,6 @@ for y = 1, SEQ_ROWS do
     ID_SEQ_STEP[y] = {}
     for x = 1, SEQ_COLUMNS do
         ID_SEQ_STEP[y][x] = "sequencer_step_" .. y .. "_" .. x
-        -- params:add_binary(ID_SEQ_STEP[y][x], ID_SEQ_STEP[y][x], "toggle", 0)
         params:add_number(ID_SEQ_STEP[y][x], ID_SEQ_STEP[y][x], -1, 1, 0)
         params:hide(ID_SEQ_STEP[y][x])
     end

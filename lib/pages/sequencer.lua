@@ -1,6 +1,6 @@
 local SequencerGraphic = include("symbiosis/lib/graphics/SequencerGraphic")
+local Sequencer = include("symbiosis/lib/Sequencer")
 local page_name = "SEQUENCER"
-local window
 local graphic
 local PERLIN_ZOOM = 10 / 3 ---4 / 3 -- empirically tuned
 -- todo: add in bits.lua? otherwise dependent on order of pages loaded
@@ -12,22 +12,29 @@ local AWAIT_RESUME = "AWAIT_RESUME"
 local HOLD = "HOLD"
 local RESOLUTION = 8 -- quarter note divided by 8, so 1/32nd
 -- todo: page creation could now actually be done from root module, to ensure all state params are available to all pages before page:init()
+local seq = Sequencer.new {
+    steps = 16,
+    rows = 6,
+    beat_div = RESOLUTION,
+    step_divider = 2,
+}
+
 local page = Page:create({
     name = page_name,
     --
     hold_status = PLAY,      -- PLAY / AWAIT RESUME / HOLD
-    current_master_step = 0, -- always runs, even if playback == HOLD
-    current_step = 0,        -- reflects actual step played back by sequencer
-    current_substep = 0,     -- holds values of 1 to MAX_STEPS, even if sequence length is shorter
-    cued_step_divider = nil,
-    substeps_per_step = nil, -- 4 1/64ths in a 1/16th note
-    current_beat = 0,
-    step_divider = 2,        -- TODO: Should be set by add_params action
+    seq=seq,
+    -- current_master_step = 0, -- always runs, even if playback == HOLD
+    -- current_step = 0,        -- reflects actual step played back by sequencer
+    -- current_substep = 0,     -- holds values of 1 to MAX_STEPS, even if sequence length is shorter
+    -- cued_step_divider = nil,
+    -- substeps_per_step = nil, -- 4 1/64ths in a 1/16th note/
+    -- current_beat = 0,
+    -- step_divider = 2,        -- TODO: Should be set by add_params action
     transport_on = true,     -- TODO should be set by params
-    sequence_steps = SEQ_COLUMNS,
-    beat_div = RESOLUTION
+    -- sequence_steps = SEQ_COLUMNS,
+    -- beat_div = RESOLUTION
 })
-
 
 local function generate_perlin_seq()
     local density = params:get(ID_SEQ_PERLIN_DENSITY)
@@ -96,75 +103,42 @@ function page:evaluate_step(x, y)
     end
 end
 
-function page:reset_counter()
-    self.current_substep = 0
-    self.current_master_step = 0
-    self.current_step = 0
-    self.current_beat = 0
-end
-
-function page:next_step()
-    local beat_div = self.beat_div
-
-    if self.cued_step_divider then
-        -- execute on first beat
-        if self.current_substep == 0 then
-            print("step div change executed: from " ..
-            self.step_divider .. " to " .. self.cued_step_divider .. " on master step " .. self.current_master_step)
-            self.step_divider = self.cued_step_divider
-            self.cued_step_divider = nil
-            self.substeps_per_step = self.step_divider
-            self:reset_counter()
-            print("new substeps per step: " .. self.substeps_per_step)
+function page:on_step(step, master)
+    if self.hold_status == HOLD then
+        -- stay still
+    elseif self.hold_status == AWAIT_RESUME then
+        print('waiting correct step to resume')
+        -- wait until current step is equal to the master step
+        if master == step then
+            -- on next iteration, playback will be picked up again
+            self.hold_status = PLAY
         end
     end
-
-    -- next step in sequence is triggered when enough substeps elapsed
-    if self.current_substep % self.step_divider == 0 then
-        -- master step is updated regardless of playback state
-        self.current_master_step = (self.current_master_step + 1) % beat_div
-
-        if self.hold_status == HOLD then
-            -- stay still
-        elseif self.hold_status == AWAIT_RESUME then
-            print('waiting correct step to resume')
-            -- wait until current step is equal to the master step
-            if self.current_master_step == self.current_step then
-                -- on next iteration, playback will be picked up again
-                self.hold_status = PLAY
-            end
-        else
-            -- TODO: self.hold_status is STOP or PLAY; in practice only PLAY otherwise sequencer wouldn't run. maybe remove stop?
-            self.current_step = (self.current_step + 1) % self.sequence_steps
-        end
-        graphic.current_step = self.current_step
-
-        -- evaluate current step, send commands to supercollider accordingly
-        for y = 1, SEQ_ROWS do
-            self:evaluate_step(self.current_step, y)
-        end
+    graphic.current_step = step
+    page_control.current_step = step
+    -- evaluate current step, send commands to supercollider accordingly
+    for y = 1, SEQ_ROWS do
+        self:evaluate_step(step, y)
     end
-
-    -- forward sequencer
-    -- substep can always go on in a 1/64th speed with no recalcaultions upon step division change
-    self.current_substep = (self.current_substep + 1) % (self.beat_div * 4) -- keep track of upto 4 quarter notes
-    self.current_beat = math.floor(self.current_substep / self.beat_div)
 end
 
+local function on_substep(substep, beat)
+    page_control.current_beat = beat
+end
 
 function page:run_sequencer()
     while true do
         -- updates playback range of each voice prior to trigger
         update_slices()
-        self:next_step()
-        clock.sync(1 / self.beat_div) -- sync on 1/16th of a beat, so each 1/64th note
+        self.seq:advance()
+        clock.sync(1 / self.seq.beat_div) -- sync on 1/16th of a beat, so each 1/64th note
     end
 end
 
 function page:toggle_transport()
     if self.transport_on then
         clock.transport.stop()
-        self:reset_counter()
+        self.seq:reset()
         graphic.is_playing = false
     else
         clock.transport.start()
@@ -223,6 +197,7 @@ local function update_grid_step(x, y, v)
     end
 end
 
+
 grid.key = function(x, y, z)
     -- if SEQUENCE_STYLE_TABLE[params:get(ID_SEQ_STYLE)] == SEQ_GRID then
     --     -- would sequence from grid
@@ -249,8 +224,9 @@ end
 function page:initialize()
     page.e2 = e2
     page.e3 = e3
+    seq.on_step = function(step, master) page:on_step(step, master) end
+    seq.on_substep = on_substep
     add_params()
-    self.substeps_per_step = self.beat_div / self.step_divider
 
     for i = 1, 6 do
         env_polls[i].callback = function(v) graphic.voice_env[i] = v end

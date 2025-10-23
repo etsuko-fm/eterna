@@ -6,9 +6,7 @@ local fileselect = require('fileselect')
 local page_disabled = false
 
 local waveform_graphics = {}
-local window
 local waveform_width = 64
-local waveform_h = 6
 local is_stereo
 
 local filename = ""
@@ -21,20 +19,6 @@ local page = Page:create({
     -- 
     sample_duration = nil,
 })
-
-
---[[
-Sample select page
-Graphics:
-- Waveform with global loop points
-- Instructions for sample loading
-- Filename of selected sample
-
-Interactions:
- K2: enter file browser (`fileselect`) - fileselect itself is a norns feature
- E2: select global loop position
- E3: select global loop length
-]]
 
 local function path_to_file_name(file_path)
     -- strips '/foo/bar/audio.wav' to 'audio.wav'
@@ -238,7 +222,7 @@ function page:render()
     else
         screen.level(3)
         screen.font_face(DEFAULT_FONT)
-        window.title = "SAMPLING"
+        self.window.title = "SAMPLING"
         screen.move(64, 32)
         screen.text_center("PRESS K2 TO LOAD SAMPLE")
     end
@@ -330,22 +314,10 @@ function page:initialize()
 
     page.footer = Footer:new({
         button_text = {
-            k2 = {
-                name = "LFO",
-                value = "",
-            },
-            k3 = {
-                name = "LOAD",
-                value = "",
-            },
-            e2 = {
-                name = "START",
-                value = "",
-            },
-            e3 = {
-                name = "SLCS",
-                value = "",
-            },
+            k2 = { name = "LFO", value = "" },
+            k3 = { name = "LOAD", value = "" },
+            e2 = { name = "START", value = "" },
+            e3 = { name = "SLCS", value = "" },
         },
         font_face = FOOTER_FONT,
     })

@@ -11,8 +11,8 @@ ControlGraphic = {
     bright = 15,
     default_level = 3,
     is_playing = true,
-    current_step = nil,
-    current_quarter = nil,
+    current_step = 0,
+    current_beat = 0,
     cue = nil,
 }
 
@@ -64,7 +64,7 @@ function ControlGraphic:render()
 
     -- 1/4 report
     for i = 0, 3 do
-        if i == self.current_quarter then
+        if i == self.current_beat then
             screen.level(bright_level)
         else
             screen.level(faint_level)

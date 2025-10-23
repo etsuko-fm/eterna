@@ -4,8 +4,6 @@ local gaussian = include("symbiosis/lib/util/gaussian")
 local level_graphic
 local graph_x = 36 -- (128 - graph_width) / 2
 local graph_y = 40
-
-local window
 local levels_lfo
 
 local function amp_to_sigma(v)

@@ -1,6 +1,5 @@
 local MasterGraphic = include("symbiosis/lib/graphics/MasterGraphic")
 local page_name = "MASTER"
-local window
 local master_graphic
 
 local function adjust_drive(d)

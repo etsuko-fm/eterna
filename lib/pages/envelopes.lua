@@ -1,7 +1,6 @@
 local EnvGraphic = include("symbiosis/lib/graphics/EnvGraphic")
 
 local page_name = "ENVELOPES"
-local window
 local envelope_graphic
 
 local function adjust_shape(d)

@@ -19,6 +19,7 @@ sequence_util = include("symbiosis/lib/util/sequence")
 include("symbiosis/lib/parameters/global")
 include("symbiosis/lib/parameters/slice")
 include("symbiosis/lib/parameters/sequencer")
+include("symbiosis/lib/parameters/control")
 include("symbiosis/lib/parameters/envelopes")
 include("symbiosis/lib/parameters/rates")
 include("symbiosis/lib/parameters/levels")
@@ -35,7 +36,7 @@ local page_envelopes = include("symbiosis/lib/pages/envelopes")
 local page_filter = include("symbiosis/lib/pages/filter")
 local page_echo = include("symbiosis/lib/pages/echo")
 local page_master = include("symbiosis/lib/pages/master")
-local page_control = include("symbiosis/lib/pages/control")
+page_control = include("symbiosis/lib/pages/control")
 local page_panning = include("symbiosis/lib/pages/panning")
 local page_rates = include("symbiosis/lib/pages/rates")
 local page_levels = include("symbiosis/lib/pages/levels")
@@ -257,14 +258,20 @@ function key(n, z)
 end
 
 local enc1n = 0
+local counter = 0
+
 function enc(n, d)
   -- E1 cycles pages
   if n == 1 then
-    enc1n = enc1n + d
-    if enc1n > 5 then
+    counter = 0 -- reset
+    if (current_page_index < #pages and d > 0) or current_page_index > 1 and d < 0 then
+      enc1n = enc1n + d
+    end
+
+    if enc1n > 3 then
       page_forward()
       enc1n = 0
-    elseif enc1n < -5 then
+    elseif enc1n < -3 then
       page_backward()
       enc1n = 0
     end
@@ -288,27 +295,43 @@ local function draw_page_indicator()
   local h
   local y
   for i = 0, #pages - 1 do
+    h = 3
+    local x = 2 + i * 2
     if pages[i + 1] == current_page then
-      h = 3
       y = 2
       screen.level(0)
+      screen.rect(2 + i * 2, y, 1, h)
+      screen.fill()
+      screen.level(3)
+      if enc1n > 0 then
+        -- line from bottom to top
+        screen.rect(x, y, 1, enc1n)
+      elseif enc1n < 0 then
+        -- line from top to bottom
+        screen.rect(x, y+3, 1, enc1n)
+      end
     else
       screen.level(6)
-      h = 3
       y = 2
-      -- y = 2
+      screen.rect(x, y, 1, h)
     end
-    screen.rect(2 + i * 2, y, 1, h)
     screen.fill()
   end
 end
 
+
 function refresh()
+  counter = counter + 1
   -- refresh screen
   if ready then
     ready = false
     screen.clear()
     current_page:render()
+    if enc1n ~= 0 and counter > 120 then
+      enc1n = 0
+      counter = 0
+    end
+    enc1n = enc1n
     -- todo: move this rendering to the Window class
     if not page_indicator_disabled then
       draw_page_indicator()
@@ -324,4 +347,5 @@ end
 
 function cleanup()
   metro.free_all()
+  poll.clear_all()
 end
