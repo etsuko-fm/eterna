@@ -10,16 +10,26 @@ local function toggle_transport(v)
     page_sequencer:toggle_transport()
 end
 
+local function adjust_num_steps(d)
+    print('adjust num steps with '..d)
+    misc_util.adjust_param(d, ID_SEQ_NUM_STEPS, controlspec_num_steps)
+end
+
 local page = Page:create({
     name = page_name,
     e2 = adjust_bpm,
-    e3 = nil,
+    e3 = adjust_num_steps,
     k2_off = toggle_transport,
     k3_on = function() page_sequencer:toggle_hold_step() end,
 })
 
+local function action_num_steps(v)
+    print('new num steps: ' .. v)
+    page_sequencer.seq.steps = v
+end
+
 local function add_params()
-    -- 
+    params:set_action(ID_SEQ_NUM_STEPS, action_num_steps)
 end
 
 function page:render()
@@ -27,6 +37,7 @@ function page:render()
     local tempo_trimmed = util.round(clock.get_tempo())
     local is_playing = page_sequencer.transport_on
     self.footer.button_text.e2.value = tempo_trimmed
+    self.footer.button_text.e3.value = page_sequencer.seq.steps
     self.footer.button_text.k2.value = is_playing and "ON" or "OFF"
     -- local hold_text
     -- local s = page_sequencer.hold_status

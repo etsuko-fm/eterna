@@ -3,27 +3,19 @@ local page_name = "MASTER"
 local master_graphic
 
 local function adjust_drive(d)
-    local p = ID_MASTER_COMP_DRIVE
-    local new_val = params:get_raw(p) + d * controlspec_master_drive.quantum
-    params:set_raw(p, new_val, false)
-end
-
-local function cycle_mono()
-    local p = ID_MASTER_MONO_FREQ
-    local curr = params:get(p)
-    params:set(p, util.wrap(curr + 1, 1, #BASS_MONO_FREQS_STR))
-end
-
-local function cycle_comp_amount()
-    local p = ID_MASTER_COMP_AMOUNT
-    local curr = params:get(p)
-    params:set(p, util.wrap(curr + 1, 1, #COMP_AMOUNTS))
+    misc_util.adjust_param(d, ID_MASTER_COMP_DRIVE, controlspec_master_drive)
 end
 
 local function adjust_output(d)
-    local p = ID_MASTER_OUTPUT
-    local new_val = params:get_raw(p) + d * controlspec_master_output.quantum
-    params:set_raw(p, new_val, false)
+    misc_util.adjust_param(d, ID_MASTER_OUTPUT, controlspec_master_output)
+end
+
+local function cycle_mono()
+    misc_util.cycle_param(ID_MASTER_MONO_FREQ, BASS_MONO_FREQS_STR)
+end
+
+local function cycle_comp_amount()
+    misc_util.cycle_param(ID_MASTER_COMP_AMOUNT, COMP_AMOUNTS)
 end
 
 local page = Page:create({
@@ -113,22 +105,10 @@ function page:initialize()
     -- graphics
     page.footer = Footer:new({
         button_text = {
-            k2 = {
-                name = "MONO",
-                value = "4:1",
-            },
-            k3 = {
-                name = "COMP",
-                value = "",
-            },
-            e2 = {
-                name = "DRIVE",
-                value = "",
-            },
-            e3 = {
-                name = "OUT",
-                value = "",
-            },
+            k2 = { name = "MONO", value = "4:1" },
+            k3 = { name = "COMP", value = "" },
+            e2 = { name = "DRIVE", value = "" },
+            e3 = { name = "OUT", value = "" },
         },
         font_face = FOOTER_FONT,
     })

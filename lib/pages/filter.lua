@@ -1,28 +1,22 @@
 local page_name = "FILTER"
 local FilterGraphic = include("symbiosis/lib/graphics/FilterGraphic")
 local filter_graphic
+
 local function adjust_freq(d)
-    local p = ID_FILTER_FREQ
-    local new_val = params:get_raw(p) + d * controlspec_filter_freq.quantum
-    params:set_raw(p, new_val)
+    misc_util.adjust_param(d, ID_FILTER_FREQ, controlspec_filter_freq)
 end
 
 local function adjust_res(d)
-    local new_val = params:get(ID_FILTER_RES) + d * controlspec_filter_res.quantum
-    params:set(ID_FILTER_RES, new_val, false)
+    misc_util.adjust_param(d, ID_FILTER_RES, controlspec_filter_res)
 end
 
 local function toggle_type()
-    local p = ID_FILTER_TYPE
-    local curr = params:get(p)
-    params:set(p, util.wrap(curr + 1, 1, #FILTER_TYPES))
-end
-local function toggle_drywet()
-    local p = ID_FILTER_WET
-    local curr = params:get(p)
-    params:set(p, util.wrap(curr + 1, 1, #DRY_WET_TYPES))
+    misc_util.cycle_param(ID_FILTER_TYPE, FILTER_TYPES)
 end
 
+local function toggle_drywet()
+    misc_util.cycle_param(ID_FILTER_WET, DRY_WET_TYPES)
+end
 
 local page = Page:create({
     name = page_name,

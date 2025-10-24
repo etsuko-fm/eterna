@@ -6,32 +6,24 @@ local graph_x = 36 -- (128 - graph_width) / 2
 local graph_y = 40
 local levels_lfo
 
-local function amp_to_sigma(v)
-    return util.linexp(0, 1, LEVELS_SIGMA_MIN, LEVELS_SIGMA_MAX, v)
-end
-
-local function adjust_sigma(d)
-    local incr = d * controlspec_amp.quantum
-    local curr = params:get(ID_LEVELS_AMP)
-    local new_val = curr + incr
-    params:set(ID_LEVELS_AMP, new_val, false)
-end
-
-local function cycle_lfo()
-    local p = ID_LEVELS_LFO
-    local new_val = util.wrap(params:get(p) + 1, 1, #LEVELS_LFO_SHAPES)
-    params:set(p, new_val)
+local function adjust_amp(d)
+    misc_util.adjust_param(d, ID_LEVELS_AMP, controlspec_amp)
 end
 
 local function adjust_position(d)
-    local incr = d * controlspec_pos.quantum
-    local curr = params:get(ID_LEVELS_POS)
-    local new_val = curr + incr
-    params:set(ID_LEVELS_POS, new_val)
+    misc_util.adjust_param(d, ID_LEVELS_POS, controlspec_pos)
+end
+
+local function cycle_lfo()
+    misc_util.cycle_param(ID_LEVELS_LFO, LEVELS_LFO_SHAPES)
 end
 
 local function adjust_lfo_rate(d)
     lfo_util.adjust_lfo_rate_quant(d, levels_lfo)
+end
+
+local function amp_to_sigma(v)
+    return util.linexp(0, 1, LEVELS_SIGMA_MIN, LEVELS_SIGMA_MAX, v)
 end
 
 local function e2(d)
@@ -46,7 +38,7 @@ local page = Page:create({
     name = page_name,
     e1 = nil,
     e2 = e2,
-    e3 = adjust_sigma,
+    e3 = adjust_amp,
     k2_off = cycle_lfo,
     k3_off = nil,
 })
@@ -93,7 +85,6 @@ local function recalculate_levels()
     for i = 0, 5 do
         engine.level(i, levels[i + 1])
     end
-    -- print(levels[1])
 end
 
 local function action_lfo(v)
@@ -129,7 +120,7 @@ function page:initialize()
         brightness = 15,
     })
 
-    adjust_sigma(0)
+    adjust_amp(0)
 
     local sigma = amp_to_sigma(params:get(ID_LEVELS_AMP))
     local levels = gaussian.calculate_gaussian_levels(params:get(ID_LEVELS_POS), sigma)

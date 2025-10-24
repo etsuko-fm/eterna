@@ -153,8 +153,7 @@ end
 
 local function adjust_num_slices(d)
     if selected_sample then
-        local p = ID_SLICES_NUM_SLICES
-        params:set_raw(p, params:get_raw(p) + d * controlspec_slices.quantum)
+        misc_util.adjust_param(d, ID_SLICES_NUM_SLICES, controlspec_slices)
     end
 end
 

@@ -3,27 +3,19 @@ local EchoGraphic = include("symbiosis/lib/graphics/EchoGraphic")
 local echo_graphic
 
 local function adjust_wet(d)
-    local p = ID_ECHO_DRYWET
-    local new_val = params:get_raw(p) + d * controlspec_echo_drywet.quantum
-    params:set_raw(p, new_val)
+    misc_util.adjust_param(d, ID_ECHO_DRYWET, controlspec_echo_drywet)
 end
 
 local function adjust_feedback(d)
-    local p = ID_ECHO_FEEDBACK
-    local new_val = params:get_raw(p) + d * controlspec_echo_feedback.quantum
-    params:set(p, new_val)
+    misc_util.adjust_param(d, ID_ECHO_FEEDBACK, controlspec_echo_feedback)
 end
 
 local function cycle_time()
-    local p = ID_ECHO_TIME
-    local new_val = util.wrap(params:get(p) + 1, 1, #ECHO_TIME_AMOUNTS)
-    params:set(p, new_val)
+    misc_util.cycle_param(ID_ECHO_TIME, ECHO_TIME_AMOUNTS)
 end
 
 local function cycle_style()
-    local p = ID_ECHO_STYLE
-    local new_val = util.wrap(params:get(p) + 1, 1, #ECHO_STYLES)
-    params:set(p, new_val)
+    misc_util.cycle_param(ID_ECHO_STYLE, ECHO_STYLES)
 end
 
 local page = Page:create({

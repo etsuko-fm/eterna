@@ -4,21 +4,15 @@ local page_name = "ENVELOPES"
 local envelope_graphic
 
 local function adjust_shape(d)
-    local p = ID_ENVELOPES_SHAPE
-    local new_val = params:get_raw(p) + d * controlspec_env_shape.quantum
-    params:set_raw(p, new_val)
+    misc_util.adjust_param(d, ID_ENVELOPES_SHAPE, controlspec_env_shape)
 end
 
 local function adjust_time(d)
-    local p = ID_ENVELOPES_TIME
-    local new_val = params:get_raw(p) + d * controlspec_env_time.quantum
-    params:set_raw(p, new_val)
+    misc_util.adjust_param(d, ID_ENVELOPES_TIME, controlspec_env_time)
 end
 
 local function toggle_curve()
-    local p = ID_ENVELOPES_CURVE
-    local curr = params:get(p)
-    params:set(p, util.wrap(curr + 1, 1, #ENVELOPE_CURVES))
+    misc_util.cycle_param(ID_ENVELOPES_CURVE, ENVELOPE_CURVES)
 end
 
 local function toggle_mod()

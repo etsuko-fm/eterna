@@ -26,7 +26,7 @@ local function set_contains(set, number)
 end
 
 -- Convert exponential range [slo, shi] to linear range [dlo, dhi]
-function explin(slo, shi, dlo, dhi, f, exp)
+local function explin(slo, shi, dlo, dhi, f, exp)
     exp = exp or 1  -- exponentiality factor (1 = plain log scaling)
 
     -- sanity checks
@@ -46,7 +46,7 @@ function explin(slo, shi, dlo, dhi, f, exp)
 end
 
 -- Convert linear range [slo, shi] to exponential range [dlo, dhi]
-function linexp(slo, shi, dlo, dhi, f, exp)
+local function linexp(slo, shi, dlo, dhi, f, exp)
     exp = exp or 1  -- exponentiality factor (1 = plain log scaling)
 
     -- sanity checks
@@ -67,11 +67,27 @@ function linexp(slo, shi, dlo, dhi, f, exp)
     )
 end
 
+local function cycle_param(param_id, tbl)
+    local v = params:get(param_id)
+    local new = util.wrap(v + 1, 1, #tbl)
+    params:set(param_id, new)
+end
+
+local function adjust_param(d, param_id, spec)
+    local incr = d * spec.quantum
+    local curr = params:get_raw(param_id)
+    local new = curr + incr
+    params:set_raw(param_id, new)
+end
+
+
 return {
     linexp = linexp,
     explin = explin,
     trim = trim,
     list_to_set = list_to_set,
     set_contains = set_contains,
+    cycle_param = cycle_param,
+    adjust_param = adjust_param,
 }
 
