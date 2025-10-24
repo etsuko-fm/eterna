@@ -1,21 +1,18 @@
 local SequencerGraphic = include("symbiosis/lib/graphics/SequencerGraphic")
 local Sequencer = include("symbiosis/lib/Sequencer")
 local page_name = "SEQUENCER"
-local graphic
 local PERLIN_ZOOM = 10 / 3 ---4 / 3 -- empirically tuned
--- todo: add in bits.lua? otherwise dependent on order of pages loaded
-
 local main_seq_clock_id
 local redraw_sequence = false
 local PLAY = "PLAY"
 local AWAIT_RESUME = "AWAIT_RESUME"
 local HOLD = "HOLD"
-local RESOLUTION = 8 -- quarter note divided by 8, so 1/32nd
--- todo: page creation could now actually be done from root module, to ensure all state params are available to all pages before page:init()
+local TICKS_PER_BEAT = 8 -- quarter note divided by 8, so 1/32nd [call ticks_per_beat?]
+
 local seq = Sequencer.new {
     steps = 16,
     rows = 6,
-    beat_div = RESOLUTION,
+    ticks_per_beat = TICKS_PER_BEAT,
     step_divider = 2,
 }
 
@@ -24,16 +21,6 @@ local page = Page:create({
     --
     hold_status = PLAY,      -- PLAY / AWAIT RESUME / HOLD
     seq=seq,
-    -- current_master_step = 0, -- always runs, even if playback == HOLD
-    -- current_step = 0,        -- reflects actual step played back by sequencer
-    -- current_substep = 0,     -- holds values of 1 to MAX_STEPS, even if sequence length is shorter
-    -- cued_step_divider = nil,
-    -- substeps_per_step = nil, -- 4 1/64ths in a 1/16th note/
-    -- current_beat = 0,
-    -- step_divider = 2,        -- TODO: Should be set by add_params action
-    transport_on = true,     -- TODO should be set by params
-    -- sequence_steps = SEQ_COLUMNS,
-    -- beat_div = RESOLUTION
 })
 
 local function generate_perlin_seq()
@@ -80,7 +67,6 @@ local function get_step_envelope(enable_mod, velocity)
     return sequence_util.get_step_envelope(max_time, max_shape, enable_mod, velocity)
 end
 
-
 function page:evaluate_step(x, y)
     local sc_voice_id = y - 1                          -- for 0-based supercollider arrays
     local enable_mod = ENVELOPE_MOD_OPTIONS[params:get(ID_ENVELOPES_MOD)]
@@ -114,7 +100,7 @@ function page:on_step(step, master)
             self.hold_status = PLAY
         end
     end
-    graphic.current_step = step
+    self.graphic.current_step = step
     page_control.current_step = step
     -- evaluate current step, send commands to supercollider accordingly
     for y = 1, SEQ_ROWS do
@@ -126,24 +112,35 @@ local function on_substep(substep, beat)
     page_control.current_beat = beat
 end
 
+local function adjust_step_size()
+    local p = ID_SEQ_SPEED
+    local v = params:get(p)
+    local new = util.wrap(v + 1, 1, #sequence_util.sequence_speeds)
+    params:set(p, new)
+end
+
 function page:run_sequencer()
     while true do
         -- updates playback range of each voice prior to trigger
         update_slices()
         self.seq:advance()
-        clock.sync(1 / self.seq.beat_div) -- sync on 1/16th of a beat, so each 1/64th note
+        clock.sync(1 / self.seq.ticks_per_beat)
     end
 end
 
+function page:stop()
+    clock.transport.stop()
+    self.seq:reset()
+    self.graphic.is_playing = false
+end
+
+function page:start()
+    clock.transport.start()
+    self.graphic.is_playing = true
+end
+
 function page:toggle_transport()
-    if self.transport_on then
-        clock.transport.stop()
-        self.seq:reset()
-        graphic.is_playing = false
-    else
-        clock.transport.start()
-        graphic.is_playing = true
-    end
+    if self.transport_on then self:stop() else self:start() end
 end
 
 function page:toggle_hold_step()
@@ -157,16 +154,15 @@ function page:toggle_hold_step()
 end
 
 function clock.transport.start()
-    print("start transport")
     page.transport_on = true
     main_seq_clock_id = clock.run(function() page:run_sequencer() end)
 end
 
 function clock.transport.stop()
-    print("stop transport")
     page.transport_on = false
-    clock.cancel(main_seq_clock_id)
-    current_step = 1
+    if main_seq_clock_id ~= nil then
+        clock.cancel(main_seq_clock_id)
+    end
 end
 
 function page:render()
@@ -181,15 +177,18 @@ function page:render()
         env_polls[i]:update()
     end
 
-    graphic:render()
+    local is_playing = self.transport_on
+    self.footer.button_text.k2.value = is_playing and "ON" or "OFF"
+    self.footer.button_text.k3.value = sequence_util.sequence_speeds[params:get(ID_SEQ_SPEED)]
+    self.graphic:render()
     page.footer.button_text.e2.value = params:get(ID_SEQ_PERLIN_X)
     page.footer.button_text.e3.value = params:get(ID_SEQ_PERLIN_DENSITY)
     page.footer:render()
     grid_device:refresh()
 end
 
-local function update_grid_step(x, y, v)
-    graphic.sequences[y][x] = v
+function page:update_grid_step(x, y, v)
+    self.graphic.sequences[y][x] = v
     if v > 0 then
         grid_device:led(x, y, 4 + math.floor(math.abs(v) * 8))
     else
@@ -209,45 +208,61 @@ local function toggle_redraw()
     redraw_sequence = true
 end
 
-local function add_params()
+function page:action_sequence_speed(v)
+    -- convert table index of human-readable options to value for clock.sync
+    -- calls global function defined on sequencer page
+    local step_div = sequence_util.convert_sequence_speed[v]
+    if self.transport_on then
+        self.seq.cued_step_divider = step_div
+    else
+        self.seq.step_divider = step_div
+    end
+end
+
+
+function page:add_params()
     params:set_action(ID_SEQ_PERLIN_X, toggle_redraw)
     params:set_action(ID_SEQ_PERLIN_Y, toggle_redraw)
     params:set_action(ID_SEQ_PERLIN_Z, toggle_redraw)
     params:set_action(ID_SEQ_PERLIN_DENSITY, toggle_redraw)
+    params:set_action(ID_SEQ_SPEED, function(v) self:action_sequence_speed(v) end)
     for y = 1, SEQ_ROWS do
         for x = 1, SEQ_COLUMNS do
-            params:set_action(ID_SEQ_STEP[y][x], function(v) update_grid_step(x, y, v) end)
+            params:set_action(ID_SEQ_STEP[y][x], function(v) self:update_grid_step(x, y, v) end)
         end
     end
 end
 
+
 function page:initialize()
+    page.k2_off = function() self:toggle_transport() end
+    page.k3_off = adjust_step_size
     page.e2 = e2
     page.e3 = e3
     seq.on_step = function(step, master) page:on_step(step, master) end
     seq.on_substep = on_substep
-    add_params()
+    self:add_params()
 
     for i = 1, 6 do
-        env_polls[i].callback = function(v) graphic.voice_env[i] = v end
+        env_polls[i].callback = function(v) self.graphic.voice_env[i] = v end
     end
 
     self.window = Window:new({ title = "SEQUENCER", font_face = TITLE_FONT })
-    graphic = SequencerGraphic:new()
+    self.graphic = SequencerGraphic:new()
     page.footer = Footer:new({
         button_text = {
-            k2 = { name = "", value = "" },
-            k3 = { name = "", value = "" },
+            k2 = { name = "PLAY", value = "" },
+            k3 = { name = "DIV", value = "" },
             e2 = { name = "SEED", value = "" },
             e3 = { name = "DENS", value = "" },
         },
         font_face = FOOTER_FONT,
     })
+    -- resets sequencer and sets self.transport_on variable
+    self:stop()
+
     -- provide starting grid (may be empty depending on initial density param)
     generate_perlin_seq()
-
-    -- start sequencer
-    main_seq_clock_id = clock.run(function() page:run_sequencer() end)
 end
 
 return page

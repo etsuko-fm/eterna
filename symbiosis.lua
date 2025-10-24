@@ -19,7 +19,6 @@ sequence_util = include("symbiosis/lib/util/sequence")
 include("symbiosis/lib/parameters/global")
 include("symbiosis/lib/parameters/slice")
 include("symbiosis/lib/parameters/sequencer")
-include("symbiosis/lib/parameters/control")
 include("symbiosis/lib/parameters/envelopes")
 include("symbiosis/lib/parameters/rates")
 include("symbiosis/lib/parameters/levels")
@@ -180,7 +179,7 @@ end
 
 function init()
   -- Encoder sensitivity
-  norns.enc.sens(1, 5)
+  norns.enc.sens(1, 2)
 
   for i = 2, 3 do
     norns.enc.sens(i, 1)
