@@ -4,22 +4,18 @@ local page_name = "SEQUENCER"
 local PERLIN_ZOOM = 10 / 3 ---4 / 3 -- empirically tuned
 local main_seq_clock_id
 local redraw_sequence = false
-local PLAY = "PLAY"
-local AWAIT_RESUME = "AWAIT_RESUME"
-local HOLD = "HOLD"
 local TICKS_PER_BEAT = 8 -- quarter note divided by 8, so 1/32nd [call ticks_per_beat?]
 
 local seq = Sequencer.new {
     steps = 16,
     rows = 6,
     ticks_per_beat = TICKS_PER_BEAT,
-    step_divider = 2,
+    ticks_per_step = 2,
 }
 
 local page = Page:create({
     name = page_name,
     --
-    hold_status = PLAY,      -- PLAY / AWAIT RESUME / HOLD
     seq=seq,
 })
 
@@ -89,17 +85,7 @@ function page:evaluate_step(x, y)
     end
 end
 
-function page:on_step(step, master)
-    if self.hold_status == HOLD then
-        -- stay still
-    elseif self.hold_status == AWAIT_RESUME then
-        print('waiting correct step to resume')
-        -- wait until current step is equal to the master step
-        if master == step then
-            -- on next iteration, playback will be picked up again
-            self.hold_status = PLAY
-        end
-    end
+function page:on_step(step)
     self.graphic.current_step = step
     page_control.current_step = step
     -- evaluate current step, send commands to supercollider accordingly
@@ -108,7 +94,7 @@ function page:on_step(step, master)
     end
 end
 
-local function on_substep(substep, beat)
+local function on_tick(tick, beat)
     page_control.current_beat = beat
 end
 
@@ -140,26 +126,16 @@ function page:start()
 end
 
 function page:toggle_transport()
-    if self.transport_on then self:stop() else self:start() end
-end
-
-function page:toggle_hold_step()
-    if self.hold_status == PLAY then
-        print('switch to HOLD')
-        self.hold_status = HOLD
-    elseif self.hold_status == HOLD then
-        print('switch to AWAIT_RESUME')
-        self.hold_status = AWAIT_RESUME
-    end
+    if self.seq.transport_on then self:stop() else self:start() end
 end
 
 function clock.transport.start()
-    page.transport_on = true
+    page.seq.transport_on = true
     main_seq_clock_id = clock.run(function() page:run_sequencer() end)
 end
 
 function clock.transport.stop()
-    page.transport_on = false
+    page.seq.transport_on = false
     if main_seq_clock_id ~= nil then
         clock.cancel(main_seq_clock_id)
     end
@@ -177,8 +153,7 @@ function page:render()
         env_polls[i]:update()
     end
 
-    local is_playing = self.transport_on
-    self.footer.button_text.k2.value = is_playing and "ON" or "OFF"
+    self.footer.button_text.k2.value = self.seq.transport_on and "ON" or "OFF"
     self.footer.button_text.k3.value = sequence_util.sequence_speeds[params:get(ID_SEQ_SPEED)]
     self.graphic:render()
     page.footer.button_text.e2.value = params:get(ID_SEQ_PERLIN_X)
@@ -212,11 +187,7 @@ function page:action_sequence_speed(v)
     -- convert table index of human-readable options to value for clock.sync
     -- calls global function defined on sequencer page
     local step_div = sequence_util.convert_sequence_speed[v]
-    if self.transport_on then
-        self.seq.cued_step_divider = step_div
-    else
-        self.seq.step_divider = step_div
-    end
+    self.seq:set_ticks_per_step(step_div)
 end
 
 
@@ -239,8 +210,8 @@ function page:initialize()
     page.k3_off = adjust_step_size
     page.e2 = e2
     page.e3 = e3
-    seq.on_step = function(step, master) page:on_step(step, master) end
-    seq.on_substep = on_substep
+    seq.on_step = function(step) page:on_step(step) end
+    seq.on_tick = on_tick
     self:add_params()
 
     for i = 1, 6 do
@@ -258,7 +229,7 @@ function page:initialize()
         },
         font_face = FOOTER_FONT,
     })
-    -- resets sequencer and sets self.transport_on variable
+    -- resets sequencer and sets transport_on variable
     self:stop()
 
     -- provide starting grid (may be empty depending on initial density param)

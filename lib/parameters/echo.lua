@@ -34,7 +34,6 @@ controlspec_echo_feedback = controlspec.def {
     wrap = false
 }
 
-
 params:add_separator("ECHO", "ECHO")
 params:add_option(ID_ECHO_STYLE, "style", ECHO_STYLES)
 params:add_option(ID_ECHO_TIME, "time", ECHO_TIME_NAMES, 4)

@@ -1,8 +1,8 @@
 local ControlGraphic = include("symbiosis/lib/graphics/ControlGraphic")
 local page_name = "SEQUENCE CONTROL"
-
+local MIN_BPM = 20 -- minimum for Ableton Link
 local function adjust_bpm(d)
-    params:set("clock_tempo", math.max(params:get('clock_tempo') + d, 15))
+    params:set("clock_tempo", math.max(params:get('clock_tempo') + d, MIN_BPM))
 end
 
 
@@ -11,7 +11,6 @@ local function toggle_transport(v)
 end
 
 local function adjust_num_steps(d)
-    print('adjust num steps with '..d)
     misc_util.adjust_param(d, ID_SEQ_NUM_STEPS, controlspec_num_steps)
 end
 
@@ -24,7 +23,6 @@ local page = Page:create({
 })
 
 local function action_num_steps(v)
-    print('new num steps: ' .. v)
     page_sequencer.seq.steps = v
 end
 
@@ -34,24 +32,17 @@ end
 
 function page:render()
     self.window:render()
-    local tempo_trimmed = util.round(clock.get_tempo())
-    local is_playing = page_sequencer.transport_on
+    local tempo_trimmed = util.round(params:get("clock_tempo"))
+    local is_playing = page_sequencer.seq.transport_on
     self.footer.button_text.e2.value = tempo_trimmed
     self.footer.button_text.e3.value = page_sequencer.seq.steps
     self.footer.button_text.k2.value = is_playing and "ON" or "OFF"
-    -- local hold_text
-    -- local s = page_sequencer.hold_status
-    -- if s == "HOLD" or s == "AWAIT_RESUME" then hold_text = "ON"
-    -- else hold_text = "OFF"
-    -- end
-
-    self.footer.button_text.k3.value = "PERL"
+    self.graphic.num_steps = page_sequencer.seq.steps
     self.graphic.bpm = tempo_trimmed
     self.graphic.is_playing = is_playing
-    -- quarters are always counted by substeps, even if a step is on hold
     self.graphic.current_beat = self.current_beat
     self.graphic.current_step = self.current_step
-    self.graphic.cue = page_sequencer.seq.cued_step_divider
+    self.graphic.cue = page_sequencer.seq.cued_ticks_per_step
     self.graphic:render()
     self.footer:render()
 end
@@ -64,7 +55,7 @@ function page:initialize()
     page.footer = Footer:new({
         button_text = {
             k2 = { name = "PLAY", value = "" },
-            k3 = { name = "SRC", value = "" },
+            k3 = { name = "", value = "" },
             e2 = { name = "BPM", value = "" },
             e3 = { name = "STEPS", value = "" },
         },

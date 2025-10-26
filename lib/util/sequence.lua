@@ -1,6 +1,5 @@
 local perlin = include("symbiosis/lib/ext/perlin")
 local sequence_speeds = { "1/32", "1/16", "1/8", "1/4" }
-local default_speed_idx = 3
 
 -- table with indexes matching to the sequence_speeds table above
 local convert_sequence_speed = {
@@ -51,7 +50,6 @@ end
 
 return {
     sequence_speeds = sequence_speeds,
-    default_speed_idx = default_speed_idx,
     convert_sequence_speed = convert_sequence_speed,
     generate_perlin_seq = generate_perlin_seq,
     get_step_envelope = get_step_envelope,

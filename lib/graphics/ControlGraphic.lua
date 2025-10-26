@@ -13,36 +13,29 @@ ControlGraphic = {
     is_playing = true,
     current_step = 0,
     current_beat = 0,
-    cue = nil,
+    cue = nil, -- has value when a step div change is cued
+    num_steps = 16,
 }
 
 function ControlGraphic:new(o)
-    -- create state if not provided
     o = o or {}
-
-    -- define prototype
     setmetatable(o, self)
     self.__index = self
-
-    -- return instance
     return o
 end
 
 local faint_level = 3
 local bright_level = 15
-
 local x = 32
 local y = 36
 local bpm_x = 95
 local seq_h = 3
 local seq_y = y
-local rep_x = x
-local rep_y = y - 3
 local play_btn_w = 5
 local play_btn_h = 8
 local pause_button_rect_w = 2
 
-local function draw_play_button()
+local function draw_play_button(x, y)
     screen.level(bright_level)
     screen.move(x, y - 14)
     screen.line_rel(play_btn_w, play_btn_h / 2)
@@ -51,7 +44,7 @@ local function draw_play_button()
     screen.fill()
 end
 
-local function draw_pause_button()
+local function draw_pause_button(x, y)
     screen.level(bright_level)
     screen.rect(x, y - 14, pause_button_rect_w, 8)
     screen.fill()
@@ -59,9 +52,7 @@ local function draw_pause_button()
     screen.fill()
 end
 
-function ControlGraphic:render()
-    if self.hide then return end
-
+function ControlGraphic:draw_beat_report(x, y)
     -- 1/4 report
     for i = 0, 3 do
         if i == self.current_beat then
@@ -69,16 +60,26 @@ function ControlGraphic:render()
         else
             screen.level(faint_level)
         end
-        screen.rect(rep_x + i * 16, rep_y, 3, 1)
+        screen.rect(x + i * 4, y, 3, 1)
         screen.fill()
     end
 
+end
+
+function ControlGraphic:render()
+    if self.hide then return end
+    local dim = 0 
+
+    -- self:draw_beat_report(rep_x, rep_y)
     -- sequence steps
     for step = 0, 15 do
+        if step >= self.num_steps then
+            dim = 5
+        end
         if step == self.current_step then
-            screen.level(bright_level)
+            screen.level(math.max(bright_level - dim,2))
         else
-            screen.level(faint_level)
+            screen.level(math.max(faint_level - dim, 1))
         end
         local step_y = seq_y
         if step % 4 == 0 then
@@ -103,15 +104,15 @@ function ControlGraphic:render()
     -- cue
     if self.cue then
         screen.level(2)
-        screen.rect(x+64,37,1,1)
+        screen.rect(x + 64, 37, 1, 1)
         screen.fill()
     end
 
     -- play/pause
     if self.is_playing then
-        draw_pause_button()
+        draw_pause_button(x, y)
     else
-        draw_play_button()
+        draw_play_button(x, y)
     end
 end
 

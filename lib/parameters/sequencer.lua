@@ -62,7 +62,7 @@ controlspec_num_steps = controlspec.def {
     max = 16,
     warp = 'lin',
     step = 1,
-    default = 0,
+    default = 16,
     units = '',
     quantum = 1/16,
     wrap = false
@@ -82,7 +82,7 @@ SEQ_COLUMNS=16
 
 params:add_separator("SEQUENCER", "SEQUENCER")
 params:add_control(ID_SEQ_NUM_STEPS, "steps", controlspec_num_steps)
-params:add_option(ID_SEQ_SPEED, "step size", sequence_util.sequence_speeds, sequence_util.default_speed_idx)
+params:add_option(ID_SEQ_SPEED, "step size", sequence_util.sequence_speeds, 2)
 params:add_control(ID_SEQ_PERLIN_X, "seed", controlspec_perlin)
 params:add_control(ID_SEQ_PERLIN_Y, "perlin y", controlspec_perlin_y)
 params:add_control(ID_SEQ_PERLIN_Z, "perlin z", controlspec_perlin_z)
