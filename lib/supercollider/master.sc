@@ -1,32 +1,32 @@
-Compressor {
+Master {
 	*initClass {
 		StartUp.add {
 			var s = Server.default;
 			s.waitForBoot {
-				SynthDef("GlueCompressor", {
+				SynthDef("Master", {
 					arg in, out, 
 					preControlBusL, preControlBusR, 
 					postCompControlBusL, postCompControlBusR, 
 					postGainBusL, postGainBusR, 
 					masterOutControlBusL, masterOutControlBusR,
-					ratio=3, gain=1.0, metering_rate = 500, 
+					ratio=3, drive=1.0, metering_rate = 500, 
 					threshold=0.25, attack=0.01, release=0.3, out_level=1.0;
                     var in_signal = In.ar(in, 2);
 
 					// Measure amplitude of unprocessed input
 					var preAmp = LagUD.ar(Peak.ar(in_signal, Impulse.ar(metering_rate)), 0, 0.1);
 
-					// Apply gain before compression
-					var in_scaled = in_signal * gain;
+					// Apply drive before compression
+					var in_scaled = in_signal * drive;
 
 					// Add compression, limit using tanh
                     var compressed = Compander.ar(in_scaled, in_scaled, thresh: threshold, slopeBelow: 1.0, slopeAbove: 1/ratio, clampTime: attack, relaxTime: release);
                     var limited = compressed.tanh;
 
-					// Amplitude after gain, before compression
+					// Amplitude meter after drive, before compression
 					var postGainAmp = LagUD.ar(Peak.ar(in_scaled, Impulse.ar(metering_rate)), 0, 0.1);
 
-					// Amplitude after compression and limiting
+					// Amplitude meter after compression and limiting
 					var postCompAmp = LagUD.ar(Peak.ar(limited, Impulse.ar(metering_rate)), 0, 0.1);
 
 					// Master out (expects out_level to be <= 1.0, because no limiter on this bit)

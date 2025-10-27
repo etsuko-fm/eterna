@@ -3,7 +3,7 @@ local MASTER_DRIVE_MIN = -12
 local MASTER_DRIVE_MAX = 18
 
 MASTER_OUT_MIN = -40
-local MASTER_OUT_MAX = 6
+local MASTER_OUT_MAX = 0
 
 ID_MASTER_MONO_FREQ = "master_mono_freq"
 ID_MASTER_COMP_DRIVE = "master_comp_drive"

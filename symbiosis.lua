@@ -78,20 +78,25 @@ amp_historyR = {}
 local current_page_index = 1
 local current_page = pages[current_page_index]
 
-local function page_forward()
-  -- Increment the current page index, reset to 1 if we exceed the table length
-  if current_page_index < #pages then
-    current_page_index = current_page_index + 1
+local function switch_page(new_index)
+  if new_index ~= current_page_index and pages[new_index] then
+    current_page:exit()
+    current_page_index = new_index
+    current_page = pages[current_page_index]
+    current_page:enter()
   end
-  current_page = pages[current_page_index]
+end
+
+local function page_forward()
+  if current_page_index < #pages then
+    switch_page(current_page_index + 1)
+  end
 end
 
 local function page_backward()
-  -- Decrement the current page index, wrap around to the last page if it goes below 1
   if current_page_index > 1 then
-    current_page_index = current_page_index - 1
+    switch_page(current_page_index - 1)
   end
-  current_page = pages[current_page_index]
 end
 
 local function count()

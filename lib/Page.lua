@@ -28,4 +28,12 @@ function Page:create(o)
   return o
 end
 
+function Page:enter()
+  -- can be overloaded. should be called when page is entered
+end
+
+function Page:exit()
+  -- can be overloaded. should be called when page is exited
+end
+
 return Page

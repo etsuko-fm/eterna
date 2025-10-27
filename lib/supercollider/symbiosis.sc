@@ -3,7 +3,7 @@ Engine_Symbiosis : CroneEngine {
   var filterBus, fxBus, bassMonoBus, compBus;
 
   // SynthDefs
-  var voices, filter, compressor, echo, bassMono;
+  var voices, filter, master, echo, bassMono;
 
   // Control buses
   var ampBuses, envBuses, preCompControlBuses, postCompControlBuses, postGainBuses, masterOutControlBuses;
@@ -128,7 +128,7 @@ Engine_Symbiosis : CroneEngine {
     filter = Synth.new("SymSVF", target:context.xg, args: [\in, filterBus, \out, fxBus, \filter_type, 0]);    
     echo = Synth.after(filter, "ClearEcho", args: [\in, fxBus, \out, bassMonoBus]);
     bassMono = Synth.after(echo, "BassMono", args: [\in, bassMonoBus, \out, compBus]);
-    compressor = Synth.after(bassMono, "GlueCompressor", args: [
+    master = Synth.after(bassMono, "Master", args: [
       \in, compBus, 
       \ampbuf, bufAmp,
       \preControlBusL, preCompControlBuses[0].index, 
@@ -258,6 +258,7 @@ Engine_Symbiosis : CroneEngine {
           bufL.normalize();
           ("mono buffer normalized").postln;
 
+          // Wait until normalized
           context.server.sync;
 
           // Send waveform
@@ -377,17 +378,17 @@ Engine_Symbiosis : CroneEngine {
     this.addCommand("bass_mono_dry", "f", { arg msg; bassMono.set(\dry, msg[1]); });
     this.addCommand("bass_mono_enabled", "i", {arg msg; bassMono.set(\enabled, msg[1]); });
 
-    // Commands for compressor
-    this.addCommand("comp_gain", "f", { arg msg; compressor.set(\gain, msg[1].dbamp); }); // arrives in decibel, converted to linear
-    this.addCommand("comp_ratio", "f", { arg msg; compressor.set(\ratio, msg[1]); });
-    this.addCommand("comp_threshold", "f", { arg msg; compressor.set(\threshold, msg[1]); });
+    // Commands for master track
+    this.addCommand("comp_drive", "f", { arg msg; master.set(\drive, msg[1].dbamp); }); // arrives in decibel, converted to linear
+    this.addCommand("comp_ratio", "f", { arg msg; master.set(\ratio, msg[1]); });
+    this.addCommand("comp_threshold", "f", { arg msg; master.set(\threshold, msg[1]); });
     this.addCommand("comp_out_level", "f", { arg msg; 
       // convert -80dB or lower to mute
-      if (msg[1] <= -80) {compressor.set(\out_level, 0) } {compressor.set(\out_level, msg[1].dbamp)};
+      if (msg[1] <= -80) {master.set(\out_level, 0) } {master.set(\out_level, msg[1].dbamp)};
     }); // arrives in decibel, converted to linear
 
     // Commands for visualization
-    this.addCommand("metering_rate", "i", {  arg msg; compressor.set(\metering_rate, msg[1])});
+    this.addCommand("metering_rate", "i", {  arg msg; master.set(\metering_rate, msg[1])});
 
     this.addCommand("request_amp_history", "", { 
       arg msg; 
@@ -430,7 +431,7 @@ Engine_Symbiosis : CroneEngine {
     filter.free;
     echo.free;
     bassMono.free;
-    compressor.free;
+    master.free;
     
     ampBuses.do(_.free);
     ampBuses.free;

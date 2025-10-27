@@ -52,7 +52,7 @@ local function action_comp_output(v)
 end
 
 local function add_params()
-    params:set_action(ID_MASTER_COMP_DRIVE, function(v) engine.comp_gain(v) end)
+    params:set_action(ID_MASTER_COMP_DRIVE, function(v) engine.comp_drive(v) end)
     params:set_action(ID_MASTER_COMP_AMOUNT, action_comp_amount)
     params:set_action(ID_MASTER_MONO_FREQ, function(v) engine.bass_mono_freq(BASS_MONO_FREQS_INT[v]) end)
     params:set_action(ID_MASTER_OUTPUT, action_comp_output)
@@ -93,7 +93,6 @@ end
 function page:initialize()
     add_params()
     master_graphic = MasterGraphic:new()
-    engine.metering_rate(1000)
 
     pre_comp_left_poll.callback = function(v) master_graphic.pre_comp_levels[1] = amp_to_log(v) end
     pre_comp_right_poll.callback = function(v) master_graphic.pre_comp_levels[2] = amp_to_log(v) end
@@ -117,5 +116,14 @@ function page:initialize()
         font_face = FOOTER_FONT,
     })
 end
+
+function page:enter()
+    engine.metering_rate(1000)
+end
+
+function page:exit()
+    engine.metering_rate(0)
+end
+
 
 return page
