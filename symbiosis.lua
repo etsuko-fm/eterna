@@ -30,7 +30,7 @@ include("symbiosis/lib/parameters/master")
 
 include("symbiosis/lib/tests")
 
-local page_slice = include("symbiosis/lib/pages/slice")
+local page_sample = include("symbiosis/lib/pages/sample")
 page_sequencer = include("symbiosis/lib/pages/sequencer")
 local page_envelopes = include("symbiosis/lib/pages/envelopes")
 local page_filter = include("symbiosis/lib/pages/filter")
@@ -56,19 +56,19 @@ TITLE_FONT = 68
 FOOTER_FONT = 68
 
 local pages = {
-  -- 1
-  page_slice,
+  --
+  page_sample,
   page_sequencer,
   page_control,
-  -- 4
+  --
   page_envelopes,
   page_rates,
   page_levels,
-  -- 7
+  --
   page_panning,
   page_filter,
   page_echo,
-  -- 10
+  --
   page_master,
 }
 
@@ -143,11 +143,11 @@ function osc.event(path, args, from)
       -- convert int8 array to floats
       waveform[i] = waveform[i] / 127
     end
-    page_slice:update_waveform(waveform, channel+1)
+    page_sample:update_waveform(waveform, channel+1)
   elseif path == "/duration" then
     local duration = tonumber(args[1])
     print('received duration: ' .. duration)
-    page_slice:set_sample_duration(duration)
+    page_sample:set_sample_duration(duration)
   elseif path == "/amp_history_left" then
     local blob = args[1]
     amp_historyL = blob_to_table(blob)

@@ -43,9 +43,9 @@ local function action_comp_amount(v)
     end
 end
 
-local function action_master_output(v)
-     if v == "-INF" then
-        engine.comp_out_level(0)
+local function action_comp_output(v)
+    if v <= MASTER_OUT_MIN then
+        engine.comp_out_level(-80) -- engine converts -80dB or lower to full mute
     else
         engine.comp_out_level(v)
     end
@@ -55,7 +55,7 @@ local function add_params()
     params:set_action(ID_MASTER_COMP_DRIVE, function(v) engine.comp_gain(v) end)
     params:set_action(ID_MASTER_COMP_AMOUNT, action_comp_amount)
     params:set_action(ID_MASTER_MONO_FREQ, function(v) engine.bass_mono_freq(BASS_MONO_FREQS_INT[v]) end)
-    params:set_action(ID_MASTER_OUTPUT, action_master_output)
+    params:set_action(ID_MASTER_OUTPUT, action_comp_output)
 end
 
 function page:render()
@@ -78,11 +78,15 @@ function page:render()
     local drive = params:get(ID_MASTER_COMP_DRIVE)
     local mono_freq = params:get(ID_MASTER_MONO_FREQ)
     local comp_amount = params:get(ID_MASTER_COMP_AMOUNT)
-    local output = params:get(ID_MASTER_OUTPUT)
+    local output = params:get(ID_MASTER_OUTPUT) 
     page.footer.button_text.k2.value = BASS_MONO_FREQS_STR[mono_freq]
     page.footer.button_text.k3.value = COMP_AMOUNTS[comp_amount]
-    page.footer.button_text.e2.value = drive
-    page.footer.button_text.e3.value = output
+    page.footer.button_text.e2.value = util.round(drive, 0.1)
+    if output == MASTER_OUT_MIN then
+        page.footer.button_text.e3.value = "-INF"
+    else
+        page.footer.button_text.e3.value = util.round(output, 0.1)
+    end
     page.footer:render()
 end
 

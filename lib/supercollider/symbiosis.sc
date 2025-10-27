@@ -258,6 +258,8 @@ Engine_Symbiosis : CroneEngine {
           bufL.normalize();
           ("mono buffer normalized").postln;
 
+          context.server.sync;
+
           // Send waveform
           bufL.loadToFloatArray(action: { |array|
               var waveform = getWaveform.(array);
@@ -376,10 +378,13 @@ Engine_Symbiosis : CroneEngine {
     this.addCommand("bass_mono_enabled", "i", {arg msg; bassMono.set(\enabled, msg[1]); });
 
     // Commands for compressor
-    this.addCommand("comp_gain", "f", { arg msg; compressor.set(\gain, msg[1]); });
+    this.addCommand("comp_gain", "f", { arg msg; compressor.set(\gain, msg[1].dbamp); }); // arrives in decibel, converted to linear
     this.addCommand("comp_ratio", "f", { arg msg; compressor.set(\ratio, msg[1]); });
     this.addCommand("comp_threshold", "f", { arg msg; compressor.set(\threshold, msg[1]); });
-    this.addCommand("comp_out_level", "f", { arg msg; compressor.set(\out_level, msg[1].dbamp); });
+    this.addCommand("comp_out_level", "f", { arg msg; 
+      // convert -80dB or lower to mute
+      if (msg[1] <= -80) {compressor.set(\out_level, 0) } {compressor.set(\out_level, msg[1].dbamp)};
+    }); // arrives in decibel, converted to linear
 
     // Commands for visualization
     this.addCommand("metering_rate", "i", {  arg msg; compressor.set(\metering_rate, msg[1])});

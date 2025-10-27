@@ -1,7 +1,7 @@
 local Waveform = include("symbiosis/lib/graphics/Waveform")
 local SliceGraphic = include("symbiosis/lib/graphics/SliceGraphic")
 
-local page_name = "SAMPLING"
+local page_name = "SAMPLE"
 local fileselect = require('fileselect')
 local page_disabled = false
 
@@ -10,7 +10,7 @@ local waveform_width = 64
 local is_stereo
 
 local filename = ""
-selected_sample = "audio/etsuko/chris/play-safe.wav"
+local selected_sample = nil -- assign path to load a default sample on script startup (e.g. "audio/etsuko/chris/play-safe.wav")
 
 local slice_lfo
 local debug_mode = true
@@ -28,6 +28,7 @@ local function path_to_file_name(file_path)
 end
 
 function table.slice(tbl, first, last)
+    -- TODO: move to util
     local result = {}
     for i = first, last do
         result[#result + 1] = tbl[i]
