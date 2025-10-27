@@ -104,14 +104,14 @@ local pre_level_x = 32
 local comp_amount_x = 64 - 17
 local drive_slider_x = 64 - 23
 local post_meters_x = 64 + 13
-local master_out_x = 64 + 20
+local master_out_x = 64 + 13r
 local center_y = 29
 local meters_y = center_y + 10
 local meters_h = 20
 local meter_width = 2
 
-function MasterGraphic:draw_pre_levels()
-  local draw_pre = false -- feature flag
+function MasterGraphic:draw_pre_levels(x, y)
+  local draw_pre = false
   if not draw_pre then return end
 
   screen.level(15)
@@ -119,54 +119,56 @@ function MasterGraphic:draw_pre_levels()
   local pre_h_right = self.input_levels[2] * -meters_h
   local pre_padding = 3
 
-  screen.rect(pre_level_x, meters_y, meter_width, math.min(pre_h_left, -1))
+  screen.rect(x, y, meter_width, math.min(pre_h_left, -1))
   screen.fill()
-  screen.rect(pre_level_x + pre_padding, meters_y, meter_width, math.min(pre_h_right, -1))
+  screen.rect(x + pre_padding, y, meter_width, math.min(pre_h_right, -1))
   screen.fill()
 end
 
-function MasterGraphic:draw_post_levels()
+function MasterGraphic:draw_post_levels(x, y)
   screen.level(7)
+  local render = false -- feature flag
+  if not render then return end
+
   local post_hL = self.post_comp_levels[1] * -meters_h
   local post_hR = self.post_comp_levels[2] * -meters_h
   local post_padding = 3
 
-  screen.rect(post_meters_x, meters_y, meter_width, math.min(-1, post_hL))
+  screen.rect(x, y, meter_width, math.min(-1, post_hL))
   screen.fill()
-  screen.rect(post_meters_x + post_padding, meters_y, meter_width, math.min(-1, post_hR))
+  screen.rect(x + post_padding, y, meter_width, math.min(-1, post_hR))
   screen.fill()
 
   -- 0dB line
   screen.level(5)
-  screen.move(post_meters_x, center_y - 10)
-  screen.line(post_meters_x + 5, center_y - 10)
+  screen.move(x, center_y - 10)
+  screen.line(x + 5, center_y - 10)
   screen.stroke()
 end
 
-function MasterGraphic:draw_drive_slider()
+function MasterGraphic:draw_drive_slider(x, y, w, h)
   screen.level(5)
-  local slider_h = 21
-  draw_slider(drive_slider_x, center_y - 11, 4, slider_h, self.drive_amount)
+  draw_slider(x, y, w, h, self.drive_amount)
 end
 
-function MasterGraphic:draw_final_out_level()
+function MasterGraphic:draw_final_out_level(x, y)
   screen.level(15)
   local master_out_hL = self.out_levels[1] * -meters_h
   local master_out_hR = self.out_levels[2] * -meters_h
 
-  screen.rect(master_out_x, meters_y, meter_width, math.min(-1, master_out_hL))
+  screen.rect(x, y, meter_width, math.min(-1, master_out_hL))
   screen.fill()
-  screen.rect(master_out_x + 3, meters_y, meter_width, math.min(-1, master_out_hR))
+  screen.rect(x + 3, y, meter_width, math.min(-1, master_out_hR))
   screen.fill()
 
   -- 0dB line
   screen.level(5)
-  screen.move(master_out_x, center_y - 10)
-  screen.line(master_out_x + 5, center_y - 10)
+  screen.move(x, center_y - 10)
+  screen.line(x + 5, center_y - 10)
   screen.stroke()
 end
 
-function MasterGraphic:draw_comp_amount()
+function MasterGraphic:draw_comp_amount(x, y)
   local comp_amountL = self.post_gain_levels[1] - self.post_comp_levels[1]
   local comp_amountR = self.post_gain_levels[2] - self.post_comp_levels[2]
 
@@ -177,15 +179,15 @@ function MasterGraphic:draw_comp_amount()
   local comp_hR = comp_amountR * meters_h
   local comp_padding = 3
 
-  screen.rect(comp_amount_x, meters_y - meters_h - 1, meter_width, math.max(1, comp_hL))
+  screen.rect(x, y - meters_h - 1, meter_width, math.max(1, comp_hL))
   screen.fill()
-  screen.rect(comp_amount_x + comp_padding, meters_y - meters_h - 1, meter_width, math.max(1, comp_hR))
+  screen.rect(x + comp_padding, y - meters_h - 1, meter_width, math.max(1, comp_hR))
   screen.fill()
 
   -- -30dB line
   screen.level(5)
-  screen.move(comp_amount_x, meters_y)
-  screen.line(comp_amount_x + 5, meters_y)
+  screen.move(x, y)
+  screen.line(x + 5, y)
   screen.stroke()
 end
 
@@ -193,12 +195,13 @@ function MasterGraphic:render()
   if self.hide then return end
   screen.level(15)
 
-  self:draw_pre_levels()
-  self:draw_comp_amount()
-  self:draw_post_levels()
-  self:draw_drive_slider()
-  self:draw_final_out_level()
+  -- self:draw_pre_levels(pre_level_x, meters_y)
+  self:draw_comp_amount(comp_amount_x, meters_y)
+  -- self:draw_post_levels(post_meters_x, meters_y)
+  self:draw_drive_slider(drive_slider_x, center_y - 11, 4, 21)
+  self:draw_final_out_level(master_out_x, meters_y)
   self:draw_lissajous()
 end
+
 
 return MasterGraphic
