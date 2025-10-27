@@ -63,23 +63,23 @@ function ControlGraphic:draw_beat_report(x, y)
         screen.rect(x + i * 4, y, 3, 1)
         screen.fill()
     end
-
 end
 
 function ControlGraphic:render()
     if self.hide then return end
-    local dim = 0 
+    local dim = 0
 
     -- self:draw_beat_report(rep_x, rep_y)
     -- sequence steps
     for step = 0, 15 do
         if step >= self.num_steps then
-            dim = 5
+            -- dim brightness if step not enabled
+            dim = -5
         end
         if step == self.current_step then
-            screen.level(math.max(bright_level - dim,2))
+            graphic_util.screen_level(bright_level, dim, 2)
         else
-            screen.level(math.max(faint_level - dim, 1))
+            graphic_util.screen_level(faint_level, dim, 1)
         end
         local step_y = seq_y
         if step % 4 == 0 then

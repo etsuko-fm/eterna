@@ -3,12 +3,13 @@ SequencerGraphic = {
     y = 16,
     rows = 10,
     columns = 21,
-    fill = 1,
+    fill = 2,
     active_fill = 6,
-    flash_fill = 15,
+    flash_fill = 1,
     current_step = nil,
     sequences = {{},{},{},{},{},{}},
     voice_env = { 0, 0, 0, 0, 0, 0, },
+    num_steps = 16,
     is_playing = true,
     hide = false,
 }
@@ -65,44 +66,53 @@ end
 function SequencerGraphic:render()
     if self.hide then return end
     local voice
+    local dim = 0
     for row = 0, rows - 1 do
         voice = row + 1
         self:draw_track_indicator(voice)
         for column = 0, columns - 1 do
-            -- iterate over entire grid
+            -- iterate over entire grid; row = voice, column = step
             local column_idx = column + 1
             local x = basex + (block_w + margin_w) * column
             local y = basey + (block_h + margin_h) * row
             local step_active = self.sequences[voice][column_idx] ~= 0.0
 
+            if column >= self.num_steps then dim = -10 else dim = 0 end
+
             -- draw sequence step indicator
             if self.current_step == column and self.is_playing then
-                screen.level(6)
+                graphic_util.screen_level(6, dim)
             else
-                screen.level(faint_fill)
+                graphic_util.screen_level(faint_fill, dim)
             end
 
-            screen.rect(basex + (column * (block_w + margin_w)), indicator_y, 3, 1)
-            screen.fill()
+            if column < self.num_steps then
+                screen.rect(basex + (column * (block_w + margin_w)), indicator_y, 3, 1)
+                screen.fill()
+            end
 
             if step_active then
                 -- brighten if active
                 if self.current_step == column and self.is_playing then
                     -- step triggered, flash block brightly
-                    screen.level(self.flash_fill)
+                    graphic_util.screen_level(self.flash_fill, dim)
                     screen.rect(x, y, block_w, block_h)
                     screen.fill()
+                    -- screen.pixel(x,y)
+                    -- screen.level(6)
+                    -- screen.fill()
                 else
                     -- step not triggered, but it is an active step in the sequence
                     local v = self.sequences[voice][column_idx]
-                    screen.level(math.floor(2 + math.abs(v) * 13))
+                    local lev = math.floor(2 + math.abs(v) * 13)
+                    graphic_util.screen_level(lev, dim, 2)
                     screen.rect(x, y, block_w, block_h)
                     screen.fill()
                 end
             else
                 -- inactive step
                 screen.rect(x, y, block_w, block_h)
-                screen.level(self.fill)
+                graphic_util.screen_level(self.fill, dim, 1)
                 screen.fill()
             end
         end

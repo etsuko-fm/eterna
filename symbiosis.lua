@@ -15,6 +15,7 @@ audio_util = include("symbiosis/lib/util/audio_util")
 lfo_util = include("symbiosis/lib/util/lfo")
 misc_util = include("symbiosis/lib/util/misc")
 sequence_util = include("symbiosis/lib/util/sequence")
+graphic_util = include("symbiosis/lib/util/graphic")
 
 include("symbiosis/lib/parameters/global")
 include("symbiosis/lib/parameters/slice")

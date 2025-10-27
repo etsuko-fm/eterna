@@ -155,6 +155,7 @@ function page:render()
 
     self.footer.button_text.k2.value = self.seq.transport_on and "ON" or "OFF"
     self.footer.button_text.k3.value = sequence_util.sequence_speeds[params:get(ID_SEQ_SPEED)]
+    self.graphic.num_steps = self.seq.steps
     self.graphic:render()
     page.footer.button_text.e2.value = params:get(ID_SEQ_PERLIN_X)
     page.footer.button_text.e3.value = params:get(ID_SEQ_PERLIN_DENSITY)
