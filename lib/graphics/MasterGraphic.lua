@@ -110,63 +110,46 @@ local meters_y = center_y + 10
 local meters_h = 20
 local meter_width = 2
 
-function MasterGraphic:render()
-  if self.hide then return end
+function MasterGraphic:draw_pre_levels()
+  local draw_pre = false -- feature flag
+  if not draw_pre then return end
+
   screen.level(15)
-  local draw_pre = false
+  local pre_h_left = self.input_levels[1] * -meters_h
+  local pre_h_right = self.input_levels[2] * -meters_h
+  local pre_padding = 3
 
-  -- pre levels
-  if draw_pre then
-    local pre_h_left = self.input_levels[1] * -meters_h
-    local pre_h_right = self.input_levels[2] * -meters_h
-    local pre_padding = 3
-    screen.rect(pre_level_x, meters_y, meter_width, math.min(pre_h_left, -1))
-    screen.fill()
-    screen.rect(pre_level_x + pre_padding, meters_y, meter_width, math.min(pre_h_right, -1))
-    screen.fill()
-    screen.move(64, 32)
-  end
-
-  -- comp amount
-  local comp_amountL = self.post_gain_levels[1] - self.post_comp_levels[1]
-  local comp_amountR = self.post_gain_levels[2] - self.post_comp_levels[2]
-
-  -- comp levels are pretty low, you'd never reach a 60dB reduction. so we multiply by 3 so a full meter down
-  -- equals 30dB reduction
-
-  comp_amountL = math.min(comp_amountL * 2, 1)
-  comp_amountR = math.min(comp_amountR * 2, 1)
-
-  local comp_hL = comp_amountL * meters_h
-  local comp_hR = comp_amountR * meters_h
-  local comp_padding = 3
-  screen.rect(comp_amount_x, meters_y - meters_h - 1, meter_width, math.max(1, comp_hL))
+  screen.rect(pre_level_x, meters_y, meter_width, math.min(pre_h_left, -1))
   screen.fill()
-  screen.rect(comp_amount_x + comp_padding, meters_y - meters_h - 1, meter_width, math.max(1, comp_hR))
+  screen.rect(pre_level_x + pre_padding, meters_y, meter_width, math.min(pre_h_right, -1))
   screen.fill()
+end
 
-  -- -30dB line for comp amount
-  screen.level(5)
-  screen.move(comp_amount_x, meters_y)
-  screen.line(comp_amount_x + 5, meters_y)
-  screen.stroke()
-
-  -- post levels
+function MasterGraphic:draw_post_levels()
   screen.level(7)
   local post_hL = self.post_comp_levels[1] * -meters_h
   local post_hR = self.post_comp_levels[2] * -meters_h
   local post_padding = 3
+
   screen.rect(post_meters_x, meters_y, meter_width, math.min(-1, post_hL))
   screen.fill()
   screen.rect(post_meters_x + post_padding, meters_y, meter_width, math.min(-1, post_hR))
   screen.fill()
 
-  -- drive slider
+  -- 0dB line
+  screen.level(5)
+  screen.move(post_meters_x, center_y - 10)
+  screen.line(post_meters_x + 5, center_y - 10)
+  screen.stroke()
+end
+
+function MasterGraphic:draw_drive_slider()
   screen.level(5)
   local slider_h = 21
   draw_slider(drive_slider_x, center_y - 11, 4, slider_h, self.drive_amount)
+end
 
-  -- final out level, calculate here, to save a poll to supercollider
+function MasterGraphic:draw_final_out_level()
   screen.level(15)
   local master_out_hL = self.out_levels[1] * -meters_h
   local master_out_hR = self.out_levels[2] * -meters_h
@@ -176,18 +159,45 @@ function MasterGraphic:render()
   screen.rect(master_out_x + 3, meters_y, meter_width, math.min(-1, master_out_hR))
   screen.fill()
 
-  -- 0dB line for post level
+  -- 0dB line
   screen.level(5)
-  screen.move(post_meters_x, center_y - 10)
-  screen.line(post_meters_x + 5, center_y - 10)
-  screen.stroke()
-
-  -- 0dB line for master out
   screen.move(master_out_x, center_y - 10)
   screen.line(master_out_x + 5, center_y - 10)
   screen.stroke()
+end
 
-  -- lissajous
+function MasterGraphic:draw_comp_amount()
+  local comp_amountL = self.post_gain_levels[1] - self.post_comp_levels[1]
+  local comp_amountR = self.post_gain_levels[2] - self.post_comp_levels[2]
+
+  comp_amountL = math.min(comp_amountL * 2, 1)
+  comp_amountR = math.min(comp_amountR * 2, 1)
+
+  local comp_hL = comp_amountL * meters_h
+  local comp_hR = comp_amountR * meters_h
+  local comp_padding = 3
+
+  screen.rect(comp_amount_x, meters_y - meters_h - 1, meter_width, math.max(1, comp_hL))
+  screen.fill()
+  screen.rect(comp_amount_x + comp_padding, meters_y - meters_h - 1, meter_width, math.max(1, comp_hR))
+  screen.fill()
+
+  -- -30dB line
+  screen.level(5)
+  screen.move(comp_amount_x, meters_y)
+  screen.line(comp_amount_x + 5, meters_y)
+  screen.stroke()
+end
+
+function MasterGraphic:render()
+  if self.hide then return end
+  screen.level(15)
+
+  self:draw_pre_levels()
+  self:draw_comp_amount()
+  self:draw_post_levels()
+  self:draw_drive_slider()
+  self:draw_final_out_level()
   self:draw_lissajous()
 end
 
