@@ -6,7 +6,7 @@ FilterGraphic = {
     freq = 1000,
     res = 0,
     type = 1, -- 1 HP / 2 LP / 3 BP / 4 Swirl
-    mix = 1, -- 0 to 1, but only 0, 0.5 and 1 are currently supported
+    mix = 1,  -- 0 to 1, but only 0, 0.5 and 1 are currently supported
 }
 
 local min_freq = 20
@@ -22,54 +22,74 @@ local res_max_db = 12
 local line_w = 2
 local start_x = (128 / 2 - graph_w / 2) - slack_x
 
--- Helper: frequency to x-coordinate (logarithmic mapping)
+-- N.B.: Playing around on https://cubic-bezier.com
+--- helps determining control coordinates
+
+-- Maps `freq` (within `min_freq` to `max_freq`) to a horizontal
+-- position in the graph. Uses a logarithmic scale, so equal ratios
+-- in frequency appear as equal distances on the graph.
 local function freq_to_x(freq)
-    local norm = (math.log(freq) - math.log(min_freq)) /
-        (math.log(max_freq) - math.log(min_freq))
-    return start_x + slack_x + norm * graph_w
+    -- distance from minimum freq to cutoff freq
+    local freq_normalized = math.log(freq) - math.log(min_freq)
+
+    -- supported frequency range
+    local range = math.log(max_freq) - math.log(min_freq)
+
+    -- fraction of the current frequency compared to max frequency
+    local pos = freq_normalized / range
+
+    -- x position
+    return start_x + pos * graph_w
 end
 
 local function db_to_y(db)
-    local norm = (db - max_db) / (off_db - max_db)
+    local db_range = off_db - max_db
+    local norm = (db - max_db) / db_range
     return offset_y + norm * graph_h
 end
 
 local norm_y = db_to_y(norm_db)
 local off_y = db_to_y(off_db)
+
+
 -- Draw a low-pass filter curve with adjustable cutoff and resonance.
 -- cutoff_hz: 20 - 20000
 -- resonance: 0.0 - 1.0
 function draw_lowpass(cutoff_hz, resonance)
-    -- local slack_x = 8
+    local res_db = resonance * res_max_db
+
     -- starting point
-    local y0 = db_to_y(norm_db)
     local cutoff_x = freq_to_x(cutoff_hz)
-    local peak_db = norm_db + resonance * res_max_db -- up to +6 dB boost at cutoff
+    local peak_db = norm_db + res_db -- up to +6 dB boost at cutoff
 
-    -- Start from left edge: flat line at 0 dB
-    screen.move(start_x, y0)
+    -- start left, out of graph range; helps draw curve correctly for lowest frequencies
+    local left_x = start_x - slack_x
+    screen.move(left_x, norm_y)
 
-    -- Left side: flat response until near cutoff
-    screen.curve(start_x, norm_y,
+    -- draw curve towards resonance
+    -- control points are placed nearly under the cutoff x,
+    -- to create exponential curve
+    screen.curve(cutoff_x - slack_x, norm_y,
         cutoff_x - slack_x, norm_y,
         cutoff_x, db_to_y(peak_db))
 
     -- Slope after cutoff: down to -24 dB/octave visually
-    screen.curve(cutoff_x + slack_x / 4, norm_y,
-        cutoff_x + slack_x / 2, db_to_y(norm_db - 3),
-        cutoff_x + slack_x, off_y)
+    screen.curve(cutoff_x + slack_x / 4, norm_y, -- handle 1
+        cutoff_x + slack_x / 2, db_to_y(norm_db - 3),  -- handle 2
+        cutoff_x + slack_x, off_y)  -- destination
     screen.line_width(line_w)
     screen.stroke()
 end
 
 function draw_highpass(cutoff_hz, resonance)
-    local y0 = off_y
+    local res_db = resonance * res_max_db
+
     local cutoff_x = freq_to_x(cutoff_hz)
-    local peak_db = norm_db + resonance * res_max_db
+    local peak_db = norm_db + res_db
     local end_x = start_x + graph_w + 2 * slack_x
 
     -- left side slope up to cutoff
-    screen.move(cutoff_x - slack_x, y0)
+    screen.move(cutoff_x - slack_x, off_y)
     screen.curve(cutoff_x - slack_x, off_y,
         cutoff_x - slack_x / 2, db_to_y(norm_db - 3),
         cutoff_x, db_to_y(peak_db))
@@ -151,11 +171,11 @@ function FilterGraphic:render()
     end
     screen.line_width(1)
     screen.level(3)
-    screen.rect(start_x, 15, graph_w + 2 * slack_x, graph_h-3)
+    screen.rect(start_x, 15, graph_w + 2 * slack_x, graph_h - 3)
     screen.stroke()
     -- hide out of range swirl
     screen.level(0)
-    screen.rect(start_x + graph_w + 2 * slack_x, 15, 32, graph_h-3)
+    screen.rect(start_x + graph_w + 2 * slack_x, 15, 32, graph_h - 3)
     screen.fill()
 end
 
