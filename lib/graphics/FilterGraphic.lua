@@ -14,13 +14,13 @@ local max_freq = 20000
 local off_db = -32
 local max_db = 0
 local norm_db = -18
-local graph_w = 40
+local graph_w = 64                                                                     
 local graph_h = 30
 local offset_y = 11
 local margin_x = 12
 local res_max_db = 12
 local line_w = 2
-local start_x = (128 / 2 - graph_w / 2) - margin_x
+local start_x = (128 / 2 - graph_w / 2)-- - margin_x
 
 -- N.B.: Playing around on https://cubic-bezier.com
 --- helps determining control coordinates
@@ -29,7 +29,8 @@ local start_x = (128 / 2 - graph_w / 2) - margin_x
 -- position in the graph. Uses a logarithmic scale, so equal ratios
 -- in frequency appear as equal distances on the graph.
 local function freq_to_x(freq)
-    -- distance from minimum freq to cutoff freq
+    -- distance from minimum freq to cutoff freq, 
+    -- so that freq_normalized = 0 when it equals min_freq
     local freq_normalized = math.log(freq) - math.log(min_freq)
 
     -- supported frequency range
@@ -39,7 +40,7 @@ local function freq_to_x(freq)
     local pos = freq_normalized / range
 
     -- x position
-    return start_x + pos * graph_w
+    return start_x + pos * (graph_w-1) -- exclude edge
 end
 
 local function db_to_y(db)
@@ -232,11 +233,12 @@ function FilterGraphic:render()
     draw_stripes()
     screen.line_width(1)
     screen.level(3)
-    screen.rect(start_x, 15, graph_w + 2 * margin_x, graph_h - 3)
+    screen.rect(start_x, 15, graph_w, graph_h - 3)
     screen.stroke()
     -- hide out of range swirl
     screen.level(0)
-    screen.rect(start_x + graph_w + 2 * margin_x, 15, 32, graph_h - 3)
+    screen.rect(0, 15, start_x-1, graph_h)
+    screen.rect(start_x + graph_w, 15, 32, graph_h)
     screen.fill()
 end
 
