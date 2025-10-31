@@ -24,7 +24,7 @@ include("symbiosis/lib/parameters/envelopes")
 include("symbiosis/lib/parameters/rates")
 include("symbiosis/lib/parameters/levels")
 include("symbiosis/lib/parameters/panning")
-include("symbiosis/lib/parameters/filter")
+include("symbiosis/lib/parameters/filters")
 include("symbiosis/lib/parameters/echo")
 include("symbiosis/lib/parameters/master")
 
@@ -33,7 +33,7 @@ include("symbiosis/lib/tests")
 local page_sample = include("symbiosis/lib/pages/sample")
 page_sequencer = include("symbiosis/lib/pages/sequencer")
 local page_envelopes = include("symbiosis/lib/pages/envelopes")
-local page_filter = include("symbiosis/lib/pages/filter")
+local page_lpf = include("symbiosis/lib/pages/lpf")
 local page_echo = include("symbiosis/lib/pages/echo")
 local page_master = include("symbiosis/lib/pages/master")
 page_control = include("symbiosis/lib/pages/control")
@@ -66,7 +66,7 @@ local pages = {
   page_levels,
   --
   page_panning,
-  page_filter,
+  page_lpf,
   page_echo,
   --
   page_master,
@@ -75,7 +75,7 @@ local pages = {
 amp_historyL = {}
 amp_historyR = {}
 
-local current_page_index = 1
+local current_page_index = 8
 local current_page = pages[current_page_index]
 
 local function switch_page(new_index)

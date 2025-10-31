@@ -1,6 +1,6 @@
 Engine_Symbiosis : CroneEngine {
   // Audio buses
-  var filterBus, fxBus, bassMonoBus, compBus;
+  var lowpassBus, fxBus, bassMonoBus, compBus;
 
   // SynthDefs
   var voices, filter, master, echo, bassMono;
@@ -14,6 +14,35 @@ Engine_Symbiosis : CroneEngine {
     ^super.new(context, doneCallback);
   }
 
+/*
+(
+// parameters
+var src, dest, factor = 16;
+
+s.waitForBoot {
+    // Load source buffer
+    src = Buffer.read(s, Platform.resourceDir +/+ "sounds/a11wlk01.wav", action: {
+        var destFrames = (src.numFrames / factor).floor;
+        dest = Buffer.alloc(s, destFrames, 1);
+
+        // Define synth to copy every `factor`th sample
+        SynthDef(\downsampleBuffer, { |srcBuf, destBuf, factor = 16, doneAction = 2|
+            var phasor = Phasor.ar(0, factor, 0, BufFrames.kr(srcBuf)); // read pointer
+            var sig = BufRd.ar(1, srcBuf, phasor, loop: 0);
+            RecordBuf.ar(sig, destBuf, loop: 0, doneAction: doneAction);
+        }).add;
+
+        s.sync;
+
+        Synth(\downsampleBuffer, [
+            \srcBuf, src,
+            \destBuf, dest,
+            \factor, factor
+        ]);
+    });
+};
+)
+*/
   alloc {
     var s = Server.default;
 
@@ -38,14 +67,6 @@ Engine_Symbiosis : CroneEngine {
     var amp_history_right = Int8Array.fill(historyLength, 0);
     var voiceParams;
 
-    // Map filter names to corresponding SynthDef
-    var filterMap = (
-      LP: "SymSVF",
-      HP: "SymSVF",
-      BP: "SymSVF",
-      SWIRL: "Swirl",
-    );
-    var currentFilter = filterMap["HP"]; 
     var filterParams = Dictionary.newFrom([\freq, 1000, \res, 0.1, \dry, 0, \gain, 1.0]);
 
     // Map echo names to corresponding SynthDef
@@ -86,7 +107,7 @@ Engine_Symbiosis : CroneEngine {
     oscServer = NetAddr("localhost", 10111);
 
     // Buses for audio routing
-    filterBus = Bus.audio(context.server, 2);
+    lowpassBus = Bus.audio(context.server, 2);
     fxBus = Bus.audio(context.server, 2);
     bassMonoBus = Bus.audio(context.server, 2);
     compBus = Bus.audio(context.server, 2);
@@ -106,7 +127,7 @@ Engine_Symbiosis : CroneEngine {
     voiceParams = Array.fill(6, { |i|
       Dictionary.newFrom(
       [
-        \out, filterBus,
+        \out, lowpassBus,
         \bufnum, bufnumL, 
         \rate, 1.0,
         \loop_start, 0.0,
@@ -125,7 +146,7 @@ Engine_Symbiosis : CroneEngine {
     "All audio and control buses created".postln;
     
     // Setup routing chain
-    filter = Synth.new("SymSVF", target:context.xg, args: [\in, filterBus, \out, fxBus, \filter_type, 0]);    
+    filter = Synth.new("SymSVF", target:context.xg, args: [\in, lowpassBus, \out, fxBus, \filter_type, 1]);
     echo = Synth.after(filter, "ClearEcho", args: [\in, fxBus, \out, bassMonoBus]);
     bassMono = Synth.after(echo, "BassMono", args: [\in, bassMonoBus, \out, compBus]);
     master = Synth.after(bassMono, "Master", args: [
@@ -322,27 +343,6 @@ Engine_Symbiosis : CroneEngine {
     });
 
     // Commands for filter
-    this.addCommand("filter_type", "s", { arg msg;
-      var name = msg[1]; // Expects LP, HP, BP or SWIRL
-      if(filterMap[name] != currentFilter) {
-        ("Swapping filter synthdef to " ++ filterMap[name] ++ " to set type " ++ name).postln;
-        filter.free;
-        filter = Synth.before(echo, filterMap[name], args: [\in, filterBus, \out, fxBus] ++ filterParams.asPairs);
-      };
-      switch(name)
-      { \HP } {
-        filter.set(\filter_type, 0);
-      }
-      { \LP } {
-        filter.set(\filter_type, 1);
-      }
-      { \BP } {
-        filter.set(\filter_type, 2);
-      };
-      currentFilter = filterMap[name];
-    });
-
-    // Commands for filter
     filterParams.keysDo({|key| 
       this.addCommand("filter_" ++ key.asString, "f", { |msg|
         var val = msg[1];
@@ -420,7 +420,7 @@ Engine_Symbiosis : CroneEngine {
     Buffer.freeAll;
 
     // Audio buses
-    filterBus.free;
+    lowpassBus.free;
     bassMonoBus.free;
     compBus.free;
     fxBus.free;

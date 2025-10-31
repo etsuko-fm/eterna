@@ -10,7 +10,9 @@ local waveform_width = 64
 local is_stereo
 
 local filename = ""
-local selected_sample = nil -- assign path to load a default sample on script startup (e.g. "audio/etsuko/chris/play-safe.wav")
+-- local selected_sample = nil -- assign path to load a default sample on script startup (e.g. "audio/etsuko/chris/play-safe.wav")
+local selected_sample = "audio/etsuko/chris/play-safe.wav"
+
 
 local slice_lfo
 local debug_mode = true
