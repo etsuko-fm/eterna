@@ -39,7 +39,15 @@ local function draw_slider(x, y, w, h, fraction, mod)
     screen.level(fg_fill)
     --fg
     if mod > 0 then
-        screen.rect(x+mod_w, y, math.max(full_w - mod_w, 1), h)
+        local xmod = x+mod_w
+        local wmod = math.max(full_w - mod_w, 1)
+        local max = math.max(1, wmod-1) 
+        for n = 0, max do
+            graphic_util.screen_level(fg_fill, (1/wmod*(wmod-n)) * -14, bg_fill+1)
+            if n == max or max < 2 then screen.level(15) end
+            screen.rect(xmod+n, y, 1, h)
+            screen.fill()
+        end
         screen.fill()
     else
         screen.level(fg_fill)
