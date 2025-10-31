@@ -163,24 +163,6 @@ local function draw_highpass(cutoff_hz, resonance)
     screen.stroke()
 end
 
-local function draw_bandpass(center_hz, resonance)
-    local cutoff_x = freq_to_x(center_hz)
-    local peak_db = norm_db + resonance * res_max_db
-    -- Left slope
-    screen.move(cutoff_x - margin_x, off_y)
-    screen.curve(cutoff_x - margin_x, off_y,
-        cutoff_x - margin_x / 2, db_to_y(norm_db - 3),
-        cutoff_x, db_to_y(peak_db))
-
-    -- Right slope
-    screen.curve(cutoff_x, db_to_y(peak_db),
-        cutoff_x + margin_x / 2, db_to_y(norm_db - 3),
-        cutoff_x + margin_x, off_y)
-
-    screen.line_width(line_w)
-    screen.stroke()
-end
-
 local function draw_filter_off()
     screen.line_width(line_w)
     screen.move(start_x, flat_y)
@@ -220,14 +202,6 @@ function FilterGraphic:render()
         draw_highpass(self.freq, self.res)
     elseif self.type == 2 then
         draw_lowpass(self.freq, self.res)
-    elseif self.type == 3 then
-        draw_bandpass(self.freq, self.res)
-    elseif self.type == 4 then
-        -- swirl
-        draw_bandpass(self.freq, self.res)
-        draw_bandpass(self.freq * 4, self.res)
-        draw_bandpass(self.freq * 16, self.res)
-        draw_bandpass(self.freq * 64, self.res)
     end
 
     draw_stripes()
@@ -235,7 +209,7 @@ function FilterGraphic:render()
     screen.level(3)
     screen.rect(start_x, 15, graph_w, graph_h - 3)
     screen.stroke()
-    -- hide out of range swirl
+    -- hide out of range stuff
     screen.level(0)
     screen.rect(0, 15, start_x-1, graph_h)
     screen.rect(start_x + graph_w, 15, 32, graph_h)
