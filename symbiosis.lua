@@ -24,7 +24,8 @@ include("symbiosis/lib/parameters/envelopes")
 include("symbiosis/lib/parameters/rates")
 include("symbiosis/lib/parameters/levels")
 include("symbiosis/lib/parameters/panning")
-include("symbiosis/lib/parameters/filters")
+include("symbiosis/lib/parameters/lpf")
+include("symbiosis/lib/parameters/hpf")
 include("symbiosis/lib/parameters/echo")
 include("symbiosis/lib/parameters/master")
 
@@ -34,6 +35,7 @@ local page_sample = include("symbiosis/lib/pages/sample")
 page_sequencer = include("symbiosis/lib/pages/sequencer")
 local page_envelopes = include("symbiosis/lib/pages/envelopes")
 local page_lpf = include("symbiosis/lib/pages/lpf")
+local page_hpf = include("symbiosis/lib/pages/hpf")
 local page_echo = include("symbiosis/lib/pages/echo")
 local page_master = include("symbiosis/lib/pages/master")
 page_control = include("symbiosis/lib/pages/control")
@@ -67,8 +69,9 @@ local pages = {
   --
   page_panning,
   page_lpf,
-  page_echo,
+  page_hpf,
   --
+  page_echo,
   page_master,
 }
 
