@@ -27,40 +27,22 @@ end
 local bg_fill = 2
 local fg_fill = 15
 
-local function draw_slider(x, y, w, h, fraction)
-    for i = 1, w, 2 do
-        screen.rect(x + i, y, 1, 3)
-        screen.fill()
-    end
-    screen.level(15)
-    screen.rect(x + (w - 2) * fraction, y, 3, h)
-    screen.fill()
-end
 
-local function draw_slider(x, y, w, h, fraction, use_gradient)
+local function draw_slider(x, y, w, h, fraction, mod)
     --bg
     screen.level(bg_fill)
     screen.rect(x, y, w, h)
     screen.fill()
-    local position = math.floor(w * fraction)
+    local full_w = math.floor(w * fraction)
+    local mod_w = math.floor(w * fraction * (1-mod))
 
+    screen.level(fg_fill)
     --fg
-    if use_gradient == 1 then
-        local block_w = 3
-        for block_pos = 1, 4 do
-            local level = util.linlin(1, 4, 15, 3, block_pos)
-            screen.level(util.round(level))
-            -- position is equal to: x + position - [index * w]
-            screen.rect(x + position - (block_pos*block_w), y, block_w, h)
-            screen.fill()
-        end
-        screen.level(0)
-        screen.rect(x-1, y, block_w*-4,h)
+    if mod > 0 then
+        screen.rect(x+mod_w, y, math.max(full_w - mod_w, 1), h)
         screen.fill()
     else
         screen.level(fg_fill)
-        -- screen.rect(x + (w - 2) * fraction, y, 3, h)
-        -- screen.fill()
         screen.rect(x, y, w * fraction, h)
         screen.fill()
     end
@@ -122,7 +104,7 @@ end
 
 function EnvGraphic:render()
     if self.hide then return end
-    if self.mod == 1 then
+    if self.mod > 0 then
         for i = 3, 0, -1 do
             local level
             if i == 0 then level = 15 else level = math.max(15 - 6 * i, 1) end
@@ -135,9 +117,9 @@ function EnvGraphic:render()
     end
 
     -- time bar
-    local bar_w = 32
+    local bar_w = 33
     local bar_h = 3
-    draw_slider(64 - 16, 39, bar_w, bar_h, self.time, self.mod)
+    draw_slider(64 - 17, 39, bar_w, bar_h, self.time, self.mod)
 end
 
 return EnvGraphic

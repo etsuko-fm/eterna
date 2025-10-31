@@ -74,7 +74,7 @@ function RatesGraphic:render()
         local arrow_y = self.y + (self.block_h + self.margin_h) * self.lines + 2
 
         if self.voice_amp[n+1] ~= nil then
-            graphic_util.screen_level(self.active_fill - 13, self.voice_amp[n+1] * 13z)
+            graphic_util.screen_level(self.active_fill - 13, self.voice_amp[n+1] * 13)
         else
             screen.level(self.active_fill)
         end

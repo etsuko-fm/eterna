@@ -78,7 +78,7 @@ local pages = {
 amp_historyL = {}
 amp_historyR = {}
 
-local current_page_index = 8
+local current_page_index = 4
 local current_page = pages[current_page_index]
 
 local function switch_page(new_index)

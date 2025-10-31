@@ -91,7 +91,7 @@ function page:render()
     envelope_graphic.time = misc_util.explin(ENV_TIME_MIN, ENV_TIME_MAX, 0.001, 1, time, 4)
     envelope_graphic.shape = shape
     envelope_graphic.curve = curve
-    envelope_graphic.mod = ENVELOPE_MOD_OPTIONS[mod] ~= "OFF" and 1 or 0
+    envelope_graphic.mod = ENVELOPE_MOD_OPTIONS[mod] ~= "OFF" and 0.5 or 0
 
     envelope_graphic:render()
     page.footer.button_text.k2.value = ENVELOPE_MOD_OPTIONS[mod]
