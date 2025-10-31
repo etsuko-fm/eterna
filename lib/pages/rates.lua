@@ -1,4 +1,4 @@
-local PitchGraph = include("symbiosis/lib/graphics/PitchGraph")
+local RatesGraphic = include("symbiosis/lib/graphics/RatesGraphic")
 local page_name = "PLAYBACK RATES"
 local page
 
@@ -35,9 +35,9 @@ local function calculate_rates()
         if params:get(get_voice_dir_param_id(voice)) == 2 then -- todo: lookuptable 2>rev, 1>fwd
             rate = -rate
         end
-        engine.rate(voice-1, rate)
+        engine.rate(voice - 1, rate)
         -- graph is linear while rate is exponential 
-        page.pitch_graph.voice_pos[i] = -math.log(math.abs(rate), 2)
+        page.graphic.voice_pos[i] = -math.log(math.abs(rate), 2)
     end
 end
 
@@ -46,23 +46,23 @@ local function update_playback_dir(new_val)
     if PLAYBACK_TABLE[new_val] == FWD then
         -- all forward
         for voice = 1, 6 do
-            page.pitch_graph.voice_dir[voice] = FWD
+            page.graphic.voice_dir[voice] = FWD
             params:set(get_voice_dir_param_id(voice), 1)
         end
     elseif PLAYBACK_TABLE[new_val] == REV then
         -- all reverse
         for voice = 1, 6 do
-            page.pitch_graph.voice_dir[voice] = REV
+            page.graphic.voice_dir[voice] = REV
             params:set(get_voice_dir_param_id(voice), 2)
         end
     else
         -- alternate forward/reverse
         for voice = 1, 5, 2 do
-            page.pitch_graph.voice_dir[voice] = FWD
+            page.graphic.voice_dir[voice] = FWD
             params:set(get_voice_dir_param_id(voice), 1)
         end
         for voice = 2, 6, 2 do
-            page.pitch_graph.voice_dir[voice] = REV
+            page.graphic.voice_dir[voice] = REV
             params:set(get_voice_dir_param_id(voice), 2)
         end
     end
@@ -101,7 +101,7 @@ end
 
 local function adjust_center(d)
     params:set(ID_RATES_CENTER, params:get(ID_RATES_CENTER) + d * controlspec_rates_center.quantum, false)
-    page.pitch_graph.center = params:get(ID_RATES_CENTER) * -2 -- todo: why *-2?
+    page.graphic.center = params:get(ID_RATES_CENTER) * -2 -- todo: why *-2?
 end
 
 local function adjust_spread(d)
@@ -122,6 +122,8 @@ page = Page:create({
 })
 
 function page:render()
+    for i = 1, 6 do amp_polls[i]:update() end
+
     self.window:render()
     self.footer.button_text.k2.value = PLAYBACK_TABLE[params:get(ID_RATES_DIRECTION)]
     self.footer.button_text.k3.value = RANGE_TABLE[params:get(ID_RATES_RANGE)]
@@ -134,7 +136,7 @@ function page:render()
         params:get(ID_RATES_SPREAD)
     ), 5)
 
-    self.pitch_graph:render()
+    self.graphic:render()
     self.footer:render()
 end
 
@@ -142,29 +144,23 @@ function page:initialize()
     add_params()
     self.window = Window:new({ title = page_name, font_face = TITLE_FONT })
 
-    self.pitch_graph = PitchGraph:new()
+    self.graphic = RatesGraphic:new()
     update_playback_dir(1)
     self.footer = Footer:new({
         button_text = {
-            k2 = {
-                name = "DIR",
-                value = "BI",
-            },
-            k3 = {
-                name = "RANGE",
-                value = "3 OCT",
-            },
-            e2 = {
-                name = "CNTR",
-                value = "0 OCT",
-            },
-            e3 = {
-                name = "SPRD",
-                value = "",
-            },
+            k2 = { name = "DIR", value = "BI" },
+            k3 = { name = "RANGE", value = "3 OCT" },
+            e2 = { name = "CNTR", value = "0 OCT" },
+            e3 = { name = "SPRD", value = "" },
         },
         font_face = FOOTER_FONT
     })
+end
+
+function page:enter()
+    for i = 1, 6 do
+        amp_polls[i].callback = function(v) self.graphic.voice_amp[i] = amp_to_log(v) end
+    end
 end
 
 return page

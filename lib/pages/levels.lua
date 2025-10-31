@@ -46,7 +46,7 @@ local page = Page:create({
 function page:render()
     local sigma = amp_to_sigma(params:get(ID_LEVELS_AMP))
 
-    for i = 1,6 do amp_polls[i]:update() end
+    for i = 1, 6 do amp_polls[i]:update() end
 
     local pos = params:get(ID_LEVELS_POS)
     level_graphic.levels = gaussian.calculate_gaussian_levels(pos, sigma)
@@ -71,8 +71,8 @@ function page:render()
         -- When LFO is disabled, E2 controls scan position
         page.footer.button_text.k2.value = "OFF"
         page.footer.button_text.e2.name = "POS"
-        -- multiply by 6 because of 6 voices; indicates which voice is fully audible    
-        page.footer.button_text.e2.value = misc_util.trim(tostring(pos*6), 4)
+        -- multiply by 6 because of 6 voices; indicates which voice is fully audible
+        page.footer.button_text.e2.value = misc_util.trim(tostring(pos * 6), 4)
     end
 
     page.footer.button_text.e3.value = misc_util.trim(tostring(params:get(ID_LEVELS_AMP)), 5)
@@ -104,9 +104,6 @@ end
 
 function page:initialize()
     add_params()
-    for i = 1,6 do 
-        amp_polls[i].callback = function(v) level_graphic.voice_amp[i] = amp_to_log(v) end
-    end
 
     self.window = Window:new({ title = "LEVELS", font_face = TITLE_FONT })
 
@@ -152,6 +149,12 @@ function page:initialize()
         end
     }
     levels_lfo:set('reset_target', 'mid: rising')
+end
+
+function page:enter()
+    for i = 1, 6 do
+        amp_polls[i].callback = function(v) level_graphic.voice_amp[i] = amp_to_log(v) end
+    end
 end
 
 return page

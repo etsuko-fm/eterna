@@ -1,4 +1,4 @@
-PitchGraph = {
+RatesGraphic = {
     x = 38,
     y = 12,
     lines = 13, -- number of horizontal background lines per pitch slider
@@ -16,6 +16,7 @@ PitchGraph = {
     hide = false,
     voice_pos = {}, -- value per voice, where each integer step represents one octave up or down; 0 = center (original pitch)
     voice_dir = {},
+    voice_amp = {},
 }
 
 -- only awareness of playback direction is "forward" or "non-forward" (i.e. reverse)
@@ -23,7 +24,7 @@ local FWD = "FWD"
 
 local pixels_per_octave = 6
 
-function PitchGraph:new(o)
+function RatesGraphic:new(o)
     -- create state if not provided
     o = o or {}
 
@@ -35,11 +36,11 @@ function PitchGraph:new(o)
     return o
 end
 
-function PitchGraph:set(idx, active)
+function RatesGraphic:set(idx, active)
     self.selected[idx] = active
 end
 
-function PitchGraph:render()
+function RatesGraphic:render()
     if self.hide then return end
 
     -- draw reference lines
@@ -65,12 +66,20 @@ function PitchGraph:render()
         local y = center_y + relative_y
 
         screen.rect(x, y, self.block_w, 3)
+
         screen.fill()
 
         -- 1 is some random extra margin
         local arrow_x = x + 2
         local arrow_y = self.y + (self.block_h + self.margin_h) * self.lines + 2
 
+        if self.voice_amp[n+1] ~= nil then
+            graphic_util.screen_level(self.active_fill - 13, self.voice_amp[n+1] * 13z)
+        else
+            screen.level(self.active_fill)
+        end
+
+        -- arrrows indicating fwd/rev playback
         if self.voice_dir[n+1] == FWD then
             -- forward arrow
             screen.move(arrow_x, arrow_y)
@@ -93,4 +102,4 @@ function PitchGraph:render()
     end
 end
 
-return PitchGraph
+return RatesGraphic
