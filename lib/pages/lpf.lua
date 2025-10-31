@@ -1,4 +1,4 @@
-local page_name = "FILTER"
+local page_name = "LOWPASS"
 local FilterGraphic = include("symbiosis/lib/graphics/FilterGraphic")
 local filter_graphic
 local lpf_lfo
@@ -41,11 +41,11 @@ local page = Page:create({
 
 local function action_wet(v)
     if DRY_WET_TYPES[v] == "DRY" then
-        engine.filter_dry(1)
+        engine.lpf_dry(1)
     elseif DRY_WET_TYPES[v] == "50/50" then
-        engine.filter_dry(.5)
+        engine.lpf_dry(.5)
     else
-        engine.filter_dry(0)
+        engine.lpf_dry(0)
     end
 end
 
@@ -64,13 +64,13 @@ end
 local function action_freq_mod(v)
     -- triggers while LFO is active, or when LFO is switched off
     local freq = params:get(ID_LPF_FREQ)
-    engine.filter_freq(v * freq)
+    engine.lpf_freq(v * freq)
 end
 
 local function add_params()
-    params:set_action(ID_LPF_FREQ, function(v) engine.filter_freq(v) end)
+    params:set_action(ID_LPF_FREQ, function(v) engine.lpf_freq(v) end)
     params:set_action(ID_LPF_FREQ_MOD, action_freq_mod)
-    params:set_action(ID_LPF_RES, function(v) engine.filter_res(v) end)
+    params:set_action(ID_LPF_RES, function(v) engine.lpf_res(v) end)
     params:set_action(ID_LPF_WET, action_wet)
     params:set_action(ID_LPF_LFO, action_lfo)
     params:set_action(ID_LPF_LFO_RATE, action_lfo_rate)

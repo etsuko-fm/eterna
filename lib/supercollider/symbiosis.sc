@@ -1,9 +1,9 @@
 Engine_Symbiosis : CroneEngine {
   // Audio buses
-  var lowpassBus, fxBus, bassMonoBus, compBus;
+  var lowpassBus, highpassBus, echoBus, bassMonoBus, compBus;
 
   // SynthDefs
-  var voices, filter, master, echo, bassMono;
+  var voices, lpfSynth, hpfSynth, master, echoSynth, bassMono;
 
   // Control buses
   var ampBuses, envBuses, preCompControlBuses, postCompControlBuses, postGainBuses, masterOutControlBuses;
@@ -67,7 +67,8 @@ s.waitForBoot {
     var amp_history_right = Int8Array.fill(historyLength, 0);
     var voiceParams;
 
-    var filterParams = Dictionary.newFrom([\freq, 1000, \res, 0.1, \dry, 0, \gain, 1.0]);
+    var lpfParams = Dictionary.newFrom([\freq, 1000, \res, 0.1, \dry, 0, \gain, 1.0]);
+    var hpfParams = Dictionary.newFrom([\freq, 10000, \res, 0.1, \dry, 0, \gain, 1.0]);
 
     // Map echo names to corresponding SynthDef
     var echoMap = (
@@ -108,7 +109,8 @@ s.waitForBoot {
 
     // Buses for audio routing
     lowpassBus = Bus.audio(context.server, 2);
-    fxBus = Bus.audio(context.server, 2);
+    highpassBus = Bus.audio(context.server, 2);
+    echoBus = Bus.audio(context.server, 2);
     bassMonoBus = Bus.audio(context.server, 2);
     compBus = Bus.audio(context.server, 2);
 
@@ -146,9 +148,10 @@ s.waitForBoot {
     "All audio and control buses created".postln;
     
     // Setup routing chain
-    filter = Synth.new("SymSVF", target:context.xg, args: [\in, lowpassBus, \out, fxBus, \filter_type, 1]);
-    echo = Synth.after(filter, "ClearEcho", args: [\in, fxBus, \out, bassMonoBus]);
-    bassMono = Synth.after(echo, "BassMono", args: [\in, bassMonoBus, \out, compBus]);
+    lpfSynth = Synth.new("SymSVF", target:context.xg, args: [\in, lowpassBus, \out, highpassBus, \filter_type, 1]);
+    hpfSynth = Synth.after(lpfSynth, "SymSVF", args: [\in, highpassBus, \out, echoBus, \filter_type, 0]);
+    echoSynth = Synth.after(hpfSynth, "ClearEcho", args: [\in, echoBus, \out, bassMonoBus]);
+    bassMono = Synth.after(echoSynth, "BassMono", args: [\in, bassMonoBus, \out, compBus]);
     master = Synth.after(bassMono, "Master", args: [
       \in, compBus, 
       \ampbuf, bufAmp,
@@ -332,7 +335,7 @@ s.waitForBoot {
           voices[idx].set(\t_trig, 1);
         } {
           // Create voice if doesn't exist
-          voices[idx] = Synth.before(filter, "SampleVoice", voiceParams[idx].asPairs);
+          voices[idx] = Synth.before(lpfSynth, "SampleVoice", voiceParams[idx].asPairs);
           voices[idx].onFree { 
               voices[idx] = nil;
           };
@@ -342,12 +345,21 @@ s.waitForBoot {
       };
     });
 
-    // Commands for filter
-    filterParams.keysDo({|key| 
-      this.addCommand("filter_" ++ key.asString, "f", { |msg|
+    // Commands for LPF
+    lpfParams.keysDo({|key| 
+      this.addCommand("lpf_" ++ key.asString, "f", { |msg|
         var val = msg[1];
-        filter.set(key.asSymbol, val);
-        filterParams.put(key.asSymbol, val);
+        lpfSynth.set(key.asSymbol, val);
+        lpfParams.put(key.asSymbol, val);
+      });
+    });
+
+    // Commands for HPF
+    hpfParams.keysDo({|key| 
+      this.addCommand("hpf_" ++ key.asString, "f", { |msg|
+        var val = msg[1];
+        hpfSynth.set(key.asSymbol, val);
+        hpfParams.put(key.asSymbol, val);
       });
     });
 
@@ -355,7 +367,7 @@ s.waitForBoot {
     echoParams.keysDo({|key| 
       this.addCommand("echo_" ++ key.asString, "f", { |msg|
         var val = msg[1];
-        echo.set(key.asSymbol, val);
+        echoSynth.set(key.asSymbol, val);
         echoParams.put(key.asSymbol, val);
       });
     });
@@ -365,9 +377,9 @@ s.waitForBoot {
       if(currentEcho != name) {
         var synthDefName = echoMap[name];
         if (synthDefName.notNil) {
-          echo.free;
+          echoSynth.free;
           currentEcho = name;
-          echo = Synth.after(filter, synthDefName, args: [\in, fxBus, \out, bassMonoBus, \t_trig, 1] ++ echoParams.asPairs);
+          echoSynth = Synth.after(hpfSynth, synthDefName, args: [\in, echoBus, \out, bassMonoBus, \t_trig, 1] ++ echoParams.asPairs);
           ("Switched to " ++ name ++ " echo").postln;
         };
       }
@@ -421,15 +433,17 @@ s.waitForBoot {
 
     // Audio buses
     lowpassBus.free;
+    highpassBus.free;
     bassMonoBus.free;
     compBus.free;
-    fxBus.free;
+    echoBus.free;
 
     // SynthDefs
     voices.do(_.free);
     voices.free;
-    filter.free;
-    echo.free;
+    lpfSynth.free;
+    hpfSynth.free;
+    echoSynth.free;
     bassMono.free;
     master.free;
     
