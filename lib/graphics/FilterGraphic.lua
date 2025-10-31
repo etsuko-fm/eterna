@@ -17,10 +17,10 @@ local norm_db = -18
 local graph_w = 40
 local graph_h = 30
 local offset_y = 11
-local slack_x = 12
+local margin_x = 12
 local res_max_db = 12
 local line_w = 2
-local start_x = (128 / 2 - graph_w / 2) - slack_x
+local start_x = (128 / 2 - graph_w / 2) - margin_x
 
 -- N.B.: Playing around on https://cubic-bezier.com
 --- helps determining control coordinates
@@ -48,14 +48,58 @@ local function db_to_y(db)
     return offset_y + norm * graph_h
 end
 
-local norm_y = db_to_y(norm_db)
+local flat_y = db_to_y(norm_db)
 local off_y = db_to_y(off_db)
 
+local function get_control_points_up(type, cutoff_hz)
+    -- calculate 2 control points for the cubic bezier curve from
+    -- the flat 0dB line to the to peak cutoff/resonance poiont
+    local cutoff_x = freq_to_x(cutoff_hz)
+    local margin
+
+    -- for lowpass, control point is before the cutoff (subtract margin)
+    -- for highpass, control point is after cutoff (add margin)
+    if type == "LP" then margin = -margin_x else margin = margin_x end
+
+    -- keep x close to the cutoff, y on the flat line, 
+    -- to create exponential slope
+    local p1 = {x = cutoff_x + margin/2, y = flat_y}
+    local p2 = {x = cutoff_x + margin/4, y = flat_y}
+
+    -- swap points depending on low/highpass
+    if type == "LP" then
+        return { c1 = p1, c2 = p2 }
+    elseif type == "HP" then
+        return { c1 = p2, c2 = p1 }
+    else
+        print(type .. " is not a supported filter type")
+    end
+end
+
+local function get_control_points_down(type, cutoff_hz)
+    -- calculate 2 control points for the cubic bezier curve from
+    -- the cutoff point to the to the bottom of the graph (-INF dB)
+
+    local cutoff_x = freq_to_x(cutoff_hz)
+    if type == "LP" then margin = margin_x else margin = -margin_x end
+
+    local p1 = { x = cutoff_x + margin / 2, y = db_to_y(norm_db - 3) }
+    local p2 = { x = cutoff_x + margin, y = off_y}
+
+    -- swap points depending on low/highpass
+    if type == "LP" then
+        return { c1 = p1, c2 = p2 }
+    elseif type == "HP" then
+        return { c1 = p2, c2 = p1 }
+    else
+        print(type .. " is not a supported filter type")
+    end
+end
 
 -- Draw a low-pass filter curve with adjustable cutoff and resonance.
 -- cutoff_hz: 20 - 20000
 -- resonance: 0.0 - 1.0
-function draw_lowpass(cutoff_hz, resonance)
+local function draw_lowpass(cutoff_hz, resonance)
     local res_db = resonance * res_max_db
 
     -- starting point
@@ -63,60 +107,74 @@ function draw_lowpass(cutoff_hz, resonance)
     local peak_db = norm_db + res_db -- up to +6 dB boost at cutoff
 
     -- start left, out of graph range; helps draw curve correctly for lowest frequencies
-    local left_x = start_x - slack_x
-    screen.move(left_x, norm_y)
+    local left_x = start_x - margin_x
+    screen.move(left_x, flat_y)
 
     -- draw curve towards resonance
     -- control points are placed nearly under the cutoff x,
     -- to create exponential curve
-    screen.curve(cutoff_x - slack_x, norm_y,
-        cutoff_x - slack_x, norm_y,
-        cutoff_x, db_to_y(peak_db))
+    local control_points_up = get_control_points_up("LP", cutoff_hz)
+    local cp1 = control_points_up.c1
+    local cp2 = control_points_up.c2
+    local dest1 = { x = cutoff_x, y = db_to_y(peak_db) }
 
+    screen.level(2)
+    screen.curve(cp1.x, cp1.y, cp2.x, cp2.y, dest1.x, dest1.y)
     -- Slope after cutoff: down to -24 dB/octave visually
-    screen.curve(cutoff_x + slack_x / 4, norm_y, -- handle 1
-        cutoff_x + slack_x / 2, db_to_y(norm_db - 3),  -- handle 2
-        cutoff_x + slack_x, off_y)  -- destination
+
+    local control_points_down = get_control_points_down("LP", cutoff_hz)
+    local cp3 = control_points_down.c1
+    local cp4 = control_points_down.c2
+    local dest2 = { x = cutoff_x + margin_x, y = off_y }
+    screen.curve(cp3.x, cp3.y, cp4.x, cp4.y, dest2.x, dest2.y)
+
     screen.line_width(line_w)
     screen.stroke()
 end
 
-function draw_highpass(cutoff_hz, resonance)
+
+local function draw_highpass(cutoff_hz, resonance)
     local res_db = resonance * res_max_db
 
     local cutoff_x = freq_to_x(cutoff_hz)
     local peak_db = norm_db + res_db
-    local end_x = start_x + graph_w + 2 * slack_x
+    local end_x = start_x + graph_w + 2 * margin_x
 
     -- left side slope up to cutoff
-    screen.move(cutoff_x - slack_x, off_y)
-    screen.curve(cutoff_x - slack_x, off_y,
-        cutoff_x - slack_x / 2, db_to_y(norm_db - 3),
-        cutoff_x, db_to_y(peak_db))
-    -- right side; from cutoff_x/res_y to end_x/norm_y
+    local control_points_down = get_control_points_down("HP", cutoff_hz)
+    local cp1 = control_points_down.c1
+    local cp2 = control_points_down.c2
+    local dest1 = { x = cutoff_x, y = db_to_y(peak_db) }
 
-    -- spacing between points: from cutoff_x to cutoff_x + slack_x / 4
-    screen.curve(cutoff_x + slack_x / 4, norm_y,
-        cutoff_x + slack_x / 2, norm_y,
-        end_x, norm_y)
+    screen.move(cutoff_x - margin_x, off_y)
+    screen.curve(cp1.x, cp1.y, cp2.x, cp2.y, dest1.x, dest1.y)
+
+    local control_points = get_control_points_up("HP", cutoff_hz)
+
+    local cp3 = control_points.c1
+    local cp4 = control_points.c2
+    local dest2 = { x = end_x, y = flat_y }
+
+    -- right side; from cutoff/res point to 0db
+    screen.curve(cp3.x, cp3.y, cp4.x, cp4.y, dest2.x, dest2.y)
 
     screen.line_width(line_w)
     screen.stroke()
 end
 
-function draw_bandpass(center_hz, resonance)
+local function draw_bandpass(center_hz, resonance)
     local cutoff_x = freq_to_x(center_hz)
     local peak_db = norm_db + resonance * res_max_db
     -- Left slope
-    screen.move(cutoff_x - slack_x, off_y)
-    screen.curve(cutoff_x - slack_x, off_y,
-        cutoff_x - slack_x / 2, db_to_y(norm_db - 3),
+    screen.move(cutoff_x - margin_x, off_y)
+    screen.curve(cutoff_x - margin_x, off_y,
+        cutoff_x - margin_x / 2, db_to_y(norm_db - 3),
         cutoff_x, db_to_y(peak_db))
 
     -- Right slope
     screen.curve(cutoff_x, db_to_y(peak_db),
-        cutoff_x + slack_x / 2, db_to_y(norm_db - 3),
-        cutoff_x + slack_x, off_y)
+        cutoff_x + margin_x / 2, db_to_y(norm_db - 3),
+        cutoff_x + margin_x, off_y)
 
     screen.line_width(line_w)
     screen.stroke()
@@ -124,8 +182,8 @@ end
 
 local function draw_filter_off()
     screen.line_width(line_w)
-    screen.move(start_x, norm_y)
-    screen.line(start_x + graph_w + 2 * slack_x, norm_y)
+    screen.move(start_x, flat_y)
+    screen.line(start_x + graph_w + 2 * margin_x, flat_y)
     screen.stroke()
 end
 
@@ -136,6 +194,17 @@ function FilterGraphic:new(o)
     return o              -- return instance
 end
 
+local function draw_stripes()
+    -- draw vertical black lines to make graphic less intense
+    for i = 1, 64 do
+        local x = i * 2
+        screen.level(0)
+        screen.line_width(1)
+        screen.move(x, 10)
+        screen.line(x, 54)
+        screen.stroke()
+    end
+end
 function FilterGraphic:render()
     if self.hide then return end
     -- add filter off graphic if mix is dry or 50/50
@@ -160,22 +229,14 @@ function FilterGraphic:render()
         draw_bandpass(self.freq * 64, self.res)
     end
 
-    -- draw vertical black lines to make graphic less intense
-    for i = 1, 64 do
-        local x = i * 2
-        screen.level(0)
-        screen.line_width(1)
-        screen.move(x, 10)
-        screen.line(x, 54)
-        screen.stroke()
-    end
+    draw_stripes()
     screen.line_width(1)
     screen.level(3)
-    screen.rect(start_x, 15, graph_w + 2 * slack_x, graph_h - 3)
+    screen.rect(start_x, 15, graph_w + 2 * margin_x, graph_h - 3)
     screen.stroke()
     -- hide out of range swirl
     screen.level(0)
-    screen.rect(start_x + graph_w + 2 * slack_x, 15, 32, graph_h - 3)
+    screen.rect(start_x + graph_w + 2 * margin_x, 15, 32, graph_h - 3)
     screen.fill()
 end
 
