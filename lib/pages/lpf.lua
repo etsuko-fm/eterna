@@ -1,6 +1,7 @@
 local page_name = "FILTER"
 local FilterGraphic = include("symbiosis/lib/graphics/FilterGraphic")
 local filter_graphic
+local lpf_lfo
 
 local function adjust_freq(d)
     misc_util.adjust_param(d, ID_LPF_FREQ, controlspec_filter_freq)
@@ -11,22 +12,30 @@ local function adjust_res(d)
 end
 
 local function cycle_lfo()
-    misc_util.cycle_param(ID_LPF_, FILTER_LFO_SHAPES)
+    misc_util.cycle_param(ID_LPF_LFO, FILTER_LFO_SHAPES)
 end
 
 local function adjust_lfo_rate(d)
-    lfo_util.adjust_lfo_rate_quant(d, levels_lfo)
+    lfo_util.adjust_lfo_rate_quant(d, lpf_lfo)
 end
 
 local function toggle_drywet()
     misc_util.cycle_param(ID_LPF_WET, DRY_WET_TYPES)
 end
 
+local function e2(d)
+    if lpf_lfo:get("enabled") == 1 then
+        adjust_lfo_rate(d)
+    else
+        adjust_freq(d)
+    end
+end
+
 local page = Page:create({
     name = page_name,
-    e2 = adjust_freq,
+    e2 = e2,
     e3 = adjust_res,
-    k2_off = toggle_type,
+    k2_off = cycle_lfo,
     k3_off = toggle_drywet,
 })
 
@@ -40,29 +49,64 @@ local function action_wet(v)
     end
 end
 
+local function action_lfo(v)
+    lfo_util.action_lfo(v, lpf_lfo, FILTER_LFO_SHAPES, params:get(ID_LPF_FREQ))
+    if lpf_lfo:get("enabled") == 0 then
+        -- reset freq mod
+        params:set(ID_LPF_FREQ_MOD, 1)
+    end
+end
+
+local function action_lfo_rate(v)
+    lpf_lfo:set('period', lfo_util.lfo_period_label_values[params:string(ID_LEVELS_LFO_RATE)])
+end
+
+local function action_freq_mod(v)
+    -- triggers while LFO is active, or when LFO is switched off
+    local freq = params:get(ID_LPF_FREQ)
+    engine.filter_freq(v * freq)
+end
+
 local function add_params()
     params:set_action(ID_LPF_FREQ, function(v) engine.filter_freq(v) end)
+    params:set_action(ID_LPF_FREQ_MOD, action_freq_mod)
     params:set_action(ID_LPF_RES, function(v) engine.filter_res(v) end)
     params:set_action(ID_LPF_WET, action_wet)
+    params:set_action(ID_LPF_LFO, action_lfo)
+    params:set_action(ID_LPF_LFO_RATE, action_lfo_rate)
 end
 
 function page:render()
     self.window:render()
-    local freq = params:get(ID_LPF_FREQ)
+    local freq = params:get(ID_LPF_FREQ) * params:get(ID_LPF_FREQ_MOD)
     local res = params:get(ID_LPF_RES)
-    local filter_type = 2 
+    local filter_type = 2
     local drywet = params:get(ID_LPF_WET)
     filter_graphic.freq = freq
     filter_graphic.res = res
     filter_graphic.type = filter_type
     filter_graphic.mix = (params:get(ID_LPF_WET) - 1) / 2 -- 1/2/3 is 0/0.5/1
     filter_graphic:render()
-    -- page.footer.button_text.k2.value = FILTER_TYPES[filter_type]
-    page.footer.button_text.e2.name = "FREQ"
-    page.footer.button_text.e3.name = "RES"
-    page.footer.button_text.k3.name = "MIX"
+
+    local lfo_state = params:get(ID_LPF_LFO)
+    page.footer.button_text.k2.value = string.upper(FILTER_LFO_SHAPES[lfo_state])
+
+    if lpf_lfo:get("enabled") == 1 then
+        -- When LFO is disabled, E2 controls LFO rate
+        page.footer.button_text.e2.name = "RATE"
+
+        -- convert period to label representation
+        local period = lpf_lfo:get('period')
+        page.footer.button_text.e2.value = lfo_util.lfo_period_value_labels[period]
+    else
+        -- When LFO is disabled, E2 controls filter freq
+        page.footer.button_text.k2.value = "OFF"
+        page.footer.button_text.e2.name = "FREQ"
+        -- multiply by 6 because of 6 voices; indicates which voice is fully audible    
+        page.footer.button_text.e2.value = misc_util.trim(tostring(freq), 5)
+    end
+
     page.footer.button_text.k3.value = DRY_WET_TYPES[drywet]
-    page.footer.button_text.e2.value = misc_util.trim(tostring(freq), 5)
     page.footer.button_text.e3.value = misc_util.trim(tostring(res), 5)
     page.footer:render()
 end
@@ -82,6 +126,20 @@ function page:initialize()
         },
         font_face = FOOTER_FONT,
     })
+
+    lpf_lfo = _lfos:add {
+        shape = 'sine',
+        min = 0,
+        max = 1,
+        depth = 1,
+        mode = 'clocked',
+        period = 8,
+        phase = 0,
+        action = function(scaled, raw)
+            params:set(ID_LPF_FREQ_MOD, controlspec_filter_freq_mod:map(scaled), false)
+        end
+    }
+    lpf_lfo:set('reset_target', 'mid: rising')
 end
 
 return page
