@@ -48,7 +48,11 @@ end
 
 local function add_params()
     params:set_action(ID_MASTER_COMP_AMOUNT, action_comp_amount)
-    params:set_action(ID_MASTER_MONO_FREQ, function(v) params:set(ID_BASS_MONO_FREQ, BASS_MONO_FREQS_INT[v]) end)
+    params:set_action(ID_MASTER_MONO_FREQ, function(v)
+         params:set(ID_BASS_MONO_FREQ, BASS_MONO_FREQS_INT[v]) 
+         print(ID_BASS_MONO_FREQ .. " set to ".. BASS_MONO_FREQS_INT[v])
+         print('result: ' .. params:get(ID_BASS_MONO_FREQ))
+         end)
 end
 
 function page:render()

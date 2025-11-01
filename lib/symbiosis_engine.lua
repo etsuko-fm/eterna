@@ -8,17 +8,6 @@ local RATE_MAX = 8
 -- goals of this file:
 --- abstract ```for i=1,6 do engine.func(i-1, val) end ```
 --- any params that only do `engine.func()` become obsolete, currently:
--- done
---- ID_ECHO_DRYWET
---- ID_ECHO_FEEDBACK
---- ID_ECHO_STYLE (with table lookup)
---- ID_HPF_FREQ
---- ID_HPF_RES
---- ID_LPF_FREQ
---- ID_LPF_RES
---- ID_MASTER_COMP_DRIVE
--- todo
---- ID_MASTER_MONO_FREQ (with table lookup)
 
 local MASTER_DRIVE_MIN = -12
 local MASTER_DRIVE_MAX = 18
@@ -36,7 +25,6 @@ local ID_LPF_FREQ          = "symbiosis_lpf_freq"
 local ID_HPF_FREQ          = "symbiosis_hpf_freq"
 local ID_COMP_DRIVE        = "symbiosis_comp_drive"
 local ID_COMP_OUT_LEVEL    = "symbiosis_comp_out_level"
-local ID_BASS_MONO_ENABLED = "symbiosis_bass_mono_enabled"
 local ID_BASS_MONO_FREQ    = "symbiosis_bass_mono_freq"
 
 ECHO_STYLES                = { "CLEAR", "DUST", "MIST" }
@@ -169,9 +157,9 @@ Symbiosis.options          = {
 }
 
 Symbiosis.toggles          = {
-    ["bass_mono_enabled"] = {
-        id = ID_BASS_MONO_ENABLED,
-    }
+    -- ["bass_mono_enabled"] = {
+    --     id = ID_BASS_MONO_ENABLED,
+    -- }
 }
 
 local function no_underscore(s)
@@ -222,7 +210,7 @@ function Symbiosis.add_params()
             type = "binary",
             id = entry.id,
             name = no_underscore(command),
-            action = function(v) engine[command](entry.options[v]) end
+            action = function(v) engine[command](v) end
         }
     end
 

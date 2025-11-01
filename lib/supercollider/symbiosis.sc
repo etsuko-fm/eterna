@@ -401,15 +401,14 @@ s.waitForBoot {
 
     // Commands for bass mono
     this.addCommand("bass_mono_freq", "f", { arg msg; bassMono.set(\freq, msg[1]); });
-    this.addCommand("bass_mono_enabled", "i", {arg msg; bassMono.set(\enabled, msg[1]); });
 
     // Commands for master track
     this.addCommand("comp_drive", "f", { arg msg; master.set(\drive, msg[1].dbamp); }); // arrives in decibel, converted to linear
     this.addCommand("comp_ratio", "f", { arg msg; master.set(\ratio, msg[1]); });
     this.addCommand("comp_threshold", "f", { arg msg; master.set(\threshold, msg[1]); });
     this.addCommand("comp_out_level", "f", { arg msg; 
-      // convert -80dB or lower to mute
-      if (msg[1] <= -80) {master.set(\out_level, 0) } {master.set(\out_level, msg[1].dbamp)};
+      // convert -60dB or lower to mute
+      if (msg[1] <= -60) {master.set(\out_level, 0) } {master.set(\out_level, msg[1].dbamp)};
     }); // arrives in decibel, converted to linear
 
     // Commands for visualization
