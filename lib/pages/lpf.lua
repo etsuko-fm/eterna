@@ -3,12 +3,15 @@ local FilterGraphic = include("symbiosis/lib/graphics/FilterGraphic")
 local filter_graphic
 local lpf_lfo
 
+local ID_LPF_FREQ = sym.specs["lpf_freq"].id
+local ID_LPF_RES = sym.specs["lpf_res"].id
+
 local function adjust_freq(d)
-    misc_util.adjust_param(d, ID_LPF_FREQ, controlspec_lpf_freq)
+    misc_util.adjust_param(d, ID_LPF_FREQ, sym.specs["lpf_freq"].spec)
 end
 
 local function adjust_res(d)
-    misc_util.adjust_param(d, ID_LPF_RES, controlspec_lpf_res)
+    misc_util.adjust_param(d, ID_LPF_RES, sym.specs["lpf_res"].spec)
 end
 
 local function cycle_lfo()

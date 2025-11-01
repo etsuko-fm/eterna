@@ -8,22 +8,28 @@ local RATE_MAX = 8
 -- goals of this file:
 --- abstract ```for i=1,6 do engine.func(i-1, val) end ```
 --- any params that only do `engine.func()` become obsolete, currently:
+-- done 
 --- ID_ECHO_DRYWET
 --- ID_ECHO_FEEDBACK
 --- ID_ECHO_STYLE (with table lookup)
---- ID_ENVELOPES_CURVE (with table lookup)
 --- ID_HPF_FREQ
 --- ID_HPF_RES
 --- ID_LPF_FREQ
 --- ID_LPF_RES
+-- todo
 --- ID_MASTER_COMP_DRIVE
 --- ID_MASTER_MONO_FREQ (with table lookup)
 
 local ID_ECHO_WET = "symbiosis_echo_wet"
+local ID_ECHO_FEEDBACK = "symbiosis_echo_feedback"
+local ID_ECHO_STYLE = "symbiosis_echo_style"
+local ID_LPF_RES = "symbiosis_lpf_res"
+local ID_HPF_RES = "symbiosis_hpf_res"
+
+ECHO_STYLES = { "CLEAR", "DUST", "MIST" }
 
 Symbiosis.specs = {
     ["echo_wet"] = {
-        command = "echo_wet",
         id = ID_ECHO_WET,
         spec = controlspec.def {
             min = 0,
@@ -35,6 +41,78 @@ Symbiosis.specs = {
             quantum = 0.02,
             wrap = false
         }
+    },
+    ["echo_feedback"] = {
+        id = ID_ECHO_FEEDBACK,
+        spec = controlspec.def {
+            min = 0,
+            max = 1,
+            warp = 'lin',
+            step = 0.01,
+            default = 0.6,
+            units = '',
+            quantum = 0.02,
+            wrap = false
+        }
+    },
+    ["lpf_freq"] = {
+        id = ID_LPF_FREQ,
+        spec = controlspec.def {
+            min = 20,
+            max = 20000,
+            warp = 'exp',
+            step = 0.1,
+            default = 440.0,
+            units = 'Hz',
+            quantum = 0.005,
+            wrap = false
+        }
+    },
+    ["hpf_freq"] = {
+        id = ID_HPF_FREQ,
+        spec = controlspec.def {
+            min = 20,
+            max = 20000,
+            warp = 'exp',
+            step = 0.1,
+            default = 440.0,
+            units = 'Hz',
+            quantum = 0.005,
+            wrap = false
+        }
+    },
+    ["lpf_res"] = {
+        id = ID_LPF_RES,
+        spec = controlspec.def {
+            min = 0.0,
+            max = 0.98,
+            warp = 'lin',
+            step = 0.01,
+            default = 0.2,
+            units = '',
+            quantum = 0.02,
+            wrap = false
+        }
+    },
+    ["hpf_res"] = {
+        id = ID_HPF_RES,
+        spec = controlspec.def {
+            min = 0.0,
+            max = 0.98,
+            warp = 'lin',
+            step = 0.01,
+            default = 0.2,
+            units = '',
+            quantum = 0.02,
+            wrap = false
+        }
+    },
+}
+
+Symbiosis.options = {
+    ["echo_style"] = {
+        id = ID_ECHO_STYLE,
+        options = ECHO_STYLES,
     }
 }
 
@@ -46,16 +124,27 @@ end
 function Symbiosis.add_params()
     params:add_group("Symbiosis", #keys)
 
-    for _, entry in pairs(Symbiosis.specs) do
+    -- add controlspec-based params
+    for command, entry in pairs(Symbiosis.specs) do
         params:add {
-            type="control",
-            id=entry.id,
-            name=entry.command,
-            controlspec=entry.spec,
-            action=function(x) engine[entry.command](x) end
+            type = "control",
+            id = entry.id,
+            name = command,
+            controlspec = entry.spec,
+            action = function(x) engine[command](x) end
         }
     end
 
+    -- add option-based params
+    for command, entry in pairs(Symbiosis.options) do
+        params:add {
+            type = "option",
+            id = entry.id,
+            name = command,
+            options = entry.options,
+            action = function(v) engine[command](entry.options[v]) end
+        }
+    end
     params:bang()
 end
 
