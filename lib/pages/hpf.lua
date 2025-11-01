@@ -71,9 +71,7 @@ local function action_freq_mod(v)
 end
 
 local function add_params()
-    params:set_action(ID_HPF_FREQ, function(v) engine.hpf_freq(v) end)
     params:set_action(ID_HPF_FREQ_MOD, action_freq_mod)
-    params:set_action(ID_HPF_RES, function(v) engine.hpf_res(v) end)
     params:set_action(ID_HPF_WET, action_wet)
     params:set_action(ID_HPF_LFO, action_lfo)
     params:set_action(ID_HPF_LFO_RATE, action_lfo_rate)

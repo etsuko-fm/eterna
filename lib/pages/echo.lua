@@ -3,7 +3,7 @@ local EchoGraphic = include("symbiosis/lib/graphics/EchoGraphic")
 local echo_graphic
 
 local ID_ECHO_WET = sym.specs["echo_wet"].id
-local ID_ECHO_STYLE = sym.specs["echo_style"].id
+local ID_ECHO_STYLE = sym.options["echo_style"].id
 local ID_ECHO_FEEDBACK = sym.specs["echo_feedback"].id
 
 local function adjust_wet(d)

@@ -71,9 +71,7 @@ local function action_freq_mod(v)
 end
 
 local function add_params()
-    params:set_action(ID_LPF_FREQ, function(v) engine.lpf_freq(v) end)
     params:set_action(ID_LPF_FREQ_MOD, action_freq_mod)
-    params:set_action(ID_LPF_RES, function(v) engine.lpf_res(v) end)
     params:set_action(ID_LPF_WET, action_wet)
     params:set_action(ID_LPF_LFO, action_lfo)
     params:set_action(ID_LPF_LFO_RATE, action_lfo_rate)
