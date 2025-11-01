@@ -42,10 +42,8 @@ local function recalculate_time(time, shape)
         -- only modify envelopes if env modulation is off; otherwise delegated to sequencer
         local attack = get_attack(time, shape)
         local decay = get_decay(time, shape)
-        for sc_voice_id = 0, 5 do
-            engine.voice_attack(sc_voice_id, attack)
-            engine.voice_decay(sc_voice_id, decay)
-        end
+        sym.each_voice_attack(attack)
+        sym.each_voice_decay(decay)
     end
 end
 
@@ -58,9 +56,7 @@ end
 local function action_mod(v)
     local shape = params:get(ID_ENVELOPES_SHAPE)
     local time = params:get(ID_ENVELOPES_TIME)
-    for sc_voice = 0,5 do
-        engine.voice_enable_lpg(sc_voice, ENVELOPE_MOD_OPTIONS[v] == "LPG" and 1 or 0)
-    end
+    sym.each_voice_enable_lpg(ENVELOPE_MOD_OPTIONS[v] == "LPG" and 1 or 0)
     recalculate_time(time, shape)
 end
 
@@ -110,22 +106,10 @@ function page:initialize()
     envelope_graphic = EnvGraphic:new()
     page.footer = Footer:new({
         button_text = {
-            k2 = {
-                name = "MOD",
-                value = "",
-            },
-            k3 = {
-                name = "CURVE",
-                value = "",
-            },
-            e2 = {
-                name = "TIME",
-                value = "",
-            },
-            e3 = {
-                name = "SHAPE",
-                value = "",
-            },
+            k2 = { name = "MOD", value = "" },
+            k3 = { name = "CURVE", value = "" },
+            e2 = { name = "TIME", value = "" },
+            e3 = { name = "SHAPE", value = "" },
         },
         font_face = FOOTER_FONT,
     })

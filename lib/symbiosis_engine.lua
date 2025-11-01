@@ -156,46 +156,13 @@ local function no_underscore(s)
     return s:gsub("_", " ")
 end
 
-local keys = {}
-for k, _ in pairs(Symbiosis.specs) do
-    table.insert(keys, k)
-end
-
-for k, _ in pairs(Symbiosis.options) do
-    table.insert(keys, k)
-end
-
-Symbiosis.get_id = function(command)
-    return engine_prefix .. command
-end
-
-function Symbiosis.add_params()
-    params:add_group("Symbiosis", #keys)
-
-    -- add controlspec-based params
-    for command, entry in pairs(Symbiosis.specs) do
-        params:add {
-            type = "control",
-            id = Symbiosis.get_id(command),
-            name = no_underscore(command),
-            controlspec = entry.spec,
-            action = function(x) engine[command](x) end
-        }
+Symbiosis.get_id = function(command, voice_id)
+    -- 1 <= voice id <= 6
+    if voice_id ~= nil then
+        return engine_prefix .. command .. "_" .. voice_id
+    else
+        return engine_prefix .. command
     end
-
-    -- add option-based params
-    for command, entry in pairs(Symbiosis.options) do
-        params:add {
-            type = "option",
-            id = Symbiosis.get_id(command),
-            name = no_underscore(command),
-            options = entry.options,
-            action = function(v) engine[command](entry.options[v]) end
-        }
-    end
-
-    -- add voice params
-    params:bang()
 end
 
 -- Voice engine commands are not exposed as params here;
@@ -206,7 +173,7 @@ end
 -- and add their own paramset based on what they want to expose.
 
 -- but then you can just hide them?
-local voice_params = {
+Symbiosis.voice_params = {
     "voice_attack",     -- acceptable range: 0 - 10~30 sec?
     "voice_decay",
     "voice_enable_env", -- toggle
@@ -221,14 +188,17 @@ local voice_params = {
     "voice_rate",       -- 1/8 to 8
 }
 
-for p = 1, #voice_params do
-    -- create methods that sets all 6 voices to the same value for a given param
-    -- e.g. Symbiosis.each_voice_level(v)
-    Symbiosis["each_" .. voice_params[p]] = function(v)
-        for i = 0, 5 do
-            engine[voice_params[p]](i, v)
-        end
+local function count_params()
+    local keys = {}
+    for k, _ in pairs(Symbiosis.specs) do
+        table.insert(keys, k)
     end
+
+    for k, _ in pairs(Symbiosis.options) do
+        table.insert(keys, k)
+    end
+    local amt = #keys + (#Symbiosis.voice_params * 6)
+    return amt
 end
 
 local ENV_TIME_MIN = 0.0015
@@ -238,9 +208,9 @@ local voice_loop_spec = controlspec.def {
     min = 0,
     max = 349,         -- 5.8 minutes;  2**24 samples at 48khz (limit of Supercollider BufRd.ar)
     warp = 'lin',
-    step = 0.01,
+    step = 1/(48000 * 5.8), -- allow sample accurate output
     default = 1,
-    units = '',
+    units = 'sec',
     quantum = 0.001,
     wrap = false
 }
@@ -292,9 +262,84 @@ Symbiosis.voice_specs = {
 }
 
 Symbiosis.voice_toggles = {
-    ["voice_enable_env"] = {}, -- toggle
-    ["voice_enable_lpg"] = {}, -- toggle
+    ["voice_enable_env"] = {},
+    ["voice_enable_lpg"] = {},
 }
+
+for _, param in pairs(Symbiosis.voice_params) do
+    -- create methods that sets all 6 voices to the same value for a given param
+    -- e.g. Symbiosis.each_voice_level(v)
+    Symbiosis["each_" .. param] = function(v)
+        for i = 1,6 do
+            params:set(Symbiosis.get_id(param, i), v)
+        end
+    end
+
+    -- create methods that set an engine param for a given voice id,
+    -- translating the lua 1-based indexes to Supercollider 0-based array indexes
+    Symbiosis[param] = function(i, v)
+        params:set(Symbiosis.get_id(param, i), v)
+    end
+end
+
+function Symbiosis.add_params()
+    params:add_group("Symbiosis", count_params())
+
+    -- add controlspec-based params
+    for command, entry in pairs(Symbiosis.specs) do
+        params:add {
+            type = "control",
+            id = Symbiosis.get_id(command),
+            name = no_underscore(command),
+            controlspec = entry.spec,
+            action = function(x) engine[command](x) end
+        }
+    end
+
+    -- add option-based params
+    for command, entry in pairs(Symbiosis.options) do
+        params:add {
+            type = "option",
+            id = Symbiosis.get_id(command),
+            name = no_underscore(command),
+            options = entry.options,
+            action = function(v) engine[command](entry.options[v]) end
+        }
+    end
+
+    -- add controlspec-based voice params
+    for command, entry in pairs(Symbiosis.voice_specs) do
+        for i = 1, 6 do
+            local sc_idx = i - 1
+            local id = Symbiosis.get_id(command, i)
+            params:add {
+                type = "control",
+                id = id,
+                name = no_underscore(id),
+                controlspec = entry.spec,
+                action = function(v) engine[command](sc_idx, v) end
+            }
+            params:hide(id)
+        end
+    end
+
+    -- add toggle-based voice params
+    for command, _ in pairs(Symbiosis.voice_toggles) do
+        for i = 1, 6 do
+            local sc_idx = i - 1
+            local id = Symbiosis.get_id(command, i)
+            params:add {
+                type = "binary",
+                id = id,
+                name = no_underscore(id),
+                action = function(v) engine[command](sc_idx, v) end
+            }
+            params:hide(id)
+        end
+    end
+
+    params:bang()
+end
 
 --[[
 Engine.register_commands; count: 35
