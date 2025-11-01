@@ -115,6 +115,8 @@ s.waitForBoot {
       });
       waveform
     };
+
+    var minOutLevel = -60;
     voices = Array.fill(6, {|i| nil});
 
     // For communicating to Lua (beyond the polling system)
@@ -408,8 +410,8 @@ s.waitForBoot {
     this.addCommand("comp_ratio", "f", { arg msg; master.set(\ratio, msg[1]); });
     this.addCommand("comp_threshold", "f", { arg msg; master.set(\threshold, msg[1]); });
     this.addCommand("comp_out_level", "f", { arg msg; 
-      // convert -80dB or lower to mute
-      if (msg[1] <= -80) {master.set(\out_level, 0) } {master.set(\out_level, msg[1].dbamp)};
+      // convert <minOutLevel>dB or lower to mute
+      if (msg[1] <= minOutLevel) {master.set(\out_level, 0) } {master.set(\out_level, msg[1].dbamp)};
     }); // arrives in decibel, converted to linear
 
     // Commands for visualization

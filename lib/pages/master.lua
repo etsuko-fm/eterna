@@ -2,12 +2,15 @@ local MasterGraphic = include("symbiosis/lib/graphics/MasterGraphic")
 local page_name = "MASTER"
 local master_graphic
 
+local ID_MASTER_COMP_DRIVE = sym.specs["comp_drive"].id
+local ID_MASTER_OUTPUT = sym.specs["comp_out_level"].id
+
 local function adjust_drive(d)
-    misc_util.adjust_param(d, ID_MASTER_COMP_DRIVE, controlspec_master_drive)
+    misc_util.adjust_param(d, ID_MASTER_COMP_DRIVE, sym.specs["comp_drive"].spec)
 end
 
 local function adjust_output(d)
-    misc_util.adjust_param(d, ID_MASTER_OUTPUT, controlspec_master_output)
+    misc_util.adjust_param(d, ID_MASTER_OUTPUT, sym.specs["comp_out_level"].spec)
 end
 
 local function cycle_mono()
@@ -43,19 +46,19 @@ local function action_comp_amount(v)
     end
 end
 
-local function action_comp_output(v)
-    if v <= MASTER_OUT_MIN then
-        engine.comp_out_level(-80) -- engine converts -80dB or lower to full mute
-    else
-        engine.comp_out_level(v)
-    end
-end
+-- local function action_comp_output(v)
+--     if v <= MASTER_OUT_MIN then
+--         engine.comp_out_level(-80) -- engine converts -80dB or lower to full mute
+--     else
+--         engine.comp_out_level(v)
+--     end
+-- end
 
 local function add_params()
-    params:set_action(ID_MASTER_COMP_DRIVE, function(v) engine.comp_drive(v) end)
+    -- params:set_action(ID_MASTER_COMP_DRIVE, function(v) engine.comp_drive(v) end)
     params:set_action(ID_MASTER_COMP_AMOUNT, action_comp_amount)
     params:set_action(ID_MASTER_MONO_FREQ, function(v) engine.bass_mono_freq(BASS_MONO_FREQS_INT[v]) end)
-    params:set_action(ID_MASTER_OUTPUT, action_comp_output)
+    -- params:set_action(ID_MASTER_OUTPUT, action_comp_output)
 end
 
 function page:render()

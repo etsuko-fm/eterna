@@ -8,7 +8,7 @@ local RATE_MAX = 8
 -- goals of this file:
 --- abstract ```for i=1,6 do engine.func(i-1, val) end ```
 --- any params that only do `engine.func()` become obsolete, currently:
--- done 
+-- done
 --- ID_ECHO_DRYWET
 --- ID_ECHO_FEEDBACK
 --- ID_ECHO_STYLE (with table lookup)
@@ -20,15 +20,26 @@ local RATE_MAX = 8
 --- ID_MASTER_COMP_DRIVE
 --- ID_MASTER_MONO_FREQ (with table lookup)
 
-local ID_ECHO_WET = "symbiosis_echo_wet"
+local MASTER_DRIVE_MIN = -12
+local MASTER_DRIVE_MAX = 18
+
+MASTER_OUT_MIN = -60
+local MASTER_OUT_MAX = 0
+
+
+local ID_ECHO_WET      = "symbiosis_echo_wet"
 local ID_ECHO_FEEDBACK = "symbiosis_echo_feedback"
-local ID_ECHO_STYLE = "symbiosis_echo_style"
-local ID_LPF_RES = "symbiosis_lpf_res"
-local ID_HPF_RES = "symbiosis_hpf_res"
+local ID_ECHO_STYLE    = "symbiosis_echo_style"
+local ID_LPF_RES       = "symbiosis_lpf_res"
+local ID_HPF_RES       = "symbiosis_hpf_res"
+local ID_LPF_FREQ      = "symbiosis_lpf_freq"
+local ID_HPF_FREQ      = "symbiosis_hpf_freq"
+local ID_COMP_DRIVE    = "symbiosis_comp_drive"
+local ID_COMP_OUT_LEVEL =  "symbiosis_comp_out_level"
 
-ECHO_STYLES = { "CLEAR", "DUST", "MIST" }
+ECHO_STYLES            = { "CLEAR", "DUST", "MIST" }
 
-Symbiosis.specs = {
+Symbiosis.specs        = {
     ["echo_wet"] = {
         id = ID_ECHO_WET,
         spec = controlspec.def {
@@ -107,7 +118,35 @@ Symbiosis.specs = {
             wrap = false
         }
     },
+    ["comp_drive"] = {
+        id = ID_COMP_DRIVE,
+        spec = controlspec.def {
+            min = -12,
+            max = 18,
+            warp = 'lin',
+            step = 0.01,
+            default = 0,
+            units = 'dB',
+            quantum = 0.1 / (MASTER_DRIVE_MAX - MASTER_DRIVE_MIN),
+            wrap = false
+        },
+    },
+    ["comp_out_level"] = {
+        id = ID_COMP_OUT_LEVEL,
+        spec = controlspec.def {
+            min = MASTER_OUT_MIN,
+            max = MASTER_OUT_MAX,
+            warp = 'lin',
+            step = 0.1,
+            default = 1,
+            units = '',
+            quantum = 0.2 / (MASTER_OUT_MAX - MASTER_OUT_MIN),
+            wrap = false
+        },
+    },
 }
+
+-- params:set_raw(ID_MASTER_OUTPUT, 1.0) -- default to unity gain
 
 Symbiosis.options = {
     ["echo_style"] = {
