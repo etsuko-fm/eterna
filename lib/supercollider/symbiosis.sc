@@ -65,7 +65,7 @@ s.waitForBoot {
     var historyLength = 32;
     var amp_history_left = Int8Array.fill(historyLength, 0);
     var amp_history_right = Int8Array.fill(historyLength, 0);
-    var voiceParams; 
+    var voiceParams;
 
     var lpfParams = Dictionary.newFrom([\freq, 1000, \res, 0.1, \dry, 0, \gain, 1.0]);
     var hpfParams = Dictionary.newFrom([\freq, 10000, \res, 0.1, \dry, 0, \gain, 1.0]);
@@ -150,6 +150,7 @@ s.waitForBoot {
         \numChannels, 1,
         \decay, 4.0,
         \enable_env, 1,
+        \level, 1.0,
         \env_level, 1.0,
         \ampBus, ampBuses[i].index,
         \envBus, envBuses[i].index,
@@ -400,7 +401,6 @@ s.waitForBoot {
 
     // Commands for bass mono
     this.addCommand("bass_mono_freq", "f", { arg msg; bassMono.set(\freq, msg[1]); });
-    this.addCommand("bass_mono_dry", "f", { arg msg; bassMono.set(\dry, msg[1]); });
     this.addCommand("bass_mono_enabled", "i", {arg msg; bassMono.set(\enabled, msg[1]); });
 
     // Commands for master track

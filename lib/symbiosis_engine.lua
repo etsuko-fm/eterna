@@ -16,8 +16,8 @@ local RATE_MAX = 8
 --- ID_HPF_RES
 --- ID_LPF_FREQ
 --- ID_LPF_RES
--- todo
 --- ID_MASTER_COMP_DRIVE
+-- todo
 --- ID_MASTER_MONO_FREQ (with table lookup)
 
 local MASTER_DRIVE_MIN = -12
@@ -27,19 +27,21 @@ MASTER_OUT_MIN = -60
 local MASTER_OUT_MAX = 0
 
 
-local ID_ECHO_WET      = "symbiosis_echo_wet"
-local ID_ECHO_FEEDBACK = "symbiosis_echo_feedback"
-local ID_ECHO_STYLE    = "symbiosis_echo_style"
-local ID_LPF_RES       = "symbiosis_lpf_res"
-local ID_HPF_RES       = "symbiosis_hpf_res"
-local ID_LPF_FREQ      = "symbiosis_lpf_freq"
-local ID_HPF_FREQ      = "symbiosis_hpf_freq"
-local ID_COMP_DRIVE    = "symbiosis_comp_drive"
-local ID_COMP_OUT_LEVEL =  "symbiosis_comp_out_level"
+local ID_ECHO_WET          = "symbiosis_echo_wet"
+local ID_ECHO_FEEDBACK     = "symbiosis_echo_feedback"
+local ID_ECHO_STYLE        = "symbiosis_echo_style"
+local ID_LPF_RES           = "symbiosis_lpf_res"
+local ID_HPF_RES           = "symbiosis_hpf_res"
+local ID_LPF_FREQ          = "symbiosis_lpf_freq"
+local ID_HPF_FREQ          = "symbiosis_hpf_freq"
+local ID_COMP_DRIVE        = "symbiosis_comp_drive"
+local ID_COMP_OUT_LEVEL    = "symbiosis_comp_out_level"
+local ID_BASS_MONO_ENABLED = "symbiosis_bass_mono_enabled"
+local ID_BASS_MONO_FREQ    = "symbiosis_bass_mono_freq"
 
-ECHO_STYLES            = { "CLEAR", "DUST", "MIST" }
+ECHO_STYLES                = { "CLEAR", "DUST", "MIST" }
 
-Symbiosis.specs        = {
+Symbiosis.specs            = {
     ["echo_wet"] = {
         id = ID_ECHO_WET,
         spec = controlspec.def {
@@ -139,21 +141,42 @@ Symbiosis.specs        = {
             warp = 'lin',
             step = 0.1,
             default = 1,
-            units = '',
+            units = 'dB',
             quantum = 0.2 / (MASTER_OUT_MAX - MASTER_OUT_MIN),
+            wrap = false
+        },
+    },
+    ["bass_mono_freq"] = {
+        id = ID_BASS_MONO_FREQ,
+        spec = controlspec.def {
+            min = 20,
+            max = 20000,
+            warp = 'exp',
+            step = 0.1,
+            default = 1,
+            units = 'Hz',
+            quantum = 0.005,
             wrap = false
         },
     }
 }
 
--- params:set_raw(ID_MASTER_OUTPUT, 1.0) -- default to unity gain
-
-Symbiosis.options = {
+Symbiosis.options          = {
     ["echo_style"] = {
         id = ID_ECHO_STYLE,
         options = ECHO_STYLES,
     }
 }
+
+Symbiosis.toggles          = {
+    ["bass_mono_enabled"] = {
+        id = ID_BASS_MONO_ENABLED,
+    }
+}
+
+local function no_underscore(s)
+    return s:gsub("_", " ")
+end
 
 local keys = {}
 for k, _ in pairs(Symbiosis.specs) do
@@ -161,6 +184,10 @@ for k, _ in pairs(Symbiosis.specs) do
 end
 
 for k, _ in pairs(Symbiosis.options) do
+    table.insert(keys, k)
+end
+
+for k, _ in pairs(Symbiosis.toggles) do
     table.insert(keys, k)
 end
 
@@ -172,7 +199,7 @@ function Symbiosis.add_params()
         params:add {
             type = "control",
             id = entry.id,
-            name = command,
+            name = no_underscore(command),
             controlspec = entry.spec,
             action = function(x) engine[command](x) end
         }
@@ -183,11 +210,22 @@ function Symbiosis.add_params()
         params:add {
             type = "option",
             id = entry.id,
-            name = command,
+            name = no_underscore(command),
             options = entry.options,
             action = function(v) engine[command](entry.options[v]) end
         }
     end
+
+    -- add toggle-based params
+    for command, entry in pairs(Symbiosis.toggles) do
+        params:add {
+            type = "binary",
+            id = entry.id,
+            name = no_underscore(command),
+            action = function(v) engine[command](entry.options[v]) end
+        }
+    end
+
     params:bang()
 end
 
@@ -226,26 +264,25 @@ end
 --[[
 Engine.register_commands; count: 35
 ___ engine commands ___
-bass_mono_dry:  f
-bass_mono_enabled:  i
-bass_mono_freq:  f
-comp_drive:  f
-comp_out_level:  f
+*bass_mono_enabled:  i
+*bass_mono_freq:  f
+*comp_drive:  f
+*comp_out_level:  f
 comp_ratio:  f
 comp_threshold:  f
-echo_feedback:  f
-echo_style:  s
+*echo_feedback:  f
+*echo_style:  s
 echo_time:  f
-echo_wet:  f
+*echo_wet:  f
 hpf_dry:  f
-hpf_freq:  f
+*hpf_freq:  f
 hpf_gain:  f
-hpf_res:  f
+*hpf_res:  f
 load_file:  s
 lpf_dry:  f
-lpf_freq:  f
+*lpf_freq:  f
 lpf_gain:  f
-lpf_res:  f
+*lpf_res:  f
 metering_rate:  i
 request_amp_history
 trigger:  i

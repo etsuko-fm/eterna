@@ -9,4 +9,3 @@ COMP_AMOUNTS = {"OFF", "SOFT", "MEDIUM", "HARD"}
 params:add_separator("MASTER", "MASTER")
 params:add_option(ID_MASTER_MONO_FREQ, "bass mono freq", BASS_MONO_FREQS_STR, 2)
 params:add_option(ID_MASTER_COMP_AMOUNT, "compressor amount", COMP_AMOUNTS, 2)
-

@@ -77,10 +77,10 @@ function page:evaluate_step(x, y)
             engine.voice_lpg_freq(sc_voice_id, misc_util.linexp(0, 1, 80, 20000, velocity, 1))
         end
         if enable_mod ~= "OFF" then
+            -- if modulation enabled, update voice attack and decay according to step velocity
             engine.voice_attack(sc_voice_id, attack)
             engine.voice_decay(sc_voice_id, decay)
         end
-        engine.voice_level(sc_voice_id, velocity)
         engine.voice_trigger(sc_voice_id)
     end
 end

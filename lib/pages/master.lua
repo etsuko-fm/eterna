@@ -4,7 +4,7 @@ local master_graphic
 
 local ID_MASTER_COMP_DRIVE = sym.specs["comp_drive"].id
 local ID_MASTER_OUTPUT = sym.specs["comp_out_level"].id
-
+local ID_BASS_MONO_FREQ = sym.specs["bass_mono_freq"].id
 local function adjust_drive(d)
     misc_util.adjust_param(d, ID_MASTER_COMP_DRIVE, sym.specs["comp_drive"].spec)
 end
@@ -48,7 +48,7 @@ end
 
 local function add_params()
     params:set_action(ID_MASTER_COMP_AMOUNT, action_comp_amount)
-    params:set_action(ID_MASTER_MONO_FREQ, function(v) engine.bass_mono_freq(BASS_MONO_FREQS_INT[v]) end)
+    params:set_action(ID_MASTER_MONO_FREQ, function(v) params:set(ID_BASS_MONO_FREQ, BASS_MONO_FREQS_INT[v]) end)
 end
 
 function page:render()

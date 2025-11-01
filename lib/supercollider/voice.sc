@@ -103,16 +103,16 @@ Voice {
 					playback = XFade2.ar(playback1, playback2, crossfade);
 					playback = Pan2.ar(playback, pan);
 					
-					// Remove digital harshness
-					playback = LPF.ar(playback, 10000);
-
+					// Remove digital harshness; multiply output by VCA level
+					playback = LPF.ar(playback, 10000, level);
+					
+					// Amplitude analysis
 					amp =  Amplitude.ar(Mix.ar(playback), 0, 0.2);
 					Out.kr(ampBus, amp);
 					Out.kr(envBus, Select.kr(intVoiceId, [percEnv1, percEnv2]));
-
-					// Second "VCA" is level
-					// Out.ar(out, playback * level * (1-isDone));
-					Out.ar(out, playback * level);
+					
+					// Final out
+					Out.ar(out, playback);
 				}).add;
 			}
 		}
