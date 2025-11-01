@@ -4,7 +4,7 @@ SymSVF {
 			var s = Server.default;
 			s.waitForBoot {
 				SynthDef("SymSVF", {
-					arg in, out, freq=2500.0, res = 0.2, gain=1.0, dry=0.0, filter_type=0;
+					arg in, out, freq=2500.0, res = 0.2, dry=0.0, filter_type=0;
 					var input = In.ar(in, 2);
 					var safeFreq = Lag.kr(freq.clip(5.0, 24000.0));
 					var safeRes = Lag.kr(res.clip(0.0, 0.999));
@@ -21,12 +21,11 @@ SymSVF {
 							SVF.ar(input[1], safeFreq, safeRes, lp, bp, hp).tanh,
 					];
 
-					// Make dry/wet mix between filtered/unfiltered; multiply by gain; take the tanh of that
+					// Make dry/wet mix between filtered/unfiltered
 					var drySig = input * dry;
 					var wetSig = filtered * (1-dry);
 					var mix = drySig + wetSig;
-					var output = (gain * mix).tanh;
-					Out.ar(out, output);
+					Out.ar(out, mix);
 				}).add;
 			}
 		}

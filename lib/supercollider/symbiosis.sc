@@ -67,8 +67,8 @@ s.waitForBoot {
     var amp_history_right = Int8Array.fill(historyLength, 0);
     var voiceParams;
 
-    var lpfParams = Dictionary.newFrom([\freq, 1000, \res, 0.1, \dry, 0, \gain, 1.0]);
-    var hpfParams = Dictionary.newFrom([\freq, 10000, \res, 0.1, \dry, 0, \gain, 1.0]);
+    var lpfParams = Dictionary.newFrom([\freq, 1000, \res, 0.1, \dry, 0]);
+    var hpfParams = Dictionary.newFrom([\freq, 10000, \res, 0.1, \dry, 0]);
 
     // Map echo names to corresponding SynthDef
     var echoMap = (

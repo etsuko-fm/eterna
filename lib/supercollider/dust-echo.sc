@@ -30,8 +30,8 @@ DustEcho {
                     fbSignal = input + (LocalIn.ar(2) * feedback);
 
                     // Create delay lines, compensating time for processing of sample
-                    delA = DelayL.ar(fbSignal, 1.0, timeA - ControlDur.ir);
-                    delB = DelayL.ar(fbSignal, 1.0, timeB - ControlDur.ir);
+                    delA = DelayL.ar(fbSignal, 2.0, timeA - ControlDur.ir);
+                    delB = DelayL.ar(fbSignal, 2.0, timeB - ControlDur.ir);
 
                     // Crossfade between delay lines to prevent clicks when switching time param
                     delX = SelectX.ar(fade, [delA, delB]);

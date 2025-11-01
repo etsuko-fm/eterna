@@ -1,9 +1,9 @@
-local Symbiosis = {}
-local Formatters = require 'formatters'
-local ENV_FILTER_MIN = 50
-local ENV_FILTER_MAX = 20000
-local RATE_MIN = 1 / 8
-local RATE_MAX = 8
+local Symbiosis        = {}
+local Formatters       = require 'formatters'
+local ENV_FILTER_MIN   = 50
+local ENV_FILTER_MAX   = 20000
+local RATE_MIN         = 1 / 8
+local RATE_MAX         = 8
 
 -- goals of this file:
 --- abstract ```for i=1,6 do engine.func(i-1, val) end ```
@@ -12,24 +12,33 @@ local RATE_MAX = 8
 local MASTER_DRIVE_MIN = -12
 local MASTER_DRIVE_MAX = 18
 
-MASTER_OUT_MIN = -60
-local MASTER_OUT_MAX = 0
+MASTER_OUT_MIN         = -60
+local MASTER_OUT_MAX   = 0
+
+local ID_ECHO_TIME     = "symbiosis_echo_time"
+local ID_ECHO_WET      = "symbiosis_echo_wet"
+local ID_ECHO_FEEDBACK = "symbiosis_echo_feedback"
+local ID_ECHO_STYLE    = "symbiosis_echo_style"
+
+local ID_LPF_FREQ      = "symbiosis_lpf_freq"
+local ID_LPF_RES       = "symbiosis_lpf_res"
+local ID_LPF_DRY       = "symbiosis_lpf_dry"
 
 
-local ID_ECHO_WET          = "symbiosis_echo_wet"
-local ID_ECHO_FEEDBACK     = "symbiosis_echo_feedback"
-local ID_ECHO_STYLE        = "symbiosis_echo_style"
-local ID_LPF_RES           = "symbiosis_lpf_res"
-local ID_HPF_RES           = "symbiosis_hpf_res"
-local ID_LPF_FREQ          = "symbiosis_lpf_freq"
-local ID_HPF_FREQ          = "symbiosis_hpf_freq"
-local ID_COMP_DRIVE        = "symbiosis_comp_drive"
-local ID_COMP_OUT_LEVEL    = "symbiosis_comp_out_level"
-local ID_BASS_MONO_FREQ    = "symbiosis_bass_mono_freq"
+local ID_HPF_FREQ       = "symbiosis_hpf_freq"
+local ID_HPF_RES        = "symbiosis_hpf_res"
+local ID_HPF_DRY        = "symbiosis_hpf_dry"
 
-ECHO_STYLES                = { "CLEAR", "DUST", "MIST" }
+local ID_COMP_DRIVE     = "symbiosis_comp_drive"
+local ID_COMP_RATIO     = "symbiosis_comp_ratio"
+local ID_COMP_THRESHOLD = "symbiosis_comp_threshold"
+local ID_COMP_OUT_LEVEL = "symbiosis_comp_out_level"
 
-Symbiosis.specs            = {
+local ID_BASS_MONO_FREQ = "symbiosis_bass_mono_freq"
+
+ECHO_STYLES             = { "CLEAR", "DUST", "MIST" }
+
+Symbiosis.specs         = {
     ["echo_wet"] = {
         id = ID_ECHO_WET,
         spec = controlspec.def {
@@ -40,6 +49,19 @@ Symbiosis.specs            = {
             default = 0.2,
             units = '',
             quantum = 0.02,
+            wrap = false
+        }
+    },
+    ["echo_time"] = {
+        id = ID_ECHO_TIME,
+        spec = controlspec.def {
+            min = 0,
+            max = 2, -- seconds
+            warp = 'lin',
+            step = 0.001,
+            default = 0.2,
+            units = '',
+            quantum = 0.001,
             wrap = false
         }
     },
@@ -108,6 +130,32 @@ Symbiosis.specs            = {
             wrap = false
         }
     },
+    ["lpf_dry"] = {
+        id = ID_LPF_DRY,
+        spec = controlspec.def {
+            min = 0,
+            max = 1,
+            warp = 'lin',
+            step = 0.01,
+            default = 0,
+            units = 'Hz',
+            quantum = 0.01,
+            wrap = false
+        }
+    },
+    ["hpf_dry"] = {
+        id = ID_HPF_DRY,
+        spec = controlspec.def {
+            min = 0,
+            max = 1,
+            warp = 'lin',
+            step = 0.01,
+            default = 0,
+            units = 'Hz',
+            quantum = 0.01,
+            wrap = false
+        }
+    },
     ["comp_drive"] = {
         id = ID_COMP_DRIVE,
         spec = controlspec.def {
@@ -118,6 +166,32 @@ Symbiosis.specs            = {
             default = 0,
             units = 'dB',
             quantum = 0.1 / (MASTER_DRIVE_MAX - MASTER_DRIVE_MIN),
+            wrap = false
+        },
+    },
+    ["comp_ratio"] = {
+        id = ID_COMP_RATIO,
+        spec = controlspec.def {
+            min = 1,
+            max = 20,
+            warp = 'lin',
+            step = 0.01,
+            default = 1,
+            units = '',
+            quantum = 0.005,
+            wrap = false
+        },
+    },
+    ["comp_threshold"] = {
+        id = ID_COMP_THRESHOLD,
+        spec = controlspec.def {
+            min = 0,
+            max = 1,
+            warp = 'lin',
+            step = 0.01,
+            default = 1,
+            units = '',
+            quantum = 0.01,
             wrap = false
         },
     },
@@ -149,14 +223,14 @@ Symbiosis.specs            = {
     }
 }
 
-Symbiosis.options          = {
+Symbiosis.options       = {
     ["echo_style"] = {
         id = ID_ECHO_STYLE,
         options = ECHO_STYLES,
     }
 }
 
-Symbiosis.toggles          = {
+Symbiosis.toggles       = {
     -- ["bass_mono_enabled"] = {
     --     id = ID_BASS_MONO_ENABLED,
     -- }
@@ -256,24 +330,22 @@ ___ engine commands ___
 *bass_mono_freq:  f
 *comp_drive:  f
 *comp_out_level:  f
-comp_ratio:  f
-comp_threshold:  f
+*comp_ratio:  f
+*comp_threshold:  f
 *echo_feedback:  f
 *echo_style:  s
-echo_time:  f
+*echo_time:  f
 *echo_wet:  f
-hpf_dry:  f
+*hpf_dry:  f
 *hpf_freq:  f
-hpf_gain:  f
 *hpf_res:  f
 load_file:  s
-lpf_dry:  f
+*lpf_dry:  f
 *lpf_freq:  f
-lpf_gain:  f
 *lpf_res:  f
 metering_rate:  i
 request_amp_history
-trigger:  i
+voice_trigger:  i
 voice_attack:  if
 voice_decay:  if
 voice_enable_env:  if
