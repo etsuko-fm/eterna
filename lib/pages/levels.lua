@@ -83,7 +83,7 @@ local function recalculate_levels()
     local sigma = amp_to_sigma(params:get(ID_LEVELS_AMP))
     local levels = gaussian.calculate_gaussian_levels(params:get(ID_LEVELS_POS), sigma)
     for i = 0, 5 do
-        engine.level(i, levels[i + 1])
+        engine.voice_level(i, levels[i + 1])
     end
 end
 

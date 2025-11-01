@@ -65,7 +65,7 @@ s.waitForBoot {
     var historyLength = 32;
     var amp_history_left = Int8Array.fill(historyLength, 0);
     var amp_history_right = Int8Array.fill(historyLength, 0);
-    var voiceParams;
+    var voiceParams; 
 
     var lpfParams = Dictionary.newFrom([\freq, 1000, \res, 0.1, \dry, 0, \gain, 1.0]);
     var hpfParams = Dictionary.newFrom([\freq, 10000, \res, 0.1, \dry, 0, \gain, 1.0]);
@@ -81,7 +81,20 @@ s.waitForBoot {
     var echoParams = Dictionary.newFrom([\wet, 0.5, \feedback, 0.7, \time, 0.1]);
     
     // helper function for adding engine command for any float param of a voice
-    var voiceCommands = ["attack", "decay", "pan", "loop_start", "loop_end", "level", "env_level", "env_curve", "enable_env", "rate", "lpg_freq", "enable_lpg"];
+    var voiceCommands = [
+      "attack",
+      "decay",
+      "pan",
+      "loop_start",
+      "loop_end",
+      "level",
+      "env_level",
+      "env_curve",
+      "enable_env", //unused
+      "rate",
+      "lpg_freq",
+      "enable_lpg"
+    ];
 
     var getWaveform = { |samples, scale=1.0, numDisplayPoints = 64 |
       // scale can be used to normalize the waveform
@@ -315,7 +328,7 @@ s.waitForBoot {
     });
 
     voiceCommands.do { |param| 
-      this.addCommand(param, "if", { |msg|
+      this.addCommand("voice_"++param, "if", { |msg|
         var idx = msg[1].asInteger; // voice index
         var val = msg[2]; // float value
         if (voices[idx].isPlaying) {
@@ -326,7 +339,7 @@ s.waitForBoot {
         voiceParams[idx].put(param.asSymbol, val);
       }); };
 
-    this.addCommand("trigger", "i", {
+    this.addCommand("voice_trigger", "i", { 
       arg msg;
       var idx = msg[1]; // voice index
 

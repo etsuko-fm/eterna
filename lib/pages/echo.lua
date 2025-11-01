@@ -2,8 +2,10 @@ local page_name = "ECHO"
 local EchoGraphic = include("symbiosis/lib/graphics/EchoGraphic")
 local echo_graphic
 
+local ID_ECHO_WET = sym.specs["echo_wet"].id
+
 local function adjust_wet(d)
-    misc_util.adjust_param(d, ID_ECHO_DRYWET, controlspec_echo_drywet)
+    misc_util.adjust_param(d, ID_ECHO_WET, sym.specs["echo_wet"].spec)
 end
 
 local function adjust_feedback(d)
@@ -40,15 +42,9 @@ local function action_echo_time(v)
     recalculate_echo_time(clock.get_tempo(), time_fraction)
 end
 
-
-local function action_echo_style(v)
-    engine.echo_style(ECHO_STYLES[v])
-    print('set echo to ' .. ECHO_STYLES[v])
-end
-
 local function add_params()
-    params:set_action(ID_ECHO_DRYWET, function(v) engine.echo_wet(v) end)
-    params:set_action(ID_ECHO_STYLE, action_echo_style)
+    -- params:set_action(ID_ECHO_WET, function(v) engine.echo_wet(v) end)
+    params:set_action(ID_ECHO_STYLE, function(v) engine.echo_style(ECHO_STYLES[v]) end )
     params:set_action(ID_ECHO_FEEDBACK, function(v) engine.echo_feedback(v) end)
     params:set_action(ID_ECHO_TIME, action_echo_time)
 end
@@ -57,12 +53,12 @@ function page:render()
     -- screen.move(64, 32)
     -- screen.text_center("ECHO")
     local time = ECHO_TIME_NAMES[params:get(ID_ECHO_TIME)]
-    local wet = params:get(ID_ECHO_DRYWET)
+    local wet = params:get(ID_ECHO_WET)
     local feedback = params:get(ID_ECHO_FEEDBACK)
     local style = ECHO_STYLES[params:get(ID_ECHO_STYLE)]
     echo_graphic.time = params:get(ID_ECHO_TIME)
     echo_graphic.feedback = params:get(ID_ECHO_FEEDBACK) -- 1 to 4
-    echo_graphic.wet = params:get(ID_ECHO_DRYWET)
+    echo_graphic.wet = params:get(ID_ECHO_WET)
     echo_graphic:render()
     page.footer.button_text.k2.value = style
     page.footer.button_text.k3.value = time

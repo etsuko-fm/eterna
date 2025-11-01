@@ -10,7 +10,7 @@ local function calculate_pan_positions()
         local voice = i + 1
         local angle = (twist + i / 6) * (math.pi * 2) -- Divide the range of radians into 6 equal parts, add offset
         local pan =  spread * math.cos(angle)
-        engine.pan(i, pan)
+        engine.voice_pan(i, pan)
         panning_graphic.pans[voice] = pan
     end
 end

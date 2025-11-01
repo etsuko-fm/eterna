@@ -43,8 +43,8 @@ local function recalculate_time(time, shape)
         local attack = get_attack(time, shape)
         local decay = get_decay(time, shape)
         for sc_voice_id = 0, 5 do
-            engine.attack(sc_voice_id, attack)
-            engine.decay(sc_voice_id, decay)
+            engine.voice_attack(sc_voice_id, attack)
+            engine.voice_decay(sc_voice_id, decay)
         end
     end
 end
@@ -59,7 +59,7 @@ local function action_mod(v)
     local shape = params:get(ID_ENVELOPES_SHAPE)
     local time = params:get(ID_ENVELOPES_TIME)
     for sc_voice = 0,5 do
-        engine.enable_lpg(sc_voice, ENVELOPE_MOD_OPTIONS[v] == "LPG" and 1 or 0)
+        engine.voice_enable_lpg(sc_voice, ENVELOPE_MOD_OPTIONS[v] == "LPG" and 1 or 0)
     end
     recalculate_time(time, shape)
 end
@@ -70,7 +70,7 @@ local function action_shape(shape)
 end
 local function action_curve(idx)
     for voice = 0, 5 do
-        engine.env_curve(voice, ENVELOPE_CURVES[idx])
+        engine.voice_env_curve(voice, ENVELOPE_CURVES[idx])
     end
 end
 local function add_params()

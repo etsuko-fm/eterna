@@ -31,6 +31,10 @@ include("symbiosis/lib/parameters/master")
 
 include("symbiosis/lib/tests")
 
+sym = include('symbiosis/lib/symbiosis_engine')
+sym.add_params()
+print('params added!')
+
 local page_sample = include("symbiosis/lib/pages/sample")
 page_sequencer = include("symbiosis/lib/pages/sequencer")
 local page_envelopes = include("symbiosis/lib/pages/envelopes")

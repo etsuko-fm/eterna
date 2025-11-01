@@ -49,8 +49,8 @@ local function update_slices()
     if UPDATE_SLICES then
         for voice = 1, 6 do
             local sc_voice = voice - 1
-            engine.loop_start(sc_voice, params:get(ID_SLICES_SECTIONS[voice].loop_start))
-            engine.loop_end(sc_voice, params:get(ID_SLICES_SECTIONS[voice].loop_end))
+            engine.voice_loop_start(sc_voice, params:get(ID_SLICES_SECTIONS[voice].loop_start))
+            engine.voice_loop_end(sc_voice, params:get(ID_SLICES_SECTIONS[voice].loop_end))
         end
         UPDATE_SLICES = false
     end
@@ -71,17 +71,17 @@ function page:evaluate_step(x, y)
     local attack, decay = get_step_envelope(enable_mod, velocity)
     if on then
         -- using modulo check to prevent triggering every 1/16 when step size is larger
-        engine.env_level(sc_voice_id, velocity)
+        engine.voice_env_level(sc_voice_id, velocity)
         if enable_mod == "LPG" then
             -- applies envelope to a lowpass filter
-            engine.lpg_freq(sc_voice_id, misc_util.linexp(0, 1, 80, 20000, velocity, 1))
+            engine.voice_lpg_freq(sc_voice_id, misc_util.linexp(0, 1, 80, 20000, velocity, 1))
         end
         if enable_mod ~= "OFF" then
-            engine.attack(sc_voice_id, attack)
-            engine.decay(sc_voice_id, decay)
+            engine.voice_attack(sc_voice_id, attack)
+            engine.voice_decay(sc_voice_id, decay)
         end
-        engine.level(sc_voice_id, velocity)
-        engine.trigger(sc_voice_id)
+        engine.voice_level(sc_voice_id, velocity)
+        engine.voice_trigger(sc_voice_id)
     end
 end
 

@@ -35,7 +35,7 @@ local function calculate_rates()
         if params:get(get_voice_dir_param_id(voice)) == 2 then -- todo: lookuptable 2>rev, 1>fwd
             rate = -rate
         end
-        engine.rate(voice - 1, rate)
+        engine.voice_rate(voice - 1, rate)
         -- graph is linear while rate is exponential 
         page.graphic.voice_pos[i] = -math.log(math.abs(rate), 2)
     end
