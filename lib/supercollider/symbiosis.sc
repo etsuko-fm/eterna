@@ -152,6 +152,7 @@ s.waitForBoot {
         \enable_env, 1,
         \level, 1.0,
         \env_level, 1.0,
+        \env_curve, 0,
         \ampBus, ampBuses[i].index,
         \envBus, envBuses[i].index,
       ])

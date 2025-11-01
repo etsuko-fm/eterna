@@ -4,11 +4,6 @@ local ENV_FILTER_MIN   = 50
 local ENV_FILTER_MAX   = 20000
 local RATE_MIN         = 1 / 8
 local RATE_MAX         = 8
-
--- goals of this file:
---- abstract ```for i=1,6 do engine.func(i-1, val) end ```
---- any params that only do `engine.func()` become obsolete, currently:
-
 local MASTER_DRIVE_MIN = -12
 local MASTER_DRIVE_MAX = 18
 
@@ -258,7 +253,18 @@ Symbiosis.voice_specs = {
     ["voice_loop_end"] = { spec = voice_loop_spec },
     ["voice_lpg_freq"] = { spec = filter_spec },
     ["voice_pan"] = { spec = controlspec.PAN },
-    ["voice_rate"] = { spec = controlspec.RATE }
+    ["voice_rate"] = {
+        spec = controlspec.def {
+            min = -8,
+            max = 8,
+            warp = 'lin',
+            step = 0.001,
+            default = 1,
+            units = '',
+            quantum = 0.01,
+            wrap = false
+        },
+}
 }
 
 Symbiosis.voice_toggles = {
@@ -270,6 +276,7 @@ for _, param in pairs(Symbiosis.voice_params) do
     -- create methods that sets all 6 voices to the same value for a given param
     -- e.g. Symbiosis.each_voice_level(v)
     Symbiosis["each_" .. param] = function(v)
+        print("each " .. param .. " to " .. v)
         for i = 1,6 do
             params:set(Symbiosis.get_id(param, i), v)
         end
@@ -280,6 +287,10 @@ for _, param in pairs(Symbiosis.voice_params) do
     Symbiosis[param] = function(i, v)
         params:set(Symbiosis.get_id(param, i), v)
     end
+end
+
+function Symbiosis.voice_trigger(id)
+    engine.voice_trigger(id-1)
 end
 
 function Symbiosis.add_params()
@@ -363,7 +374,7 @@ load_file:  s
 *lpf_res:  f
 metering_rate:  i
 request_amp_history
-voice_trigger:  i
+* voice_trigger:  i
 voice_attack:  if
 voice_decay:  if
 voice_enable_env:  if

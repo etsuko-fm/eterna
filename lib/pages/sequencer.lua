@@ -16,7 +16,7 @@ local seq = Sequencer.new {
 local page = Page:create({
     name = page_name,
     --
-    seq=seq,
+    seq = seq,
 })
 
 local function generate_perlin_seq()
@@ -48,9 +48,10 @@ end
 local function update_slices()
     if UPDATE_SLICES then
         for voice = 1, 6 do
-            local sc_voice = voice - 1
-            engine.voice_loop_start(sc_voice, params:get(ID_SLICES_SECTIONS[voice].loop_start))
-            engine.voice_loop_end(sc_voice, params:get(ID_SLICES_SECTIONS[voice].loop_end))
+            local voice_loop_start = sym.get_id("voice_loop_start", voice)
+            local voice_loop_end = sym.get_id("voice_loop_end", voice)
+            params:set(voice_loop_start, params:get(ID_SLICES_SECTIONS[voice].loop_start))
+            params:set(voice_loop_end, params:get(ID_SLICES_SECTIONS[voice].loop_end))
         end
         UPDATE_SLICES = false
     end
@@ -64,24 +65,31 @@ local function get_step_envelope(enable_mod, velocity)
 end
 
 function page:evaluate_step(x, y)
-    local sc_voice_id = y - 1                          -- for 0-based supercollider arrays
+    -- 0 <= x <= 15
+    -- 1 <= y <= 6
     local enable_mod = ENVELOPE_MOD_OPTIONS[params:get(ID_ENVELOPES_MOD)]
     local velocity = params:get(ID_SEQ_STEP[y][x + 1]) -- using x+1 for 1-based table indexing
     local on = velocity > 0
     local attack, decay = get_step_envelope(enable_mod, velocity)
     if on then
         -- using modulo check to prevent triggering every 1/16 when step size is larger
-        engine.voice_env_level(sc_voice_id, velocity)
+        local voice_env_level = sym.get_id("voice_env_level", y)
+        local voice_lpg_freq = sym.get_id("voice_lpg_freq", y)
+        local voice_attack = sym.get_id("voice_attack", y)
+        local voice_decay = sym.get_id("voice_decay", y)
+        params:set(voice_env_level, velocity)
         if enable_mod == "LPG" then
             -- applies envelope to a lowpass filter
-            engine.voice_lpg_freq(sc_voice_id, misc_util.linexp(0, 1, 80, 20000, velocity, 1))
+            params:set(voice_lpg_freq, misc_util.linexp(0, 1, 80, 20000, velocity, 1))
         end
         if enable_mod ~= "OFF" then
             -- if modulation enabled, update voice attack and decay according to step velocity
-            engine.voice_attack(sc_voice_id, attack)
-            engine.voice_decay(sc_voice_id, decay)
+            params:set(voice_env_level, velocity)
+            params:set(voice_env_level, velocity)
+            params:set(voice_attack, attack)
+            params:set(voice_decay, decay)
         end
-        engine.voice_trigger(sc_voice_id)
+        sym.voice_trigger(y)
     end
 end
 
@@ -172,7 +180,6 @@ function page:update_grid_step(x, y, v)
     end
 end
 
-
 grid.key = function(x, y, z)
     -- if SEQUENCE_STYLE_TABLE[params:get(ID_SEQ_STYLE)] == SEQ_GRID then
     --     -- would sequence from grid
@@ -191,7 +198,6 @@ function page:action_sequence_speed(v)
     self.seq:set_ticks_per_step(step_div)
 end
 
-
 function page:add_params()
     params:set_action(ID_SEQ_PERLIN_X, toggle_redraw)
     params:set_action(ID_SEQ_PERLIN_Y, toggle_redraw)
@@ -204,7 +210,6 @@ function page:add_params()
         end
     end
 end
-
 
 function page:initialize()
     page.k2_off = function() self:toggle_transport() end

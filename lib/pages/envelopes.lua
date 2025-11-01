@@ -64,11 +64,11 @@ local function action_shape(shape)
     local time = params:get(ID_ENVELOPES_TIME)
     recalculate_time(time, shape)
 end
+
 local function action_curve(idx)
-    for voice = 0, 5 do
-        engine.voice_env_curve(voice, ENVELOPE_CURVES[idx])
-    end
+    sym.each_voice_env_curve(ENVELOPE_CURVES[idx])
 end
+
 local function add_params()
     params:set_action(ID_ENVELOPES_TIME, action_time)
     params:set_action(ID_ENVELOPES_SHAPE, action_shape)

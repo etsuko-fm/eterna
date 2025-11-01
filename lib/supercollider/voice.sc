@@ -11,7 +11,7 @@ Voice {
 					loop=1,  // 0 for one-shot, 1 for looping playback
 					loop_start=0.0, loop_end=0.0, // start/end pos in seconds
 					t_trig=1, // if 1, triggers the voice; it will then be reset back to zero because it starts with t_. Defaults to 1, because assumed voice is created only when it should be triggered
-					attack=0.01, decay=1.0, curve=(-4), env_level=1.0, // envelope
+					attack=0.01, decay=1.0, env_curve=(-4), env_level=1.0, // envelope
 					enable_env=1, enable_lpg=0, 
 					pan=0.0, // panning (-1 to 1)
 					lpg_freq=20000, res=0.0,  // filter frequency and resonance, if LPG is enabled
@@ -85,8 +85,8 @@ Voice {
 
 					// AR env according to env settings
 					// The extra 0 stage is so that a retrigger restarts the env at 0
-					var percEnv1 = EnvGen.ar(Env.new([0, 0, env_level, 0], [0, attack, decay], curve), gate: t_1);
-					var percEnv2 = EnvGen.ar(Env.new([0, 0, env_level, 0], [0, attack, decay], curve), gate: t_2);
+					var percEnv1 = EnvGen.ar(Env.new([0, 0, env_level, 0], [0, attack, decay], env_curve), gate: t_1);
+					var percEnv2 = EnvGen.ar(Env.new([0, 0, env_level, 0], [0, attack, decay], env_curve), gate: t_2);
 
 					var amp; // for reporting amplitude
 

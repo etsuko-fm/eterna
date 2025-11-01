@@ -10,7 +10,8 @@ local function calculate_pan_positions()
         local voice = i + 1
         local angle = (twist + i / 6) * (math.pi * 2) -- Divide the range of radians into 6 equal parts, add offset
         local pan =  spread * math.cos(angle)
-        engine.voice_pan(i, pan)
+        local voice_pan = sym.get_id("voice_pan", voice)
+        params:set(voice_pan, pan)
         panning_graphic.pans[voice] = pan
     end
 end
