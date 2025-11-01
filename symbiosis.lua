@@ -110,22 +110,6 @@ local function count()
   ready = true -- used for fps
 end
 
-local midi_device = {}
-local midi_device_names = {}
-local midi_target
-
-function midi_to_hz(note)
-  local hz = (440 / 32) * (2 ^ ((note - 9) / 12))
-  return hz
-end
-
-function midi_cb(data)
-  local d = midi.to_msg(data)
-  if d.type == "note_on" then
-    engine.lpf_freq(midi_to_hz(d.note))
-  end
-end
-
 function blob_to_table(blob, len)
   -- converts OSC blobs, assuming to be an array of 32 bit integers, to a lua table
   local ints = {}
@@ -217,23 +201,6 @@ function init()
   for _, page in ipairs(pages) do
     page:initialize()
   end
-  params:bang()
-
-  for i = 1, #midi.vports do         -- query all ports
-    midi_device[i] = midi.connect(i) -- connect each device
-    table.insert(
-      midi_device_names,
-      i .. ": " .. util.trim_string_to_width(midi_device[i].name, 38) -- value to insert
-    )
-  end
-  params:add_option("midi keyboard", "midi keyboard", midi_device_names, 1)
-  params:set_action("midi keyboard",
-    function(x)
-      if midi_target then midi_target.event = nil end 
-      midi_target = midi_device[x]
-      midi_target.event = midi_cb
-    end
-  )
   params:bang()
 
   -- metro for screen refresh

@@ -2,16 +2,17 @@ local page_name = "LOWPASS"
 local FilterGraphic = include("symbiosis/lib/graphics/FilterGraphic")
 local filter_graphic
 local lpf_lfo
-
-local ID_LPF_FREQ = sym.specs["lpf_freq"].id
-local ID_LPF_RES = sym.specs["lpf_res"].id
+local ENGINE_LPF_FREQ = sym.get_id("lpf_freq")
+local ENGINE_LPF_RES = sym.get_id("lpf_res")
+local ENGINE_LPF_DRY = sym.get_id("lpf_dry")
+local last_freq
 
 local function adjust_freq(d)
-    misc_util.adjust_param(d, ID_LPF_FREQ, sym.specs["lpf_freq"].spec)
+    misc_util.adjust_param(d, ENGINE_LPF_FREQ, sym.specs["lpf_freq"].spec)
 end
 
 local function adjust_res(d)
-    misc_util.adjust_param(d, ID_LPF_RES, sym.specs["lpf_res"].spec)
+    misc_util.adjust_param(d, ENGINE_LPF_RES, sym.specs["lpf_res"].spec)
 end
 
 local function cycle_lfo()
@@ -44,19 +45,24 @@ local page = Page:create({
 
 local function action_wet(v)
     if DRY_WET_TYPES[v] == "DRY" then
-        engine.lpf_dry(1)
+        params:set(ENGINE_LPF_DRY, 1)
     elseif DRY_WET_TYPES[v] == "50/50" then
-        engine.lpf_dry(.5)
+        params:set(ENGINE_LPF_DRY, 0.5)
     else
-        engine.lpf_dry(0)
+        params:set(ENGINE_LPF_DRY, 0)
     end
 end
 
 local function action_lfo(v)
-    lfo_util.action_lfo(v, lpf_lfo, LPF_LFO_SHAPES, params:get(ID_LPF_FREQ))
-    if lpf_lfo:get("enabled") == 0 then
-        -- reset freq mod
+    lfo_util.action_lfo(v, lpf_lfo, LPF_LFO_SHAPES, params:get(ENGINE_LPF_FREQ))
+    if LPF_LFO_SHAPES[v] ~= "off" then
+        last_freq = params:get(ENGINE_LPF_FREQ)
+    else
+        -- action turned off LFO; reset frequency
         params:set(ID_LPF_FREQ_MOD, 1)
+        if last_freq then 
+            params:set(ENGINE_LPF_FREQ, last_freq)
+        end
     end
 end
 
@@ -66,8 +72,7 @@ end
 
 local function action_freq_mod(v)
     -- triggers while LFO is active, or when LFO is switched off
-    local freq = params:get(ID_LPF_FREQ)
-    engine.lpf_freq(v * freq)
+    params:set(ENGINE_LPF_FREQ, v * last_freq)
 end
 
 local function add_params()
@@ -79,8 +84,8 @@ end
 
 function page:render()
     self.window:render()
-    local freq = params:get(ID_LPF_FREQ) * params:get(ID_LPF_FREQ_MOD)
-    local res = params:get(ID_LPF_RES)
+    local freq = params:get(ENGINE_LPF_FREQ)
+    local res = params:get(ENGINE_LPF_RES)
     local filter_type = 2
     local drywet = params:get(ID_LPF_WET)
     filter_graphic.freq = freq
@@ -113,6 +118,7 @@ function page:render()
 end
 
 function page:initialize()
+    last_freq = params:get(ENGINE_LPF_FREQ)
     add_params()
     self.window = Window:new({ title = page_name, font_face = TITLE_FONT })
     -- graphics

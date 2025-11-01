@@ -2,9 +2,9 @@ local page_name = "ECHO"
 local EchoGraphic = include("symbiosis/lib/graphics/EchoGraphic")
 local echo_graphic
 
-local ID_ECHO_WET = sym.specs["echo_wet"].id
-local ID_ECHO_STYLE = sym.options["echo_style"].id
-local ID_ECHO_FEEDBACK = sym.specs["echo_feedback"].id
+local ID_ECHO_WET = sym.get_id("echo_wet")
+local ID_ECHO_STYLE = sym.get_id("echo_style")
+local ID_ECHO_FEEDBACK = sym.get_id("echo_feedback")
 
 local function adjust_wet(d)
     misc_util.adjust_param(d, ID_ECHO_WET, sym.specs["echo_wet"].spec)
@@ -19,7 +19,7 @@ local function cycle_time()
 end
 
 local function cycle_style()
-    misc_util.cycle_param(ID_ECHO_STYLE, ECHO_STYLES)
+    misc_util.cycle_param(ID_ECHO_STYLE, sym.echo_styles)
 end
 
 local page = Page:create({
@@ -36,7 +36,7 @@ function recalculate_echo_time(bpm, time_fraction)
         time_fraction = ECHO_TIME_AMOUNTS[params:get(ID_ECHO_TIME)]
     end
     local duration = (60 / bpm) * time_fraction
-    engine.echo_time(duration)
+    params:set(sym.get_id("echo_time"), duration)
 end
 
 local function action_echo_time(v)
@@ -45,7 +45,6 @@ local function action_echo_time(v)
 end
 
 local function add_params()
-    params:set_action(ID_ECHO_STYLE, function(v) engine.echo_style(ECHO_STYLES[v]) end )
     params:set_action(ID_ECHO_TIME, action_echo_time)
 end
 
@@ -53,7 +52,7 @@ function page:render()
     local time = ECHO_TIME_NAMES[params:get(ID_ECHO_TIME)]
     local wet = params:get(ID_ECHO_WET)
     local feedback = params:get(ID_ECHO_FEEDBACK)
-    local style = ECHO_STYLES[params:get(ID_ECHO_STYLE)]
+    local style = sym.echo_styles[params:get(ID_ECHO_STYLE)]
     echo_graphic.time = params:get(ID_ECHO_TIME)
     echo_graphic.feedback = params:get(ID_ECHO_FEEDBACK) -- 1 to 4
     echo_graphic.wet = params:get(ID_ECHO_WET)

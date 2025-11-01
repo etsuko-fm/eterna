@@ -96,6 +96,7 @@ local function toggle_shape(lfo, available_shapes)
 end
 
 local function action_lfo(v, lfo, shapes, phase)
+    -- helper method to enable/disable LFO and set LFO shape
     local selection = shapes[v]
     if selection == "off" then
         lfo:stop()

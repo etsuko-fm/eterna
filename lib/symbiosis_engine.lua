@@ -15,45 +15,35 @@ local MASTER_DRIVE_MAX = 18
 MASTER_OUT_MIN         = -60
 local MASTER_OUT_MAX   = 0
 
-local ID_ECHO_TIME     = "symbiosis_echo_time"
-local ID_ECHO_WET      = "symbiosis_echo_wet"
-local ID_ECHO_FEEDBACK = "symbiosis_echo_feedback"
-local ID_ECHO_STYLE    = "symbiosis_echo_style"
+local engine_prefix    = "symbiosis_"
 
-local ID_LPF_FREQ      = "symbiosis_lpf_freq"
-local ID_LPF_RES       = "symbiosis_lpf_res"
-local ID_LPF_DRY       = "symbiosis_lpf_dry"
+Symbiosis.echo_styles  = { "CLEAR", "DUST", "MIST" }
 
+local filter_spec      = controlspec.def {
+    min = 20,
+    max = 20000,
+    warp = 'exp',
+    step = 0.01,
+    default = 1000,
+    units = 'Hz',
+    quantum = 0.005,
+    wrap = false
+}
 
-local ID_HPF_FREQ       = "symbiosis_hpf_freq"
-local ID_HPF_RES        = "symbiosis_hpf_res"
-local ID_HPF_DRY        = "symbiosis_hpf_dry"
+local simple_spec      = controlspec.def {
+    min = 0,
+    max = 1,
+    warp = 'lin',
+    step = 0.01,
+    default = 0,
+    units = '',
+    quantum = 0.01,
+    wrap = false
+}
 
-local ID_COMP_DRIVE     = "symbiosis_comp_drive"
-local ID_COMP_RATIO     = "symbiosis_comp_ratio"
-local ID_COMP_THRESHOLD = "symbiosis_comp_threshold"
-local ID_COMP_OUT_LEVEL = "symbiosis_comp_out_level"
-
-local ID_BASS_MONO_FREQ = "symbiosis_bass_mono_freq"
-
-ECHO_STYLES             = { "CLEAR", "DUST", "MIST" }
-
-Symbiosis.specs         = {
-    ["echo_wet"] = {
-        id = ID_ECHO_WET,
-        spec = controlspec.def {
-            min = 0,
-            max = 1,
-            warp = 'lin',
-            step = 0.01,
-            default = 0.2,
-            units = '',
-            quantum = 0.02,
-            wrap = false
-        }
-    },
+Symbiosis.specs        = {
+    ["echo_wet"] = {spec = simple_spec },
     ["echo_time"] = {
-        id = ID_ECHO_TIME,
         spec = controlspec.def {
             min = 0,
             max = 2, -- seconds
@@ -65,47 +55,10 @@ Symbiosis.specs         = {
             wrap = false
         }
     },
-    ["echo_feedback"] = {
-        id = ID_ECHO_FEEDBACK,
-        spec = controlspec.def {
-            min = 0,
-            max = 1,
-            warp = 'lin',
-            step = 0.01,
-            default = 0.6,
-            units = '',
-            quantum = 0.02,
-            wrap = false
-        }
-    },
-    ["lpf_freq"] = {
-        id = ID_LPF_FREQ,
-        spec = controlspec.def {
-            min = 20,
-            max = 20000,
-            warp = 'exp',
-            step = 0.1,
-            default = 440.0,
-            units = 'Hz',
-            quantum = 0.005,
-            wrap = false
-        }
-    },
-    ["hpf_freq"] = {
-        id = ID_HPF_FREQ,
-        spec = controlspec.def {
-            min = 20,
-            max = 20000,
-            warp = 'exp',
-            step = 0.1,
-            default = 440.0,
-            units = 'Hz',
-            quantum = 0.005,
-            wrap = false
-        }
-    },
+    ["echo_feedback"] = { spec = simple_spec },
+    ["lpf_freq"] = { spec = filter_spec },
+    ["hpf_freq"] = { spec = filter_spec },
     ["lpf_res"] = {
-        id = ID_LPF_RES,
         spec = controlspec.def {
             min = 0.0,
             max = 0.98,
@@ -118,7 +71,6 @@ Symbiosis.specs         = {
         }
     },
     ["hpf_res"] = {
-        id = ID_HPF_RES,
         spec = controlspec.def {
             min = 0.0,
             max = 0.98,
@@ -130,34 +82,9 @@ Symbiosis.specs         = {
             wrap = false
         }
     },
-    ["lpf_dry"] = {
-        id = ID_LPF_DRY,
-        spec = controlspec.def {
-            min = 0,
-            max = 1,
-            warp = 'lin',
-            step = 0.01,
-            default = 0,
-            units = 'Hz',
-            quantum = 0.01,
-            wrap = false
-        }
-    },
-    ["hpf_dry"] = {
-        id = ID_HPF_DRY,
-        spec = controlspec.def {
-            min = 0,
-            max = 1,
-            warp = 'lin',
-            step = 0.01,
-            default = 0,
-            units = 'Hz',
-            quantum = 0.01,
-            wrap = false
-        }
-    },
+    ["lpf_dry"] = { spec = simple_spec },
+    ["hpf_dry"] = { spec = simple_spec },
     ["comp_drive"] = {
-        id = ID_COMP_DRIVE,
         spec = controlspec.def {
             min = -12,
             max = 18,
@@ -170,7 +97,6 @@ Symbiosis.specs         = {
         },
     },
     ["comp_ratio"] = {
-        id = ID_COMP_RATIO,
         spec = controlspec.def {
             min = 1,
             max = 20,
@@ -183,20 +109,18 @@ Symbiosis.specs         = {
         },
     },
     ["comp_threshold"] = {
-        id = ID_COMP_THRESHOLD,
         spec = controlspec.def {
-            min = 0,
+            min = 0.01,
             max = 1,
             warp = 'lin',
             step = 0.01,
-            default = 1,
+            default = 0,
             units = '',
             quantum = 0.01,
             wrap = false
-        },
+        }
     },
     ["comp_out_level"] = {
-        id = ID_COMP_OUT_LEVEL,
         spec = controlspec.def {
             min = MASTER_OUT_MIN,
             max = MASTER_OUT_MAX,
@@ -209,7 +133,6 @@ Symbiosis.specs         = {
         },
     },
     ["bass_mono_freq"] = {
-        id = ID_BASS_MONO_FREQ,
         spec = controlspec.def {
             min = 20,
             max = 20000,
@@ -223,17 +146,10 @@ Symbiosis.specs         = {
     }
 }
 
-Symbiosis.options       = {
+Symbiosis.options      = {
     ["echo_style"] = {
-        id = ID_ECHO_STYLE,
-        options = ECHO_STYLES,
+        options = Symbiosis.echo_styles,
     }
-}
-
-Symbiosis.toggles       = {
-    -- ["bass_mono_enabled"] = {
-    --     id = ID_BASS_MONO_ENABLED,
-    -- }
 }
 
 local function no_underscore(s)
@@ -249,8 +165,8 @@ for k, _ in pairs(Symbiosis.options) do
     table.insert(keys, k)
 end
 
-for k, _ in pairs(Symbiosis.toggles) do
-    table.insert(keys, k)
+Symbiosis.get_id = function(command)
+    return engine_prefix .. command
 end
 
 function Symbiosis.add_params()
@@ -260,7 +176,7 @@ function Symbiosis.add_params()
     for command, entry in pairs(Symbiosis.specs) do
         params:add {
             type = "control",
-            id = entry.id,
+            id = Symbiosis.get_id(command),
             name = no_underscore(command),
             controlspec = entry.spec,
             action = function(x) engine[command](x) end
@@ -271,32 +187,25 @@ function Symbiosis.add_params()
     for command, entry in pairs(Symbiosis.options) do
         params:add {
             type = "option",
-            id = entry.id,
+            id = Symbiosis.get_id(command),
             name = no_underscore(command),
             options = entry.options,
             action = function(v) engine[command](entry.options[v]) end
         }
     end
 
-    -- add toggle-based params
-    for command, entry in pairs(Symbiosis.toggles) do
-        params:add {
-            type = "binary",
-            id = entry.id,
-            name = no_underscore(command),
-            action = function(v) engine[command](v) end
-        }
-    end
-
+    -- add voice params
     params:bang()
 end
 
--- Voice engine commands are not exposed as pset params here;
--- there're so many of them (11 params * 6 voices) that it's pretty bad UX
+-- Voice engine commands are not exposed as params here;
+-- there're so many of them (12 commands * 6 voices) that it's a bit overwhelming
 -- to expose them all to the end user individually.
--- Depending on the script, acceptable ranges may vary -
--- e.g. for attack and decay, depending on whether it's a percussive or drone app.
--- Scripts using this engine may instead define params and controls themselves.
+-- Instead, some convenience methods are provided to set the params.
+-- Scripts may use these in actions instead of direct engine invocations,
+-- and add their own paramset based on what they want to expose.
+
+-- but then you can just hide them?
 local voice_params = {
     "voice_attack",     -- acceptable range: 0 - 10~30 sec?
     "voice_decay",
@@ -322,6 +231,70 @@ for p = 1, #voice_params do
     end
 end
 
+local ENV_TIME_MIN = 0.0015
+local ENV_TIME_MAX = 5
+
+local voice_loop_spec = controlspec.def {
+    min = 0,
+    max = 349,         -- 5.8 minutes;  2**24 samples at 48khz (limit of Supercollider BufRd.ar)
+    warp = 'lin',
+    step = 0.01,
+    default = 1,
+    units = '',
+    quantum = 0.001,
+    wrap = false
+}
+
+Symbiosis.voice_specs = {
+    ["voice_attack"] = {
+        spec = controlspec.def {
+            min = ENV_TIME_MIN,
+            max = ENV_TIME_MAX,
+            warp = 'lin',
+            step = 0.01,
+            default = 1,
+            units = '',
+            quantum = 0.01,
+            wrap = false
+        },
+    },
+    ["voice_decay"] = {
+        spec = controlspec.def {
+            min = ENV_TIME_MIN,
+            max = ENV_TIME_MAX,
+            warp = 'lin',
+            step = 0.01,
+            default = 1,
+            units = '',
+            quantum = 0.01,
+            wrap = false
+        },
+    },
+    ["voice_env_curve"] = {
+        spec = controlspec.def {
+            min = -4,
+            max = 4,
+            warp = 'lin',
+            step = 0.01,
+            default = 1,
+            units = '',
+            quantum = 0.01,
+            wrap = false
+        },
+    },
+    ["voice_env_level"] = { spec = simple_spec },
+    ["voice_level"] = { spec = simple_spec },
+    ["voice_loop_start"] = { spec = voice_loop_spec },
+    ["voice_loop_end"] = { spec = voice_loop_spec },
+    ["voice_lpg_freq"] = { spec = filter_spec },
+    ["voice_pan"] = { spec = controlspec.PAN },
+    ["voice_rate"] = { spec = controlspec.RATE }
+}
+
+Symbiosis.voice_toggles = {
+    ["voice_enable_env"] = {}, -- toggle
+    ["voice_enable_lpg"] = {}, -- toggle
+}
 
 --[[
 Engine.register_commands; count: 35
