@@ -46,19 +46,9 @@ local function action_comp_amount(v)
     end
 end
 
--- local function action_comp_output(v)
---     if v <= MASTER_OUT_MIN then
---         engine.comp_out_level(-80) -- engine converts -80dB or lower to full mute
---     else
---         engine.comp_out_level(v)
---     end
--- end
-
 local function add_params()
-    -- params:set_action(ID_MASTER_COMP_DRIVE, function(v) engine.comp_drive(v) end)
     params:set_action(ID_MASTER_COMP_AMOUNT, action_comp_amount)
     params:set_action(ID_MASTER_MONO_FREQ, function(v) engine.bass_mono_freq(BASS_MONO_FREQS_INT[v]) end)
-    -- params:set_action(ID_MASTER_OUTPUT, action_comp_output)
 end
 
 function page:render()

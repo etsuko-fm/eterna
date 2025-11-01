@@ -4,9 +4,11 @@
 --
 -- Other controls, see footer:
 -- | K2 | K3 | E2 | E3 |
+engine.name = 'Symbiosis'
 
 _lfos = require 'lfo'
 MusicUtil = require "musicutil"
+
 
 Page = include("symbiosis/lib/Page")
 Window = include("symbiosis/lib/graphics/Window")
@@ -32,8 +34,7 @@ include("symbiosis/lib/parameters/master")
 include("symbiosis/lib/tests")
 
 sym = include('symbiosis/lib/symbiosis_engine')
-sym.add_params()
-print('params added!')
+
 
 local page_sample = include("symbiosis/lib/pages/sample")
 page_sequencer = include("symbiosis/lib/pages/sequencer")
@@ -51,7 +52,6 @@ local ready
 
 
 UPDATE_SLICES = false
-engine.name = 'Symbiosis'
 
 grid_device = grid.connect()
 
@@ -213,6 +213,7 @@ function init()
   master_left_poll = poll.set("master_left")
   master_right_poll = poll.set("master_right")
 
+  sym.add_params()
   for _, page in ipairs(pages) do
     page:initialize()
   end
@@ -228,7 +229,7 @@ function init()
   params:add_option("midi keyboard", "midi keyboard", midi_device_names, 1)
   params:set_action("midi keyboard",
     function(x)
-      if midi_target then midi_target.event = nil end
+      if midi_target then midi_target.event = nil end 
       midi_target = midi_device[x]
       midi_target.event = midi_cb
     end

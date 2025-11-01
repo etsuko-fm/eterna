@@ -143,7 +143,7 @@ Symbiosis.specs        = {
             quantum = 0.2 / (MASTER_OUT_MAX - MASTER_OUT_MIN),
             wrap = false
         },
-    },
+    }
 }
 
 -- params:set_raw(ID_MASTER_OUTPUT, 1.0) -- default to unity gain
@@ -157,6 +157,10 @@ Symbiosis.options = {
 
 local keys = {}
 for k, _ in pairs(Symbiosis.specs) do
+    table.insert(keys, k)
+end
+
+for k, _ in pairs(Symbiosis.options) do
     table.insert(keys, k)
 end
 
