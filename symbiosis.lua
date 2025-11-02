@@ -31,8 +31,6 @@ include("symbiosis/lib/parameters/hpf")
 include("symbiosis/lib/parameters/echo")
 include("symbiosis/lib/parameters/master")
 
-include("symbiosis/lib/tests")
-
 sym = include('symbiosis/lib/symbiosis_engine')
 
 

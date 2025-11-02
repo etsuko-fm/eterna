@@ -56,7 +56,9 @@ end
 local function action_mod(v)
     local shape = params:get(ID_ENVELOPES_SHAPE)
     local time = params:get(ID_ENVELOPES_TIME)
-    sym.each_voice_enable_lpg(ENVELOPE_MOD_OPTIONS[v] == "LPG" and 1 or 0)
+    local val = ENVELOPE_MOD_OPTIONS[v] == "LPG" and 1 or 0
+    print('LPG '..val)
+    sym.each_voice_enable_lpg(val)
     recalculate_time(time, shape)
 end
 

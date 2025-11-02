@@ -150,6 +150,7 @@ s.waitForBoot {
         \numChannels, 1,
         \decay, 4.0,
         \enable_env, 1,
+        \enable_lpg, 0,
         \level, 1.0,
         \env_level, 1.0,
         \env_curve, 0,

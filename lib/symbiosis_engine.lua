@@ -141,6 +141,15 @@ Symbiosis.specs            = {
         units = 'Hz',
         quantum = 0.005,
         wrap = false
+    },
+    ["metering_rate"] = controlspec.def {
+        min = 0,
+        max = 5000,
+        warp = "lin",
+        step = 1,
+        default = 1000,
+        units = 'Hz',
+        quantum = 1 / 5000,
     }
 }
 
@@ -226,15 +235,6 @@ Symbiosis.voice_specs = {
         quantum = 0.01 / 16,
         wrap = false
     },
-    ["metering_rate"] = controlspec.def {
-        min = 0,
-        max = 5000,
-        warp = "lin",
-        step = 1,
-        default = 1000,
-        units = 'Hz',
-        quantum = 1 / 5000,
-    }
 }
 
 -- Voice params that are binary toggles
@@ -247,7 +247,6 @@ for _, param in pairs(Symbiosis.voice_params) do
     -- create methods that sets all 6 voices to the same value for a given param
     -- e.g. Symbiosis.each_voice_level(v)
     Symbiosis["each_" .. param] = function(v)
-        print("each " .. param .. " to " .. v)
         for i = 1, 6 do
             params:set(Symbiosis.get_id(param, i), v)
         end

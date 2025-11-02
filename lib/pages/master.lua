@@ -114,11 +114,11 @@ function page:initialize()
 end
 
 function page:enter()
-    engine.metering_rate(1000)
+    params:set(sym.get_id("metering_rate"), 1000)
 end
 
 function page:exit()
-    engine.metering_rate(0)
+    params:set(sym.get_id("metering_rate"), 0)
 end
 
 
