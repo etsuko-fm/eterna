@@ -110,46 +110,20 @@ local function count()
   ready = true -- used for fps
 end
 
-function blob_to_table(blob, len)
-  -- converts OSC blobs, assuming to be an array of 32 bit integers, to a lua table
-  local ints = {}
-  local size = #blob
-  local offset = 1
-
-  while offset <= size do
-    -- iterate over blob, starting at `offset` (1 = first char)
-    local value
-    -- Unpack using ">i1" for big-endian single-byte integer, see lua docs 6.4.2
-    value, offset = string.unpack(">i1", blob, offset)
-    table.insert(ints, value)
-  end
-
-  return ints
-end
-
 
 function osc.event(path, args, from)
   if path == "/waveform" then
     print("Lua: /waveform received from SC")
-    local blob = args[1] -- the int8 array from OSC
-    local channel = args[2] -- 0 or 1 for left, right
-    print('channel: '.. tonumber(channel))
-    local waveform = blob_to_table(blob)
-    for i, v in ipairs(waveform) do
-      -- convert int8 array to floats
-      waveform[i] = waveform[i] / 127
-    end
-    page_sample:update_waveform(waveform, channel+1)
+    channel, waveform = sym.process_waveform(args)
+    page_sample:update_waveform(waveform, channel)
   elseif path == "/duration" then
     local duration = tonumber(args[1])
     print('received duration: ' .. duration)
     page_sample:set_sample_duration(duration)
   elseif path == "/amp_history_left" then
-    local blob = args[1]
-    amp_historyL = blob_to_table(blob)
+    amp_historyL = sym.process_amp_history(args)
   elseif path == "/amp_history_right" then
-    local blob = args[1]
-    amp_historyR = blob_to_table(blob)
+    amp_historyR = sym.process_amp_history(args)
   end
 end
 

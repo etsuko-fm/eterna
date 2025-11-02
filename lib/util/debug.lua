@@ -24,21 +24,6 @@ function tprint(tbl, indent)
   return toprint
 end
 
-function print_info(file)
-  if util.file_exists(file) == true then
-    local ch, samples, samplerate = audio.file_info(file)
-    local duration = samples / samplerate
-    print("loading file: " .. file)
-    print("  channels:\t" .. ch)
-    print("  samples:\t" .. samples)
-    print("  sample rate:\t" .. samplerate .. "hz")
-    print("  duration:\t" .. duration .. " sec")
-  else
-    print "read_wav(): file not found"
-  end
-end
-
 return {
   tprint = tprint,
-  print_info = print_info,
 }
