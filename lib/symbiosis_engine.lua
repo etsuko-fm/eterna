@@ -33,33 +33,11 @@ local simple_spec          = controlspec.def {
     wrap = false
 }
 
-local voice_loop_spec      = controlspec.def {
-    min = 0,
-    max = 349,                -- 5.8 minutes;  2**24 samples at 48khz (limit of Supercollider BufRd.ar)
-    warp = 'lin',
-    step = 1 / (48000 * 349), -- allow sample accurate output
-    default = 1,
-    units = 'sec',
-    quantum = 1 / (48000 * 349),
-    wrap = false
-}
-
-local env_spec             = controlspec.def {
-    min = Symbiosis.env_time_min,
-    max = Symbiosis.env_time_max,
-    warp = 'exp',
-    step = 0.001,
-    default = 1,
-    units = 'sec',
-    quantum = 0.001 / (Symbiosis.env_time_max - Symbiosis.env_time_min),
-    wrap = false
-}
-
 Symbiosis.specs            = {
     ["echo_wet"] = simple_spec,
     ["echo_time"] = controlspec.def {
         min = 0,
-        max = 2,     -- seconds
+        max = 2, -- seconds
         warp = 'lin',
         step = 0.001,
         default = 0.2,
@@ -71,14 +49,14 @@ Symbiosis.specs            = {
     ["lpf_freq"] = filter_spec,
     ["hpf_freq"] = filter_spec,
     ["lpf_res"] = controlspec.def {
-            min = 0.0,
-            max = 0.98,
-            warp = 'lin',
-            step = 0.01,
-            default = 0.2,
-            units = '',
-            quantum = 0.02,
-            wrap = false
+        min = 0.0,
+        max = 0.98,
+        warp = 'lin',
+        step = 0.01,
+        default = 0.2,
+        units = '',
+        quantum = 0.02,
+        wrap = false
     },
     ["hpf_res"] = controlspec.def {
         min = 0.0,
@@ -180,7 +158,6 @@ end
 Symbiosis.voice_params = {
     "voice_attack",
     "voice_decay",
-    "voice_enable_env",
     "voice_enable_lpg",
     "voice_env_curve",
     "voice_env_level",
@@ -205,41 +182,82 @@ local function count_params()
     return amt
 end
 
+Symbiosis.available_polls = {
+    ["file_loaded"] = { "file_loaded" },
+    ["pre_comp"] = { "pre_comp_left", "pre_comp_right" },
+    ["post_comp"] = { "post_comp_left", "post_comp_right" },
+    ["post_gain"] = { "post_gain_left", "post_gain_right" },
+    ["master"] = { "master_left", "master_right" },
+    ["voice_amp"] = { "voice1amp", "voice2amp", "voice3amp", "voice4amp", "voice5amp", "voice6amp" },
+    ["voice_env"] = { "voice1env", "voice2env", "voice3env", "voice4env", "voice5env", "voice6env" },
+}
+
+Symbiosis.enable_poll = function(name)
+    -- Usage:
+    --[[
+          left, right = sym.enable_poll("pre_comp")
+    ---]]
+    local t = Symbiosis.available_polls[name]
+    local result = {}
+    if t then
+        for n, poll_name in pairs(t) do
+            result[n] = poll.set(poll_name)
+        end
+    else
+        print("poll does not exist: " .. name)
+    end
+    return table.unpack(result)
+end
+
+
 -- Voice params with a controlspec
 Symbiosis.voice_specs = {
-    ["voice_attack"] = env_spec,
-    ["voice_decay"] = env_spec,
-    ["voice_env_curve"] = controlspec.def {
-        min = -4,
-        max = 4,
-        warp = 'lin',
-        step = 0.01,
-        default = 1,
-        units = '',
-        quantum = 0.01 / 8,
-        wrap = false
-    },
     ["voice_env_level"] = simple_spec,
     ["voice_level"] = simple_spec,
-    ["voice_loop_start"] = voice_loop_spec,
-    ["voice_loop_end"] = voice_loop_spec,
     ["voice_lpg_freq"] = filter_spec,
     ["voice_pan"] = controlspec.PAN,
-    ["voice_rate"] = controlspec.def {
+}
+
+Symbiosis.voice_numbers = {
+    ["voice_loop_start"] = {
+        min = 0,
+        max = 349, -- == 5.8 minutes at 48khz, corresponds to BufRd.ar() max phasor value
+        default = 0,
+        wrap = true
+    },
+    ["voice_loop_end"] = {
+        min = 0,
+        max = 349,
+        default = 0,
+        wrap = true
+    },
+    ["voice_rate"] = {
         min = -8,
         max = 8,
-        warp = 'lin',
-        step = 0.001,
         default = 1,
-        units = '',
-        quantum = 0.01 / 16,
+        wrap = false
+    },
+    ["voice_attack"] = {
+        min = Symbiosis.env_time_min,
+        max = Symbiosis.env_time_max,
+        default = 0.1,
+        wrap = false
+    },
+    ["voice_decay"] = {
+        min = Symbiosis.env_time_min,
+        max = Symbiosis.env_time_max,
+        default = 1,
+        wrap = false
+    },
+    ["voice_env_curve"] = {
+        min = -4,
+        max = 4,
+        default = 1,
         wrap = false
     },
 }
-
 -- Voice params that are binary toggles
 Symbiosis.voice_toggles = {
-    "voice_enable_env",
     "voice_enable_lpg",
 }
 
@@ -375,31 +393,58 @@ function Symbiosis.add_params()
         for i = 1, 6 do
             local sc_idx = i - 1
             local id = Symbiosis.get_id(command, i)
-            params:add {
+            params:add ({
                 type = "control",
                 id = id,
                 name = no_underscore(id),
-                controlspec = entry.spec,
+                controlspec = entry,
                 action = function(v) engine[command](sc_idx, v) end
-            }
+            })
             params:hide(id)
         end
     end
 
     -- add toggle-based voice params (define one per voice)
-    for _, param in pairs(Symbiosis.voice_toggles) do
+    for _, command in pairs(Symbiosis.voice_toggles) do
         for i = 1, 6 do
             local sc_idx = i - 1
-            local id = Symbiosis.get_id(param, i)
-            params:add {
+            local id = Symbiosis.get_id(command, i)
+            params:add({
                 type = "binary",
+                behavior = "toggle",
                 id = id,
                 name = no_underscore(id),
-                action = function(v) engine[param](sc_idx, v) end
-            }
+                action = function(v)
+                    engine[command](sc_idx, v)
+                end
+            })
             params:hide(id)
         end
     end
+
+    -- add number-based voice params (define one per voice)
+    for command, entry in pairs(Symbiosis.voice_numbers) do
+        print("adding " .. command)
+        for i = 1, 6 do
+            local sc_idx = i - 1
+            local id = Symbiosis.get_id(command, i)
+            params:add ({
+                type = "number",
+                id = id,
+                name = no_underscore(id),
+                min = entry.min,
+                max = entry.max,
+                default=entry.default,
+                wrap=entry.wrap,
+                action = function(v)
+                    engine[command](sc_idx, v)
+                    print('sending engine.' .. command .. '(' .. sc_idx .. ',' .. v ..')')
+                end
+            })
+            params:hide(id)
+        end
+    end
+
 
     params:bang()
 end

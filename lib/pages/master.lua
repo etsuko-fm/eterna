@@ -56,7 +56,7 @@ end
 
 function page:render()
     self.window:render()
-    engine.request_amp_history()
+    sym.request_amp_history()
 
     pre_comp_left_poll:update()
     pre_comp_right_poll:update()

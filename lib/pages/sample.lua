@@ -109,7 +109,7 @@ function page:load_sample(file)
     if not file or file == "-" then return end
     local num_channels = audio_util.num_channels(file)
     selected_sample = file
-    engine.load_file(file)
+    sym.load_file(file)
     if num_channels > 1 then
         is_stereo = true
         waveform_graphics[1].y = 20

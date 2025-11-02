@@ -90,10 +90,8 @@ s.waitForBoot {
       "level",
       "env_level",
       "env_curve",
-      "enable_env", //unused
       "rate",
       "lpg_freq",
-      "enable_lpg"
     ];
 
     var getWaveform = { |samples, scale=1.0, numDisplayPoints = 64 |
@@ -142,20 +140,22 @@ s.waitForBoot {
     voiceParams = Array.fill(6, { |i|
       Dictionary.newFrom(
       [
-        \out, lowpassBus,
-        \bufnum, bufnumL, 
-        \rate, 1.0,
+        \attack, 0.05,
+        \decay, 4.0,
+        \pan, 0.0,
         \loop_start, 0.0,
         \loop_end, 4.0,
-        \numChannels, 1,
-        \decay, 4.0,
-        \enable_env, 1,
-        \enable_lpg, 0,
         \level, 1.0,
         \env_level, 1.0,
         \env_curve, 0,
+        \rate, 1.0,
+        \lpg_freq, 20000,
+        \numChannels, 1,
+        \enable_lpg, 0,
         \ampBus, ampBuses[i].index,
         \envBus, envBuses[i].index,
+        \out, lowpassBus,
+        \bufnum, bufnumL, 
       ])
     });    
 
@@ -340,7 +340,19 @@ s.waitForBoot {
         };
         // store value for when voice is recreated
         voiceParams[idx].put(param.asSymbol, val);
-      }); };
+      });
+    };
+
+    this.addCommand("voice_enable_lpg", "ii", { |msg|
+        var idx = msg[1].asInteger; // voice index
+        var val = msg[2].asInteger; // 0 or 1
+        if (voices[idx].isPlaying) {
+          // if voice exists, set directly
+          voices[idx].set(\enable_lpg, val);
+        };
+        // store value for when voice is recreated
+        voiceParams[idx].put(\enable_lpg, val);
+    });
 
     this.addCommand("voice_trigger", "i", { 
       arg msg;

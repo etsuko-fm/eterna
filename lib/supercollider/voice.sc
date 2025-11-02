@@ -90,10 +90,6 @@ Voice {
 
 					var amp; // for reporting amplitude
 
-					// If envelopes are disabled, the voice plays continuously with env_level as optional amplitude modulator
-					percEnv1 = Select.kr(enable_env, [env_level, percEnv1]);
-					percEnv2 = Select.kr(enable_env, [env_level, percEnv2]);
-
 					playback1 = playback1 * percEnv1 * EnvGen.ar(openEnv1, gate: t_1);
 					playback1 = Select.ar(enable_lpg, [playback1, SVF.ar(playback1, percEnv1 * lpg_freq, res, 1.0, 0.0, 0.0)]);
 
