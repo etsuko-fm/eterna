@@ -73,14 +73,14 @@ Voice {
 						bufnum: bufnum,
 						phase: ramp1,
 						loop: loop,
-						interpolation: 2
+						interpolation: 4
 					);
 					var playback2 = BufRd.ar(
 						numChannels: 1,
 						bufnum: bufnum,
 						phase: ramp2,
 						loop: loop,
-						interpolation: 2
+						interpolation: 4
 					);
 
 					// AR env according to env settings
