@@ -8,11 +8,11 @@ local ENGINE_LPF_DRY = sym.get_id("lpf_dry")
 local last_freq
 
 local function adjust_freq(d)
-    misc_util.adjust_param(d, ENGINE_LPF_FREQ, sym.specs["lpf_freq"].spec)
+    misc_util.adjust_param(d, ENGINE_LPF_FREQ, sym.specs["lpf_freq"])
 end
 
 local function adjust_res(d)
-    misc_util.adjust_param(d, ENGINE_LPF_RES, sym.specs["lpf_res"].spec)
+    misc_util.adjust_param(d, ENGINE_LPF_RES, sym.specs["lpf_res"])
 end
 
 local function cycle_lfo()

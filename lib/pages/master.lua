@@ -9,11 +9,11 @@ local ENGINE_COMP_RATIO = sym.get_id("comp_ratio")
 local ENGINE_COMP_THRESHOLD = sym.get_id("comp_threshold")
 
 local function adjust_drive(d)
-    misc_util.adjust_param(d, ENGINE_MASTER_COMP_DRIVE, sym.specs["comp_drive"].spec)
+    misc_util.adjust_param(d, ENGINE_MASTER_COMP_DRIVE, sym.specs["comp_drive"])
 end
 
 local function adjust_output(d)
-    misc_util.adjust_param(d, ENGINE_MASTER_OUTPUT, sym.specs["comp_out_level"].spec)
+    misc_util.adjust_param(d, ENGINE_MASTER_OUTPUT, sym.specs["comp_out_level"])
 end
 
 local function cycle_mono()
@@ -78,7 +78,7 @@ function page:render()
     page.footer.button_text.k2.value = BASS_MONO_FREQS_STR[mono_freq]
     page.footer.button_text.k3.value = COMP_AMOUNTS[comp_amount]
     page.footer.button_text.e2.value = util.round(drive, 0.1)
-    if output == MASTER_OUT_MIN then
+    if output == sym.master_out_min then
         page.footer.button_text.e3.value = "-INF"
     else
         page.footer.button_text.e3.value = util.round(output, 0.1)

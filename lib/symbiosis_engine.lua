@@ -56,24 +56,21 @@ local env_spec             = controlspec.def {
 }
 
 Symbiosis.specs            = {
-    ["echo_wet"] = { spec = simple_spec },
-    ["echo_time"] = {
-        spec = controlspec.def {
-            min = 0,
-            max = 2, -- seconds
-            warp = 'lin',
-            step = 0.001,
-            default = 0.2,
-            units = '',
-            quantum = 0.001,
-            wrap = false
-        }
+    ["echo_wet"] = simple_spec,
+    ["echo_time"] = controlspec.def {
+        min = 0,
+        max = 2,     -- seconds
+        warp = 'lin',
+        step = 0.001,
+        default = 0.2,
+        units = '',
+        quantum = 0.001,
+        wrap = false
     },
-    ["echo_feedback"] = { spec = simple_spec },
-    ["lpf_freq"] = { spec = filter_spec },
-    ["hpf_freq"] = { spec = filter_spec },
-    ["lpf_res"] = {
-        spec = controlspec.def {
+    ["echo_feedback"] = simple_spec,
+    ["lpf_freq"] = filter_spec,
+    ["hpf_freq"] = filter_spec,
+    ["lpf_res"] = controlspec.def {
             min = 0.0,
             max = 0.98,
             warp = 'lin',
@@ -82,81 +79,68 @@ Symbiosis.specs            = {
             units = '',
             quantum = 0.02,
             wrap = false
-        }
     },
-    ["hpf_res"] = {
-        spec = controlspec.def {
-            min = 0.0,
-            max = 0.98,
-            warp = 'lin',
-            step = 0.01,
-            default = 0.2,
-            units = '',
-            quantum = 0.02,
-            wrap = false
-        }
+    ["hpf_res"] = controlspec.def {
+        min = 0.0,
+        max = 0.98,
+        warp = 'lin',
+        step = 0.01,
+        default = 0.2,
+        units = '',
+        quantum = 0.02,
+        wrap = false
     },
-    ["lpf_dry"] = { spec = simple_spec },
-    ["hpf_dry"] = { spec = simple_spec },
-    ["comp_drive"] = {
-        spec = controlspec.def {
-            min = -12,
-            max = 18,
-            warp = 'lin',
-            step = 0.01,
-            default = 0,
-            units = 'dB',
-            quantum = 0.1 / (MASTER_DRIVE_MAX - MASTER_DRIVE_MIN),
-            wrap = false
-        },
+    ["lpf_dry"] = simple_spec,
+    ["hpf_dry"] = simple_spec,
+    ["comp_drive"] = controlspec.def {
+        min = -12,
+        max = 18,
+        warp = 'lin',
+        step = 0.01,
+        default = 0,
+        units = 'dB',
+        quantum = 0.1 / (Symbiosis.master_drive_max - Symbiosis.master_drive_min),
+        wrap = false
     },
-    ["comp_ratio"] = {
-        spec = controlspec.def {
-            min = 1,
-            max = 20,
-            warp = 'lin',
-            step = 0.01,
-            default = 1,
-            units = '',
-            quantum = 0.005,
-            wrap = false
-        },
+    ["comp_ratio"] = controlspec.def {
+        min = 1,
+        max = 20,
+        warp = 'lin',
+        step = 0.01,
+        default = 1,
+        units = '',
+        quantum = 0.005,
+        wrap = false
     },
-    ["comp_threshold"] = {
-        spec = controlspec.def {
-            min = 0.01,
-            max = 1,
-            warp = 'lin',
-            step = 0.01,
-            default = 0,
-            units = '',
-            quantum = 0.01,
-            wrap = false
-        }
+    ["comp_threshold"] = controlspec.def {
+        min = 0.01,
+        max = 1,
+        warp = 'lin',
+        step = 0.01,
+        default = 0,
+        units = '',
+        quantum = 0.01,
+        wrap = false
     },
-    ["comp_out_level"] = {
-        spec = controlspec.def {
-            min = MASTER_OUT_MIN,
-            max = MASTER_OUT_MAX,
-            warp = 'lin',
-            step = 0.1,
-            default = 1,
-            units = 'dB',
-            quantum = 0.2 / (MASTER_OUT_MAX - MASTER_OUT_MIN),
-            wrap = false
-        },
+    ["comp_out_level"] = controlspec.def {
+        min = Symbiosis.master_out_min,
+        max = Symbiosis.master_out_max,
+        warp = 'lin',
+        step = 0.1,
+        default = 1,
+        units = 'dB',
+        quantum = 0.2 / (Symbiosis.master_out_max - Symbiosis.master_out_min),
+        wrap = false
     },
-    ["bass_mono_freq"] = {
-        spec = controlspec.def {
-            min = 20,
-            max = 20000,
-            warp = 'exp',
-            step = 0.1,
-            default = 1,
-            units = 'Hz',
-            quantum = 0.005,
-            wrap = false
-        },
+    ["bass_mono_freq"] = controlspec.def {
+        min = 20,
+        max = 20000,
+        warp = 'exp',
+        step = 0.1,
+        default = 1,
+        units = 'Hz',
+        quantum = 0.005,
+        wrap = false
     }
 }
 
@@ -183,19 +167,20 @@ Symbiosis.get_id = function(command, voice_id)
     end
 end
 
+-- All voice params, used to define helper methods
 Symbiosis.voice_params = {
-    "voice_attack",     -- acceptable range: 0 - 10~30 sec?
+    "voice_attack",
     "voice_decay",
-    "voice_enable_env", -- toggle
-    "voice_enable_lpg", -- toggle
-    "voice_env_curve",  -- -4 to 4
-    "voice_env_level",  -- 0 to 1
-    "voice_level",      -- 0 to 1
-    "voice_loop_start", -- 0 to max buff length
+    "voice_enable_env",
+    "voice_enable_lpg",
+    "voice_env_curve",
+    "voice_env_level",
+    "voice_level",
+    "voice_loop_start",
     "voice_loop_end",
-    "voice_lpg_freq",   -- 20 to 20k
-    "voice_pan",        -- -1 to 1
-    "voice_rate",       -- 1/8 to 8
+    "voice_lpg_freq",
+    "voice_pan",
+    "voice_rate",
 }
 
 local function count_params()
@@ -211,56 +196,51 @@ local function count_params()
     return amt
 end
 
-
+-- Voice params with a controlspec
 Symbiosis.voice_specs = {
-    ["voice_attack"] = { spec = env_spec },
-    ["voice_decay"] = { spec = env_spec },
-    ["voice_env_curve"] = {
-        spec = controlspec.def {
-            min = -4,
-            max = 4,
-            warp = 'lin',
-            step = 0.01,
-            default = 1,
-            units = '',
-            quantum = 0.01 / 8,
-            wrap = false
-        },
+    ["voice_attack"] = env_spec,
+    ["voice_decay"] = env_spec,
+    ["voice_env_curve"] = controlspec.def {
+        min = -4,
+        max = 4,
+        warp = 'lin',
+        step = 0.01,
+        default = 1,
+        units = '',
+        quantum = 0.01 / 8,
+        wrap = false
     },
-    ["voice_env_level"] = { spec = simple_spec },
-    ["voice_level"] = { spec = simple_spec },
-    ["voice_loop_start"] = { spec = voice_loop_spec },
-    ["voice_loop_end"] = { spec = voice_loop_spec },
-    ["voice_lpg_freq"] = { spec = filter_spec },
-    ["voice_pan"] = { spec = controlspec.PAN },
-    ["voice_rate"] = {
-        spec = controlspec.def {
-            min = -8,
-            max = 8,
-            warp = 'lin',
-            step = 0.001,
-            default = 1,
-            units = '',
-            quantum = 0.01 / 16,
-            wrap = false
-        },
+    ["voice_env_level"] = simple_spec,
+    ["voice_level"] = simple_spec,
+    ["voice_loop_start"] = voice_loop_spec,
+    ["voice_loop_end"] = voice_loop_spec,
+    ["voice_lpg_freq"] = filter_spec,
+    ["voice_pan"] = controlspec.PAN,
+    ["voice_rate"] = controlspec.def {
+        min = -8,
+        max = 8,
+        warp = 'lin',
+        step = 0.001,
+        default = 1,
+        units = '',
+        quantum = 0.01 / 16,
+        wrap = false
     },
-    ["metering_rate"] = {
-        spec = controlspec.def {
-            min = 0,
-            max = 5000,
-            warp = "lin",
-            step = 1,
-            default = 1000,
-            units = 'Hz',
-            quantum = 1 / 5000,
-        }
+    ["metering_rate"] = controlspec.def {
+        min = 0,
+        max = 5000,
+        warp = "lin",
+        step = 1,
+        default = 1000,
+        units = 'Hz',
+        quantum = 1 / 5000,
     }
 }
 
+-- Voice params that are binary toggles
 Symbiosis.voice_toggles = {
-    ["voice_enable_env"] = {},
-    ["voice_enable_lpg"] = {},
+    "voice_enable_env",
+    "voice_enable_lpg",
 }
 
 for _, param in pairs(Symbiosis.voice_params) do
@@ -354,29 +334,28 @@ function Symbiosis.process_amp_history(args)
 end
 
 function Symbiosis.process_waveform(args)
-    local blob = args[1] -- the int8 array from OSC
+    local blob = args[1]    -- the int8 array from OSC
     local channel = args[2] -- 0 or 1 for left, right
-    print('channel: '.. tonumber(channel))
+    print('channel: ' .. tonumber(channel))
     local waveform = Symbiosis.blob_to_table(blob)
     for i, v in ipairs(waveform) do
-      -- convert int8 array to floats
-      waveform[i] = waveform[i] / 127
+        -- convert int8 array to floats
+        waveform[i] = waveform[i] / 127
     end
     -- supercollider uses 0-based, convert to 1-based
     return channel + 1, waveform
 end
 
-
 function Symbiosis.add_params()
     params:add_group("Symbiosis", count_params())
 
     -- add controlspec-based params
-    for command, entry in pairs(Symbiosis.specs) do
+    for command, spec in pairs(Symbiosis.specs) do
         params:add {
             type = "control",
             id = Symbiosis.get_id(command),
             name = no_underscore(command),
-            controlspec = entry.spec,
+            controlspec = spec,
             action = function(x) engine[command](x) end
         }
     end
@@ -392,7 +371,7 @@ function Symbiosis.add_params()
         }
     end
 
-    -- add controlspec-based voice params
+    -- add controlspec-based voice params (define one per voice)
     for command, entry in pairs(Symbiosis.voice_specs) do
         for i = 1, 6 do
             local sc_idx = i - 1
@@ -408,16 +387,16 @@ function Symbiosis.add_params()
         end
     end
 
-    -- add toggle-based voice params
-    for command, _ in pairs(Symbiosis.voice_toggles) do
+    -- add toggle-based voice params (define one per voice)
+    for _, param in pairs(Symbiosis.voice_toggles) do
         for i = 1, 6 do
             local sc_idx = i - 1
-            local id = Symbiosis.get_id(command, i)
+            local id = Symbiosis.get_id(param, i)
             params:add {
                 type = "binary",
                 id = id,
                 name = no_underscore(id),
-                action = function(v) engine[command](sc_idx, v) end
+                action = function(v) engine[param](sc_idx, v) end
             }
             params:hide(id)
         end
