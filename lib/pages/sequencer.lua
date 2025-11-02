@@ -86,7 +86,6 @@ function page:evaluate_step(x, y)
             -- if modulation enabled, update voice attack and decay according to step velocity
             params:set(voice_env_level, velocity)
             params:set(voice_attack, attack)
-            print("voice attack set to " .. attack .. " using id " .. voice_attack)
             params:set(voice_decay, decay)
         end
         sym.voice_trigger(y)
