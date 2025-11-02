@@ -19,20 +19,9 @@ misc_util = include("symbiosis/lib/util/misc")
 sequence_util = include("symbiosis/lib/util/sequence")
 graphic_util = include("symbiosis/lib/util/graphic")
 
-include("symbiosis/lib/parameters/global")
-include("symbiosis/lib/parameters/slice")
-include("symbiosis/lib/parameters/sequencer")
-include("symbiosis/lib/parameters/envelopes")
-include("symbiosis/lib/parameters/rates")
-include("symbiosis/lib/parameters/levels")
-include("symbiosis/lib/parameters/panning")
-include("symbiosis/lib/parameters/lpf")
-include("symbiosis/lib/parameters/hpf")
-include("symbiosis/lib/parameters/echo")
-include("symbiosis/lib/parameters/master")
+include("symbiosis/lib/parameters")
 
 sym = include('symbiosis/lib/symbiosis_engine')
-
 
 local page_sample = include("symbiosis/lib/pages/sample")
 page_sequencer = include("symbiosis/lib/pages/sequencer")
