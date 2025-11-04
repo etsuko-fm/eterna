@@ -423,7 +423,7 @@ params:add_control(ID_SLICES_NUM_SLICES, "slices", controlspec_slices)
 params:add_control(ID_SLICES_START, "start", controlspec_slice_start)
 
 for voice = 1, 6 do
-    -- ranges per slice
+    -- ranges per voice; each voice plays 1 slice
     params:add_number(ID_SLICES_SECTIONS[voice].loop_start, ID_SLICES_SECTIONS[voice].loop_start, 0)
     params:add_number(ID_SLICES_SECTIONS[voice].loop_end, ID_SLICES_SECTIONS[voice].loop_end, 0)
     params:hide(ID_SLICES_SECTIONS[voice].loop_start)

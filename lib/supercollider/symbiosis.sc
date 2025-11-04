@@ -8,41 +8,14 @@ Engine_Symbiosis : CroneEngine {
   // Control buses
   var ampBuses, envBuses, preCompControlBuses, postCompControlBuses, postGainBuses, masterOutControlBuses;
   var oscServer;
-  var bufL, bufR, bufAmp;
+
+  // Buffers
+  var bufL, bufR, bufAmp, bufWaveformL, bufWaveformR;
 
   *new { arg context, doneCallback;
     ^super.new(context, doneCallback);
   }
 
-/*
-(
-// parameters
-var src, dest, factor = 16;
-
-s.waitForBoot {
-    // Load source buffer
-    src = Buffer.read(s, Platform.resourceDir +/+ "sounds/a11wlk01.wav", action: {
-        var destFrames = (src.numFrames / factor).floor;
-        dest = Buffer.alloc(s, destFrames, 1);
-
-        // Define synth to copy every `factor`th sample
-        SynthDef(\downsampleBuffer, { |srcBuf, destBuf, factor = 16, doneAction = 2|
-            var phasor = Phasor.ar(0, factor, 0, BufFrames.kr(srcBuf)); // read pointer
-            var sig = BufRd.ar(1, srcBuf, phasor, loop: 0);
-            RecordBuf.ar(sig, destBuf, loop: 0, doneAction: doneAction);
-        }).add;
-
-        s.sync;
-
-        Synth(\downsampleBuffer, [
-            \srcBuf, src,
-            \destBuf, dest,
-            \factor, factor
-        ]);
-    });
-};
-)
-*/
   alloc {
     var s = Server.default;
 
@@ -204,9 +177,7 @@ s.waitForBoot {
         |inval|
         var left, right, waveform_left, waveform_right;
         bufL.free;
-        bufL = nil;
         bufR.free;
-        bufR = nil;
         isLoaded = false; 
 
         // Free voices
@@ -220,11 +191,9 @@ s.waitForBoot {
         ("file" + path + "has" + f.numChannels + "channels").postln;
 
         // Limit buffer read to 2^24 samples because of Phasor resolution
+        // TODO increase to 2^24 again
         numFrames = f.numFrames.min(48000*60);
         f.close;
-
-        // // Wait until voices freed
-        context.server.sync;
 
         ("Loading " ++ numFrames ++ " frames").postln;
 
@@ -234,49 +203,9 @@ s.waitForBoot {
           oscServer.sendBundle(0, ['/duration', b.duration]);
         });
         
-        // Load buffers sequentially to prevent hanging
-        context.server.sync;
-
         if (f.numChannels > 1) {
           "Loading channel 2".postln;
           bufR = Buffer.readChannel(context.server, path, numFrames: numFrames, channels:[1], bufnum: bufnumR, action: {|b| ("Channel 2 loaded to buffer " ++ bufnumR).postln;});
-        };
-
-        context.server.sync;
-
-        if (f.numChannels > 1) {
-          // Normalize based on loudest sample across channels
-          "Starting normalization".postln;
-          bufL.loadToFloatArray(action: { |array| 
-            peakL = array.maxItem; 
-            left = array;
-          });
-          bufR.loadToFloatArray(action: { |array| 
-            peakR = array.maxItem; 
-            right = array;
-          });
-          
-          context.server.sync;
-
-          ("Max of left/right channel: " ++ max(peakL, peakR)).postln;
-          maxAmp = max(peakL, peakR);
-          normalizeFactor = 1.0 / maxAmp;
-          ("Normalize factor: " ++ normalizeFactor).postln;
-
-          waveform_left = getWaveform.(left, normalizeFactor);
-          waveform_right = getWaveform.(right, normalizeFactor);
-          oscServer.sendBundle(0, ['/waveform', waveform_left, 0]);
-          oscServer.sendBundle(0, ['/waveform', waveform_right, 1]);
-          "waveforms sent".postln;
-
-          bufL.normalize(newmax: peakL * normalizeFactor); 
-          bufR.normalize(newmax: peakR * normalizeFactor); 
-          context.server.sync;
-          left.free;
-          right.free;
-
-          ("left and right buffer normalized by scaling both with factor " + normalizeFactor).postln;
-
           // Spread 2 channels over 6 voices
           voices.do { |voice, i|
               var n;
@@ -294,22 +223,6 @@ s.waitForBoot {
           };
           
         } { 
-          // if mono, also mark loading as finished
-          bufL.normalize();
-          ("mono buffer normalized").postln;
-
-          // Wait until normalized
-          context.server.sync;
-
-          // Send waveform
-          bufL.loadToFloatArray(action: { |array|
-              var waveform = getWaveform.(array);
-              oscServer.sendBundle(0, ['/waveform', waveform, 0]);
-              "waveform sent".postln;
-              array.free;
-           });
-          context.server.sync;
-
           // Let all voices use the left buffer
           voices.do {|voice, i| 
             if (voice.notNil) {
@@ -323,10 +236,9 @@ s.waitForBoot {
           };
         };
 
-        // Wait until normalization complete and voices loaded
+        // Wait until buffers loaded
         context.server.sync;
         isLoaded = true;
-        "Normalizing completed".postln;
       }.play;
     });
 
