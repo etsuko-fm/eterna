@@ -123,7 +123,7 @@ page = Page:create({
 })
 
 function page:render()
-    for i = 1, 6 do amp_polls[i]:update() end
+    for i = 1, 6 do env_polls[i]:update() end
 
     self.window:render()
     self.footer.button_text.k2.value = PLAYBACK_TABLE[params:get(ID_RATES_DIRECTION)]
@@ -160,7 +160,7 @@ end
 
 function page:enter()
     for i = 1, 6 do
-        amp_polls[i].callback = function(v) self.graphic.voice_amp[i] = amp_to_log(v) end
+        env_polls[i].callback = function(v) self.graphic.voice_env[i] = amp_to_log(v) end
     end
 end
 

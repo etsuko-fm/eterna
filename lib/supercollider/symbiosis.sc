@@ -10,7 +10,7 @@ Engine_Symbiosis : CroneEngine {
   var oscServer;
 
   // Buffers
-  var bufL, bufR, bufAmp, bufWaveformL, bufWaveformR;
+  var bufL, bufR, bufAmp, bufWaveformL, bufWaveformR, buffers;
 
   *new { arg context, doneCallback;
     ^super.new(context, doneCallback);
@@ -87,6 +87,7 @@ Engine_Symbiosis : CroneEngine {
       waveform
     };
     voices = Array.fill(6, {|i| nil});
+    buffers = Array.fill(6, {|i| nil});
 
     // For communicating to Lua (beyond the polling system)
     oscServer = NetAddr("localhost", 10111);
@@ -176,6 +177,7 @@ Engine_Symbiosis : CroneEngine {
       var r = Routine {
         |inval|
         var left, right, waveform_left, waveform_right;
+        var numChannels;
         bufL.free;
         bufR.free;
         isLoaded = false; 
@@ -192,23 +194,125 @@ Engine_Symbiosis : CroneEngine {
 
         // Limit buffer read to 2^24 samples because of Phasor resolution
         // TODO increase to 2^24 again
-        numFrames = f.numFrames.min(48000*60);
+        numFrames = f.numFrames.min(2**24);
+        numChannels = f.numChannels;
+        ("Loading " ++ numFrames ++ " frames").postln;
         f.close;
 
-        ("Loading " ++ numFrames ++ " frames").postln;
+        // "Loading channel 1".postln;
+        // bufL = Buffer.readChannel(context.server, path, numFrames: numFrames, channels:[0], bufnum: bufnumL, action: {|b| 
+        //   ("Channel 1 loaded to buffer " ++ bufnumL).postln;
+        //   oscServer.sendBundle(0, ['/duration', b.duration]);
+        // });
+        buffers.do { |b| if (b.notNil) {b.free} };
 
-        "Loading channel 1".postln;
-        bufL = Buffer.readChannel(context.server, path, numFrames: numFrames, channels:[0], bufnum: bufnumL, action: {|b| 
-          ("Channel 1 loaded to buffer " ++ bufnumL).postln;
-          oscServer.sendBundle(0, ['/duration', b.duration]);
-        });
-        
-        if (f.numChannels > 1) {
+        /* 
+          Seems to work fine since I added the 3 syncs, but why? 
+          And how to test?
+          - let initial file load
+          - add sequence, press play
+          - load the 8:09 field recording
+          if I remove SYNC1 & SYNC3, it hangs.
+
+          Last logs:
+          Nov 05 08:44:15 norns ws-wrapper[17527]: Attempting load channel 1
+          Nov 05 08:44:15 norns ws-wrapper[17527]: sync
+          
+          Also, the env doesn't update
+          Change: Re-add SYNC1
+
+          Nov 05 09:21:34 norns ws-wrapper[24958]: Attempting load channel 0
+          Nov 05 09:21:34 norns ws-wrapper[24958]: sync
+          
+          It never attempts to load the second channel 
+
+          Re-add SYNC3
+
+          Nov 05 09:35:47 norns ws-wrapper[25930]: Loading 16777216.0 frames
+          Nov 05 09:35:47 norns ws-wrapper[25930]: Attempting load channel 0
+          Nov 05 09:35:47 norns ws-wrapper[25930]: sync
+
+          conclusion: no direct relation to the syncs
+
+          now remove all 3 syncs
+          Nov 05 09:42:49 norns ws-wrapper[29394]: FAILURE IN SERVER /n_set Node 1025 not found
+          Nov 05 09:42:51 norns ws-wrapper[29394]: Channel 0 loaded to buffer 0
+          Nov 05 09:42:51 norns ws-wrapper[29432]: received duration: 349.52532958984
+          Nov 05 09:42:51 norns ws-wrapper[29432]: received duration 349.52532958984
+          Nov 05 09:42:51 norns ws-wrapper[29394]: Channel 1 loaded to buffer 1
+
+          So all is loaded now! but i don't hear sound; yet the envs work - oh could've been too soft
+          moved allocation of voices to after the last sync
+
+          now it works
+
+          Nov 05 09:46:46 norns ws-wrapper[30474]: Channel 0 loaded to buffer 0
+          Nov 05 09:46:46 norns ws-wrapper[30474]: Channel 1 loaded to buffer 1
+          Nov 05 09:46:46 norns ws-wrapper[30474]: Sync finished
+          Nov 05 09:46:46 norns ws-wrapper[30474]: Voice param 0 set to buffer 0
+          Nov 05 09:46:46 norns ws-wrapper[30474]: Voice param 1 set to buffer 1
+          Nov 05 09:46:46 norns ws-wrapper[30474]: Voice param 2 set to buffer 0
+          Nov 05 09:46:46 norns ws-wrapper[30474]: Voice param 3 set to buffer 1
+          Nov 05 09:46:46 norns ws-wrapper[30474]: Voice param 4 set to buffer 0
+          Nov 05 09:46:46 norns ws-wrapper[30474]: Voice param 5 set to buffer 1
+
+          Let's try with 6 channel file now - ha works fine
+
+          Nov 05 09:48:06 norns ws-wrapper[30474]: Attempting load channel 0
+          Nov 05 09:48:06 norns ws-wrapper[30474]: sync
+          Nov 05 09:48:06 norns ws-wrapper[30474]: Attempting load channel 1
+          Nov 05 09:48:06 norns ws-wrapper[30474]: sync
+          Nov 05 09:48:06 norns ws-wrapper[30474]: Attempting load channel 2
+          Nov 05 09:48:06 norns ws-wrapper[30474]: sync
+          Nov 05 09:48:06 norns ws-wrapper[30474]: Attempting load channel 3
+          Nov 05 09:48:06 norns ws-wrapper[30474]: sync
+          Nov 05 09:48:06 norns ws-wrapper[30474]: Attempting load channel 4
+          Nov 05 09:48:06 norns ws-wrapper[30474]: sync
+          Nov 05 09:48:06 norns ws-wrapper[30474]: Attempting load channel 5
+          Nov 05 09:48:06 norns ws-wrapper[30474]: sync
+          Nov 05 09:48:07 norns ws-wrapper[30474]: Channel 0 loaded to buffer 0
+          Nov 05 09:48:07 norns ws-wrapper[30474]: Channel 1 loaded to buffer 1
+          Nov 05 09:48:07 norns ws-wrapper[30474]: Channel 2 loaded to buffer 2
+          Nov 05 09:48:07 norns ws-wrapper[30474]: Channel 3 loaded to buffer 3
+          Nov 05 09:48:07 norns ws-wrapper[30474]: Channel 4 loaded to buffer 4
+          Nov 05 09:48:07 norns ws-wrapper[30513]: received duration: 17.454563140869
+          Nov 05 09:48:07 norns ws-wrapper[30513]: received duration 17.454563140869
+          Nov 05 09:48:07 norns ws-wrapper[30474]: Channel 5 loaded to buffer 5
+          Nov 05 09:48:07 norns ws-wrapper[30474]: Sync finished
+          Nov 05 09:48:07 norns ws-wrapper[30474]: Voice param 0 set to buffer 0
+          Nov 05 09:48:07 norns ws-wrapper[30474]: Voice param 1 set to buffer 1
+          Nov 05 09:48:07 norns ws-wrapper[30474]: Voice param 2 set to buffer 2
+          Nov 05 09:48:07 norns ws-wrapper[30474]: Voice param 3 set to buffer 3
+          Nov 05 09:48:07 norns ws-wrapper[30474]: Voice param 4 set to buffer 4
+          Nov 05 09:48:07 norns ws-wrapper[30474]: Voice param 5 set to buffer 5
+
+        */  
+
+        // context.server.sync; // SYNC1
+
+        numChannels.min(6).do { |i|
+          // Load upto 6 channels of the file into buffers
+          ("Attempting load channel" + i).postln;
+          buffers[i] = Buffer.readChannel(context.server, path, numFrames: numFrames, channels:[i], action: {|b| 
+           ("Channel" + i + "loaded to buffer" + b.bufnum).postln;
+           if (i==0) {oscServer.sendBundle(0, ['/duration', b.duration])};
+           }); 
+          "sync".postln;
+          //  context.server.sync; //SYNC2
+        };
+        // context.server.sync; //SYNC3
+
+        // Spread channels over 6 voices
+
+        /*if (f.numChannels > 1) {
           "Loading channel 2".postln;
-          bufR = Buffer.readChannel(context.server, path, numFrames: numFrames, channels:[1], bufnum: bufnumR, action: {|b| ("Channel 2 loaded to buffer " ++ bufnumR).postln;});
+          bufR = Buffer.readChannel(context.server, path, numFrames: numFrames, channels:[1], bufnum: bufnumR, action: {|b| 
+            ("Channel 2 loaded to buffer " ++ bufnumR).postln;
+          });
           // Spread 2 channels over 6 voices
           voices.do { |voice, i|
               var n;
+
               if (voice.notNil) {
                 n = if(i < voices.size.div(2)) { bufnumL } { bufnumR };
                 voice.set(\bufnum, n);
@@ -234,10 +338,24 @@ Engine_Symbiosis : CroneEngine {
             params.put(\bufnum, bufnumL);
             ("Voice " ++ i ++ " set to buffer " ++ bufnumL).postln;
           };
-        };
+        };*/
 
         // Wait until buffers loaded
         context.server.sync;
+
+        "Sync finished".postln;
+        voices.do { |voice, i|
+            var channelIndex = i % f.numChannels; // wrap voices across channels
+
+            if (voice.notNil) {
+              voice.set(\bufnum, buffers[channelIndex].bufnum);
+              ("Voice " ++ i ++ " set to buffer " ++ channelIndex).postln;
+            };
+
+            voiceParams[i].put(\bufnum, buffers[channelIndex].bufnum);
+            ("Voice param " ++ i ++ " set to buffer " ++ channelIndex).postln;
+        };
+
         isLoaded = true;
       }.play;
     });
@@ -368,6 +486,7 @@ Engine_Symbiosis : CroneEngine {
   
   free {
     Buffer.freeAll;
+    buffers.free;
 
     // Audio buses
     lowpassBus.free;

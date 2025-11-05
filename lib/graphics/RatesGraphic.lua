@@ -14,9 +14,9 @@ RatesGraphic = {
     end_active = 17,
     center = 0,  -- current pitch center, corresponds to the number of vertical lines; 0 is middle line
     hide = false,
-    voice_pos = {}, -- value per voice, where each integer step represents one octave up or down; 0 = center (original pitch)
+    voice_pos = {}, -- value    per voice, where each integer step represents one octave up or down; 0 = center (original pitch)
     voice_dir = {},
-    voice_amp = {},
+    voice_env = {},
 }
 
 -- only awareness of playback direction is "forward" or "non-forward" (i.e. reverse)
@@ -73,8 +73,8 @@ function RatesGraphic:render()
         local arrow_x = x + 2
         local arrow_y = self.y + (self.block_h + self.margin_h) * self.lines + 2
 
-        if self.voice_amp[n+1] ~= nil then
-            graphic_util.screen_level(self.active_fill - 13, self.voice_amp[n+1] * 13)
+        if self.voice_env[n+1] ~= nil then
+            graphic_util.screen_level(self.active_fill - 13, self.voice_env[n+1] * 13)
         else
             screen.level(self.active_fill)
         end
