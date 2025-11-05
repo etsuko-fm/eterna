@@ -241,4 +241,11 @@ function page:initialize()
     generate_perlin_seq()
 end
 
+function page:enter()
+    for i = 1, 6 do
+        env_polls[i].callback = function(v) self.graphic.voice_env[i] = amp_to_log(v) end
+    end
+end
+
+
 return page
