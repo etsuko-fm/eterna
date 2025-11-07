@@ -11,7 +11,7 @@ local function toggle_transport(v)
 end
 
 local function adjust_num_steps(d)
-    misc_util.adjust_param(d, ID_SEQ_NUM_STEPS, controlspec_num_steps)
+    misc_util.adjust_param(d, ID_SEQ_NUM_STEPS, controlspec_num_steps.quantum)
 end
 
 local page = Page:create({

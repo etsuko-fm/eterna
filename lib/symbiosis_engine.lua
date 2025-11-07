@@ -215,12 +215,13 @@ Symbiosis.available_polls  = {
     ["voice_env"] = { "voice1env", "voice2env", "voice3env", "voice4env", "voice5env", "voice6env" },
 }
 
-Symbiosis.enable_poll      = function(name)
-    -- Returns one or more poll instances
+Symbiosis.get_polls      = function(name, as_tuple)
+    -- Returns poll instances corresponding to the mapping in Symbiosis.available_polls
     -- Usage:
     --[[
           left, right = sym.enable_poll("pre_comp")
     ---]]
+    if as_tuple == nil then as_tuple = true end -- default to returning tuple
     local t = Symbiosis.available_polls[name]
     local result = {}
     if t then
@@ -230,7 +231,12 @@ Symbiosis.enable_poll      = function(name)
     else
         print("poll does not exist: " .. name)
     end
-    return table.unpack(result)
+    if as_tuple then
+        -- return tuple
+        return table.unpack(result)
+    end
+    -- return table
+    return result
 end
 
 local function no_underscore(s) return s:gsub("_", " ") end

@@ -73,8 +73,8 @@ local function cycle_param(param_id, tbl)
     params:set(param_id, new)
 end
 
-local function adjust_param(d, param_id, spec)
-    local incr = d * spec.quantum
+local function adjust_param(d, param_id, quantum)
+    local incr = d * quantum
     local curr = params:get_raw(param_id)
     local new = curr + incr
     params:set_raw(param_id, new)

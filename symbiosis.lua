@@ -144,16 +144,14 @@ function init()
     norns.enc.accel(i, false)
   end
 
-  loaded_poll = sym.enable_poll("file_loaded")
+  loaded_poll = sym.get_polls("file_loaded")
 
-  -- for i = 1,6 do amp_polls[i] = poll.set("voice" .. i .. "amp") end
-  for i = 1,6 do env_polls[i] = poll.set("voice" .. i .. "env") end
-
-  pre_comp_left_poll, pre_comp_right_poll = sym.enable_poll("pre_comp")
-  post_comp_left_poll, post_comp_right_poll = sym.enable_poll("post_comp")
-  post_gain_left_poll, post_gain_right_poll = sym.enable_poll("post_gain")
-  master_left_poll, master_right_poll = sym.enable_poll("master")
-  amp_polls = table.pack(sym.enable_poll("voice_amp"))
+  pre_comp_left_poll, pre_comp_right_poll = sym.get_polls("pre_comp")
+  post_comp_left_poll, post_comp_right_poll = sym.get_polls("post_comp")
+  post_gain_left_poll, post_gain_right_poll = sym.get_polls("post_gain")
+  master_left_poll, master_right_poll = sym.get_polls("master")
+  amp_polls = sym.get_polls("voice_amp", false)
+  env_polls = sym.get_polls("voice_env", false)
 
   sym.add_params()
   for _, page in ipairs(pages) do

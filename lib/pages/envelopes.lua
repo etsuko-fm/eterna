@@ -4,11 +4,11 @@ local page_name = "ENVELOPES"
 local envelope_graphic
 
 local function adjust_shape(d)
-    misc_util.adjust_param(d, ID_ENVELOPES_SHAPE, controlspec_env_shape)
+    misc_util.adjust_param(d, ID_ENVELOPES_SHAPE, controlspec_env_shape.quantum)
 end
 
 local function adjust_time(d)
-    misc_util.adjust_param(d, ID_ENVELOPES_TIME, controlspec_env_time)
+    misc_util.adjust_param(d, ID_ENVELOPES_TIME, controlspec_env_time.quantum)
 end
 
 local function toggle_curve()
@@ -85,7 +85,7 @@ function page:render()
     local curve = ENVELOPE_NAMES[params:get(ID_ENVELOPES_CURVE)]
     local mod = params:get(ID_ENVELOPES_MOD)
 
-    envelope_graphic.time = misc_util.explin(ENV_TIME_MIN, ENV_TIME_MAX, 0.001, 1, time, 4)
+    envelope_graphic.time = misc_util.explin(controlspec_env_time.minval, controlspec_env_time.maxval, 0.001, 1, time, 4)
     envelope_graphic.shape = shape
     envelope_graphic.curve = curve
     envelope_graphic.mod = ENVELOPE_MOD_OPTIONS[mod] ~= "OFF" and 0.5 or 0

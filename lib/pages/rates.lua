@@ -32,7 +32,7 @@ local function calculate_rates()
         end
 
         local voice = i + 1
-        if params:get(get_voice_dir_param_id(voice)) == 2 then -- todo: lookuptable 2>rev, 1>fwd
+        if params:get(get_voice_direction_id(voice)) == 2 then -- todo: lookuptable 2>rev, 1>fwd
             rate = -rate
         end
         local voice_rate = sym.get_id("voice_rate", voice)
@@ -48,23 +48,23 @@ local function update_playback_dir(new_val)
         -- all forward
         for voice = 1, 6 do
             page.graphic.voice_dir[voice] = FWD
-            params:set(get_voice_dir_param_id(voice), 1)
+            params:set(get_voice_direction_id(voice), 1)
         end
     elseif PLAYBACK_TABLE[new_val] == REV then
         -- all reverse
         for voice = 1, 6 do
             page.graphic.voice_dir[voice] = REV
-            params:set(get_voice_dir_param_id(voice), 2)
+            params:set(get_voice_direction_id(voice), 2)
         end
     else
         -- alternate forward/reverse
         for voice = 1, 5, 2 do
             page.graphic.voice_dir[voice] = FWD
-            params:set(get_voice_dir_param_id(voice), 1)
+            params:set(get_voice_direction_id(voice), 1)
         end
         for voice = 2, 6, 2 do
             page.graphic.voice_dir[voice] = REV
-            params:set(get_voice_dir_param_id(voice), 2)
+            params:set(get_voice_direction_id(voice), 2)
         end
     end
     calculate_rates()

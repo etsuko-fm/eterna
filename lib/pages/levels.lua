@@ -7,11 +7,11 @@ local graph_y = 40
 local levels_lfo
 
 local function adjust_amp(d)
-    misc_util.adjust_param(d, ID_LEVELS_AMP, controlspec_amp)
+    misc_util.adjust_param(d, ID_LEVELS_AMP, controlspec_amp.quantum)
 end
 
 local function adjust_position(d)
-    misc_util.adjust_param(d, ID_LEVELS_POS, controlspec_pos)
+    misc_util.adjust_param(d, ID_LEVELS_POS, controlspec_pos.quantum)
 end
 
 local function cycle_lfo()

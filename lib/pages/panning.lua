@@ -28,7 +28,7 @@ end
 
 local function cycle_lfo()
     local p = ID_PANNING_LFO
-    local new_val = util.wrap(params:get(p) + 1, 1, #SLICES_LFO_SHAPES)
+    local new_val = util.wrap(params:get(p) + 1, 1, #SLICE_START_LFO_SHAPES)
     params:set(p, new_val)
 end
 

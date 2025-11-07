@@ -20,12 +20,12 @@ local page = Page:create({
 })
 
 local function generate_perlin_seq()
-    local density = params:get(ID_SEQ_PERLIN_DENSITY)
+    local density = params:get(ID_SEQ_DENSITY)
     local x_seed = params:get(ID_SEQ_PERLIN_X)
     local y_seed = params:get(ID_SEQ_PERLIN_Y)
     local z_seed = params:get(ID_SEQ_PERLIN_Z)
 
-    local sequence = sequence_util.generate_perlin_seq(SEQ_ROWS, SEQ_COLUMNS, x_seed, y_seed, z_seed, density,
+    local sequence = sequence_util.generate_perlin_seq(SEQ_TRACKS, SEQ_STEPS, x_seed, y_seed, z_seed, density,
         PERLIN_ZOOM)
     for i, v in ipairs(sequence) do
         params:set(ID_SEQ_STEP[v.voice][v.step], v.value)
@@ -40,8 +40,8 @@ local function e2(d)
 end
 
 local function e3(d)
-    local new = params:get(ID_SEQ_PERLIN_DENSITY) + controlspec_perlin_density.quantum * d
-    params:set(ID_SEQ_PERLIN_DENSITY, new, false)
+    local new = params:get(ID_SEQ_DENSITY) + controlspec_perlin_density.quantum * d
+    params:set(ID_SEQ_DENSITY, new, false)
 end
 
 
@@ -50,8 +50,8 @@ local function update_slices()
         for voice = 1, 6 do
             local voice_loop_start = sym.get_id("voice_loop_start", voice)
             local voice_loop_end = sym.get_id("voice_loop_end", voice)
-            params:set(voice_loop_start, params:get(ID_SLICES_SECTIONS[voice].loop_start))
-            params:set(voice_loop_end, params:get(ID_SLICES_SECTIONS[voice].loop_end))
+            params:set(voice_loop_start, params:get(ID_SAMPLER_SECTIONS[voice].loop_start))
+            params:set(voice_loop_end, params:get(ID_SAMPLER_SECTIONS[voice].loop_end))
         end
         UPDATE_SLICES = false
     end
@@ -96,7 +96,7 @@ function page:on_step(step)
     self.graphic.current_step = step
     page_control.current_step = step
     -- evaluate current step, send commands to supercollider accordingly
-    for y = 1, SEQ_ROWS do
+    for y = 1, SEQ_TRACKS do
         self:evaluate_step(step, y)
     end
 end
@@ -165,7 +165,7 @@ function page:render()
     self.graphic.num_steps = self.seq.steps
     self.graphic:render()
     page.footer.button_text.e2.value = params:get(ID_SEQ_PERLIN_X)
-    page.footer.button_text.e3.value = params:get(ID_SEQ_PERLIN_DENSITY)
+    page.footer.button_text.e3.value = params:get(ID_SEQ_DENSITY)
     page.footer:render()
     grid_device:refresh()
 end
@@ -201,10 +201,10 @@ function page:add_params()
     params:set_action(ID_SEQ_PERLIN_X, toggle_redraw)
     params:set_action(ID_SEQ_PERLIN_Y, toggle_redraw)
     params:set_action(ID_SEQ_PERLIN_Z, toggle_redraw)
-    params:set_action(ID_SEQ_PERLIN_DENSITY, toggle_redraw)
+    params:set_action(ID_SEQ_DENSITY, toggle_redraw)
     params:set_action(ID_SEQ_SPEED, function(v) self:action_sequence_speed(v) end)
-    for y = 1, SEQ_ROWS do
-        for x = 1, SEQ_COLUMNS do
+    for y = 1, SEQ_TRACKS do
+        for x = 1, SEQ_STEPS do
             params:set_action(ID_SEQ_STEP[y][x], function(v) self:update_grid_step(x, y, v) end)
         end
     end

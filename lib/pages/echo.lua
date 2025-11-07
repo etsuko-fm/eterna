@@ -7,11 +7,11 @@ local ID_ECHO_STYLE = sym.get_id("echo_style")
 local ID_ECHO_FEEDBACK = sym.get_id("echo_feedback")
 
 local function adjust_wet(d)
-    misc_util.adjust_param(d, ID_ECHO_WET, sym.params.specs["echo_wet"])
+    misc_util.adjust_param(d, ID_ECHO_WET, sym.params.specs["echo_wet"].quantum)
 end
 
 local function adjust_feedback(d)
-    misc_util.adjust_param(d, ID_ECHO_FEEDBACK, sym.params.specs["echo_feedback"])
+    misc_util.adjust_param(d, ID_ECHO_FEEDBACK, sym.params.specs["echo_feedback"].quantum)
 end
 
 local function cycle_time()

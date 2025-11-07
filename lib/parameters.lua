@@ -1,43 +1,57 @@
+local app = "symbiosis"
+
+-- Components, for creating param ids
+SAMPLER = "sampler"
+SEQUENCER = "sequencer"
+PROCESSOR = "processor"
+MASTER = "master"
+
+local components = {
+    [SAMPLER]=true,
+    [SEQUENCER]=true,
+    [PROCESSOR]=true,
+    [MASTER]=true,
+}
+
+local function get_id(component, param)
+    if components[component] then
+        return app .. "_" .. component .. "_" .. param
+    else
+        print("get_id: component " .. component .. " unknown")
+    end
+end
+
 ---
---- SLICES
+--- SAMPLER
 ---
 
-SLICES_MIN = 1
-SLICES_MAX = 32
-SLICES_DEFAULT = 16
-
-controlspec_slices = controlspec.def {
-    min = SLICES_MIN,
-    max = SLICES_MAX,
+controlspec_num_slices = controlspec.def {
+    min = 1,
+    max = 32,
     warp = 'lin',
     step = 1,
-    default = SLICES_DEFAULT,
-    units = '',
-    quantum = 1 / SLICES_MAX,
+    default = 16,
+    quantum = 1 / 32,
     wrap = false
 }
 
-local START_MIN = 1
-local START_MAX = 32 -- dynamic, todo: deal with that
-
 controlspec_slice_start = controlspec.def {
-    min = START_MIN,
-    max = START_MAX,
+    min = 1,
+    max = 32,
     warp = 'lin',
     step = 1,
     default = 1,
-    units = '',
-    quantum = 1 / START_MAX,
+    quantum = 1 / 32,
     wrap = true
 }
 
-ID_SLICES_AUDIO_FILE = "slices_audio_file"
-ID_SLICES_NUM_SLICES = "slices_num_slices"
-ID_SLICES_START = "slices_slice_start"
-ID_SLICES_LFO = "slices_lfo"
-SLICES_LFO_SHAPES = { "off", "up", "down", "random" }
+ID_SAMPLER_AUDIO_FILE = get_id(SAMPLER, "sample_path")
+ID_SAMPLER_NUM_SLICES = get_id(SAMPLER, "num_slices")
+ID_SAMPLER_START = get_id(SAMPLER, "start_slice")
+ID_SAMPLER_LFO = get_id(SAMPLER, "slice_lfo")
+SLICE_START_LFO_SHAPES = { "off", "up", "down", "random" }
 
-ID_SLICES_SECTIONS = {}
+ID_SAMPLER_SECTIONS = {}
 
 function get_slice_start_param_id(voice)
     return "slices_" .. voice .. "_start"
@@ -48,7 +62,7 @@ function get_slice_end_param_id(voice)
 end
 
 for voice = 1, 6 do
-    ID_SLICES_SECTIONS[voice] = {
+    ID_SAMPLER_SECTIONS[voice] = {
         loop_start = get_slice_start_param_id(voice),
         loop_end = get_slice_end_param_id(voice),
     }
@@ -67,40 +81,15 @@ local primes = {
     71, 73, 79, 83, 89, 97
 }
 
-
 controlspec_perlin = controlspec.def {
     min = 0,
     max = 100,
     warp = 'lin',
     step = .01,
     default = primes[math.floor(math.random(1, #primes))],
-    units = '',
     quantum = .05,
     wrap = true
 }
-
-controlspec_perlin_z = controlspec.def {
-    min = 0,
-    max = 100,
-    warp = 'lin',
-    step = .01,
-    default = 1,
-    units = '',
-    quantum = .05,
-    wrap = true
-}
-
-controlspec_perlin_y = controlspec.def {
-    min = 0,
-    max = 25,
-    warp = 'lin',
-    step = .00001,
-    default = math.random(4) * 25.0,
-    units = '',
-    quantum = .00001,
-    wrap = true
-}
-
 
 controlspec_perlin_density = controlspec.def {
     min = 0,
@@ -108,7 +97,6 @@ controlspec_perlin_density = controlspec.def {
     warp = 'lin',
     step = .001,
     default = 0.0,
-    units = '',
     quantum = .01,
     wrap = false
 }
@@ -119,52 +107,40 @@ controlspec_num_steps = controlspec.def {
     warp = 'lin',
     step = 1,
     default = 16,
-    units = '',
     quantum = 1 / 16,
     wrap = false
 }
 
-local component = "sequencer_"
-ID_SEQ_SPEED = component .. "speed"
-ID_SEQ_PERLIN_X = component .. "perlin_x"
-ID_SEQ_PERLIN_Y = component .. "perlin_y"
-ID_SEQ_PERLIN_Z = component .. "perlin_z"
-ID_SEQ_PERLIN_DENSITY = component .. "perlin_density"
-ID_SEQ_STYLE = component .. "style"
-ID_SEQ_NUM_STEPS = component .. "num_steps"
+ID_SEQ_SPEED = get_id(SEQUENCER, "step_size")
+ID_SEQ_PERLIN_X = get_id(SEQUENCER, "perlin_x")
+ID_SEQ_PERLIN_Y = get_id(SEQUENCER, "perlin_x")
+ID_SEQ_PERLIN_Z = get_id(SEQUENCER, "perlin_z")
+ID_SEQ_DENSITY = get_id(SEQUENCER, "density")
+ID_SEQ_STYLE = get_id(SEQUENCER, "style")
+ID_SEQ_NUM_STEPS = get_id(SEQUENCER, "num_steps")
 ID_SEQ_STEP = {}
-SEQ_ROWS = 6
-SEQ_COLUMNS = 16
+SEQ_TRACKS = 6
+SEQ_STEPS = 16
 
 ---
 --- ENVELOPES params
 ---
-local page_id = "env_"
-
-ID_ENVELOPES_MOD = page_id .. "mod"
-ID_ENVELOPES_TIME = page_id .. "time"
-ID_ENVELOPES_FILTER_ENV = page_id .. "filter_env"
-ID_ENVELOPES_CURVE = page_id .. "curve"
-ID_ENVELOPES_SHAPE = page_id .. "shape"
+ID_ENVELOPES_MOD = get_id(SAMPLER, "env_velocity_mod")
+ID_ENVELOPES_TIME = get_id(SAMPLER, "env_time")
+ID_ENVELOPES_FILTER_ENV = get_id(SAMPLER, "filter_env")
+ID_ENVELOPES_CURVE = get_id(SAMPLER, "env_curve")
+ID_ENVELOPES_SHAPE = get_id(SAMPLER, "env_shape")
 
 ENVELOPE_CURVES = { -3, 0, 3 }
 ENVELOPE_NAMES = { "NEG", "LIN", "POS" }
 ENVELOPE_MOD_OPTIONS = { "OFF", "TIME", "LPG" }
 
-ENV_TIME_MIN = 0.0015
-ENV_TIME_MAX = 5
-ENV_ATTACK_MAX = 2.5
-ENV_DECAY_MAX = 2.5
-local ENV_FILTER_MIN = 50
-local ENV_FILTER_MAX = 20000
-
 controlspec_env_time = controlspec.def {
-    min = ENV_TIME_MIN,
-    max = ENV_TIME_MAX,
+    min = 0.0015,
+    max = 5,
     warp = 'exp',
     step = 0.002,
     default = 0.5,
-    units = '',
     quantum = 0.005,
     wrap = false
 }
@@ -175,18 +151,16 @@ controlspec_env_shape = controlspec.def {
     warp = 'lin',
     step = 0.001,
     default = 0.25,
-    units = '',
     quantum = 0.01,
     wrap = false
 }
 
 controlspec_env_filter = controlspec.def {
-    min = ENV_FILTER_MIN,
-    max = ENV_FILTER_MAX,
+    min = 50,
+    max = 20000,
     warp = 'exp',
     step = 0.01,
     default = 20000,
-    units = '',
     quantum = 0.001,
     wrap = false
 }
@@ -195,43 +169,29 @@ controlspec_env_filter = controlspec.def {
 --- PLAYBACK RATES
 ---
 
--- Helpers
-
-function get_voice_dir_param_id(i)
-  -- get voice directions; also used for other pages, hence global
-  return "rates_v" .. i .. "_dir"
+function get_voice_direction_id(voice)
+  -- 1 <= voice <= 6
+  -- get playback direction param ID for voice; also used for other pages, hence global
+  return get_id(SAMPLER, "rates_voice_" .. voice .. "_direction")
 end
 
-RATES_CENTER_MIN = -2
-RATES_CENTER_MAX = 2
-RATES_CENTER_QUANTUM = 1
-
-RATES_SPREAD_MIN = -2
-RATES_SPREAD_MAX = 2
-RATES_SPREAD_MIN_QNT = -2
-RATES_SPREAD_MAX_QNT = 2
-RATES_SPREAD_QUANTUM = 1
-RATES_SPREAD_QUANTUM = 1
-
 controlspec_rates_center = controlspec.def {
-    min = RATES_CENTER_MIN,
-    max = RATES_CENTER_MAX,
+    min = -2,
+    max = 2,
     warp = 'lin',
     step = 1,
     default = -1,
-    units = '',
-    quantum = RATES_CENTER_QUANTUM,
+    quantum = 1,
     wrap = false
 }
 
 controlspec_rates_spread = controlspec.def {
-    min = RATES_SPREAD_MIN_QNT,
-    max = RATES_SPREAD_MAX_QNT,
+    min = -2,
+    max = 2,
     warp = 'lin',
     step = 1,
     default = 1,
-    units = '',
-    quantum = RATES_SPREAD_QUANTUM,
+    quantum = 1,
     wrap = false
 }
 
@@ -260,133 +220,107 @@ LEVELS_SIGMA_MIN = 0.3
 LEVELS_SIGMA_MAX = 15
 LEVELS_LFO_SHAPES = { "off", "up", "down", "random" }
 
-local LEVELS_POSITION_MIN = 0
-local LEVELS_POSITION_MAX = 1
-
 controlspec_pos = controlspec.def {
-    min = LEVELS_POSITION_MIN,
-    max = LEVELS_POSITION_MAX,
+    min = 0,
+    max = 1,
     warp = 'lin',
     step = 1/180,
     default = 0.42,
-    units = '',
     quantum = 1/180,
     wrap = true
 }
 
 -- Amp maps the arbitrary sigma range from 0 to 1
-local LEVELS_AMP_MIN = 0
-local LEVELS_AMP_MAX = 1
-
 controlspec_amp = controlspec.def {
-    min = LEVELS_AMP_MIN,
-    max = LEVELS_AMP_MAX,
+    min = 0,
+    max = 1,
     warp = 'lin',
     step = 0.01,
     default = 0.45,
-    units = '',
     quantum = 0.01,
     wrap = false
 }
 
-ID_LEVELS_LFO = "levels_lfo_enabled"
-ID_LEVELS_LFO_RATE = "levels_lfo_rate"
-ID_LEVELS_POS = "levels_pos"
-ID_LEVELS_AMP = "levels_sigma"
+ID_LEVELS_LFO = get_id(PROCESSOR, "levels_lfo")
+ID_LEVELS_LFO_RATE = get_id(PROCESSOR, "levels_lfo_rate")
+ID_LEVELS_POS = get_id(PROCESSOR, "levels_pos")
+ID_LEVELS_AMP = get_id(PROCESSOR, "levels_amp")
 
 local LEVELS_LFO_DEFAULT_RATE_INDEX = 20
 
 ---
 --- PANNING
 ---
-local PAN_TWIST_MIN = 0
-local PAN_TWIST_MAX = 1
-
 controlspec_pan_twist = controlspec.def {
-    min = PAN_TWIST_MIN,
-    max = PAN_TWIST_MAX,
+    min = 0,
+    max = 1,
     warp = 'lin',
     step = 0.005,
     default = 0.0,
-    units = '',
     quantum = 0.005,
     wrap = true
 }
 
-local PAN_SPREAD_MIN = 0
-local PAN_SPREAD_MAX = 1
-
 controlspec_pan_spread = controlspec.def {
-    min = PAN_SPREAD_MIN,
-    max = PAN_SPREAD_MAX,
+    min = 0,
+    max = 1,
     warp = 'lin',
     step = 0.01,
     default = 0.8,
-    units = '',
     quantum = 0.01,
     wrap = false
 }
 
-ID_PANNING_LFO = "panning_lfo_enabled"
-
-ID_PANNING_LFO_RATE = "panning_lfo_rate"
-ID_PANNING_TWIST = "panning_twist"
-ID_PANNING_SPREAD = "panning_spread"
+ID_PANNING_LFO = get_id(PROCESSOR, "panning_lfo")
+ID_PANNING_LFO_RATE = get_id(PROCESSOR, "panning_lfo_rate")
+ID_PANNING_TWIST = get_id(PROCESSOR, "panning_twist")
+ID_PANNING_SPREAD = get_id(PROCESSOR, "panning_spread")
 PANNING_LFO_SHAPES = { "off", "up", "down", "random" }
 DEFAULT_PANNING_LFO_RATE_IDX = 16
 
 ---
---- LPF params
+--- Lowpass filter params
 ---
 
-local page_id = "lpf_"
-ID_LPF_WET = page_id .. "wet"
-ID_LPF_TYPE = page_id .. "type"
-ID_LPF_LFO = page_id .. "lfo"
-ID_LPF_FREQ_MOD = page_id .. "freq_mod"
-ID_LPF_LFO_RATE = page_id .. "lfo_rate"
+ID_LPF_WET = get_id(PROCESSOR, "lpf_wet")
+ID_LPF_TYPE = get_id(PROCESSOR, "lpf_type")
+ID_LPF_LFO = get_id(PROCESSOR, "lpf_lfo")
+ID_LPF_FREQ_MOD = get_id(PROCESSOR, "lpf_freq_mod")
+ID_LPF_LFO_RATE = get_id(PROCESSOR, "lpf_lfo_rate")
+
 LPF_LFO_SHAPES = { "off", "sine" }
 DRY_WET_TYPES = { "DRY", "50/50", "WET" }
 
 -- multiplies with cutoff value
-local FREQ_MOD_RANGE_MIN = 0.5
-local FREQ_MOD_RANGE_MAX = 2
-
 controlspec_lpf_freq_mod = controlspec.def {
-    min = FREQ_MOD_RANGE_MIN,
-    max = FREQ_MOD_RANGE_MAX,
+    min = 0.5,
+    max = 2,
     warp = 'lin',
     step = 0.001,
     default = 1,
-    units = '',
     quantum = 0.005,
     wrap = false
 }
 
 ---
---- HPF params
+--- Highpass filter params
 ---
 
-local page_id = "hpf_"
-ID_HPF_WET = page_id .. "wet"
-ID_HPF_TYPE = page_id .. "type"
-ID_HPF_LFO = page_id .. "lfo"
-ID_HPF_FREQ_MOD = page_id .. "freq_mod"
-ID_HPF_LFO_RATE = page_id .. "lfo_rate"
-HPF_LFO_SHAPES = { "off", "sine" }
+ID_HPF_WET = get_id(PROCESSOR, "hpf_wet")
+ID_HPF_TYPE = get_id(PROCESSOR, "hpf_type")
+ID_HPF_LFO = get_id(PROCESSOR, "hpf_lfo")
+ID_HPF_FREQ_MOD = get_id(PROCESSOR, "hpf_freq_mod")
+ID_HPF_LFO_RATE = get_id(PROCESSOR, "hpf_lfo_rate")
 DRY_WET_TYPES = { "DRY", "50/50", "WET" }
+HPF_LFO_SHAPES = { "off", "sine" }
 
 -- multiplies with cutoff value
-local FREQ_MOD_RANGE_MIN = 0.5
-local FREQ_MOD_RANGE_MAX = 2
-
 controlspec_hpf_freq_mod = controlspec.def {
-    min = FREQ_MOD_RANGE_MIN,
-    max = FREQ_MOD_RANGE_MAX,
+    min = 0.5,
+    max = 2,
     warp = 'lin',
     step = 0.001,
     default = 1,
-    units = '',
     quantum = 0.005,
     wrap = false
 }
@@ -394,9 +328,9 @@ controlspec_hpf_freq_mod = controlspec.def {
 ---
 --- ECHO params
 ---
-local page_id = "echo_"
+local componentid = "echo_"
 
-ID_ECHO_TIME = page_id .. "time"
+ID_ECHO_TIME = componentid .. "time"
 ECHO_TIME_AMOUNTS = { 0.0625, 0.125, 0.1875, 0.25, 0.375, 0.5, 0.625, 0.75, 1, 1.25 }
 ECHO_TIME_NAMES = {"1/64", "1/32", "1/32D", "1/16", "1/16D", "1/8", "5/32", "1/8D", "1/4", "5/16" }
 
@@ -404,8 +338,8 @@ ECHO_TIME_NAMES = {"1/64", "1/32", "1/32D", "1/16", "1/16D", "1/8", "5/32", "1/8
 --- MASTER params
 ---
 
-ID_MASTER_MONO_FREQ = "master_mono_freq"
-ID_MASTER_COMP_AMOUNT = "master_comp_amount"
+ID_MASTER_MONO_FREQ = get_id(MASTER, "bass_mono_freq")
+ID_MASTER_COMP_AMOUNT = get_id(MASTER, "comp_amount")
 
 BASS_MONO_FREQS_STR = {"OFF", "50Hz", "100Hz", "200Hz", "FULL"}
 BASS_MONO_FREQS_INT = {20, 50, 100, 200, 20000}
@@ -414,40 +348,41 @@ COMP_AMOUNTS = {"OFF", "SOFT", "MEDIUM", "HARD"}
 
 
 --- MENU
-params:add_separator("BITS", "BITS")
+params:add_separator("SYMBIOSIS", "SYMBIOSIS")
 
 params:add_separator("SAMPLE_SLICES", "SAMPLE SLICES")
-params:add_file(ID_SLICES_AUDIO_FILE, 'sample', nil)
-params:add_option(ID_SLICES_LFO, "lfo", SLICES_LFO_SHAPES)
-params:add_control(ID_SLICES_NUM_SLICES, "slices", controlspec_slices)
-params:add_control(ID_SLICES_START, "start", controlspec_slice_start)
+params:add_file(ID_SAMPLER_AUDIO_FILE, 'sample', nil)
+params:add_option(ID_SAMPLER_LFO, "lfo", SLICE_START_LFO_SHAPES)
+params:add_control(ID_SAMPLER_NUM_SLICES, "slices", controlspec_num_slices)
+params:add_control(ID_SAMPLER_START, "start", controlspec_slice_start)
 
 for voice = 1, 6 do
     -- ranges per voice; each voice plays 1 slice
-    params:add_number(ID_SLICES_SECTIONS[voice].loop_start, ID_SLICES_SECTIONS[voice].loop_start, 0)
-    params:add_number(ID_SLICES_SECTIONS[voice].loop_end, ID_SLICES_SECTIONS[voice].loop_end, 0)
-    params:hide(ID_SLICES_SECTIONS[voice].loop_start)
-    params:hide(ID_SLICES_SECTIONS[voice].loop_end)
+    params:add_number(ID_SAMPLER_SECTIONS[voice].loop_start, ID_SAMPLER_SECTIONS[voice].loop_start, 0)
+    params:add_number(ID_SAMPLER_SECTIONS[voice].loop_end, ID_SAMPLER_SECTIONS[voice].loop_end, 0)
+    params:hide(ID_SAMPLER_SECTIONS[voice].loop_start)
+    params:hide(ID_SAMPLER_SECTIONS[voice].loop_end)
 end
 
 params:add_separator("SEQUENCER", "SEQUENCER")
 params:add_control(ID_SEQ_NUM_STEPS, "steps", controlspec_num_steps)
 params:add_option(ID_SEQ_SPEED, "step size", sequence_util.sequence_speeds, 2)
 params:add_control(ID_SEQ_PERLIN_X, "seed", controlspec_perlin)
-params:add_control(ID_SEQ_PERLIN_Y, "perlin y", controlspec_perlin_y)
-params:add_control(ID_SEQ_PERLIN_Z, "perlin z", controlspec_perlin_z)
-params:add_control(ID_SEQ_PERLIN_DENSITY, "density", controlspec_perlin_density)
+params:add_number(get_id(SEQUENCER, "perlin_y"), "perlin y", 0, 25, 10, nil, true)
+params:add_number(get_id(SEQUENCER, "perlin_z"), "perlin z", 0, 100, nil, true)
+params:add_control(ID_SEQ_DENSITY, "density", controlspec_perlin_density)
 
-params:hide(ID_SEQ_PERLIN_Y)
-params:hide(ID_SEQ_PERLIN_Z)
+params:hide(get_id(SEQUENCER, "perlin_y"))
+params:hide(get_id(SEQUENCER, "perlin_z"))
 
 -- add 6x16 params for sequence step status
-for y = 1, SEQ_ROWS do
-    ID_SEQ_STEP[y] = {}
-    for x = 1, SEQ_COLUMNS do
-        ID_SEQ_STEP[y][x] = "sequencer_step_" .. y .. "_" .. x
-        params:add_number(ID_SEQ_STEP[y][x], ID_SEQ_STEP[y][x], -1, 1, 0)
-        params:hide(ID_SEQ_STEP[y][x])
+for track = 1, SEQ_TRACKS do
+    ID_SEQ_STEP[track] = {}
+    for step = 1, SEQ_STEPS do
+        ID_SEQ_STEP[track][step] = get_id(SEQUENCER, "step_" .. track .. "_" .. step)
+        params:add_number(ID_SEQ_STEP[track][step], ID_SEQ_STEP[track][step], -1, 1, 0)
+        -- User can change values through UI instead
+        params:hide(ID_SEQ_STEP[track][step])
     end
 end
 
@@ -466,7 +401,7 @@ params:add_option(ID_RATES_DIRECTION, "direction", PLAYBACK_TABLE, 1)
 
 for voice = 1, 6 do
     -- add params for playback direction per voice
-    local param_id = get_voice_dir_param_id(voice)
+    local param_id = get_voice_direction_id(voice)
     params:add_option(param_id, param_id, PLAYBACK_TABLE, 1)
     params:hide(param_id)
 end

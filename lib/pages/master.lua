@@ -9,11 +9,11 @@ local ENGINE_COMP_RATIO = sym.get_id("comp_ratio")
 local ENGINE_COMP_THRESHOLD = sym.get_id("comp_threshold")
 
 local function adjust_drive(d)
-    misc_util.adjust_param(d, ENGINE_MASTER_COMP_DRIVE, sym.params.specs["comp_drive"])
+    misc_util.adjust_param(d, ENGINE_MASTER_COMP_DRIVE, sym.params.specs["comp_drive"].quantum)
 end
 
 local function adjust_output(d)
-    misc_util.adjust_param(d, ENGINE_MASTER_OUTPUT, sym.params.specs["comp_out_level"])
+    misc_util.adjust_param(d, ENGINE_MASTER_OUTPUT, sym.params.specs["comp_out_level"].quantum)
 end
 
 local function cycle_mono()

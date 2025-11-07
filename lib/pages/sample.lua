@@ -55,7 +55,7 @@ end
 
 function page:get_slice_length()
     -- returns slice length in seconds
-    local n_slices = params:get(ID_SLICES_NUM_SLICES)
+    local n_slices = params:get(ID_SAMPLER_NUM_SLICES)
     if n_slices and self.sample_duration then
         return (1 / n_slices) * self.sample_duration
     else
@@ -65,11 +65,11 @@ end
 
 function page:update_loop_ranges()
     -- updates the playback range of each voice in params, based on num_slices, slices_start, and sample duration
-    local n_slices = params:get(ID_SLICES_NUM_SLICES)
+    local n_slices = params:get(ID_SAMPLER_NUM_SLICES)
 
     -- if slices > num_voices, not all slices can be assigned to a voice
     -- 6 consecutive slices are assigned to voice 1-6
-    local start = params:get(ID_SLICES_START)
+    local start = params:get(ID_SAMPLER_START)
 
     -- edit buffer ranges per voice
     local slice_start_timestamps = {} -- start position of each slice, in seconds
@@ -99,8 +99,8 @@ function page:update_loop_ranges()
         local end_pos = start_pos + (slice_length * .999) -- leave a small gap to prevent overlap
 
         -- save in params, so waveforms can render correctly
-        params:set(ID_SLICES_SECTIONS[voice].loop_start, start_pos)
-        params:set(ID_SLICES_SECTIONS[voice].loop_end, end_pos)
+        params:set(ID_SAMPLER_SECTIONS[voice].loop_start, start_pos)
+        params:set(ID_SAMPLER_SECTIONS[voice].loop_end, end_pos)
     end
 end
 
@@ -126,7 +126,7 @@ end
 local function select_sample()
     local function callback(file_path)
         if file_path ~= 'cancel' then
-            params:set(ID_SLICES_AUDIO_FILE, file_path)
+            params:set(ID_SAMPLER_AUDIO_FILE, file_path)
         end
         page_disabled = false -- proceed with rendering page instead of file menu
         page_indicator_disabled = false
@@ -156,27 +156,27 @@ end
 
 local function adjust_num_slices(d)
     if selected_sample then
-        misc_util.adjust_param(d, ID_SLICES_NUM_SLICES, controlspec_slices)
+        misc_util.adjust_param(d, ID_SAMPLER_NUM_SLICES, controlspec_num_slices.quantum)
     end
 end
 
 local function adjust_slice_start(d)
     if selected_sample then
-        local p = ID_SLICES_START
-        local max_slices = params:get(ID_SLICES_NUM_SLICES)
+        local p = ID_SAMPLER_START
+        local max_slices = params:get(ID_SAMPLER_NUM_SLICES)
         local new = util.wrap(params:get(p) + d, 1, max_slices)
         params:set(p, new)
     end
 end
 
 local function cycle_lfo()
-    local p = ID_SLICES_LFO
-    local new_val = util.wrap(params:get(p) + 1, 1, #SLICES_LFO_SHAPES)
+    local p = ID_SAMPLER_LFO
+    local new_val = util.wrap(params:get(p) + 1, 1, #SLICE_START_LFO_SHAPES)
     params:set(p, new_val)
 end
 
 local function action_lfo(v)
-    lfo_util.action_lfo(v, slice_lfo, SLICES_LFO_SHAPES, params:get(ID_SLICES_START))
+    lfo_util.action_lfo(v, slice_lfo, SLICE_START_LFO_SHAPES, params:get(ID_SAMPLER_START))
 end
 
 local function e2(d)
@@ -194,7 +194,7 @@ function page:render()
         fileselect:redraw()
         return
     end -- for rendering the fileselect interface
-    local lfo_val = SLICES_LFO_SHAPES[params:get(ID_SLICES_LFO)]
+    local lfo_val = SLICE_START_LFO_SHAPES[params:get(ID_SAMPLER_LFO)]
 
     if selected_sample then
         -- show filename of selecteed sample in title bar
@@ -205,8 +205,8 @@ function page:render()
         end
         slice_graphic:render()
 
-        page.footer.button_text.e2.value = params:get(ID_SLICES_START)
-        page.footer.button_text.e3.value = params:get(ID_SLICES_NUM_SLICES)
+        page.footer.button_text.e2.value = params:get(ID_SAMPLER_START)
+        page.footer.button_text.e3.value = params:get(ID_SAMPLER_NUM_SLICES)
         page.footer.button_text.k2.value = string.upper(lfo_val)
 
         if slice_lfo:get("enabled") == 1 then
@@ -235,7 +235,7 @@ end
 
 function page:add_params()
     -- file selection
-    params:set_action(ID_SLICES_AUDIO_FILE,
+    params:set_action(ID_SAMPLER_AUDIO_FILE,
         function(file)
             if file ~= "-" then
                 filename = to_sample_name(file)
@@ -245,23 +245,24 @@ function page:add_params()
     )
 
     -- number of slices
-    params:set_action(ID_SLICES_NUM_SLICES, function(v) self:action_num_slices(v) end)
+    params:set_action(ID_SAMPLER_NUM_SLICES, function(v) self:action_num_slices(v) end)
 
     -- starting slice
-    params:set_action(ID_SLICES_START, function(v) self:action_slice_start(v) end)
-    constrain_max_start(SLICES_DEFAULT)
+    params:set_action(ID_SAMPLER_START, function(v) self:action_slice_start(v) end)
+    local num_slices = params:get(ID_SAMPLER_NUM_SLICES)
+    constrain_max_start(num_slices)
     for voice = 1, 6 do
-        params:set_action(ID_SLICES_SECTIONS[voice].loop_start, function(v) UPDATE_SLICES = true end)
-        params:set_action(ID_SLICES_SECTIONS[voice].loop_end, function(v) UPDATE_SLICES = true end)
+        params:set_action(ID_SAMPLER_SECTIONS[voice].loop_start, function(v) UPDATE_SLICES = true end)
+        params:set_action(ID_SAMPLER_SECTIONS[voice].loop_end, function(v) UPDATE_SLICES = true end)
     end
 
     -- lfo
-    params:set_action(ID_SLICES_LFO, action_lfo)
+    params:set_action(ID_SAMPLER_LFO, action_lfo)
     params:bang()
 end
 
 function page:set_sample_duration(v)
-    print('received duration '..v)
+    print('Sample duration: '..v)
     self.sample_duration = v
     self:update_loop_ranges()
 end
@@ -283,7 +284,7 @@ function page:initialize()
         period = 8,
         phase = 0,
         action = function(scaled, raw)
-            params:set(ID_SLICES_START, controlspec_slice_start:map(scaled))
+            params:set(ID_SAMPLER_START, controlspec_slice_start:map(scaled))
         end
     }
     slice_lfo:set('reset_target', 'mid: rising')
