@@ -115,7 +115,6 @@ end
 function page:run_sequencer()
     while true do
         -- updates playback range of each voice prior to trigger
-        update_slices()
         self.seq:advance()
         clock.sync(1 / self.seq.ticks_per_beat)
     end

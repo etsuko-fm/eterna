@@ -98,9 +98,11 @@ function page:update_loop_ranges()
         -- end point is where the next slice starts
         local end_pos = start_pos + (slice_length * .999) -- leave a small gap to prevent overlap
 
-        -- save in params, so waveforms can render correctly
-        params:set(ID_SAMPLER_SECTIONS[voice].loop_start, start_pos)
-        params:set(ID_SAMPLER_SECTIONS[voice].loop_end, end_pos)
+        local voice_loop_start = sym.get_id("voice_loop_start", voice)
+        local voice_loop_end = sym.get_id("voice_loop_end", voice)
+        params:set(voice_loop_start, start_pos)
+        params:set(voice_loop_end, end_pos)
+
     end
 end
 
@@ -251,10 +253,6 @@ function page:add_params()
     params:set_action(ID_SAMPLER_START, function(v) self:action_slice_start(v) end)
     local num_slices = params:get(ID_SAMPLER_NUM_SLICES)
     constrain_max_start(num_slices)
-    for voice = 1, 6 do
-        params:set_action(ID_SAMPLER_SECTIONS[voice].loop_start, function(v) UPDATE_SLICES = true end)
-        params:set_action(ID_SAMPLER_SECTIONS[voice].loop_end, function(v) UPDATE_SLICES = true end)
-    end
 
     -- lfo
     params:set_action(ID_SAMPLER_LFO, action_lfo)
