@@ -261,11 +261,18 @@ Engine_Symbiosis : CroneEngine {
           };
           "[3/3] spreading voices done".postln;
           isLoaded = true;  
+          oscServer.sendBundle(0, ['/file_load_success', true]);
         } {
           "skipped steps 2 & 3, re-load should be attempted".postln;
-          // TODO: Send error message to client
+          oscServer.sendBundle(0, ['/file_load_success', false]);
         };
       }.play;
+    });
+
+  	this.addCommand("normalize", "", {
+      buffers.do { |b| 
+        if (b.notNil) {b.normalize()};
+      };
     });
 
     voiceCommands.do { |param| 
@@ -373,7 +380,6 @@ Engine_Symbiosis : CroneEngine {
     });
 
     this.addPoll(\file_loaded, { isLoaded }, periodic:false);
-
     this.addPoll(\pre_comp_left, { preCompControlBuses[0].getSynchronous });
     this.addPoll(\pre_comp_right, { preCompControlBuses[1].getSynchronous });
 

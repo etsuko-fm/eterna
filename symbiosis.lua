@@ -144,8 +144,6 @@ function init()
     norns.enc.accel(i, false)
   end
 
-  loaded_poll = sym.get_polls("file_loaded")
-
   pre_comp_left_poll, pre_comp_right_poll = sym.get_polls("pre_comp")
   post_comp_left_poll, post_comp_right_poll = sym.get_polls("post_comp")
   post_gain_left_poll, post_gain_right_poll = sym.get_polls("post_gain")

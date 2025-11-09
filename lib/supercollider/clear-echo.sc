@@ -9,6 +9,7 @@ ClearEcho {
                     var output;
                     var delA, delB, delX, fbSignal;
                     var fadeTime=0.05;
+                    var drive = 1.5;
 
                     var first = Impulse.kr(0);
 
@@ -28,20 +29,18 @@ ClearEcho {
 
                     // Delay line with input local to this SynthDef
                     fbSignal = input + (LocalIn.ar(2) * feedback);
+                    fbSignal = BPF.ar((fbSignal * drive).tanh * 1/drive, 1000, 2.0);
 
                     // Create delay lines, compensating time for processing of sample
+                    // timeA and timeB are different when delay time was adjusted by client
                     delA = DelayL.ar(fbSignal, 2.0, timeA - ControlDur.ir);
                     delB = DelayL.ar(fbSignal, 2.0, timeB - ControlDur.ir);
 
-                    // Crossfade between delay lines to prevent clicks when switching time param
+                    // Crossfade between delay lines to prevent clicks when changing delay time
                     delX = SelectX.ar(fade, [delA, delB]);
 
                     // Swap left and right channel (ping-pong)
                     delX = delX.swap(0, 1);
-
-                    // Filter feedback before going into reverb stage
-                    delX = HPF.ar(delX, 500); // bright
-
 
                     LocalOut.ar(delX);
                     delX = LPF.ar(delX, 10000);

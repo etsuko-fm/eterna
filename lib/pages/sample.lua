@@ -110,8 +110,13 @@ function page:load_sample(file)
     -- use specified `file` as a sample and store enabled length of buffer in state
     if not file or file == "-" then return end
     local num_channels = audio_util.num_channels(file)
-    selected_sample = file
-    sym.load_file(file)
+    if sym.load_file(file) then
+        selected_sample = file
+        print('loading file...')
+    else
+        print('loading file failed')
+        return
+    end
     if num_channels > 1 then
         is_stereo = true
         waveform_graphics[1].y = 20
@@ -288,8 +293,6 @@ function page:initialize()
     slice_lfo:set('reset_target', 'mid: rising')
 
     self:add_params()
-
-    loaded_poll:update()
 
     -- add waveform
     waveform_graphics[1] = Waveform:new({

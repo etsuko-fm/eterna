@@ -296,8 +296,10 @@ function Symbiosis.load_file(path)
             print("Files longer than 87.3 seconds are trimmed")
         end
         engine.load_file(path)
+        return true
     else
         print('file not found: ' .. path .. ", loading cancelled")
+        return false
     end
 end
 
@@ -341,10 +343,12 @@ end
 function Symbiosis.process_amp_history(args)
     -- usage:
     --[[
+    sym = include('lib/symbiosis_engine')
+
     function osc.event(path, args, from)
+        local values
         if path == "/amp_history_left" then
-            local blob = args[1]
-            result = Symbiosis.blob_to_table(blob)
+            values = sym.process_amp_history(args)
         end
     end
   ]] --
