@@ -10,7 +10,10 @@ Engine_Symbiosis : CroneEngine {
   var oscServer;
 
   // Buffers
-  var bufAmp, bufWaveformL, bufWaveformR, buffers;
+  var bufAmp, waveformBufs, buffers;
+
+  //
+  var waveformSynths;
 
   *new { arg context, doneCallback;
     ^super.new(context, doneCallback);
@@ -27,13 +30,6 @@ Engine_Symbiosis : CroneEngine {
 
     // For normalizing user sample
     var peakL, peakR, normalizeFactor, maxAmp;
-        
-    // Bufnums for user sample
-    var bufnumL = 0;
-    var bufnumR = 1;
-
-    // Buffer for collecting amplitude data for visualization
-    var bufnumAmp = 2;
 
     var historyLength = 32;
     var amp_history_left = Int8Array.fill(historyLength, 0);
@@ -88,6 +84,7 @@ Engine_Symbiosis : CroneEngine {
     };
     voices = Array.fill(6, {|i| nil});
     buffers = Array.fill(6, {|i| nil});
+    waveformSynths = Array.fill(6, {|i| nil});
 
     // For communicating to Lua (beyond the polling system)
     oscServer = NetAddr("localhost", 10111);
@@ -129,7 +126,7 @@ Engine_Symbiosis : CroneEngine {
         \ampBus, ampBuses[i].index,
         \envBus, envBuses[i].index,
         \out, lowpassBus,
-        \bufnum, bufnumL, 
+        \bufnum, nil, 
       ])
     });    
 
@@ -167,6 +164,25 @@ Engine_Symbiosis : CroneEngine {
         amp_history_left = amp_history_left.insert(0, (msg[3] * 127).round.asInteger);
         amp_history_right = amp_history_right.insert(0, (msg[4] * 127).round.asInteger);
     }, '/amp');
+    OSCFunc({ |msg| 
+      var channel = msg[3].asInteger;
+      ("Preparing waveform for channel" + channel ++ "...").postln;
+      ("bufnum for this waveform buffer:"+waveformBufs[channel].bufnum).postln;
+      waveformBufs[channel].loadToFloatArray(action: {
+        |array| 
+        var waveform = Int8Array.fill(array.size, { |i| 
+          array[i].postln;
+          (array[i] * 127).abs.floor.asInteger.postln;
+          (array[i] * 127).abs.floor.asInteger 
+        });
+        ("Length of this waveform array:"+array.size).postln;
+        ("Length of resulting waveform :"+waveform.size).postln;
+        ("value 0 is:" + waveform[0]).postln;
+        ("value 32 is:" + waveform[32]).postln;
+        oscServer.sendBundle(0, ['/waveform', waveform, channel]);
+        ("Sent channel" + channel + "waveform").postln;
+      });
+    },'/waveformDone');
 
   	this.addCommand("load_file","s", {
       arg msg;
@@ -274,6 +290,70 @@ Engine_Symbiosis : CroneEngine {
         if (b.notNil) {b.normalize()};
       };
       oscServer.sendBundle(0, ['/normalized', true]);
+    });
+
+    this.addCommand("get_waveforms", "i", { |msg|
+      var points = msg[1].asInteger; // number of waveform points
+      var factor = buffers[0].numFrames / points;
+      var next;
+      // 2D array with one waveform array per index
+      var waveforms = Array.fill(6, {
+        Int8Array.fill(points, {|i| 0})
+      });
+      next = { |buf, channel, n, factor, total| 
+        buf.get(n*factor, action: { |result|
+          var rawval = result;
+          var val = (result.abs*127).floor.asInteger;
+          result.postln;
+          val.postln;
+          waveforms[channel][n] = val;
+          if (n < (total-1)) {
+            next.(buf, channel, n+1, factor, total)
+          } { 
+            // waveform ready
+            oscServer.sendBundle(0, ['/waveform', waveforms[channel], channel]);
+          };
+        });
+      };
+      buffers.size.do {|i| 
+        if (buffers[i].notNil) {
+          // Generate new buffer with only as many samples as the required
+          // number of points in the waveform, by downsampling the original buffer
+          ("Generating waveform of" + points + "points for channel"+i).postln;
+          ("Bufnum of src: " + buffers[i].bufnum).postln;
+          ("Factor:" + factor).postln;
+          next.(buffers[i], i, 0, factor, points);
+        } {
+          ("Skipped waveform for empty buffer" + i).postln;
+        };
+      };
+    });
+
+    this.addCommand("get_waveforms_synthdef", "i", { |msg|
+      var points = msg[1].asInteger; // number of waveform points
+      var factor = buffers[0].numFrames / points; // TODO: fail gracefully if no buffer loaded
+      waveformBufs.do { |w| if (w.notNil) { w.free }};
+      "Old waveforms freed".postln;
+      waveformBufs = Array.fill(6, {|i| 
+        if (buffers[i].notNil) {
+          ("Allocating waveform buffer " + i).postln; 
+          Buffer.alloc(context.server, points, 1)
+        }
+      });
+      waveformSynths.do{|w| if(w.notNil) {w.free} };
+      buffers.size.do {|i| 
+        if (buffers[i].notNil) {
+          // Generate new buffer with only as many samples as the required
+          // number of points in the waveform, by downsampling the original buffer
+          ("Generating waveform of" + points + "points for channel"+i).postln;
+          ("Bufnum of src: " + buffers[i].bufnum).postln;
+          ("Bufnum of dest: " + waveformBufs[i].bufnum).postln;
+          ("Factor:" + factor).postln;
+          waveformSynths[i] = Synth.new("Downsample", target:context.xg, args: [\srcBuf, buffers[i], \destBuf, waveformBufs[i], \factor, 256, \channel, i]);
+        } {
+          ("Skipped waveform for empty buffer" + i).postln;
+        };
+      };
     });
 
     voiceCommands.do { |param| 
@@ -403,6 +483,8 @@ Engine_Symbiosis : CroneEngine {
     Buffer.freeAll;
     buffers.free;
 
+    
+
     // Audio buses
     lowpassBus.free;
     highpassBus.free;
@@ -412,6 +494,8 @@ Engine_Symbiosis : CroneEngine {
 
     // SynthDefs
     voices.do(_.free);
+    waveformSynths.do(_.free);
+    waveformSynths.free;
     voices.free;
     lpfSynth.free;
     hpfSynth.free;

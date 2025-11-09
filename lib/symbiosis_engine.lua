@@ -308,6 +308,10 @@ function Symbiosis.normalize()
     engine.normalize()
 end
 
+function Symbiosis.get_waveforms()
+    print('Requesting waveforms...')
+    engine.get_waveforms(64)
+end
 
 function Symbiosis.request_amp_history()
     -- Upon receiving this command, the engine sends back 2 OSC messages to

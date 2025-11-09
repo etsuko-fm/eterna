@@ -33,7 +33,7 @@ Master {
 					var masterOut = limited * out_level;
 					var masterOutAmp = LagUD.ar(Peak.ar(masterOut, Impulse.ar(metering_rate)), 0, 0.1);
 
-					// Send sample values, can be used to plot Lissajous curve
+					// Send sample values, can be used, for example, to plot Lissajous curve
 					SendReply.ar(Impulse.ar(metering_rate), '/amp', [limited[0], limited[1]]);
 
 					// Audio out

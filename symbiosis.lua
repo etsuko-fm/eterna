@@ -100,6 +100,9 @@ end
 
 function osc.event(path, args, from)
   -- TODO: provide table with function to execute per path; paths can be constant on sym engine
+  -- sym.osc_callback(sym.waveform, my_func1)
+  -- sym.osc_callback(sym.duration, my_func2)
+  -- sym.process_osc_event(path, args, from)
   if path == "/waveform" then
     print("Lua: /waveform received from SC")
     channel, waveform = sym.process_waveform(args)
@@ -123,6 +126,7 @@ function osc.event(path, args, from)
     end
   elseif path == "/normalized" then
     print("buffers normalized")
+    sym.get_waveforms()
   end
 end
 

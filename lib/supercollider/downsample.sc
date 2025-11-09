@@ -3,11 +3,13 @@ Downsample {
 		StartUp.add {
 			var s = Server.default;
 			s.waitForBoot {
-                SynthDef(\Downsample, { |srcBuf, destBuf, factor = 16|
+                SynthDef("Downsample", { |srcBuf, destBuf, channel, factor = 16|
                     // Scan through scrBuf at a given speed, write result to destBuf
-                    var phasor = Phasor.ar(0, factor, 0, BufFrames.kr(srcBuf));
-                    var sig = BufRd.ar(1, srcBuf, phasor, loop: 0);
-                    RecordBuf.ar(sig, destBuf, loop: 0, doneAction: Done.freeSelf);
+					var sig = PlayBuf.ar(1, srcBuf, factor);
+					var rec = RecordBuf.ar([sig], destBuf,recLevel:1, run:1.0 loop: 0);
+					var done = Done.kr(sig);
+					SendReply.kr(done, '/waveformDone', [channel]);
+					FreeSelf.kr(done);
                 }).add;
 			}
 		}
