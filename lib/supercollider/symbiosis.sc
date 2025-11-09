@@ -175,57 +175,96 @@ Engine_Symbiosis : CroneEngine {
 
       // Routine to allow server.sync
       var r = Routine {
-        |inval|
+        |in|
         var left, right, waveform_left, waveform_right;
         var numChannels;
         var ready;
+        var elapsed = 0;
+        var timeout = 15;
+        var exit = false;
+        var readNext;
+        var file;
+
         isLoaded = false; 
 
         // Free voices
         voices.do { |voice, i| 
-          voice.free; 
-          voices[i] = nil;
+          if (voice.notNil) {
+            voice.free; 
+            voices[i] = nil;
+          };
         };
 
         // Get file metadata
-        f.free;
-        f = SoundFile.new;
+        file = SoundFile.new;
         path = msg[1].asString;
-        f.openRead(path);
-        ("file" + path + "has" + f.numChannels + "channels").postln;
+        file.openRead(path);
+        ("file" + path + "has" + file.numChannels + "channels").postln;
 
-        // Limit buffer read to 2^24 samples because of Phasor resolution
-        numFrames = f.numFrames.min(2**24);
-        numChannels = f.numChannels;
+        // True limit is 2^24 samples because of Phasor resolution; 
+        // however encountering occassional freezes when numFrames > 2**22 
+        // and reading a large file. 
+        numFrames = file.numFrames.min(2**22);
+        numChannels = file.numChannels.min(6); 
+        file.close;
+        file.free;
+        
+        // Array to keep track of loading status of each channel
         ready = Array.new(numChannels);
-        
-        ("Loading " ++ numFrames ++ " frames").postln;
-        f.close;
 
-        buffers.do { |b| if (b.notNil) {b.free} };
+        buffers.size.do { |i| 
+          if (buffers[i].notNil) {
+            buffers[i].free;
+            buffers[i] = nil;
+          };
+        };
 
-        numChannels.min(6).do { |i|
+        // Allocate buffers
+        ("[1/3] Allocating buffers").postln;
+        numChannels.do { |i| 
+          buffers[i] = Buffer.alloc(context.server, numFrames, 1);
           ready.add(false);
-          // Load upto 6 channels of the file into buffers
-          ("Attempting load channel" + i).postln;
-          buffers[i] = Buffer.readChannel(context.server, path, numFrames: numFrames, channels:[i], action: {|b| 
-           ("Channel" + i + "loaded to buffer" + b.bufnum).postln;
-           if (i==0) {oscServer.sendBundle(0, ['/duration', b.duration])};
-           ready[i] = true;
-           }); 
-        };
-        "Waiting until buffers loaded...".postln;
-        while {ready.includes(false)} {
-          0.01.wait;
-        };
-        
-        voices.do { |voice, i|
-            var channelIndex = i % f.numChannels; // wrap voices across channels
-            voiceParams[i].put(\bufnum, buffers[channelIndex].bufnum);
-            ("Voice param " ++ i ++ " set to buffer " ++ channelIndex).postln;
+          ("Buffer" + i + "allocated with" + buffers[i].numFrames + "frames").postln;
         };
 
-        isLoaded = true;
+        readNext = { |i|
+            ("Reading channel" + i).postln;
+            if (i < numChannels) {
+                buffers[i].readChannel(path, 0, numFrames, channels: [i], action: {
+                  ("Loaded channel " ++ i).postln;
+                  if (i==0) {oscServer.sendBundle(0, ['/duration', buffers[i].duration])};
+                  ready[i] = true;
+                  readNext.(i + 1);
+                });
+            } {
+                "All channels loaded.".postln;
+            };
+        };
+
+        readNext.(0);
+
+        while {ready.includes(false) && exit.not} {
+          (0.5).wait;
+          elapsed = elapsed + 0.5;
+          if (elapsed > timeout) {
+            exit = true;
+          };
+          "Still loading...".postln;
+        };
+        
+        if (exit.not) {
+          "[2/3] loading done, spreading over channels...".postln;
+          voices.do { |voice, i|
+              var channelIndex = i % numChannels; // wrap voices across channels
+              voiceParams[i].put(\bufnum, buffers[channelIndex].bufnum);
+              ("Voice " ++ i ++ " set to buffer " ++ channelIndex).postln;
+          };
+          "[3/3] spreading voices done".postln;
+          isLoaded = true;  
+        } {
+          "skipped steps 2 & 3, re-load should be attempted".postln;
+          // TODO: Send error message to client
+        };
       }.play;
     });
 

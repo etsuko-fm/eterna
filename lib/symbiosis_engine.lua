@@ -147,13 +147,13 @@ Symbiosis.params           = {
         numbers = {
             ["voice_loop_start"] = {
                 min = 0,
-                max = 349, -- == 5.8 minutes at 48khz, corresponds to BufRd.ar() max phasor value
+                max = (2^22)/48000,
                 default = 0,
                 wrap = true
             },
             ["voice_loop_end"] = {
                 min = 0,
-                max = 349,
+                max = (2^22)/48000,
                 default = 0,
                 wrap = true
             },
@@ -186,7 +186,6 @@ Symbiosis.params           = {
         toggles = {
             "voice_enable_lpg",
         }
-
     }
 }
 
@@ -205,6 +204,7 @@ Symbiosis.voice_params     = {
     "voice_rate",
 }
 
+-- all polls defined in the engine
 Symbiosis.available_polls  = {
     ["file_loaded"] = { "file_loaded" },
     ["pre_comp"] = { "pre_comp_left", "pre_comp_right" },
@@ -292,9 +292,8 @@ function Symbiosis.load_file(path)
         if samplerate ~= 48000 then
             print("Sample rate of 48KHz expected, found " .. samplerate)
         end
-        if duration > 60 then
-            -- TODO: check actual max duration
-            print("Duration longer than 60 seconds are trimmed")
+        if duration > 87.3 then
+            print("Files longer than 87.3 seconds are trimmed")
         end
         engine.load_file(path)
     else
