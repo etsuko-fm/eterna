@@ -99,6 +99,7 @@ end
 
 
 function osc.event(path, args, from)
+  -- TODO: provide table with function to execute per path; paths can be constant on sym engine
   if path == "/waveform" then
     print("Lua: /waveform received from SC")
     channel, waveform = sym.process_waveform(args)
@@ -111,6 +112,17 @@ function osc.event(path, args, from)
     amp_historyL = sym.process_amp_history(args)
   elseif path == "/amp_history_right" then
     amp_historyR = sym.process_amp_history(args)
+  elseif path == "/file_load_success" then
+    if args[1] then
+      print('successfully loaded '.. args[2])
+      print('normalizing...')
+      sym.normalize()
+    else
+      print('failed to load '.. args[2])
+      -- TODO: clear sample / retry
+    end
+  elseif path == "/normalized" then
+    print("buffers normalized")
   end
 end
 

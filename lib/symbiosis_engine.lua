@@ -303,6 +303,12 @@ function Symbiosis.load_file(path)
     end
 end
 
+function Symbiosis.normalize()
+    -- normalize buffers individually (does not preserve peaks relative to each other)
+    engine.normalize()
+end
+
+
 function Symbiosis.request_amp_history()
     -- Upon receiving this command, the engine sends back 2 OSC messages to
     -- /amp_history_left and /amp_history_right

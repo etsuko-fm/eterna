@@ -261,10 +261,10 @@ Engine_Symbiosis : CroneEngine {
           };
           "[3/3] spreading voices done".postln;
           isLoaded = true;  
-          oscServer.sendBundle(0, ['/file_load_success', true]);
+          oscServer.sendBundle(0, ['/file_load_success', true, path]);
         } {
           "skipped steps 2 & 3, re-load should be attempted".postln;
-          oscServer.sendBundle(0, ['/file_load_success', false]);
+          oscServer.sendBundle(0, ['/file_load_success', false, path]);
         };
       }.play;
     });
@@ -273,6 +273,7 @@ Engine_Symbiosis : CroneEngine {
       buffers.do { |b| 
         if (b.notNil) {b.normalize()};
       };
+      oscServer.sendBundle(0, ['/normalized', true]);
     });
 
     voiceCommands.do { |param| 
