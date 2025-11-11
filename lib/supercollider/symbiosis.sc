@@ -220,7 +220,7 @@ Engine_Symbiosis : CroneEngine {
         // True limit is 2^24 samples because of Phasor resolution; 
         // however encountering occassional freezes when numFrames > 2**22 
         // and reading a large file. 
-        numFrames = file.numFrames.min(2**22);
+        numFrames = file.numFrames.min(2**24);
         numChannels = file.numChannels.min(6); 
         file.close;
         file.free;
@@ -234,6 +234,7 @@ Engine_Symbiosis : CroneEngine {
             buffers[i] = nil;
           };
         };
+        context.server.sync;
 
         // Allocate buffers
         ("[1/3] Allocating buffers").postln;
@@ -242,6 +243,7 @@ Engine_Symbiosis : CroneEngine {
           ready.add(false);
           ("Buffer" + i + "allocated with" + buffers[i].numFrames + "frames").postln;
         };
+        context.server.sync;
 
         readNext = { |i|
             ("Reading channel" + i).postln;
@@ -258,6 +260,8 @@ Engine_Symbiosis : CroneEngine {
         };
 
         readNext.(0);
+        context.server.sync; // the timeout was more resilient; this may hang indefinitely
+        // now it should always be done instantly
 
         while {ready.includes(false) && exit.not} {
           (0.5).wait;
@@ -266,16 +270,18 @@ Engine_Symbiosis : CroneEngine {
             exit = true;
           };
           "Still loading...".postln;
+          // TODO: could it be file is loaded successfully, but msg didn't arrive
         };
-        
+        "[2/3] loading done, spreading over channels...".postln;
+
+        voices.do { |voice, i|
+            var channelIndex = i % numChannels; // wrap voices across channels
+            voiceParams[i].put(\bufnum, buffers[channelIndex].bufnum);
+            ("Voice " ++ i ++ " set to buffer " ++ channelIndex).postln;
+        };
+        "[3/3] spreading voices done".postln;
+
         if (exit.not) {
-          "[2/3] loading done, spreading over channels...".postln;
-          voices.do { |voice, i|
-              var channelIndex = i % numChannels; // wrap voices across channels
-              voiceParams[i].put(\bufnum, buffers[channelIndex].bufnum);
-              ("Voice " ++ i ++ " set to buffer " ++ channelIndex).postln;
-          };
-          "[3/3] spreading voices done".postln;
           isLoaded = true;  
           oscServer.sendBundle(0, ['/file_load_success', true, path]);
         } {
@@ -286,32 +292,44 @@ Engine_Symbiosis : CroneEngine {
     });
 
   	this.addCommand("normalize", "", {
-      buffers.do { |b| 
-        if (b.notNil) {b.normalize()};
-      };
-      oscServer.sendBundle(0, ['/normalized', true]);
+      //TODO: refactor to create function per channel
+      var r = Routine {
+        buffers.do { |b| 
+          if (b.notNil) {b.normalize()};
+        };
+        context.server.sync;
+        oscServer.sendBundle(0, ['/normalized', true]);
+      }.play;
     });
 
     this.addCommand("get_waveforms", "i", { |msg|
+      //TODO: refactor to create function per channel
       var points = msg[1].asInteger; // number of waveform points
       var factor = buffers[0].numFrames / points;
       var next;
       // 2D array with one waveform array per index
-      var waveforms = Array.fill(6, {
+      var int8waveforms = Array.fill(6, {
         Int8Array.fill(points, {|i| 0})
       });
-      next = { |buf, channel, n, factor, total| 
-        buf.get(n*factor, action: { |result|
-          var rawval = result;
-          var val = (result.abs*127).floor.asInteger;
-          result.postln;
-          val.postln;
-          waveforms[channel][n] = val;
+      var waveforms = Array.fill(6, {
+        Array.fill(points, {|i| 0.0})
+      });
+      
+      // Function to create wavefom based on samples in buffer
+      next = { |buf, ch, n, factor, total| 
+        buf.getn(n*factor, 96, action: { |result|
+          var rawval = result.maxItem; // take highest out of 96 samples at requested point (2ms)
+
+          // Positive or negative is irrelevant for waveform
+          waveforms[ch][n] = (rawval.abs*127).floor.asInteger;
           if (n < (total-1)) {
-            next.(buf, channel, n+1, factor, total)
+            next.(buf, ch, n+1, factor, total)
           } { 
-            // waveform ready
-            oscServer.sendBundle(0, ['/waveform', waveforms[channel], channel]);
+            // waveform ready; normalize
+            waveforms[ch] = waveforms[ch] * (127 / waveforms[ch].maxItem);
+            // remap to int8, send to client
+            waveforms[ch].size.do { |i| int8waveforms[ch][i] = waveforms[ch][i].floor.asInteger};
+            oscServer.sendBundle(0, ['/waveform', int8waveforms[ch], ch]);
           };
         });
       };
