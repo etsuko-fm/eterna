@@ -184,112 +184,74 @@ Engine_Symbiosis : CroneEngine {
       });
     },'/waveformDone');
 
-  	this.addCommand("load_file","s", {
+  	this.addCommand("load_channel_to_buffer","sii", {
+      // one should be a list of voices
       arg msg;
-      var path, numFrames, step;
-      var numDisplayPoints = 128;
+      var numFrames;
+      var path = msg[1].asString;
+      var channel = msg[2].asInteger;
+      var index = msg[3].asInteger;
 
       // Routine to allow server.sync
       var r = Routine {
         |in|
-        var left, right, waveform_left, waveform_right;
-        var numChannels;
         var ready;
         var elapsed = 0;
         var timeout = 15;
         var exit = false;
-        var readNext;
         var file;
+
+        (path+": channel"+channel+"-> buffer"+index).postln;
 
         isLoaded = false; 
 
-        // Free voices
-        voices.do { |voice, i| 
-          if (voice.notNil) {
-            voice.free; 
-            voices[i] = nil;
-          };
+        // Free buffer
+        if (buffers[index].notNil) {
+            buffers[index].free;
+            buffers[index] = nil;
         };
+        
 
         // Get file metadata
         file = SoundFile.new;
-        path = msg[1].asString;
         file.openRead(path);
-        ("file" + path + "has" + file.numChannels + "channels").postln;
-
-        // True limit is 2^24 samples because of Phasor resolution; 
-        // however encountering occassional freezes when numFrames > 2**22 
-        // and reading a large file. 
         numFrames = file.numFrames.min(2**24);
-        numChannels = file.numChannels.min(6); 
         file.close;
         file.free;
-        
-        // Array to keep track of loading status of each channel
-        ready = Array.new(numChannels);
+        ready = false;
 
-        buffers.size.do { |i| 
-          if (buffers[i].notNil) {
-            buffers[i].free;
-            buffers[i] = nil;
-          };
-        };
+        // Allocate buffer
+        buffers[index] = Buffer.alloc(context.server, numFrames, 1);
+        ("Buffer" + index + "allocated with" + buffers[index].numFrames + "frames").postln;
         context.server.sync;
 
-        // Allocate buffers
-        ("[1/3] Allocating buffers").postln;
-        numChannels.do { |i| 
-          buffers[i] = Buffer.alloc(context.server, numFrames, 1);
-          ready.add(false);
-          ("Buffer" + i + "allocated with" + buffers[i].numFrames + "frames").postln;
-        };
-        context.server.sync;
+        buffers[index].readChannel(path, 0, numFrames, channels: [channel], action: {
+          ("Loaded channel" + channel + "to buffer" + index).postln;
+          oscServer.sendBundle(0, ['/duration', buffers[index].duration]);
+          ready = true;
+        });
 
-        readNext = { |i|
-            ("Reading channel" + i).postln;
-            if (i < numChannels) {
-                buffers[i].readChannel(path, 0, numFrames, channels: [i], action: {
-                  ("Loaded channel " ++ i).postln;
-                  if (i==0) {oscServer.sendBundle(0, ['/duration', buffers[i].duration])};
-                  ready[i] = true;
-                  readNext.(i + 1);
-                });
-            } {
-                "All channels loaded.".postln;
-            };
-        };
-
-        readNext.(0);
-        context.server.sync; // the timeout was more resilient; this may hang indefinitely
-        // now it should always be done instantly
-
-        while {ready.includes(false) && exit.not} {
+        while {ready.not && exit.not} {
           (0.5).wait;
           elapsed = elapsed + 0.5;
           if (elapsed > timeout) {
             exit = true;
+          } {
+            ("Still loading..."+elapsed+"/"++timeout).postln;
           };
-          "Still loading...".postln;
-          // TODO: could it be file is loaded successfully, but msg didn't arrive
         };
-        "[2/3] loading done, spreading over channels...".postln;
-
-        voices.do { |voice, i|
-            var channelIndex = i % numChannels; // wrap voices across channels
-            voiceParams[i].put(\bufnum, buffers[channelIndex].bufnum);
-            ("Voice " ++ i ++ " set to buffer " ++ channelIndex).postln;
-        };
-        "[3/3] spreading voices done".postln;
 
         if (exit.not) {
           isLoaded = true;  
-          oscServer.sendBundle(0, ['/file_load_success', true, path]);
+          oscServer.sendBundle(0, ['/file_load_success', true, path, channel, index]);
         } {
-          "skipped steps 2 & 3, re-load should be attempted".postln;
-          oscServer.sendBundle(0, ['/file_load_success', false, path]);
+          ("Operation timed out for buffer"+index++", channel"+channel).postln;
+          oscServer.sendBundle(0, ['/file_load_success', false, path, channel, index]);
         };
       }.play;
     });
+
+    this.addCommand("allocate_buffer_to_voice","ii", {|msg|});
 
   	this.addCommand("normalize", "", {
       //TODO: refactor to create function per channel
