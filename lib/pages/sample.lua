@@ -110,13 +110,16 @@ function page:load_sample(file)
     -- use specified `file` as a sample and store enabled length of buffer in state
     if not file or file == "-" then return end
     local num_channels = audio_util.num_channels(file)
-    if sym.load_file(file) then
-        selected_sample = file
-        print('loading file...')
-    else
-        print('loading file failed')
-        return
+    local ready = {}
+    local success
+    for ch = 1, math.min(num_channels, 6) do
+        -- load file to buffer corresponding to channel
+        ready[ch] = false
+        if not sym.load_file(file, ch, ch) then
+            success = false
+        end
     end
+
     if num_channels > 1 then
         is_stereo = true
         waveform_graphics[1].y = 20

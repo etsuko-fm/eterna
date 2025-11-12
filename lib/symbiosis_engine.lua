@@ -189,7 +189,7 @@ Symbiosis.params           = {
     }
 }
 
--- All voice params, used to define helper methods
+-- All voice params available in supercollider
 Symbiosis.voice_params     = {
     "voice_attack",
     "voice_decay",
@@ -202,6 +202,7 @@ Symbiosis.voice_params     = {
     "voice_lpg_freq",
     "voice_pan",
     "voice_rate",
+    "voice_bufnum",
 }
 
 -- all polls defined in the engine
@@ -279,13 +280,13 @@ function Symbiosis.voice_trigger(voice_id)
     end
 end
 
-function Symbiosis.load_file(path)
+function Symbiosis.load_file(path, channel, buffer)
     -- Perform sanity checks before sending to engine
     if util.file_exists(path) then
-        local ch, samples, samplerate = audio.file_info(path)
+        local channels, samples, samplerate = audio.file_info(path)
         local duration = samples / samplerate
         print("loading file: " .. path)
-        print("  channels:\t" .. ch)
+        print("  channels:\t" .. channels)
         print("  samples:\t" .. samples)
         print("  sample rate:\t" .. samplerate .. "hz")
         print("  duration:\t" .. duration .. " sec")
@@ -295,7 +296,15 @@ function Symbiosis.load_file(path)
         if duration > 87.3 then
             print("Files longer than 87.3 seconds are trimmed")
         end
-        engine.load_file(path)
+        if channel > channels then
+            print("Can't load channel " .. channel .. ', file only has' .. channels .. ' channels')
+            return false
+        elseif buffer > 6 or buffer < 1 then
+            print("buffer should be 1..6")
+            return false
+        end
+        -- lua indexes 1-based, supercollider 0-based
+        engine.load_channel_to_buffer(path, channel - 1, buffer - 1)
         return true
     else
         print('file not found: ' .. path .. ", loading cancelled")
@@ -303,9 +312,15 @@ function Symbiosis.load_file(path)
     end
 end
 
-function Symbiosis.normalize()
-    -- normalize buffers individually (does not preserve peaks relative to each other)
-    engine.normalize()
+function Symbiosis.normalize(buffer)
+    if buffer > 6 or buffer < 1 then
+        print("buffer should be 1..6")
+        return false
+    end
+
+    -- normalizes an individual buffer
+    engine.normalize(buffer-1)
+    return true
 end
 
 function Symbiosis.get_waveforms()

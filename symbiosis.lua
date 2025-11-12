@@ -97,7 +97,14 @@ local function count()
   ready = true -- used for fps
 end
 
-
+local sc_buffer = {
+  [0] = 1,
+  [1] = 2,
+  [2] = 3,
+  [3] = 4,
+  [4] = 5,
+  [5] = 6,
+}
 function osc.event(path, args, from)
   -- TODO: provide table with function to execute per path; paths can be constant on sym engine
   -- sym.osc_callback(sym.waveform, my_func1)
@@ -116,10 +123,14 @@ function osc.event(path, args, from)
   elseif path == "/amp_history_right" then
     amp_historyR = sym.process_amp_history(args)
   elseif path == "/file_load_success" then
-    if args[1] then
-      print('successfully loaded '.. args[2])
+    local success = args[1]
+    local path = args[2]
+    local channel = args[3]
+    local buffer = args[4]
+    if success then
+      print('successfully loaded channel ' .. channel .. "of ".. path .. " to buffer " .. buffer)
       print('normalizing...')
-      sym.normalize()
+      sym.normalize(sc_buffer[buffer])
     else
       print('failed to load '.. args[2])
       -- TODO: clear sample / retry
