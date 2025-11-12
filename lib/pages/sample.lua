@@ -112,6 +112,11 @@ function page:load_sample(file)
     local num_channels = audio_util.num_channels(file)
     local ready = {}
     local success
+    -- TODO: implement progress indicator
+    -- TODO: implement callback to see if successful
+    -- TODO: implement retry mechanism if not successful
+    -- TODO: call sym.voice_bufnum() once loaded successfully
+    -- TODO: spread buffers over voices
     for ch = 1, math.min(num_channels, 6) do
         -- load file to buffer corresponding to channel
         ready[ch] = false
@@ -120,6 +125,7 @@ function page:load_sample(file)
         end
     end
 
+    -- TODO: implement upto 6 channels
     if num_channels > 1 then
         is_stereo = true
         waveform_graphics[1].y = 20
