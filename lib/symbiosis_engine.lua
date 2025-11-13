@@ -147,13 +147,13 @@ Symbiosis.params           = {
         numbers = {
             ["voice_loop_start"] = {
                 min = 0,
-                max = (2^22)/48000,
+                max = (2 ^ 22) / 48000,
                 default = 0,
                 wrap = true
             },
             ["voice_loop_end"] = {
                 min = 0,
-                max = (2^22)/48000,
+                max = (2 ^ 22) / 48000,
                 default = 0,
                 wrap = true
             },
@@ -205,7 +205,7 @@ Symbiosis.voice_params     = {
     "voice_bufnum",
 }
 
--- all polls defined in the engine
+-- All polls defined in the engine
 Symbiosis.available_polls  = {
     ["file_loaded"] = { "file_loaded" },
     ["pre_comp"] = { "pre_comp_left", "pre_comp_right" },
@@ -216,7 +216,7 @@ Symbiosis.available_polls  = {
     ["voice_env"] = { "voice1env", "voice2env", "voice3env", "voice4env", "voice5env", "voice6env" },
 }
 
-Symbiosis.get_polls      = function(name, as_tuple)
+Symbiosis.get_polls        = function(name, as_tuple)
     -- Returns poll instances corresponding to the mapping in Symbiosis.available_polls
     -- Usage:
     --[[
@@ -268,6 +268,12 @@ for _, param in pairs(Symbiosis.voice_params) do
     -- create methods that set an engine param for a given voice id,
     -- translating the lua 1-based indexes to Supercollider 0-based array indexes
     Symbiosis[param] = function(i, v)
+        if i < 1 or i > 6 then
+            print("Error: voice for voice_" .. param .. "() should be 1..6, got " .. i)
+            return
+        end
+        -- Utilize param system to pass value to SuperCollider;
+        -- advantage is that state becomes saveable
         params:set(Symbiosis.get_id(param, i), v)
     end
 end
@@ -280,7 +286,7 @@ function Symbiosis.voice_trigger(voice_id)
     end
 end
 
-function Symbiosis.load_file(path, channel, buffer)
+function Symbiosis.load_file(path, channel, buffer, on_success, on_fail)
     -- Perform sanity checks before sending to engine
     if util.file_exists(path) then
         local channels, samples, samplerate = audio.file_info(path)
@@ -319,7 +325,7 @@ function Symbiosis.normalize(buffer)
     end
 
     -- normalizes an individual buffer
-    engine.normalize(buffer-1)
+    engine.normalize(buffer - 1)
     return true
 end
 
@@ -398,7 +404,7 @@ function Symbiosis.add_params()
     -- Script has to call this method in order to add params. All will be hidden by default,
     -- as there're so many they may not make much sense to the end user.
     -- Scripts may still expose (a selection of ) these,
-    -- or define controlspecs on top of them, 
+    -- or define controlspecs on top of them,
     -- tuned to their desired range, steps, formatting, grouping, etc.
 
     -- add controlspec-based params
@@ -481,6 +487,63 @@ function Symbiosis.add_params()
         end
     end
     params:bang()
+end
+
+function Symbiosis.osc_event(path, args, from)
+    print("engine got OSC:", path)
+    if path == "/waveform" then
+        channel, waveform = Symbiosis.process_waveform(args)
+        Symbiosis.on_waveform(waveform, channel)
+    elseif path == "/duration" then
+        local duration = tonumber(args[1])
+        Symbiosis.on_duration(duration)
+    elseif path == "/amp_history_left" then
+        local history = sym.process_amp_history(args)
+        Symbiosis.on_amp_history_left(history)
+    elseif path == "/amp_history_right" then
+        local history = sym.process_amp_history(args)
+        Symbiosis.on_amp_history_right(history)
+    elseif path == "/file_load_success" then
+        local success = args[1]
+        local path = args[2]
+        local channel = args[3]
+        local buffer = args[4]
+        if success then
+            Symbiosis.on_file_load_success(path, channel, buffer)
+        else
+            Symbiosis.on_file_load_fail(path, channel, buffer)
+        end
+    elseif path == "/normalized" then
+        Symbiosis.on_normalize()
+    end
+end
+
+ -- These functions can be overloaded by script
+function Symbiosis.on_normalize() end
+function Symbiosis.on_duration(duration) end
+function Symbiosis.on_waveform(waveform, channel) end
+function Symbiosis.on_file_load_success(path, channel, buffer) end
+function Symbiosis.on_amp_history_left(history) end
+function Symbiosis.on_amp_history_right(history) end
+
+function Symbiosis.install_osc_hook()
+    -- Allows this module to process SuperCollider's OSC events;
+    -- if a script also defines its own osc.event function,
+    -- this hook should be invoked after that definition.
+
+    -- reference to script's osc.event function (if any)
+    original = osc.event
+
+    -- capture osc events
+    osc.event = function(path, args, from)
+        -- process event within this engine
+        Symbiosis.osc_event(path, args, from)
+
+        -- pass to original handler
+        if original then
+            return original(path, args, from)
+        end
+    end
 end
 
 return Symbiosis

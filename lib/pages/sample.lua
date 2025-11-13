@@ -122,6 +122,8 @@ function page:load_sample(file)
         ready[ch] = false
         if not sym.load_file(file, ch, ch) then
             success = false
+        else
+            -- engine.voice_bufnum()
         end
     end
 
@@ -138,6 +140,36 @@ function page:load_sample(file)
     end
     self:update_loop_ranges()
 end
+
+function sym.on_normalize()
+  print("buffers normalized")
+  sym.get_waveforms()
+end
+
+function sym.on_duration(duration)
+  page:set_sample_duration(duration)
+end
+
+function sym.on_waveform(waveform, channel)
+  print("Lua: /waveform received from SC")
+  page:update_waveform(waveform, channel)
+end
+
+local sc_buffer = {
+  [0] = 1,
+  [1] = 2,
+  [2] = 3,
+  [3] = 4,
+  [4] = 5,
+  [5] = 6,
+}
+
+function sym.on_file_load_success(path, channel, buffer)
+  print('successfully loaded channel ' .. channel .. "of " .. path .. " to buffer " .. buffer)
+  print('normalizing...')
+  sym.normalize(sc_buffer[buffer])
+end
+
 
 local function select_sample()
     local function callback(file_path)

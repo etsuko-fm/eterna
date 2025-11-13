@@ -97,48 +97,12 @@ local function count()
   ready = true -- used for fps
 end
 
-local sc_buffer = {
-  [0] = 1,
-  [1] = 2,
-  [2] = 3,
-  [3] = 4,
-  [4] = 5,
-  [5] = 6,
-}
-function osc.event(path, args, from)
-  -- TODO: provide table with function to execute per path; paths can be constant on sym engine
-  -- sym.osc_callback(sym.waveform, my_func1)
-  -- sym.osc_callback(sym.duration, my_func2)
-  -- sym.process_osc_event(path, args, from)
-  if path == "/waveform" then
-    print("Lua: /waveform received from SC")
-    channel, waveform = sym.process_waveform(args)
-    page_sample:update_waveform(waveform, channel)
-  elseif path == "/duration" then
-    local duration = tonumber(args[1])
-    print('received duration: ' .. duration)
-    page_sample:set_sample_duration(duration)
-  elseif path == "/amp_history_left" then
-    amp_historyL = sym.process_amp_history(args)
-  elseif path == "/amp_history_right" then
-    amp_historyR = sym.process_amp_history(args)
-  elseif path == "/file_load_success" then
-    local success = args[1]
-    local path = args[2]
-    local channel = args[3]
-    local buffer = args[4]
-    if success then
-      print('successfully loaded channel ' .. channel .. "of ".. path .. " to buffer " .. buffer)
-      print('normalizing...')
-      sym.normalize(sc_buffer[buffer])
-    else
-      print('failed to load '.. args[2])
-      -- TODO: clear sample / retry
-    end
-  elseif path == "/normalized" then
-    print("buffers normalized")
-    sym.get_waveforms()
-  end
+function sym.on_amp_history_left(history)
+  amp_historyL = history
+end
+
+function sym.on_amp_history_right(history)
+  amp_historyR = history
 end
 
 DB_FLOOR = -60
@@ -147,6 +111,7 @@ env_polls = {}
 amp_polls = {}
 
 function to_dBFS(x)
+  -- TODO: move to util
   -- x: 0 to 1
   local floor = DB_FLOOR
   if x <= 0 then return floor end
@@ -171,6 +136,10 @@ function init()
     norns.enc.accel(i, false)
   end
 
+  -- Enable engine module to process OSC from SuperCollider
+  sym.install_osc_hook()
+
+  -- Setup polls
   pre_comp_left_poll, pre_comp_right_poll = sym.get_polls("pre_comp")
   post_comp_left_poll, post_comp_right_poll = sym.get_polls("post_comp")
   post_gain_left_poll, post_gain_right_poll = sym.get_polls("post_gain")
@@ -179,6 +148,8 @@ function init()
   env_polls = sym.get_polls("voice_env", false)
 
   sym.add_params()
+
+  -- Initialize pages
   for _, page in ipairs(pages) do
     page:initialize()
   end
@@ -269,7 +240,7 @@ local function draw_page_indicator()
         screen.rect(x, y, 1, enc1n)
       elseif enc1n < 0 then
         -- line from top to bottom
-        screen.rect(x, y+3, 1, enc1n)
+        screen.rect(x, y + 3, 1, enc1n)
       end
     else
       screen.level(6)
