@@ -10,6 +10,23 @@ Symbiosis.env_time_max     = 5
 
 local engine_prefix        = "symbiosis_"
 
+local sc_to_lua = {
+  [0] = 1,
+  [1] = 2,
+  [2] = 3,
+  [3] = 4,
+  [4] = 5,
+  [5] = 6,
+}
+
+local lua_to_sc = {
+  [1] = 0,
+  [2] = 1,
+  [3] = 2,
+  [4] = 3,
+  [5] = 4,
+  [6] = 5,
+}
 Symbiosis.echo_styles      = { "CLEAR", "DUST", "MIST" }
 
 local filter_spec          = controlspec.def {
@@ -278,11 +295,11 @@ for _, param in pairs(Symbiosis.voice_params) do
     end
 end
 
-function Symbiosis.voice_trigger(voice_id)
-    if voice_id >= 1 and voice_id <= 6 then
-        engine.voice_trigger(voice_id - 1)
+function Symbiosis.voice_trigger(voice)
+    if voice >= 1 and voice <= 6 then
+        engine.voice_trigger(lua_to_sc[voice])
     else
-        print("voice_id should be between 1 and 6, found " .. voice_id)
+        print("voice should be between 1 and 6, found " .. voice)
     end
 end
 
@@ -309,8 +326,7 @@ function Symbiosis.load_file(path, channel, buffer, on_success, on_fail)
             print("buffer should be 1..6")
             return false
         end
-        -- lua indexes 1-based, supercollider 0-based
-        engine.load_channel_to_buffer(path, channel - 1, buffer - 1)
+        engine.load_channel_to_buffer(path, lua_to_sc[channel], lua_to_sc[buffer])
         return true
     else
         print('file not found: ' .. path .. ", loading cancelled")
@@ -325,13 +341,13 @@ function Symbiosis.normalize(buffer)
     end
 
     -- normalizes an individual buffer
-    engine.normalize(buffer - 1)
+    engine.normalize(lua_to_sc[buffer])
     return true
 end
 
-function Symbiosis.get_waveforms()
-    print('Requesting waveforms...')
-    engine.get_waveforms(64)
+function Symbiosis.get_waveform(buffer, num_samples)
+    print('Requesting waveform for buffer ' .. buffer)
+    engine.get_waveform(lua_to_sc[buffer], num_samples)
 end
 
 function Symbiosis.request_amp_history()
@@ -389,15 +405,14 @@ end
 
 function Symbiosis.process_waveform(args)
     local blob = args[1]    -- the int8 array from OSC
-    local channel = args[2] -- 0 or 1 for left, right
-    print('channel: ' .. tonumber(channel))
+    local buffer = args[2] -- 0-5
+    buffer = sc_to_lua[buffer]
     local waveform = blob_to_table(blob)
     for i, v in ipairs(waveform) do
         -- convert int8 array to floats
         waveform[i] = waveform[i] / 127
     end
-    -- supercollider uses 0-based, convert to 1-based
-    return channel + 1, waveform
+    return buffer, waveform
 end
 
 function Symbiosis.add_params()
@@ -435,15 +450,14 @@ function Symbiosis.add_params()
 
     -- add controlspec-based voice params (define one per voice)
     for command, entry in pairs(Symbiosis.params.voices.specs) do
-        for i = 1, 6 do
-            local sc_idx = i - 1
-            local id = Symbiosis.get_id(command, i)
+        for voice = 1, 6 do
+            local id = Symbiosis.get_id(command, voice)
             params:add({
                 type = "control",
                 id = id,
                 name = no_underscore(id),
                 controlspec = entry,
-                action = function(v) engine[command](sc_idx, v) end
+                action = function(v) engine[command](lua_to_sc[voice], v) end
             })
             params:hide(id)
         end
@@ -451,16 +465,15 @@ function Symbiosis.add_params()
 
     -- add toggle-based voice params (define one per voice)
     for _, command in pairs(Symbiosis.params.voices.toggles) do
-        for i = 1, 6 do
-            local sc_idx = i - 1
-            local id = Symbiosis.get_id(command, i)
+        for voice = 1, 6 do
+            local id = Symbiosis.get_id(command, voice)
             params:add({
                 type = "binary",
                 behavior = "toggle",
                 id = id,
                 name = no_underscore(id),
                 action = function(v)
-                    engine[command](sc_idx, v)
+                    engine[command](lua_to_sc[voice], v)
                 end
             })
             params:hide(id)
@@ -490,40 +503,50 @@ function Symbiosis.add_params()
 end
 
 function Symbiosis.osc_event(path, args, from)
-    print("engine got OSC:", path)
     if path == "/waveform" then
         channel, waveform = Symbiosis.process_waveform(args)
         Symbiosis.on_waveform(waveform, channel)
+    --
     elseif path == "/duration" then
         local duration = tonumber(args[1])
         Symbiosis.on_duration(duration)
+    --
     elseif path == "/amp_history_left" then
         local history = sym.process_amp_history(args)
         Symbiosis.on_amp_history_left(history)
+    --
     elseif path == "/amp_history_right" then
         local history = sym.process_amp_history(args)
         Symbiosis.on_amp_history_right(history)
-    elseif path == "/file_load_success" then
+    --
+    elseif path == "/file_load_result" then
         local success = args[1]
         local path = args[2]
-        local channel = args[3]
-        local buffer = args[4]
-        if success then
+        local channel = sc_to_lua[args[3]]
+        local buffer = sc_to_lua[args[4]]
+        if success == 1 then
             Symbiosis.on_file_load_success(path, channel, buffer)
         else
             Symbiosis.on_file_load_fail(path, channel, buffer)
         end
+    --
     elseif path == "/normalized" then
-        Symbiosis.on_normalize()
+        local voice = sc_to_lua[args[1]]
+        Symbiosis.on_normalize(voice)
     end
 end
 
- -- These functions can be overloaded by script
-function Symbiosis.on_normalize() end
+-- These functions can be overloaded by script
+function Symbiosis.on_normalize(voice) end
+
 function Symbiosis.on_duration(duration) end
+
 function Symbiosis.on_waveform(waveform, channel) end
+
 function Symbiosis.on_file_load_success(path, channel, buffer) end
+
 function Symbiosis.on_amp_history_left(history) end
+
 function Symbiosis.on_amp_history_right(history) end
 
 function Symbiosis.install_osc_hook()

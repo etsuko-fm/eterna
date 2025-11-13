@@ -172,7 +172,6 @@ Engine_Symbiosis : CroneEngine {
             buffers[index] = nil;
         };
         
-
         // Get file metadata
         file = SoundFile.new;
         file.openRead(path);
@@ -204,10 +203,10 @@ Engine_Symbiosis : CroneEngine {
 
         if (exit.not) {
           isLoaded = true;  
-          oscServer.sendBundle(0, ['/file_load_success', true, path, channel, index]);
+          oscServer.sendBundle(0, ['/file_load_result', true, path, channel, index]);
         } {
-          ("Operation timed out for buffer"+index++", channel"+channel).postln;
-          oscServer.sendBundle(0, ['/file_load_success', false, path, channel, index]);
+          ("Operation timed out for buffer" + index ++ ", channel" + channel).postln;
+          oscServer.sendBundle(0, ['/file_load_result', false, path, channel, index]);
         };
       }.play;
     });
@@ -230,53 +229,52 @@ Engine_Symbiosis : CroneEngine {
           buffers[index].normalize();
           context.server.sync;
           oscServer.sendBundle(0, ['/normalized', index]);
-        };        
+        };
       }.play;
     });
 
-    this.addCommand("get_waveforms", "i", { |msg|
-      //TODO: refactor to create function per channel
-      var points = msg[1].asInteger; // number of waveform points
-      var factor = buffers[0].numFrames / points;
+    this.addCommand("get_waveform", "ii", { |msg|
+      var idx = msg[1].asInteger;
+      var points = msg[2].asInteger; // number of waveform points
+      var factor = buffers[idx].numFrames / points;
       var next;
       // 2D array with one waveform array per index
-      var int8waveforms = Array.fill(6, {
-        Int8Array.fill(points, {|i| 0})
-      });
-      var waveforms = Array.fill(6, {
-        Array.fill(points, {|i| 0.0})
-      });
+      var int8waveform = Int8Array.fill(points, {|i| 0});
+      var waveform = Array.fill(points, {|i| 0.0});
       
-      // Function to create wavefom based on samples in buffer
-      next = { |buf, ch, n, factor, total| 
+      // Function to retrieve a single buffer sample and store it in waveform array
+      var next_sample = { |buf, buf_idx, n, factor, total| 
         buf.getn(n*factor, 96, action: { |result|
           var rawval = result.maxItem; // take highest out of 96 samples at requested point (2ms)
 
           // Positive or negative is irrelevant for waveform
-          waveforms[ch][n] = (rawval.abs*127).floor.asInteger;
+          waveform[n] = (rawval.abs*127).floor.asInteger;
           if (n < (total-1)) {
-            next.(buf, ch, n+1, factor, total)
+            next_sample.(buf, buf_idx, n+1, factor, total)
           } { 
-            // waveform ready; normalize
-            waveforms[ch] = waveforms[ch] * (127 / waveforms[ch].maxItem);
-            // remap to int8, send to client
-            waveforms[ch].size.do { |i| int8waveforms[ch][i] = waveforms[ch][i].floor.asInteger};
-            oscServer.sendBundle(0, ['/waveform', int8waveforms[ch], ch]);
+            // waveform ready; scale so max is 127 
+            //  (graphical choice, would not reflect a very silent waveform)
+            //  TODO: leave this to lua
+            waveform = waveform * (127 / waveform.maxItem);
+            // remap to int8
+            waveform.size.do { |i| int8waveform[i] = waveform[i].floor.asInteger};
+            // send to client
+            oscServer.sendBundle(0, ['/waveform', int8waveform, buf_idx]);
+            "waveform sent".postln;
           };
         });
       };
-      buffers.size.do {|i| 
-        if (buffers[i].notNil) {
-          // Generate new buffer with only as many samples as the required
-          // number of points in the waveform, by downsampling the original buffer
-          ("Generating waveform of" + points + "points for channel"+i).postln;
-          ("Bufnum of src: " + buffers[i].bufnum).postln;
-          ("Factor:" + factor).postln;
-          next.(buffers[i], i, 0, factor, points);
-        } {
-          ("Skipped waveform for empty buffer" + i).postln;
-        };
+
+      if (buffers[idx].notNil) {
+        // Generate new buffer with only as many samples as the required
+        // number of points in the waveform, by downsampling the original buffer
+        ("Generating waveform of" + points + "points for buffer"+idx).postln;
+        ("Factor:" + factor).postln;
+        next_sample.(buffers[idx], idx, 0, factor, points);
+      } {
+        ("Skipped waveform for empty buffer" + idx).postln;
       };
+
     });
 
     voiceCommands.do { |param| 

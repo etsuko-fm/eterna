@@ -106,6 +106,19 @@ function page:update_loop_ranges()
     end
 end
 
+local load_queue = {}
+local ready = {}
+
+
+local function load_files(queue)
+    for n = 1, #queue do
+        file = queue[n][1]
+        channel = queue[n][2]
+        buffer = queue[n][3]
+        sym.load_file(file, channel, buffer)
+    end
+end
+
 function page:load_sample(file)
     -- use specified `file` as a sample and store enabled length of buffer in state
     if not file or file == "-" then return end
@@ -113,18 +126,17 @@ function page:load_sample(file)
     local ready = {}
     local success
     -- TODO: implement progress indicator
-    -- TODO: implement callback to see if successful
     -- TODO: implement retry mechanism if not successful
     -- TODO: call sym.voice_bufnum() once loaded successfully
     -- TODO: spread buffers over voices
-    for ch = 1, math.min(num_channels, 6) do
+    ready = {}
+    retries = {}
+    for channel = 1, math.min(num_channels, 6) do
         -- load file to buffer corresponding to channel
-        ready[ch] = false
-        if not sym.load_file(file, ch, ch) then
-            success = false
-        else
-            -- engine.voice_bufnum()
-        end
+        ready[channel] = false
+        local buffer = channel
+        sym.load_file(file, channel, buffer)
+        load_files(load_queue)
     end
 
     -- TODO: implement upto 6 channels
@@ -141,9 +153,9 @@ function page:load_sample(file)
     self:update_loop_ranges()
 end
 
-function sym.on_normalize()
-  print("buffers normalized")
-  sym.get_waveforms()
+function sym.on_normalize(buffer)
+  print("buffer " .. buffer .." normalized")
+  sym.get_waveform(buffer, 64)
 end
 
 function sym.on_duration(duration)
@@ -155,21 +167,29 @@ function sym.on_waveform(waveform, channel)
   page:update_waveform(waveform, channel)
 end
 
-local sc_buffer = {
-  [0] = 1,
-  [1] = 2,
-  [2] = 3,
-  [3] = 4,
-  [4] = 5,
-  [5] = 6,
-}
-
 function sym.on_file_load_success(path, channel, buffer)
-  print('successfully loaded channel ' .. channel .. "of " .. path .. " to buffer " .. buffer)
+  print('successfully loaded channel ' .. channel .. " of " .. path .. " to buffer " .. buffer)
   print('normalizing...')
-  sym.normalize(sc_buffer[buffer])
+  ready[channel] = true
+  -- TODO: once all ready, normalize
+  sym.normalize(buffer)
 end
 
+local retries = {}
+function sym.on_file_load_fail(path, channel, buffer)
+    if retries[channel] == nil then
+        retries[channel] = 0
+    end
+    if retries[channel] < 1 then
+        -- try once more
+        print("retry #" .. retries)
+        sym.load_file(path, channel, buffer)
+        retries[channel] = retries[channel] + 1
+    else
+        print('failed to load channel ' .. channel .. "of " .. path .. " to buffer " .. buffer)
+    end
+  -- deselect sample? retry?
+end
 
 local function select_sample()
     local function callback(file_path)
@@ -336,20 +356,15 @@ function page:initialize()
     self:add_params()
 
     -- add waveform
-    waveform_graphics[1] = Waveform:new({
-        x = 33,
-        y = 20,
-        waveform_width = waveform_width,
-        vertical_scale = 9,
-    })
-
-    waveform_graphics[2] = Waveform:new({
-        x = 33,
-        y = 32,
-        waveform_width = waveform_width,
-        vertical_scale = 9,
-    })
-
+    for n = 1,6 do
+        -- upto 6 waveforms, 1 for each buffer
+        waveform_graphics[n] = Waveform:new({
+            x = 33,
+            y = 20,
+            waveform_width = waveform_width,
+            vertical_scale = 9,
+        })
+    end
     if selected_sample then
         filename = to_sample_name(selected_sample)
         if debug_mode then self:load_sample(_path.dust .. selected_sample) end
