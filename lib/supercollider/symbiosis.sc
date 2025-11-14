@@ -12,9 +12,6 @@ Engine_Symbiosis : CroneEngine {
   // Buffers
   var bufAmp, waveformBufs, buffers;
 
-  //
-  var waveformSynths;
-
   *new { arg context, doneCallback;
     ^super.new(context, doneCallback);
   }
@@ -32,8 +29,7 @@ Engine_Symbiosis : CroneEngine {
     var peakL, peakR, normalizeFactor, maxAmp;
 
     var historyLength = 32;
-    var amp_history_left = Int8Array.fill(historyLength, 0);
-    var amp_history_right = Int8Array.fill(historyLength, 0);
+    var amp_history = Array.fill(2, {|n| Int8Array.fill(historyLength, 0)});
     var voiceParams;
 
     var lpfParams = Dictionary.newFrom([\freq, 1000, \res, 0.1, \dry, 0]);
@@ -66,7 +62,6 @@ Engine_Symbiosis : CroneEngine {
 
     voices = Array.fill(6, {|i| nil});
     buffers = Array.fill(6, {|i| nil});
-    waveformSynths = Array.fill(6, {|i| nil});
 
     // For communicating to Lua (beyond the polling system)
     oscServer = NetAddr("localhost", 10111);
@@ -140,11 +135,12 @@ Engine_Symbiosis : CroneEngine {
 
     // Receive amplitude batches for visualization
     OSCFunc({ |msg|
-        amp_history_left.pop;
-        amp_history_right.pop;
-        // Make value positive and between 0 and 255
-        amp_history_left = amp_history_left.insert(0, (msg[3] * 127).round.asInteger);
-        amp_history_right = amp_history_right.insert(0, (msg[4] * 127).round.asInteger);
+        2.do { |n| 
+          var val = msg[3+n]; // arg 3 & 4 are channel left/right samples
+          amp_history[n].pop; // remove oldest value
+          // Make value positive and between 0 and 127
+          amp_history[n] = amp_history[n].insert(0, (val * 127).round.asInteger);
+        };
     }, '/amp');
     
   	this.addCommand("load_channel_to_buffer","sii", {
@@ -197,7 +193,7 @@ Engine_Symbiosis : CroneEngine {
           if (elapsed > timeout) {
             exit = true;
           } {
-            ("Still loading..." + elapsed + "/" ++ timeout).postln;
+            ("Still loading buffer" + index + "..." + elapsed ++ "/" ++ timeout).postln;
           };
         };
 
@@ -377,8 +373,8 @@ Engine_Symbiosis : CroneEngine {
 
     this.addCommand("request_amp_history", "", { 
       arg msg; 
-      oscServer.sendBundle(0, ['/amp_history_left', amp_history_left]);
-      oscServer.sendBundle(0, ['/amp_history_right', amp_history_right]);
+      // TODO: could be a poll
+      oscServer.sendBundle(0, ['/amp_history', amp_history[0], amp_history[1]]);
     });
 
     this.addPoll(\file_loaded, { isLoaded }, periodic:false);
@@ -404,8 +400,6 @@ Engine_Symbiosis : CroneEngine {
     Buffer.freeAll;
     buffers.free;
 
-    
-
     // Audio buses
     lowpassBus.free;
     highpassBus.free;
@@ -415,8 +409,6 @@ Engine_Symbiosis : CroneEngine {
 
     // SynthDefs
     voices.do(_.free);
-    waveformSynths.do(_.free);
-    waveformSynths.free;
     voices.free;
     lpfSynth.free;
     hpfSynth.free;

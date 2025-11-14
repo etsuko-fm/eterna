@@ -303,7 +303,7 @@ function Symbiosis.voice_trigger(voice)
     end
 end
 
-function Symbiosis.load_file(path, channel, buffer, on_success, on_fail)
+function Symbiosis.load_file(path, channel, buffer)
     -- Perform sanity checks before sending to engine
     if util.file_exists(path) then
         local channels, samples, samplerate = audio.file_info(path)
@@ -351,9 +351,9 @@ function Symbiosis.get_waveform(buffer, num_samples)
 end
 
 function Symbiosis.request_amp_history()
-    -- Upon receiving this command, the engine sends back 2 OSC messages to
-    -- /amp_history_left and /amp_history_right
-    -- with the values of the last 32 samples that were recorded for this purpose.
+    -- Upon receiving this command, the engine sends back an OSC message
+    -- to /amp_history
+    -- with the int8 values of the last 32 samples that were recorded for this purpose.
     -- the speed of recording is dependent on engine.metering_rate().
     -- The result can be used for visualizations, e.g. a lissajous curve
     -- or an amplitude graph.
@@ -394,13 +394,14 @@ function Symbiosis.process_amp_history(args)
 
     function osc.event(path, args, from)
         local values
-        if path == "/amp_history_left" then
-            values = sym.process_amp_history(args)
+        if path == "/amp_history" then
+            left, right = sym.process_amp_history(args)
         end
     end
   ]] --
-    local blob = args[1]
-    return blob_to_table(blob)
+    local left = args[1]
+    local right = args[2]
+    return blob_to_table(left), blob_to_table(right)
 end
 
 function Symbiosis.process_waveform(args)
@@ -511,13 +512,9 @@ function Symbiosis.osc_event(path, args, from)
         local duration = tonumber(args[1])
         Symbiosis.on_duration(duration)
     --
-    elseif path == "/amp_history_left" then
-        local history = sym.process_amp_history(args)
-        Symbiosis.on_amp_history_left(history)
-    --
-    elseif path == "/amp_history_right" then
-        local history = sym.process_amp_history(args)
-        Symbiosis.on_amp_history_right(history)
+    elseif path == "/amp_history" then
+        local left, right = sym.process_amp_history(args)
+        Symbiosis.on_amp_history(left, right)
     --
     elseif path == "/file_load_result" then
         local success = args[1]
@@ -545,9 +542,7 @@ function Symbiosis.on_waveform(waveform, channel) end
 
 function Symbiosis.on_file_load_success(path, channel, buffer) end
 
-function Symbiosis.on_amp_history_left(history) end
-
-function Symbiosis.on_amp_history_right(history) end
+function Symbiosis.on_amp_history(left, right) end
 
 function Symbiosis.install_osc_hook()
     -- Allows this module to process SuperCollider's OSC events;

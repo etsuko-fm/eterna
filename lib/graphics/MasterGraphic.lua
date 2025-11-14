@@ -9,7 +9,7 @@ MasterGraphic = {
   post_comp_levels = { 0, 0 },
   out_levels = { 0, 0 },
   out_level = 1.0,
-  lissajous_buf = {},
+  amp_history = {{}, {}}
 }
 
 function MasterGraphic:new(o)
@@ -34,27 +34,21 @@ function MasterGraphic:draw_lissajous()
   local box_size = (scale + 2) * 2
   screen.level(4)
   screen.rect(center_x - box_size / 2 + 1, center_y - box_size / 2, box_size, box_size) -- don't let graphic touch the boundary
-  -- screen.circle(center_x, center_y, scale / 2 + 3)
   screen.stroke()
 
   screen.level(5)
 
   -- draw previous frames with lower brightness
   for i, frame in ipairs(prev_frames) do
-    -- if i % 2 == 0 then
-    --   lev = lev-1
-    --   screen.level(math.max(lev,1))
-    -- end
     if i == 1 then
       screen.level(10)
     elseif i == 2 then
       screen.level(5)
-      -- elseif i == 3 then screen.level(1)
     else
       screen.level(1)
     end
 
-    for j, pixel in ipairs(frame) do
+    for _, pixel in ipairs(frame) do
       screen.pixel(pixel['x'], pixel['y'])
       screen.fill()
     end
@@ -66,10 +60,10 @@ function MasterGraphic:draw_lissajous()
   screen.level(15)
 
   prev_frames[1] = {}
-  for i, s in ipairs(amp_historyL) do
+  for i, s in ipairs(self.amp_history[1]) do
     if i < 16 then
       local divL = (s / 127) * scale
-      local divR = (amp_historyR[i] / 127) * scale
+      local divR = (self.amp_history[2][i] / 127) * scale
       local x = center_x + divL
       local y = center_y - divR - 1
       screen.pixel(x, y)

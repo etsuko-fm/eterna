@@ -9,12 +9,12 @@ Master {
 					postCompControlBusL, postCompControlBusR, 
 					postGainBusL, postGainBusR, 
 					masterOutControlBusL, masterOutControlBusR,
-					ratio=3, drive=1.0, metering_rate = 500, 
+					ratio=3, drive=1.0, metering_rate = 0, 
 					threshold=0.25, attack=0.01, release=0.3, out_level=1.0;
                     var in_signal = In.ar(in, 2);
 
 					// Measure amplitude of unprocessed input
-					var preAmp = LagUD.ar(Peak.ar(in_signal, Impulse.ar(metering_rate)), 0, 0.1);
+					var preAmp = LagUD.kr(Peak.kr(in_signal, Impulse.kr(metering_rate)), 0, 0.1);
 
 					// Apply drive before compression
 					var in_scaled = in_signal * drive;
@@ -24,17 +24,17 @@ Master {
                     var limited = compressed.tanh;
 
 					// Amplitude meter after drive, before compression
-					var postGainAmp = LagUD.ar(Peak.ar(in_scaled, Impulse.ar(metering_rate)), 0, 0.1);
+					var postGainAmp = LagUD.kr(Peak.kr(in_scaled, Impulse.kr(metering_rate)), 0, 0.1);
 
 					// Amplitude meter after compression and limiting
-					var postCompAmp = LagUD.ar(Peak.ar(limited, Impulse.ar(metering_rate)), 0, 0.1);
+					var postCompAmp = LagUD.kr(Peak.kr(limited, Impulse.kr(metering_rate)), 0, 0.1);
 
 					// Master out (expects out_level to be <= 1.0, because no limiter on this bit)
 					var masterOut = limited * out_level;
-					var masterOutAmp = LagUD.ar(Peak.ar(masterOut, Impulse.ar(metering_rate)), 0, 0.1);
+					var masterOutAmp = LagUD.kr(Peak.kr(masterOut, Impulse.kr(metering_rate)), 0, 0.1);
 
 					// Send sample values, can be used, for example, to plot Lissajous curve
-					SendReply.ar(Impulse.ar(metering_rate), '/amp', [limited[0], limited[1]]);
+					SendReply.kr(Impulse.kr(metering_rate), '/amp', [limited[0], limited[1]]);
 
 					// Audio out
 					Out.ar(out, masterOut);

@@ -69,6 +69,7 @@ function page:render()
 
     master_graphic.drive_amount = params:get_raw(ENGINE_MASTER_COMP_DRIVE)
     master_graphic.out_level = params:get(ENGINE_MASTER_OUTPUT)
+    master_graphic.amp_history = self.amp_history
     master_graphic:render()
 
     local drive = params:get(ENGINE_MASTER_COMP_DRIVE)
@@ -88,8 +89,8 @@ end
 
 function page:initialize()
     add_params()
+    self.amp_history = {{}, {}}
     master_graphic = MasterGraphic:new()
-
     pre_comp_left_poll.callback = function(v) master_graphic.pre_comp_levels[1] = amp_to_log(v) end
     pre_comp_right_poll.callback = function(v) master_graphic.pre_comp_levels[2] = amp_to_log(v) end
     post_comp_left_poll.callback = function(v) master_graphic.post_comp_levels[1] = amp_to_log(v) end
@@ -114,7 +115,7 @@ function page:initialize()
 end
 
 function page:enter()
-    params:set(sym.get_id("metering_rate"), 1000)
+    params:set(sym.get_id("metering_rate"), 500)
 end
 
 function page:exit()

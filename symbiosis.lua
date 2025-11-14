@@ -97,12 +97,9 @@ local function count()
   ready = true -- used for fps
 end
 
-function sym.on_amp_history_left(history)
-  amp_historyL = history
-end
-
-function sym.on_amp_history_right(history)
-  amp_historyR = history
+function sym.on_amp_history(left, right)
+  page_master.amp_history[1] = left
+  page_master.amp_history[2] = right
 end
 
 DB_FLOOR = -60

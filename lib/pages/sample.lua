@@ -129,6 +129,7 @@ function page:load_sample(file)
     -- TODO: implement retry mechanism if not successful
     -- TODO: call sym.voice_bufnum() once loaded successfully
     -- TODO: spread buffers over voices
+    -- TODO: Clear buffers not needed before loading new
     ready = {}
     retries = {}
     for channel = 1, math.min(num_channels, 6) do
