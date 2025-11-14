@@ -28,7 +28,7 @@ Engine_Symbiosis : CroneEngine {
     // For normalizing user sample
     var peakL, peakR, normalizeFactor, maxAmp;
 
-    var historyLength = 32;
+    var historyLength = 16;
     var amp_history = Array.fill(2, {|n| Int8Array.fill(historyLength, 0)});
     var voiceParams;
 
@@ -191,7 +191,6 @@ Engine_Symbiosis : CroneEngine {
           (0.5).wait;
           elapsed = elapsed + 0.5;
           if (elapsed > timeout) {
-            "waiting to exit".postln;
             exit = true;
           } {
             ("Still loading buffer" + index + "..." + elapsed ++ "/" ++ timeout).postln;
@@ -370,7 +369,10 @@ Engine_Symbiosis : CroneEngine {
     }); // arrives in decibel, converted to linear
 
     // Commands for visualization
-    this.addCommand("metering_rate", "i", {  arg msg; master.set(\metering_rate, msg[1])});
+    this.addCommand("metering_rate", "i", {  arg msg; 
+      master.set(\metering_rate, msg[1]);
+      ("metering rate set to "++msg[1]).postln;
+    });
 
     this.addCommand("request_amp_history", "", { 
       arg msg; 

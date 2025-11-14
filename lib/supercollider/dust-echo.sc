@@ -5,47 +5,53 @@ DustEcho {
 			s.waitForBoot {
 				SynthDef("DustEcho", {
 					arg in, out, wet=0.5, feedback=0.8, time=0.1;
+                    var grains, rate, filteredFeedback;
 					var input = In.ar(in, 2);
                     var output;
                     var delA, delB, delX, fbSignal;
-                    var fadeTime=0.05;
+                    var times = [5,19,35,36];
+                    var allPassDelayTimes = times.collect { |p| p * 0.01 };
+                    var trig;
+                    var buf = LocalBuf(48000);
+                    var mix;
+	                buf.clear;
 
-                    var first = Impulse.kr(0);
+                    fbSignal = LocalIn.ar(1);
+                    filteredFeedback = LPF.ar(fbSignal, 7000, 1);
 
-                    // If time changed, or first run, trigger
-                    var t_trig = Changed.kr(time) + first;
+                    allPassDelayTimes.do { |t,i|
+                        filteredFeedback = AllpassL.ar(
+                            CombL.ar(filteredFeedback, 0.2, t),
+                            0.3, //max delay time
+                            t, //delay
+                            LFNoise1.kr(25, mul: 0.5, add: 1)
+                        ); // decay
+                    };
+                    RecordBuf.ar(LPF.ar((fbSignal*0.5)+(filteredFeedback*0.5), 4500).tanh , buf, recLevel: feedback, loop: 1);
                     
-                    // Mechanism to allow one t_trig to alternately trigger t_1 and t_2
-                    var which = ToggleFF.kr(t_trig);
-                    var t_1 = Select.kr(which, [t_trig, 0]);
-					var t_2 = Select.kr(which, [0, t_trig]);
+                    // Alter forward/backward playback
+                    rate = Dseq([1, 1, -1, 1, -1, -1, 1], inf);
+                    
+                    // Trigger random grains, plus one every <time>
+                    trig = Dust.kr(2/time) + Impulse.kr(2/time);
 
-                    var fade = EnvGen.kr(Env([1-which, which],[fadeTime]), t_trig);
+                    // Grains plays from the feedback buffer
+                    grains = DelayL.ar(TGrains.ar(
+                        2, //numchannels
+                        trig,
+                        buf,
+                        rate,
+                        LFNoise1.kr(1/time, mul: 0.25, add: 0.75), // position in buffer
+                        LFNoise1.kr(1/time, mul: 0.25, add: 0.26), // duration
+                        Dseq([-1, 1, 0], inf),//,LFNoise1.kr(50),      // random pan
+                        0.7, //amp
+                    ), 2, time);
 
-                    // Alternately update delay time A/B, to enable crossfading to prevent click on changing delay time
-                    var timeA = Latch.kr(time, t_1);
-                    var timeB = Latch.kr(time, t_2);
+                    // Send grains into feedback loop
+                    LocalOut.ar(Mix.ar(input) * 0.5 + Mix.ar(grains) * 0.5);
 
-                    // Delay line with input local to this SynthDef
-                    fbSignal = input + (LocalIn.ar(2) * feedback);
-
-                    // Create delay lines, compensating time for processing of sample
-                    delA = DelayL.ar(fbSignal, 2.0, timeA - ControlDur.ir);
-                    delB = DelayL.ar(fbSignal, 2.0, timeB - ControlDur.ir);
-
-                    // Crossfade between delay lines to prevent clicks when switching time param
-                    delX = SelectX.ar(fade, [delA, delB]);
-
-                    // Swap left and right channel (ping-pong)
-                    delX = delX.swap(0, 1);
-
-                    // Filter feedback before going into reverb stage
-                    delX = HPF.ar(LPF.ar(delX, 2400), 50);
-
-                    LocalOut.ar(delX);
-                    delX = LPF.ar(delX, 10000);
-                    output = input + (delX * wet); // wet/dry mix
-
+                    // Output wet+dry mix
+                    output = input + (grains * wet);
 					Out.ar(out, output);
 				}).add;
 			}

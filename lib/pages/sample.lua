@@ -15,8 +15,10 @@ local retries = {}
 
 -- State of loading file, per channel of file
 local ready = {}
-
 local slice_lfo
+
+local active_channels = 1 --
+
 
 -- when true, preloads a sample
 local debug_mode = true
@@ -122,11 +124,11 @@ function page:load_sample(file)
         -- load file to buffer corresponding to channel
         ready[channel] = false
         local buffer = channel
-        sym.load_file(file, channel, buffer)
+        if sym.load_file(file, channel, buffer) then
+            active_channels = num_channels
+            self.slice_graphic.num_channels = num_channels
+        end
     end
-
-    self.slice_graphic.num_channels = num_channels
-    self:update_loop_ranges()
 end
 
 function sym.on_normalize(buffer)
@@ -148,6 +150,13 @@ function sym.on_file_load_success(path, channel, buffer)
   print('normalizing...')
   ready[channel] = true
   sym.normalize(buffer)
+  if all_true(ready) then
+    for voice = 1,6 do
+        local buffer_idx = util.wrap(voice, 1, active_channels)
+        params:set(sym.get_id("voice_bufnum", voice),  buffer_idx)
+        print("lua: voice ".. voice .. "set to buffer ".. buffer_idx)
+    end
+  end
 end
 
 

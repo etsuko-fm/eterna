@@ -142,10 +142,10 @@ Symbiosis.params           = {
         },
         ["metering_rate"] = controlspec.def {
             min = 0,
-            max = 5000,
+            max = 600, -- values > approx 650 seem to cause issues with processing on SC side
             warp = "lin",
             step = 1,
-            default = 1000,
+            default = 0,
             units = 'Hz',
             quantum = 1 / 5000,
         }
@@ -203,6 +203,11 @@ Symbiosis.params           = {
         -- Voice params that are binary toggles
         toggles = {
             "voice_enable_lpg",
+        },
+        options = {
+            ["voice_bufnum"] = {
+                options = {0,1,2,3,4,5},
+            },
         }
     }
 }
@@ -475,6 +480,23 @@ function Symbiosis.add_params()
                 name = no_underscore(id),
                 action = function(v)
                     engine[command](lua_to_sc[voice], v)
+                end
+            })
+            params:hide(id)
+        end
+    end
+
+    -- add options-based voice params (define one per voice)
+    for command, entry in pairs(Symbiosis.params.voices.options) do
+        for voice = 1, 6 do
+            local id = Symbiosis.get_id(command, voice)
+            params:add({
+                type = "option",
+                id = id,
+                name = no_underscore(id),
+                options = entry.options,
+                action = function(v)
+                    engine[command](lua_to_sc[voice], entry.options[v])
                 end
             })
             params:hide(id)

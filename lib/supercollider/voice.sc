@@ -103,7 +103,7 @@ Voice {
 					playback = LPF.ar(playback, 10000, level);
 					
 					// Amplitude analysis
-					amp =  Amplitude.ar(Mix.ar(playback), 0, 0.2);
+					amp =  Amplitude.kr(Mix.kr(playback), 0, 0.2);
 					Out.kr(ampBus, amp);
 					Out.kr(envBus, Select.kr(intVoiceId, [percEnv1, percEnv2]));
 					

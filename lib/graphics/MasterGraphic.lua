@@ -60,7 +60,7 @@ function MasterGraphic:draw_lissajous()
 
   -- clear most recent frame (other values have been shifted)
   prev_frames[1] = {}
-
+  -- print(self.amp_history[1][1])
   for i, s in ipairs(self.amp_history[1]) do
     -- convert int8 (0-127) to float (0-1), then scale
     local divL = (s / 127) * scale
