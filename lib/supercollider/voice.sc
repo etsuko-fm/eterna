@@ -22,14 +22,14 @@ Voice {
 					var xfadeTime = 0.05;
 
 					 // Playback start pos in samples
-					var start = loop_start  * BufSampleRate.ir(bufnum); 
+					var start = loop_start  * BufSampleRate.kr(bufnum); 
 
 					// Playback end pos in samples; if loop_end is set, use it; otherwise use entire buffer
 					var end = Select.kr(
 						loop_end > 0,
 						[
 							BufFrames.kr(bufnum),
-							loop_end * BufSampleRate.ir(bufnum)
+							loop_end * BufSampleRate.kr(bufnum)
 						]
 					);
 					var playback; // xfaded voice (between playback1 and playback2)
@@ -50,8 +50,8 @@ Voice {
 					var end2 = Latch.kr(end, t_2);
 
  					// Duration of selected section of buffer, in seconds
-					var duration1 = (end1 - start1).abs / BufSampleRate.ir(bufnum) / rate.abs;
-					var duration2 = (end2 - start2).abs / BufSampleRate.ir(bufnum) / rate.abs;
+					var duration1 = (end1 - start1).abs / BufSampleRate.kr(bufnum) / rate.abs;
+					var duration2 = (end2 - start2).abs / BufSampleRate.kr(bufnum) / rate.abs;
 
 					// This is a fully open envelope for the duration of the section, 
 					// only useful when the AR envelope is disabled

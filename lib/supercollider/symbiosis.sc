@@ -156,6 +156,7 @@ Engine_Symbiosis : CroneEngine {
         var timeout = 10;
         var exit = false;
         var file;
+        var sampleRate;
 
         (path + ": channel" + channel + "-> buffer" + index).postln;
 
@@ -174,9 +175,10 @@ Engine_Symbiosis : CroneEngine {
         file.close;
         file.free;
         ready = false;
+        
 
         // Allocate buffer
-        buffers[index] = Buffer.alloc(context.server, numFrames, 1);
+        buffers[index] = Buffer.alloc(context.server, numFrames, numChannels: 1);
         ("Buffer" + index + "allocated with" + buffers[index].numFrames + "frames").postln;
         context.server.sync;
 
