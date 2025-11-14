@@ -38,7 +38,6 @@ Engine_Symbiosis : CroneEngine {
     // Map echo names to corresponding SynthDef
     var echoMap = (
       MIST: "MistEcho",
-      DUST: "DustEcho",
       CLEAR: "ClearEcho"
     );
     var currentEcho;

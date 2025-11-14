@@ -28,7 +28,7 @@ local lua_to_sc = {
   [5] = 4,
   [6] = 5,
 }
-Symbiosis.echo_styles      = { "CLEAR", "DUST", "MIST" }
+Symbiosis.echo_styles      = { "CLEAR", "MIST" }
 
 local filter_spec          = controlspec.def {
     min = 20,
