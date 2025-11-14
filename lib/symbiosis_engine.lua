@@ -500,7 +500,6 @@ function Symbiosis.add_params()
             params:hide(id)
         end
     end
-    params:bang()
 end
 
 function Symbiosis.osc_event(path, args, from)
@@ -518,13 +517,13 @@ function Symbiosis.osc_event(path, args, from)
     --
     elseif path == "/file_load_result" then
         local success = args[1]
-        local path = args[2]
+        local file_path = args[2]
         local channel = sc_to_lua[args[3]]
         local buffer = sc_to_lua[args[4]]
         if success == 1 then
-            Symbiosis.on_file_load_success(path, channel, buffer)
+            Symbiosis.on_file_load_success(file_path, channel, buffer)
         else
-            Symbiosis.on_file_load_fail(path, channel, buffer)
+            Symbiosis.on_file_load_fail(file_path, channel, buffer)
         end
     --
     elseif path == "/normalized" then

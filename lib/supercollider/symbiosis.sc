@@ -154,7 +154,7 @@ Engine_Symbiosis : CroneEngine {
         |in|
         var ready;
         var elapsed = 0;
-        var timeout = 15;
+        var timeout = 10;
         var exit = false;
         var file;
 
@@ -191,13 +191,14 @@ Engine_Symbiosis : CroneEngine {
           (0.5).wait;
           elapsed = elapsed + 0.5;
           if (elapsed > timeout) {
+            "waiting to exit".postln;
             exit = true;
           } {
             ("Still loading buffer" + index + "..." + elapsed ++ "/" ++ timeout).postln;
           };
         };
 
-        if (exit.not) {
+        if (ready) {
           isLoaded = true;  
           oscServer.sendBundle(0, ['/file_load_result', true, path, channel, index]);
         } {

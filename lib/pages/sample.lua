@@ -9,9 +9,18 @@ local filename = ""
 -- local selected_sample = nil -- assign path to load a default sample on script startup (e.g. "audio/etsuko/chris/play-safe.wav")
 local selected_sample = "audio/etsuko/chris/play-safe.wav"
 
+-- In rare cases sample loading may fail, these are for a retry mechanism
+local MAX_RETRIES = 1
+local retries = {}
+
+-- State of loading file, per channel of file
+local ready = {}
 
 local slice_lfo
+
+-- when true, preloads a sample
 local debug_mode = true
+
 local page = Page:create({
     name = page_name,
     -- 
@@ -20,20 +29,9 @@ local page = Page:create({
 
 local function path_to_file_name(file_path)
     -- strips '/foo/bar/audio.wav' to 'audio.wav'
-    print("file path: " .. file_path)
     local split_at = string.match(file_path, "^.*()/")
     return string.sub(file_path, split_at + 1)
 end
-
-function table.slice(tbl, first, last)
-    -- TODO: move to util
-    local result = {}
-    for i = first, last do
-        result[#result + 1] = tbl[i]
-    end
-    return result
-end
-
 
 local function remove_extension(filename)
     return filename:match("^(.*)%.[^%.]+$") or filename
@@ -97,43 +95,37 @@ function page:update_loop_ranges()
     end
 end
 
-local load_queue = {}
-local ready = {}
-
-
-local function load_files(queue)
-    for n = 1, #queue do
-        file = queue[n][1]
-        channel = queue[n][2]
-        buffer = queue[n][3]
-        sym.load_file(file, channel, buffer)
+local function all_true(t)
+    for _, v in pairs(t) do
+        if not v then
+            return false
+        end
     end
+    return true
 end
 
+
+
 function page:load_sample(file)
+    print("page:load_sample("..file..")")
     -- use specified `file` as a sample and store enabled length of buffer in state
     if not file or file == "-" then return end
     local num_channels = audio_util.num_channels(file)
-    local ready = {}
+    ready = {}
     local success
     -- TODO: implement progress indicator
-    -- TODO: implement retry mechanism if not successful
     -- TODO: call sym.voice_bufnum() once loaded successfully
     -- TODO: spread buffers over voices
     -- TODO: Clear buffers not needed before loading new
-    ready = {}
     retries = {}
     for channel = 1, math.min(num_channels, 6) do
         -- load file to buffer corresponding to channel
         ready[channel] = false
         local buffer = channel
         sym.load_file(file, channel, buffer)
-        load_files(load_queue)
     end
 
-
     self.slice_graphic.num_channels = num_channels
-
     self:update_loop_ranges()
 end
 
@@ -155,18 +147,17 @@ function sym.on_file_load_success(path, channel, buffer)
   print('successfully loaded channel ' .. channel .. " of " .. path .. " to buffer " .. buffer)
   print('normalizing...')
   ready[channel] = true
-  -- TODO: once all ready, normalize
   sym.normalize(buffer)
 end
 
-local retries = {}
+
 function sym.on_file_load_fail(path, channel, buffer)
     if retries[channel] == nil then
         retries[channel] = 0
     end
-    if retries[channel] < 1 then
+    if retries[channel] < MAX_RETRIES then
         -- try once more
-        print("retry #" .. retries)
+        print("retry #" .. retries[channel])
         sym.load_file(path, channel, buffer)
         retries[channel] = retries[channel] + 1
     else
@@ -176,8 +167,10 @@ function sym.on_file_load_fail(path, channel, buffer)
 end
 
 local function select_sample()
+    print("select_sample()")
     local function callback(file_path)
         if file_path ~= 'cancel' then
+            print ("setting path to "..file_path)
             params:set(ID_SAMPLER_AUDIO_FILE, file_path)
         end
         page_disabled = false -- proceed with rendering page instead of file menu
@@ -302,7 +295,6 @@ function page:add_params()
 
     -- lfo
     params:set_action(ID_SAMPLER_LFO, action_lfo)
-    params:bang()
 end
 
 function page:set_sample_duration(v)
@@ -337,7 +329,11 @@ function page:initialize()
 
     if selected_sample then
         filename = to_sample_name(selected_sample)
-        if debug_mode then self:load_sample(_path.dust .. selected_sample) end
+        print("initialize, file load")
+        if debug_mode then
+            -- silent set, main module invokes params:bang() after initialization
+            params:set(ID_SAMPLER_AUDIO_FILE, _path.dust .. selected_sample, true)
+        end
     end
 
     self.window = Window:new({title = "SAMPLING"})
