@@ -44,19 +44,6 @@ local function e3(d)
     params:set(ID_SEQ_DENSITY, new, false)
 end
 
-
-local function update_slices()
-    if UPDATE_SLICES then
-        for voice = 1, 6 do
-            local voice_loop_start = sym.get_id("voice_loop_start", voice)
-            local voice_loop_end = sym.get_id("voice_loop_end", voice)
-            params:set(voice_loop_start, params:get(ID_SAMPLER_SECTIONS[voice].loop_start))
-            params:set(voice_loop_end, params:get(ID_SAMPLER_SECTIONS[voice].loop_end))
-        end
-        UPDATE_SLICES = false
-    end
-end
-
 local function get_step_envelope(enable_mod, velocity)
     local max_time = params:get(ID_ENVELOPES_TIME)
     local max_shape = params:get(ID_ENVELOPES_SHAPE)
@@ -124,11 +111,13 @@ function page:stop()
     clock.transport.stop()
     self.seq:reset()
     self.graphic.is_playing = false
+    self:disable_env_polls()
 end
 
 function page:start()
     clock.transport.start()
     self.graphic.is_playing = true
+    self:enable_env_polls()
 end
 
 function page:toggle_transport()
@@ -177,13 +166,6 @@ function page:update_grid_step(x, y, v)
         grid_device:led(x, y, 0)
     end
 end
-
-grid.key = function(x, y, z)
-    -- if SEQUENCE_STYLE_TABLE[params:get(ID_SEQ_STYLE)] == SEQ_GRID then
-    --     -- would sequence from grid
-    -- end
-end
-
 
 local function toggle_redraw()
     redraw_sequence = true
@@ -240,11 +222,25 @@ function page:initialize()
     generate_perlin_seq()
 end
 
-function page:enter()
+function page:enable_env_polls()
     for i = 1, 6 do
         env_polls[i].callback = function(v) self.graphic.voice_env[i] = amp_to_log(v) end
     end
 end
 
+function page:disable_env_polls()
+    for i = 1, 6 do
+        env_polls[i].callback = nil
+        self.graphic.voice_env[i] = 0
+    end
+end
+
+function page:enter()
+    self:enable_env_polls()
+end
+
+function page:exit()
+    self:disable_env_polls()
+end
 
 return page

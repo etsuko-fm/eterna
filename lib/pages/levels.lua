@@ -157,5 +157,10 @@ function page:enter()
         amp_polls[i].callback = function(v) level_graphic.voice_amp[i] = amp_to_log(v) end
     end
 end
+function page:exit()
+    for i = 1, 6 do
+        amp_polls[i].callback = nil
+    end
+end
 
 return page

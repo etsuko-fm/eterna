@@ -9,7 +9,7 @@ MasterGraphic = {
   post_comp_levels = { 0, 0 },
   out_levels = { 0, 0 },
   out_level = 1.0,
-  amp_history = {{}, {}}
+  amp_history = { {}, {} }
 }
 
 function MasterGraphic:new(o)
@@ -37,15 +37,17 @@ function MasterGraphic:draw_lissajous()
   screen.stroke()
 
   screen.level(5)
-
+  if math.random() < 1 / 60 then
+    print(prev_frames[1])
+  end
   -- draw previous frames with lower brightness
   for i, frame in ipairs(prev_frames) do
     if i == 1 then
-      screen.level(10)
+      screen.level(11)
     elseif i == 2 then
-      screen.level(5)
+      screen.level(7)
     else
-      screen.level(1)
+      screen.level(3)
     end
 
     for _, pixel in ipairs(frame) do
@@ -59,19 +61,21 @@ function MasterGraphic:draw_lissajous()
   end
   screen.level(15)
 
+  -- clear most recent frame (other values have been shifted)
   prev_frames[1] = {}
+
   for i, s in ipairs(self.amp_history[1]) do
-    if i < 16 then
-      local divL = (s / 127) * scale
-      local divR = (self.amp_history[2][i] / 127) * scale
-      local x = center_x + divL
-      local y = center_y - divR - 1
-      screen.pixel(x, y)
-      screen.fill()
-      prev_frames[1][i] = {}
-      prev_frames[1][i]['x'] = x
-      prev_frames[1][i]['y'] = y
-    end
+    -- convert int8 (0-127) to float (0-1), then scale
+    local divL = (s / 127) * scale
+    local divR = (self.amp_history[2][i] / 127) * scale
+    local x = center_x + divL
+    local y = center_y - divR - 1
+    screen.pixel(x, y)
+    screen.fill()
+    -- save state of pixels of current frame for feedback effect
+    prev_frames[1][i] = {}
+    prev_frames[1][i]['x'] = x
+    prev_frames[1][i]['y'] = y
   end
 end
 
@@ -197,6 +201,5 @@ function MasterGraphic:render()
   self:draw_final_out_level(master_out_x, meters_y)
   self:draw_lissajous()
 end
-
 
 return MasterGraphic

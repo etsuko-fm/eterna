@@ -42,7 +42,7 @@ local indicator_h = 3
 local indicator_vmargin = indicator_h + margin_h
 local faint_fill = 1
 
-function SequencerGraphic:draw_track_indicator(voice)
+function SequencerGraphic:draw_env_meter(voice)
     if self.voice_env[voice] == nil then return end
     local zero_idx = voice - 1
 
@@ -54,7 +54,7 @@ function SequencerGraphic:draw_track_indicator(voice)
     local indicator_y = indicator_base_y + (indicator_vmargin * zero_idx)
     local v = self.voice_env[voice]
     screen.level(1 + util.round(v * 14))
-    if v > 0 then
+    if v > 0 and self.is_playing then
         screen.rect(indicator_x, indicator_y, indicator_w, indicator_h)
         screen.fill()
     else
@@ -69,7 +69,7 @@ function SequencerGraphic:render()
     local dim = 0
     for row = 0, rows - 1 do
         voice = row + 1
-        self:draw_track_indicator(voice)
+        self:draw_env_meter(voice)
         for column = 0, columns - 1 do
             -- iterate over entire grid; row = voice, column = step
             local column_idx = column + 1

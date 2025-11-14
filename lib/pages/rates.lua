@@ -164,4 +164,11 @@ function page:enter()
     end
 end
 
+function page:exit()
+    for i = 1, 6 do
+        env_polls[i].callback = nil
+    end
+end
+
+
 return page

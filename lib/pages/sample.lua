@@ -5,10 +5,6 @@ local page_name = "SAMPLE"
 local fileselect = require('fileselect')
 local page_disabled = false
 
-local waveform_graphics = {}
-local waveform_width = 64
-local is_stereo
-
 local filename = ""
 -- local selected_sample = nil -- assign path to load a default sample on script startup (e.g. "audio/etsuko/chris/play-safe.wav")
 local selected_sample = "audio/etsuko/chris/play-safe.wav"
@@ -36,11 +32,6 @@ function table.slice(tbl, first, last)
         result[#result + 1] = tbl[i]
     end
     return result
-end
-
-function page:update_waveform(waveform, ch)
-    -- called by root module when OSC event received for updating waveform
-    waveform_graphics[ch].samples = waveform
 end
 
 
@@ -92,7 +83,7 @@ function page:update_loop_ranges()
         --- this works fine for n_slices > 6; else, voices need to recycle slices;
         --- hence the modulo.
         local slice_index = util.wrap(start + i, 1, n_slices)
-        slice_graphic.active_slices[voice] = slice_index -- update slice graphic
+        self.slice_graphic.active_slices[voice] = slice_index -- update slice graphic
         local start_pos = slice_start_timestamps[slice_index]
         -- loop start/end works as buffer range when loop not enabled
         -- end point is where the next slice starts
@@ -140,17 +131,9 @@ function page:load_sample(file)
         load_files(load_queue)
     end
 
-    -- TODO: implement upto 6 channels
-    if num_channels > 1 then
-        is_stereo = true
-        waveform_graphics[1].y = 20
-        waveform_graphics[1].vertical_scale = 5
-        waveform_graphics[2].vertical_scale = 5
-    else
-        is_stereo = false
-        waveform_graphics[1].y = 26
-        waveform_graphics[1].vertical_scale = 10
-    end
+
+    self.slice_graphic.num_channels = num_channels
+
     self:update_loop_ranges()
 end
 
@@ -165,7 +148,7 @@ end
 
 function sym.on_waveform(waveform, channel)
   print("Lua: /waveform received from SC")
-  page:update_waveform(waveform, channel)
+  page.slice_graphic.waveform_graphics[channel].samples = waveform
 end
 
 function sym.on_file_load_success(path, channel, buffer)
@@ -214,8 +197,8 @@ end
 function page:action_num_slices(v)
     -- update max start based on number of slices
     constrain_max_start(v)
-    slice_graphic.slice_len = 1 / v
-    slice_graphic.num_slices = v
+    self.slice_graphic.slice_len = 1 / v
+    self.slice_graphic.num_slices = v
     self:update_loop_ranges()
 end
 
@@ -268,11 +251,7 @@ function page:render()
     if selected_sample then
         -- show filename of selecteed sample in title bar
         self.window.title = filename
-        waveform_graphics[1]:render()
-        if is_stereo then
-            waveform_graphics[2]:render()
-        end
-        slice_graphic:render()
+        self.slice_graphic:render()
 
         page.footer.button_text.e2.value = params:get(ID_SAMPLER_START)
         page.footer.button_text.e3.value = params:get(ID_SAMPLER_NUM_SLICES)
@@ -333,7 +312,7 @@ function page:set_sample_duration(v)
 end
 
 function page:initialize()
-    slice_graphic = SliceGraphic:new()
+    self.slice_graphic = SliceGraphic:new()
     self.e2 = e2
     self.e3 = adjust_num_slices
     self.k2_off = cycle_lfo
@@ -356,16 +335,6 @@ function page:initialize()
 
     self:add_params()
 
-    -- add waveform
-    for n = 1,6 do
-        -- upto 6 waveforms, 1 for each buffer
-        waveform_graphics[n] = Waveform:new({
-            x = 33,
-            y = 20,
-            waveform_width = waveform_width,
-            vertical_scale = 9,
-        })
-    end
     if selected_sample then
         filename = to_sample_name(selected_sample)
         if debug_mode then self:load_sample(_path.dust .. selected_sample) end

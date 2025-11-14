@@ -7,6 +7,8 @@ Waveform = {
     fill_selected = 15,
     fill_default = 5,
     waveform_width = 64,
+    brightness = 12,
+    half = false, -- draw half a waveform (space saving)
 }
 
 function Waveform:new(o)
@@ -25,24 +27,29 @@ function Waveform:render()
     local total_samples = #self.samples
     local iter_size = math.floor(total_samples / self.waveform_width)
     -- if it needs to go to 1, you might need to interpolate the table so # samples fits.. 
-    local c = 0
+    local sample = 0
     for i = 1, #self.samples, iter_size do
-        if c < self.waveform_width then
-            -- sometimes iter step is .8 because not enough samples..?
+        if sample < self.waveform_width then
             local height = math.max(1, util.round(math.abs(self.samples[i]) * self.vertical_scale))
-            local brightness = math.max(1, util.round(math.abs(self.samples[i]) * self.vertical_scale)) * 2
-            screen.move(x_pos, self.y - height) -- this makes it 3D
-            -- screen.move(x_pos, self.y)  -- this makes it flat
+            -- local brightness = math.max(1, util.round(math.abs(self.samples[i]) * self.vertical_scale)) * 2
+            screen.level(self.brightness)
+            if self.half then
+                screen.move(x_pos, self.y)
+                screen.line_rel(0, - height)
+            else
+                screen.move(x_pos, self.y - height)
+                screen.line_rel(0, -1 + 2 * height)
+            end
 
-            -- screen.level(self.fill_default)
-            screen.level(brightness)
-            screen.line_rel(0, -1 + 2 * height)
-            -- screen.line_rel(0,4) 
             screen.stroke()
             x_pos = x_pos + 1
-            c = c + 1
+            sample = sample + 1
         end
     end
+    -- bounding box for debugging
+    -- screen.rect(x_pos, self.y-self.vertical_scale, self.waveform_width, 2*self.vertical_scale)
+    screen.stroke()
+
 end
 
 return Waveform
