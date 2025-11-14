@@ -104,7 +104,7 @@ local meters_y = center_y + 10
 local meters_h = 20
 local meter_width = 2
 
-function MasterGraphic:draw_pre_levels(x, y)
+function MasterGraphic:draw_input_levels(x, y)
   local draw_pre = false
   if not draw_pre then return end
 
@@ -120,6 +120,7 @@ function MasterGraphic:draw_pre_levels(x, y)
 end
 
 function MasterGraphic:draw_post_levels(x, y)
+  -- levels after compression
   screen.level(7)
   local render = false -- feature flag
   if not render then return end
@@ -189,7 +190,7 @@ function MasterGraphic:render()
   if self.hide then return end
   screen.level(15)
 
-  -- self:draw_pre_levels(pre_level_x, meters_y)
+  -- self:draw_input_levels(pre_level_x, meters_y)
   self:draw_comp_amount(comp_amount_x, meters_y)
   -- self:draw_post_levels(post_meters_x, meters_y)
   self:draw_drive_slider(drive_slider_x, center_y - 11, 4, 21)

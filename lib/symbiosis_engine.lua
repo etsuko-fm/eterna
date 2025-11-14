@@ -224,7 +224,6 @@ Symbiosis.voice_params     = {
 
 -- All polls defined in the engine
 Symbiosis.available_polls  = {
-    ["file_loaded"] = { "file_loaded" },
     ["pre_comp"] = { "pre_comp_left", "pre_comp_right" },
     ["post_comp"] = { "post_comp_left", "post_comp_right" },
     ["post_gain"] = { "post_gain_left", "post_gain_right" },

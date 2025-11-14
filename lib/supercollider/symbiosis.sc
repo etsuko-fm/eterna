@@ -377,7 +377,6 @@ Engine_Symbiosis : CroneEngine {
       oscServer.sendBundle(0, ['/amp_history', amp_history[0], amp_history[1]]);
     });
 
-    this.addPoll(\file_loaded, { isLoaded }, periodic:false);
     this.addPoll(\pre_comp_left, { preCompControlBuses[0].getSynchronous });
     this.addPoll(\pre_comp_right, { preCompControlBuses[1].getSynchronous });
 
