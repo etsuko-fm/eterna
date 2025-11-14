@@ -22,7 +22,7 @@ function SliceGraphic:new(o)
         self.waveform_graphics[n] = Waveform:new({
             x = self.x,
             y = 20,
-            waveform_width = self.width,
+            waveform_width = self.width-1,
             vertical_scale = 9,
             half=false
         })

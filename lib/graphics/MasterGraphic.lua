@@ -37,9 +37,6 @@ function MasterGraphic:draw_lissajous()
   screen.stroke()
 
   screen.level(5)
-  if math.random() < 1 / 60 then
-    print(prev_frames[1])
-  end
   -- draw previous frames with lower brightness
   for i, frame in ipairs(prev_frames) do
     if i == 1 then

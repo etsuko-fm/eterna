@@ -21,7 +21,7 @@ end
 function Waveform:render()
     if self.hide then return end
     if #self.samples == 0 then return end
-    local x_pos = self.x
+    local x_pos = self.x + 1 -- stroke() draws a pixel early
 
     -- draw waveform
     local total_samples = #self.samples
