@@ -331,6 +331,8 @@ controlspec_hpf_freq_mod = controlspec.def {
 local componentid = "echo_"
 
 ID_ECHO_TIME = componentid .. "time"
+
+-- TODO: zip so time/name is defined together
 ECHO_TIME_AMOUNTS = { 0.0625, 0.125, 0.1875, 0.25, 0.3125, 0.375, 0.5, 0.625, 0.75}
 ECHO_TIME_NAMES =   {"1/64", "1/32", "1/32D", "1/16", "5/64", "1/16D", "1/8", "5/32", "1/8D"}
 
@@ -344,7 +346,8 @@ ID_MASTER_COMP_AMOUNT = get_id(MASTER, "comp_amount")
 BASS_MONO_FREQS_STR = {"OFF", "50Hz", "100Hz", "200Hz", "FULL"}
 BASS_MONO_FREQS_INT = {20, 50, 100, 200, 20000}
 
-COMP_AMOUNTS = {"OFF", "SOFT", "MEDIUM", "HARD"}
+-- cycling backwards here because the gain difference is large otherwise
+COMP_AMOUNTS = {"OFF", "SOFT", "MEDIUM", "HARD", "MEDIUM", "SOFT"}
 
 
 --- MENU
@@ -437,5 +440,5 @@ params:add_separator("ECHO", "ECHO")
 params:add_option(ID_ECHO_TIME, "time", ECHO_TIME_NAMES, 4)
 
 params:add_separator("MASTER", "MASTER")
-params:add_option(ID_MASTER_MONO_FREQ, "bass mono freq", BASS_MONO_FREQS_STR, 2)
+params:add_option(ID_MASTER_MONO_FREQ, "bass mono freq", BASS_MONO_FREQS_STR, 1)
 params:add_option(ID_MASTER_COMP_AMOUNT, "compressor amount", COMP_AMOUNTS, 2)

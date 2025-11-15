@@ -91,13 +91,13 @@ Symbiosis.params           = {
         ["lpf_dry"] = simple_spec,
         ["hpf_dry"] = simple_spec,
         ["comp_drive"] = controlspec.def {
-            min = -12,
-            max = 18,
+            min = 0,
+            max = 24,
             warp = 'lin',
             step = 0.01,
             default = 0,
             units = 'dB',
-            quantum = 0.1 / (Symbiosis.master_drive_max - Symbiosis.master_drive_min),
+            quantum = 0.2 / (Symbiosis.master_drive_max - Symbiosis.master_drive_min),
             wrap = false
         },
         ["comp_ratio"] = controlspec.def {

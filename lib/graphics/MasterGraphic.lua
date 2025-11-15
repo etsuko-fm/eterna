@@ -28,9 +28,9 @@ local prev_frames = {}
 
 function MasterGraphic:draw_lissajous()
   screen.line_width(1)
-  local center_x = 64
-  local center_y = 29
-  local scale = 8
+  local center_x = self.x + 32
+  local center_y = self.y + 18
+  local scale = 10
   local box_size = (scale + 2) * 2
   screen.level(4)
   screen.rect(center_x - box_size / 2 + 1, center_y - box_size / 2, box_size, box_size) -- don't let graphic touch the boundary
@@ -95,52 +95,16 @@ local function draw_slider(x, y, w, h, fraction)
   end
 end
 
-local pre_level_x = 32
-local comp_amount_x = 64 - 17
-local drive_slider_x = 64 - 23
-local post_meters_x = 64 + 13
-local master_out_x = 64 + 13
-local center_y = 29
-local meters_y = center_y + 10
-local meters_h = 20
+local center_x = 64
+local lissajous_width = 24
+local comp_amount_x = center_x - lissajous_width/2 - 7
+local drive_slider_x = center_x - lissajous_width/2 - 13
+local master_out_x = center_x + lissajous_width/2 + 3
+
+local center_y = 27
+local meters_y = center_y + 14
+local meters_h = 24
 local meter_width = 2
-
-function MasterGraphic:draw_input_levels(x, y)
-  local draw_pre = false
-  if not draw_pre then return end
-
-  screen.level(15)
-  local pre_h_left = self.input_levels[1] * -meters_h
-  local pre_h_right = self.input_levels[2] * -meters_h
-  local pre_padding = 3
-
-  screen.rect(x, y, meter_width, math.min(pre_h_left, -1))
-  screen.fill()
-  screen.rect(x + pre_padding, y, meter_width, math.min(pre_h_right, -1))
-  screen.fill()
-end
-
-function MasterGraphic:draw_post_levels(x, y)
-  -- levels after compression
-  screen.level(7)
-  local render = false -- feature flag
-  if not render then return end
-
-  local post_hL = self.post_comp_levels[1] * -meters_h
-  local post_hR = self.post_comp_levels[2] * -meters_h
-  local post_padding = 3
-
-  screen.rect(x, y, meter_width, math.min(-1, post_hL))
-  screen.fill()
-  screen.rect(x + post_padding, y, meter_width, math.min(-1, post_hR))
-  screen.fill()
-
-  -- 0dB line
-  screen.level(5)
-  screen.move(x, center_y - 10)
-  screen.line(x + 5, center_y - 10)
-  screen.stroke()
-end
 
 function MasterGraphic:draw_drive_slider(x, y, w, h)
   screen.level(5)
@@ -159,8 +123,8 @@ function MasterGraphic:draw_final_out_level(x, y)
 
   -- 0dB line
   screen.level(5)
-  screen.move(x, center_y - 10)
-  screen.line(x + 5, center_y - 10)
+  screen.move(x,  y - meters_h)
+  screen.line(x + 5,  y - meters_h)
   screen.stroke()
 end
 
@@ -175,6 +139,7 @@ function MasterGraphic:draw_comp_amount(x, y)
   local comp_hR = comp_amountR * meters_h
   local comp_padding = 3
 
+  -- compression amount
   screen.rect(x, y - meters_h - 1, meter_width, math.max(1, comp_hL))
   screen.fill()
   screen.rect(x + comp_padding, y - meters_h - 1, meter_width, math.max(1, comp_hR))
@@ -191,10 +156,8 @@ function MasterGraphic:render()
   if self.hide then return end
   screen.level(15)
 
-  -- self:draw_input_levels(pre_level_x, meters_y)
   self:draw_comp_amount(comp_amount_x, meters_y)
-  -- self:draw_post_levels(post_meters_x, meters_y)
-  self:draw_drive_slider(drive_slider_x, center_y - 11, 4, 21)
+  self:draw_drive_slider(drive_slider_x, center_y - 11, 4, meters_h+1)
   self:draw_final_out_level(master_out_x, meters_y)
   self:draw_lissajous()
 end

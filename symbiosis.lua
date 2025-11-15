@@ -1,5 +1,5 @@
 -- Symbiosis
--- 0.9.12 @etsuko.fm
+-- 0.9.13 @etsuko.fm
 -- E1: scroll pages
 --
 -- Other controls, see footer:
