@@ -49,20 +49,20 @@ TITLE_FONT = 68
 FOOTER_FONT = 68
 
 local pages = {
-  --
+  -- sound source
   page_sample,
-  page_sequencer,
-  page_control,
-  --
   page_envelopes,
   page_rates,
   page_levels,
-  --
   page_panning,
+  -- sequencer
+  page_sequencer,
+  page_control,
+  -- processing
   page_lpf,
   page_hpf,
-  --
   page_echo,
+  -- output
   page_master,
 }
 

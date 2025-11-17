@@ -1,12 +1,14 @@
 local app = "symbiosis"
 
 -- Components, for creating param ids
+META  = "meta"
 SAMPLER = "sampler"
 SEQUENCER = "sequencer"
 PROCESSOR = "processor"
 MASTER = "master"
 
 local components = {
+    [META]=true,
     [SAMPLER]=true,
     [SEQUENCER]=true,
     [PROCESSOR]=true,
@@ -20,6 +22,14 @@ local function get_id(component, param)
         print("get_id: component " .. component .. " unknown")
     end
 end
+
+-- VERSIONING
+local MAJOR_VERSION = 0
+local MINOR_VERSION = 9
+local PATCH_VERSION = 13
+local VERSION_STRING = MAJOR_VERSION .. "." .. MINOR_VERSION .. ".".. PATCH_VERSION
+local ID_VERSION = get_id(META, "version")
+
 
 ---
 --- SAMPLER
@@ -346,12 +356,15 @@ ID_MASTER_COMP_AMOUNT = get_id(MASTER, "comp_amount")
 BASS_MONO_FREQS_STR = {"OFF", "50Hz", "100Hz", "200Hz", "FULL"}
 BASS_MONO_FREQS_INT = {20, 50, 100, 200, 20000}
 
--- cycling backwards here because the gain difference is large otherwise
+-- cycling FWD+REV here because the gain difference is large otherwise
 COMP_AMOUNTS = {"OFF", "SOFT", "MEDIUM", "HARD", "MEDIUM", "SOFT"}
 
 
 --- MENU
 params:add_separator("SYMBIOSIS", "SYMBIOSIS")
+
+params:add_text(ID_VERSION, "version", VERSION_STRING)
+params:hide(ID_VERSION)
 
 params:add_separator("SAMPLE_SLICES", "SAMPLE SLICES")
 params:add_file(ID_SAMPLER_AUDIO_FILE, 'sample', nil)

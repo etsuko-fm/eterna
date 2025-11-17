@@ -11,22 +11,22 @@ Symbiosis.env_time_max     = 5
 local engine_prefix        = "symbiosis_"
 
 -- -.-
-local sc_to_lua = {
-  [0] = 1,
-  [1] = 2,
-  [2] = 3,
-  [3] = 4,
-  [4] = 5,
-  [5] = 6,
+local sc_to_lua            = {
+    [0] = 1,
+    [1] = 2,
+    [2] = 3,
+    [3] = 4,
+    [4] = 5,
+    [5] = 6,
 }
 
-local lua_to_sc = {
-  [1] = 0,
-  [2] = 1,
-  [3] = 2,
-  [4] = 3,
-  [5] = 4,
-  [6] = 5,
+local lua_to_sc            = {
+    [1] = 0,
+    [2] = 1,
+    [3] = 2,
+    [4] = 3,
+    [5] = 4,
+    [6] = 5,
 }
 Symbiosis.echo_styles      = { "CLEAR", "MIST" }
 
@@ -165,13 +165,13 @@ Symbiosis.params           = {
         numbers = {
             ["voice_loop_start"] = {
                 min = 0,
-                max = (2 ^ 22) / 48000,
+                max = (2 ^ 24) / 48000,
                 default = 0,
                 wrap = true
             },
             ["voice_loop_end"] = {
                 min = 0,
-                max = (2 ^ 22) / 48000,
+                max = (2 ^ 24) / 48000,
                 default = 0,
                 wrap = true
             },
@@ -206,7 +206,7 @@ Symbiosis.params           = {
         },
         options = {
             ["voice_bufnum"] = {
-                options = {0,1,2,3,4,5},
+                options = { 0, 1, 2, 3, 4, 5 },
             },
         }
     }
@@ -319,10 +319,11 @@ function Symbiosis.load_file(path, channel, buffer)
         print("  sample rate:\t" .. samplerate .. "hz")
         print("  duration:\t" .. duration .. " sec")
         if samplerate ~= 48000 then
-            print("Sample rate of 48KHz expected, found " .. samplerate)
+            print("Sample rate of 48KHz expected, found " ..
+            samplerate .. ". The file will load but playback on wrong pitch.")
         end
-        if duration > 87.3 then
-            print("Files longer than 87.3 seconds are trimmed")
+        if duration > 349 then
+            print("Files longer than 349 seconds are truncated")
         end
         if channel > channels then
             print("Can't load channel " .. channel .. ', file only has' .. channels .. ' channels')
@@ -410,7 +411,7 @@ function Symbiosis.process_amp_history(args)
 end
 
 function Symbiosis.process_waveform(args)
-    local blob = args[1]    -- the int8 array from OSC
+    local blob = args[1]   -- the int8 array from OSC
     local buffer = args[2] -- 0-5
     buffer = sc_to_lua[buffer]
     local waveform = blob_to_table(blob)
@@ -528,15 +529,15 @@ function Symbiosis.osc_event(path, args, from)
     if path == "/waveform" then
         channel, waveform = Symbiosis.process_waveform(args)
         Symbiosis.on_waveform(waveform, channel)
-    --
+        --
     elseif path == "/duration" then
         local duration = tonumber(args[1])
         Symbiosis.on_duration(duration)
-    --
+        --
     elseif path == "/amp_history" then
         local left, right = sym.process_amp_history(args)
         Symbiosis.on_amp_history(left, right)
-    --
+        --
     elseif path == "/file_load_result" then
         local success = args[1]
         local file_path = args[2]
@@ -547,7 +548,7 @@ function Symbiosis.osc_event(path, args, from)
         else
             Symbiosis.on_file_load_fail(file_path, channel, buffer)
         end
-    --
+        --
     elseif path == "/normalized" then
         local voice = sc_to_lua[args[1]]
         Symbiosis.on_normalize(voice)

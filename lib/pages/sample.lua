@@ -17,7 +17,7 @@ local retries = {}
 local ready = {}
 local slice_lfo
 
-local active_channels = 1 --
+local active_channels = 1
 
 
 -- when true, preloads a sample
@@ -41,7 +41,7 @@ end
 
 local function to_sample_name(path)
     local s = string.upper(remove_extension(path_to_file_name(path)))
-    return util.trim_string_to_width(s, 100)
+    return util.trim_string_to_width(s, 80)
 end
 
 function page:get_slice_length()
@@ -114,10 +114,6 @@ function page:load_sample(file)
     if not file or file == "-" then return end
     local num_channels = audio_util.num_channels(file)
     ready = {}
-    local success
-    -- TODO: implement progress indicator
-    -- TODO: call sym.voice_bufnum() once loaded successfully
-    -- TODO: spread buffers over voices
     -- TODO: Clear buffers not needed before loading new
     retries = {}
     for channel = 1, math.min(num_channels, 6) do
@@ -251,7 +247,7 @@ function page:render()
     local lfo_val = SLICE_START_LFO_SHAPES[params:get(ID_SAMPLER_LFO)]
 
     if selected_sample then
-        -- show filename of selecteed sample in title bar
+        -- show filename of selected sample in title bar
         self.window.title = filename
         self.slice_graphic:render()
 

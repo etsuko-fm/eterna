@@ -3,9 +3,9 @@ SequencerGraphic = {
     y = 16,
     rows = 10,
     columns = 21,
-    fill = 2,
+    fill = 1,
     active_fill = 6,
-    flash_fill = 1,
+    flash_fill = 3,
     current_step = nil,
     sequences = {{},{},{},{},{},{}},
     voice_env = { 0, 0, 0, 0, 0, 0, },
@@ -90,7 +90,8 @@ function SequencerGraphic:render()
                 screen.rect(basex + (column * (block_w + margin_w)), indicator_y, 3, 1)
                 screen.fill()
             end
-
+            
+            -- draw grid
             if step_active then
                 -- brighten if active
                 if self.current_step == column and self.is_playing then
