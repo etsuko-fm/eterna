@@ -7,6 +7,7 @@ PanningGraphic = {
     bar_w = 2,
     bar_h = 4,
     margin_h = 2,
+    graph_w = 63,
     hide = false,
 }
 
@@ -34,7 +35,7 @@ function PanningGraphic:render()
         local voice = i+1
         -- draw background rectangle
         screen.level(2)
-        screen.rect(self.x, self.y + (margin+self.bar_h) * i, 64, self.bar_h)
+        screen.rect(self.x, self.y + (margin+self.bar_h) * i, self.graph_w, self.bar_h)
         screen.fill()
 
         -- pan is -1 to 1

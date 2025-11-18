@@ -24,12 +24,8 @@ local function get_id(component, param)
 end
 
 -- VERSIONING
-local MAJOR_VERSION = 0
-local MINOR_VERSION = 9
-local PATCH_VERSION = 13
-local VERSION_STRING = MAJOR_VERSION .. "." .. MINOR_VERSION .. ".".. PATCH_VERSION
+local VERSION_STRING = "0.9.13"
 local ID_VERSION = get_id(META, "version")
-
 
 ---
 --- SAMPLER
