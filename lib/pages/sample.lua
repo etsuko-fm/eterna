@@ -1,5 +1,5 @@
 local Waveform = include("symbiosis/lib/graphics/Waveform")
-local SliceGraphic = include("symbiosis/lib/graphics/SliceGraphic")
+local SampleGraphic = include("symbiosis/lib/graphics/SampleGraphic")
 
 local page_name = "SAMPLE"
 local fileselect = require('fileselect')
@@ -309,7 +309,7 @@ function page:set_sample_duration(v)
 end
 
 function page:initialize()
-    self.slice_graphic = SliceGraphic:new()
+    self.slice_graphic = SampleGraphic:new()
     self.e2 = e2
     self.e3 = adjust_num_slices
     self.k2_off = cycle_lfo

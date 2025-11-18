@@ -1,4 +1,4 @@
-SliceGraphic = {
+SampleGraphic = {
     slice_len = 1,
     num_slices=1,
     active_slices = {}, -- 1-based indexes of each active slice
@@ -9,7 +9,7 @@ SliceGraphic = {
     num_channels = 1,
 }
 
-function SliceGraphic:new(o)
+function SampleGraphic:new(o)
     -- create state if not provided
     o = o or {}
 
@@ -55,7 +55,7 @@ local function rect_midpoint_y(box_height, rect_h, num_rects, idx)
     return midpoint
 end
 
-function SliceGraphic:render()
+function SampleGraphic:render()
     if self.hide then return end
 
     local box_height = 33
@@ -108,4 +108,4 @@ function SliceGraphic:render()
     end
 end
 
-return SliceGraphic
+return SampleGraphic
