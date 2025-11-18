@@ -12,10 +12,10 @@ Waveform = {
 }
 
 function Waveform:new(o)
-    o = o or {} -- create state if not provided
+    o = o or {}           -- create state if not provided
     setmetatable(o, self) -- define prototype
     self.__index = self
-    return o -- return instance
+    return o              -- return instance
 end
 
 function Waveform:render()
@@ -26,7 +26,7 @@ function Waveform:render()
     -- draw waveform
     local total_samples = #self.samples
     local iter_size = math.floor(total_samples / self.waveform_width)
-    -- if it needs to go to 1, you might need to interpolate the table so # samples fits.. 
+    -- if it needs to go to 1, you might need to interpolate the table so # samples fits..
     local sample = 0
     for i = 1, #self.samples, iter_size do
         if sample < self.waveform_width then
@@ -35,7 +35,7 @@ function Waveform:render()
             screen.level(self.brightness)
             if self.half then
                 screen.move(x_pos, self.y)
-                screen.line_rel(0, - height)
+                screen.line_rel(0, -height)
             else
                 screen.move(x_pos, self.y - height)
                 screen.line_rel(0, -1 + 2 * height)
@@ -49,7 +49,6 @@ function Waveform:render()
     -- bounding box for debugging
     -- screen.rect(x_pos, self.y-self.vertical_scale, self.waveform_width, 2*self.vertical_scale)
     screen.stroke()
-
 end
 
 return Waveform

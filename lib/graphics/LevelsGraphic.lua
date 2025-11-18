@@ -14,14 +14,9 @@ LevelsGraphic = {
 }
 
 function LevelsGraphic:new(o)
-    -- create state if not provided
     o = o or {}
-
-    -- define prototype
     setmetatable(o, self)
     self.__index = self
-
-    -- return instance
     return o
 end
 
@@ -71,8 +66,6 @@ function LevelsGraphic:render()
             screen.rect(x, self.y, self.bar_width, h * amp)
             screen.fill()
         end
-
-
     end
 
     -- scan position slider

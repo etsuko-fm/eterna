@@ -4,14 +4,14 @@ Window = {
     w = 128,
     h = 64,
     title = "WINDOW",
-    title_x=64,
+    title_x = 64,
     font_face = 68, -- TITLE_FONT
     brightness = 15,
     bar_height = 7,
 }
 
 function Window:new(o)
-    o = o or {} -- create state if not provided
+    o = o or {}           -- create state if not provided
     setmetatable(o, self) -- define prototype
     self.__index = self
     return o
@@ -26,7 +26,6 @@ function Window:render()
     screen.level(self.brightness)
 
     screen.move(self.x, self.bar_height - 2)
-    -- screen.line(self.x + 3)
 
     screen.move(self.x, self.y)
     screen.rect(self.x, self.y, self.w, self.bar_height)

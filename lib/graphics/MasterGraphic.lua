@@ -13,14 +13,9 @@ MasterGraphic = {
 }
 
 function MasterGraphic:new(o)
-  -- create state if not provided
   o = o or {}
-
-  -- define prototype
   setmetatable(o, self)
   self.__index = self
-
-  -- return instance
   return o
 end
 
@@ -97,9 +92,9 @@ end
 
 local center_x = 64
 local lissajous_width = 24
-local comp_amount_x = center_x - lissajous_width/2 - 7
-local drive_slider_x = center_x - lissajous_width/2 - 13
-local master_out_x = center_x + lissajous_width/2 + 3
+local comp_amount_x = center_x - lissajous_width / 2 - 7
+local drive_slider_x = center_x - lissajous_width / 2 - 13
+local master_out_x = center_x + lissajous_width / 2 + 3
 
 local center_y = 27
 local meters_y = center_y + 14
@@ -123,8 +118,8 @@ function MasterGraphic:draw_final_out_level(x, y)
 
   -- 0dB line
   screen.level(5)
-  screen.move(x,  y - meters_h)
-  screen.line(x + 5,  y - meters_h)
+  screen.move(x, y - meters_h)
+  screen.line(x + 5, y - meters_h)
   screen.stroke()
 end
 
@@ -157,7 +152,7 @@ function MasterGraphic:render()
   screen.level(15)
 
   self:draw_comp_amount(comp_amount_x, meters_y)
-  self:draw_drive_slider(drive_slider_x, center_y - 11, 4, meters_h+1)
+  self:draw_drive_slider(drive_slider_x, center_y - 11, 4, meters_h + 1)
   self:draw_final_out_level(master_out_x, meters_y)
   self:draw_lissajous()
 end

@@ -7,22 +7,17 @@ SequencerGraphic = {
     active_fill = 6,
     flash_fill = 3,
     current_step = nil,
-    sequences = {{},{},{},{},{},{}},
-    voice_env = { 0, 0, 0, 0, 0, 0, },
+    sequences = { {}, {}, {}, {}, {}, {} },
+    voice_env = { 0, 0, 0, 0, 0, 0, }, -- realtime envelope level of each voice
     num_steps = 16,
     is_playing = true,
     hide = false,
 }
 
 function SequencerGraphic:new(o)
-    -- create state if not provided
     o = o or {}
-
-    -- define prototype
     setmetatable(o, self)
     self.__index = self
-
-    -- return instance
     return o
 end
 
@@ -90,7 +85,7 @@ function SequencerGraphic:render()
                 screen.rect(basex + (column * (block_w + margin_w)), indicator_y, 3, 1)
                 screen.fill()
             end
-            
+
             -- draw grid
             if step_active then
                 -- brighten if active
@@ -99,9 +94,6 @@ function SequencerGraphic:render()
                     graphic_util.screen_level(self.flash_fill, dim)
                     screen.rect(x, y, block_w, block_h)
                     screen.fill()
-                    -- screen.pixel(x,y)
-                    -- screen.level(6)
-                    -- screen.fill()
                 else
                     -- step not triggered, but it is an active step in the sequence
                     local v = self.sequences[voice][column_idx]

@@ -25,14 +25,9 @@ local FWD = "FWD"
 local pixels_per_octave = 6
 
 function RatesGraphic:new(o)
-    -- create state if not provided
     o = o or {}
-
-    -- define prototype
     setmetatable(o, self)
     self.__index = self
-
-    -- return instance
     return o
 end
 

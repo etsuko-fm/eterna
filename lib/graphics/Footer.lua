@@ -1,25 +1,25 @@
 Footer = {
     hide = false,
-    active_fill = 10, -- text brightness when corresponding button has been physically modified
+    active_fill = 10,    -- text brightness when corresponding button has been physically modified
     foreground_fill = 3, -- default text brightness
     background_fill = 1, -- fill of rect surrounding text
     -- text on buttons; `name` is displayed on top row, `value` on bottom row
     button_text = {
         e2 = {
             name = '',
-            value ='',
+            value = '',
         },
         e3 = {
             name = '',
-            value ='',
+            value = '',
         },
         k2 = {
             name = '',
-            value ='',
+            value = '',
         },
         k3 = {
             name = '',
-            value ='',
+            value = '',
         },
     },
     active_knob = nil,
@@ -33,12 +33,12 @@ Footer = {
 }
 
 
-local btn_width = 128/4 - 1
+local btn_width = 128 / 4 - 1
 local btn_height = 7
 
 -- default position at bottom of screen; 2 rows of 7px and 1 px spacing
 local ver_btn_spacing = 1
-local base_y_row1 = 64 - (btn_height*2) - ver_btn_spacing
+local base_y_row1 = 64 - (btn_height * 2) - ver_btn_spacing
 local base_y_row2 = 64 - btn_height
 
 -- positioning of footer elements
@@ -66,8 +66,8 @@ end
 
 local rect_x_positions = {}
 
-for i = 1,4 do 
-    rect_x_positions[i] = (128 / 4) * (i-1)
+for i = 1, 4 do
+    rect_x_positions[i] = (128 / 4) * (i - 1)
 end
 
 local buttons = {
@@ -97,7 +97,6 @@ local buttons = {
     }
 }
 
-local btn_width = 128/4 - 1
 
 function Footer:render()
     if self.hide then return end
@@ -107,9 +106,9 @@ function Footer:render()
 
     -- draw 8 blocks
     screen.level(self.background_fill)
-    
+
     for i = 1, 4 do
-        screen.rect(rect_x_positions[i], base_y_row1-1, btn_width, 1)
+        screen.rect(rect_x_positions[i], base_y_row1 - 1, btn_width, 1)
         screen.rect(rect_x_positions[i], base_y_row2, btn_width, 1) -- btn_height
     end
     screen.fill()
@@ -118,7 +117,6 @@ function Footer:render()
 
     local active_button_switched = false
     for i, btn in ipairs(buttons) do
-
         if self.active_knob == btn.name then
             fill = self.active_fill
             self.active_knob = nil

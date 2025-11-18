@@ -1,34 +1,31 @@
 SampleGraphic = {
     slice_len = 1,
-    num_slices=1,
+    num_slices = 1,
     active_slices = {}, -- 1-based indexes of each active slice
     hide = false,
-    width=64,
+    width = 64,
     x = 32,
     waveform_graphics = {},
     num_channels = 1,
+    voice_env = { 0, 0, 0, 0, 0, 0, }, -- realtime envelope level of each voice
 }
 
 function SampleGraphic:new(o)
-    -- create state if not provided
     o = o or {}
-
-    -- define prototype
     setmetatable(o, self)
     self.__index = self
 
-    for n = 1,6 do
+    for n = 1, 6 do
         -- upto 6 waveforms, 1 for each buffer
         self.waveform_graphics[n] = Waveform:new({
             x = self.x,
             y = 20,
-            waveform_width = self.width-1,
+            waveform_width = self.width - 1,
             vertical_scale = 9,
-            half=false
+            half = false
         })
     end
 
-    -- return instance
     return o
 end
 
@@ -65,7 +62,7 @@ function SampleGraphic:render()
     local total_spacing = (self.num_channels - 1) * spacing
 
     -- each waveform has a scale property, which relates to its height by scale*2
-    -- calculate the maximum scale based on the size of the bounding box and the 
+    -- calculate the maximum scale based on the size of the bounding box and the
     -- number of channels that should fit
     local max_scale = math.floor((box_height - total_spacing) / self.num_channels / 2)
     local scale = util.clamp(max_scale, 2, 8)
@@ -73,19 +70,18 @@ function SampleGraphic:render()
     for i = 1, 6 do
         if i <= self.num_channels then
             self.waveform_graphics[i].hide = false
-            self.waveform_graphics[i].y = min_y + rect_midpoint_y(box_height, scale*2, self.num_channels, i)
+            self.waveform_graphics[i].y = min_y + rect_midpoint_y(box_height, scale * 2, self.num_channels, i)
             self.waveform_graphics[i].vertical_scale = scale
         else
             self.waveform_graphics[i].hide = true
         end
-    end 
+    end
 
-    for i=1,6 do
+    for i = 1, 6 do
         self.waveform_graphics[i]:render()
     end
 
-    -- print(self.active_slices[1])
-    for n=0, self.num_slices - 1 do
+    for n = 0, self.num_slices - 1 do
         local index = n + 1
         if contains(self.active_slices, index) then
             screen.level(level_bright)
@@ -95,16 +91,15 @@ function SampleGraphic:render()
         -- draw a line under the waveform for each available slice
         local startx = self.x + (w * self.slice_len * n)
         local rect_w = w * self.slice_len - 1
-        screen.rect(startx, y,  rect_w, 1)
+        screen.rect(startx, y, rect_w, 1)
         screen.fill()
 
         -- indicate starting slice if between 2 and 6 slices
         if self.num_slices <= 6 and self.num_slices > 1 and index == self.active_slices[1] then
             screen.level(5)
-            screen.rect(startx, y,  1, 1)
+            screen.rect(startx, y, 1, 1)
         end
         screen.fill()
-
     end
 end
 
