@@ -1,7 +1,8 @@
 SampleGraphic = {
     slice_len = 1,
     num_slices = 1,
-    active_slices = {}, -- 1-based indexes of each active slice
+    -- 1-based indexes of each active slice; always successive, e.g. {29,30,31,32,1,2}
+    active_slices = {},
     hide = false,
     width = 64,
     x = 32,
@@ -33,7 +34,8 @@ local w = 64
 local y = 44
 
 local level_faint = 2
-local level_bright = 15
+local level_bright = 4
+local level_trigger = 15
 
 
 local function contains(tbl, value)
@@ -78,23 +80,37 @@ function SampleGraphic:render()
     end
 
     for i = 1, 6 do
+        -- render all waveforms; if they're not active, 
+        -- their .hide property will prevent resource usage
         self.waveform_graphics[i]:render()
+    end
+
+    -- map envelope index to slice index;
+    -- e.g., active slices may be {3,4,5,6,7,8}
+    -- this mapping returns 3 for slice_to_env[1].
+    local slice_to_env = {}
+    for env_i = 1, 6 do
+        local slice_index = self.active_slices[env_i]
+        slice_to_env[slice_index] = env_i
     end
 
     for n = 0, self.num_slices - 1 do
         local index = n + 1
-        if contains(self.active_slices, index) then
-            screen.level(level_bright)
+        local env_i = slice_to_env[index]
+        if env_i then
+            local mod = self.voice_env[env_i] or 0
+            graphic_util.screen_level(level_bright, mod * (level_trigger-level_bright))
         else
             screen.level(level_faint)
         end
+
         -- draw a line under the waveform for each available slice
         local startx = self.x + (w * self.slice_len * n)
         local rect_w = w * self.slice_len - 1
         screen.rect(startx, y, rect_w, 1)
         screen.fill()
 
-        -- indicate starting slice if between 2 and 6 slices
+        -- indicate starting slice with a little dot, if user selected between 2 and 6 slices
         if self.num_slices <= 6 and self.num_slices > 1 and index == self.active_slices[1] then
             screen.level(5)
             screen.rect(startx, y, 1, 1)

@@ -137,7 +137,7 @@ end
 
 function sym.on_waveform(waveform, channel)
     print("Lua: /waveform received from SC")
-    page.slice_graphic.waveform_graphics[channel].samples = waveform
+    page.graphic.waveform_graphics[channel].samples = waveform
 end
 
 function sym.on_file_load_success(path, channel, buffer)
@@ -243,6 +243,9 @@ function page:render()
         return
     end -- for rendering the fileselect interface
     local lfo_val = SLICE_START_LFO_SHAPES[params:get(ID_SAMPLER_LFO)]
+    for i = 1, 6 do
+        env_polls[i]:update()
+    end
 
     if selected_sample then
         -- show filename of selected sample in title bar
