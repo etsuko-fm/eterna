@@ -1,4 +1,4 @@
-local ControlGraphic = include("symbiosis/lib/graphics/ControlGraphic")
+local ControlGraphic = include("mist-system/lib/graphics/ControlGraphic")
 local page_name = "SEQUENCE CONTROL"
 local MIN_BPM = 20 -- minimum for Ableton Link
 local function adjust_bpm(d)

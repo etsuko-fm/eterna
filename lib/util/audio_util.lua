@@ -1,4 +1,4 @@
-local debug = include("symbiosis/lib/util/debug")
+local debug = include("mist-system/lib/util/debug")
 
 function get_duration(file)
     local ch, samples, samplerate = audio.file_info(file)

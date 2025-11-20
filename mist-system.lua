@@ -1,4 +1,4 @@
--- Symbiosis
+-- mist system
 -- 0.9.14 @etsuko.fm
 -- E1: scroll pages
 --
@@ -10,30 +10,30 @@ _lfos = require 'lfo'
 MusicUtil = require "musicutil"
 
 
-Page = include("symbiosis/lib/Page")
-Window = include("symbiosis/lib/graphics/Window")
-Footer = include("symbiosis/lib/graphics/Footer")
-audio_util = include("symbiosis/lib/util/audio_util")
-lfo_util = include("symbiosis/lib/util/lfo")
-misc_util = include("symbiosis/lib/util/misc")
-sequence_util = include("symbiosis/lib/util/sequence")
-graphic_util = include("symbiosis/lib/util/graphic")
+Page = include("mist-system/lib/Page")
+Window = include("mist-system/lib/graphics/Window")
+Footer = include("mist-system/lib/graphics/Footer")
+audio_util = include("mist-system/lib/util/audio_util")
+lfo_util = include("mist-system/lib/util/lfo")
+misc_util = include("mist-system/lib/util/misc")
+sequence_util = include("mist-system/lib/util/sequence")
+graphic_util = include("mist-system/lib/util/graphic")
 
-include("symbiosis/lib/parameters")
+include("mist-system/lib/parameters")
 
-sym = include('symbiosis/lib/symbiosis_engine')
+sym = include('mist-system/lib/mist-engine')
 
-local page_sample = include("symbiosis/lib/pages/sample")
-page_sequencer = include("symbiosis/lib/pages/sequencer")
-local page_envelopes = include("symbiosis/lib/pages/envelopes")
-local page_lpf = include("symbiosis/lib/pages/lpf")
-local page_hpf = include("symbiosis/lib/pages/hpf")
-local page_echo = include("symbiosis/lib/pages/echo")
-local page_master = include("symbiosis/lib/pages/master")
-page_control = include("symbiosis/lib/pages/control")
-local page_panning = include("symbiosis/lib/pages/panning")
-local page_rates = include("symbiosis/lib/pages/rates")
-local page_levels = include("symbiosis/lib/pages/levels")
+local page_sample = include("mist-system/lib/pages/sample")
+page_sequencer = include("mist-system/lib/pages/sequencer")
+local page_envelopes = include("mist-system/lib/pages/envelopes")
+local page_lpf = include("mist-system/lib/pages/lpf")
+local page_hpf = include("mist-system/lib/pages/hpf")
+local page_echo = include("mist-system/lib/pages/echo")
+local page_master = include("mist-system/lib/pages/master")
+page_control = include("mist-system/lib/pages/control")
+local page_panning = include("mist-system/lib/pages/panning")
+local page_rates = include("mist-system/lib/pages/rates")
+local page_levels = include("mist-system/lib/pages/levels")
 local fps = 45
 local ready
 

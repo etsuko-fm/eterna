@@ -1,4 +1,4 @@
-local RatesGraphic = include("symbiosis/lib/graphics/RatesGraphic")
+local RatesGraphic = include("mist-system/lib/graphics/RatesGraphic")
 local page_name = "PLAYBACK RATES"
 local page
 

@@ -1,5 +1,5 @@
 local page_name = "HIGHPASS"
-local FilterGraphic = include("symbiosis/lib/graphics/FilterGraphic")
+local FilterGraphic = include("mist-system/lib/graphics/FilterGraphic")
 local filter_graphic
 local hpf_lfo
 local ENGINE_HPF_FREQ = sym.get_id("hpf_freq")

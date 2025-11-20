@@ -1,5 +1,5 @@
-local Waveform = include("symbiosis/lib/graphics/Waveform")
-local SampleGraphic = include("symbiosis/lib/graphics/SampleGraphic")
+local Waveform = include("mist-system/lib/graphics/Waveform")
+local SampleGraphic = include("mist-system/lib/graphics/SampleGraphic")
 
 local page_name = "SAMPLE"
 local fileselect = require('fileselect')

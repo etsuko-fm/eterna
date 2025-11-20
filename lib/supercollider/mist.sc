@@ -1,4 +1,4 @@
-Engine_Symbiosis : CroneEngine {
+Engine_Mist : CroneEngine {
   // Audio buses
   var lowpassBus, highpassBus, echoBus, bassMonoBus, compBus;
 

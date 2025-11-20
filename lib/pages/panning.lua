@@ -1,4 +1,4 @@
-local PanningGraphic = include("symbiosis/lib/graphics/PanningGraphic")
+local PanningGraphic = include("mist-system/lib/graphics/PanningGraphic")
 local page_name = "PANNING"
 local panning_graphic
 local panning_lfo

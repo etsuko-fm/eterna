@@ -1,5 +1,5 @@
-local SequencerGraphic = include("symbiosis/lib/graphics/SequencerGraphic")
-local Sequencer = include("symbiosis/lib/Sequencer")
+local SequencerGraphic = include("mist-system/lib/graphics/SequencerGraphic")
+local Sequencer = include("mist-system/lib/Sequencer")
 local page_name = "SEQUENCER"
 local PERLIN_ZOOM = 10 / 3 ---4 / 3 -- empirically tuned
 local main_seq_clock_id

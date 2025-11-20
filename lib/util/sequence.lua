@@ -1,4 +1,4 @@
-local perlin = include("symbiosis/lib/ext/perlin")
+local perlin = include("mist-system/lib/ext/perlin")
 local sequence_speeds = { "1/32", "1/16", "1/8", "1/4" }
 
 -- table with indexes matching to the sequence_speeds table above
