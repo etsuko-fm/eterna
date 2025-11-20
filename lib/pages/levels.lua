@@ -1,6 +1,6 @@
 local page_name = "Levels"
-local LevelsGraphic = include("mist-system/lib/graphics/LevelsGraphic")
-local gaussian = include("mist-system/lib/util/gaussian")
+local LevelsGraphic = include("computer/lib/graphics/LevelsGraphic")
+local gaussian = include("computer/lib/util/gaussian")
 local level_graphic
 local graph_x = 36 -- (128 - graph_width) / 2
 local graph_y = 40

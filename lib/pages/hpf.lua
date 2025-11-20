@@ -1,5 +1,5 @@
 local page_name = "HIGHPASS"
-local FilterGraphic = include("mist-system/lib/graphics/FilterGraphic")
+local FilterGraphic = include("computer/lib/graphics/FilterGraphic")
 local filter_graphic
 local hpf_lfo
 local ENGINE_HPF_FREQ = mist_engine.get_id("hpf_freq")

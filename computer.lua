@@ -1,4 +1,4 @@
--- mist system
+-- computer
 -- 0.9.14 @etsuko.fm
 -- E1: scroll pages
 --
@@ -10,37 +10,35 @@ _lfos = require 'lfo'
 MusicUtil = require "musicutil"
 
 
-Page = include("mist-system/lib/Page")
-Window = include("mist-system/lib/graphics/Window")
-Footer = include("mist-system/lib/graphics/Footer")
-audio_util = include("mist-system/lib/util/audio_util")
-lfo_util = include("mist-system/lib/util/lfo")
-misc_util = include("mist-system/lib/util/misc")
-sequence_util = include("mist-system/lib/util/sequence")
-graphic_util = include("mist-system/lib/util/graphic")
+Page = include("computer/lib/Page")
+Window = include("computer/lib/graphics/Window")
+Footer = include("computer/lib/graphics/Footer")
+audio_util = include("computer/lib/util/audio_util")
+lfo_util = include("computer/lib/util/lfo")
+misc_util = include("computer/lib/util/misc")
+sequence_util = include("computer/lib/util/sequence")
+graphic_util = include("computer/lib/util/graphic")
 
-include("mist-system/lib/parameters")
+include("computer/lib/parameters")
 
-sym = include('mist-system/lib/mist-engine')
+mist_engine = include('computer/lib/mist-engine')
 
-local page_sample = include("mist-system/lib/pages/sample")
-page_sequencer = include("mist-system/lib/pages/sequencer")
-local page_envelopes = include("mist-system/lib/pages/envelopes")
-local page_lpf = include("mist-system/lib/pages/lpf")
-local page_hpf = include("mist-system/lib/pages/hpf")
-local page_echo = include("mist-system/lib/pages/echo")
-local page_master = include("mist-system/lib/pages/master")
-page_control = include("mist-system/lib/pages/control")
-local page_panning = include("mist-system/lib/pages/panning")
-local page_rates = include("mist-system/lib/pages/rates")
-local page_levels = include("mist-system/lib/pages/levels")
+local page_sample = include("computer/lib/pages/sample")
+page_sequencer = include("computer/lib/pages/sequencer")
+local page_envelopes = include("computer/lib/pages/envelopes")
+local page_lpf = include("computer/lib/pages/lpf")
+local page_hpf = include("computer/lib/pages/hpf")
+local page_echo = include("computer/lib/pages/echo")
+local page_master = include("computer/lib/pages/master")
+page_control = include("computer/lib/pages/control")
+local page_panning = include("computer/lib/pages/panning")
+local page_rates = include("computer/lib/pages/rates")
+local page_levels = include("computer/lib/pages/levels")
 local fps = 45
 local ready
 
 
 UPDATE_SLICES = false
-
-grid_device = grid.connect()
 
 page_indicator_disabled = false
 

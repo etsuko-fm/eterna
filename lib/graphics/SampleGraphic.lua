@@ -9,6 +9,7 @@ SampleGraphic = {
     waveform_graphics = {},
     num_channels = 1,
     voice_env = { 0, 0, 0, 0, 0, 0, }, -- realtime envelope level of each voice
+    voice_mapping = {}, -- which voice is mapped to which channel
 }
 
 function SampleGraphic:new(o)

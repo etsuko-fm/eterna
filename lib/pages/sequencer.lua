@@ -1,5 +1,5 @@
-local SequencerGraphic = include("mist-system/lib/graphics/SequencerGraphic")
-local Sequencer = include("mist-system/lib/Sequencer")
+local SequencerGraphic = include("computer/lib/graphics/SequencerGraphic")
+local Sequencer = include("computer/lib/Sequencer")
 local page_name = "SEQUENCER"
 local PERLIN_ZOOM = 10 / 3 ---4 / 3 -- empirically tuned
 local main_seq_clock_id
@@ -155,17 +155,8 @@ function page:render()
     page.footer.button_text.e2.value = params:get(ID_SEQ_PERLIN_X)
     page.footer.button_text.e3.value = params:get(ID_SEQ_DENSITY)
     page.footer:render()
-    grid_device:refresh()
 end
 
-function page:update_grid_step(x, y, v)
-    self.graphic.sequences[y][x] = v
-    if v > 0 then
-        grid_device:led(x, y, 4 + math.floor(math.abs(v) * 8))
-    else
-        grid_device:led(x, y, 0)
-    end
-end
 
 local function toggle_redraw()
     redraw_sequence = true
@@ -184,11 +175,6 @@ function page:add_params()
     params:set_action(ID_SEQ_PERLIN_Z, toggle_redraw)
     params:set_action(ID_SEQ_DENSITY, toggle_redraw)
     params:set_action(ID_SEQ_SPEED, function(v) self:action_sequence_speed(v) end)
-    for y = 1, SEQ_TRACKS do
-        for x = 1, SEQ_STEPS do
-            params:set_action(ID_SEQ_STEP[y][x], function(v) self:update_grid_step(x, y, v) end)
-        end
-    end
 end
 
 function page:initialize()

@@ -1,4 +1,4 @@
-local MasterGraphic = include("mist-system/lib/graphics/MasterGraphic")
+local MasterGraphic = include("computer/lib/graphics/MasterGraphic")
 local page_name = "MASTER"
 local master_graphic
 

@@ -1,5 +1,5 @@
 local page_name = "ECHO"
-local EchoGraphic = include("mist-system/lib/graphics/EchoGraphic")
+local EchoGraphic = include("computer/lib/graphics/EchoGraphic")
 local echo_graphic
 
 local ID_ECHO_WET = mist_engine.get_id("echo_wet")

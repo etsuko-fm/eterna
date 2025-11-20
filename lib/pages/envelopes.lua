@@ -1,4 +1,4 @@
-local EnvGraphic = include("mist-system/lib/graphics/EnvGraphic")
+local EnvGraphic = include("computer/lib/graphics/EnvGraphic")
 
 local page_name = "ENVELOPES"
 local envelope_graphic
