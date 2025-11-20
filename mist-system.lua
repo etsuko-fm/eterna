@@ -4,7 +4,7 @@
 --
 -- Other controls, see footer:
 -- | K2 | K3 | E2 | E3 |
-engine.name = 'Symbiosis'
+engine.name = 'Mist'
 
 _lfos = require 'lfo'
 MusicUtil = require "musicutil"
@@ -97,7 +97,7 @@ local function count()
   ready = true -- used for fps
 end
 
-function sym.on_amp_history(left, right)
+function mist_engine.on_amp_history(left, right)
   page_master.amp_history[1] = left
   page_master.amp_history[2] = right
 end
@@ -134,17 +134,17 @@ function init()
   end
 
   -- Enable engine module to process OSC from SuperCollider
-  sym.install_osc_hook()
+  mist_engine.install_osc_hook()
 
   -- Setup polls
-  pre_comp_left_poll, pre_comp_right_poll = sym.get_polls("pre_comp")
-  post_comp_left_poll, post_comp_right_poll = sym.get_polls("post_comp")
-  post_gain_left_poll, post_gain_right_poll = sym.get_polls("post_gain")
-  master_left_poll, master_right_poll = sym.get_polls("master")
-  amp_polls = sym.get_polls("voice_amp", false)
-  env_polls = sym.get_polls("voice_env", false)
+  pre_comp_left_poll, pre_comp_right_poll = mist_engine.get_polls("pre_comp")
+  post_comp_left_poll, post_comp_right_poll = mist_engine.get_polls("post_comp")
+  post_gain_left_poll, post_gain_right_poll = mist_engine.get_polls("post_gain")
+  master_left_poll, master_right_poll = mist_engine.get_polls("master")
+  amp_polls = mist_engine.get_polls("voice_amp", false)
+  env_polls = mist_engine.get_polls("voice_env", false)
 
-  sym.add_params()
+  mist_engine.add_params()
 
   -- Initialize pages
   for _, page in ipairs(pages) do

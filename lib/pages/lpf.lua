@@ -2,17 +2,17 @@ local page_name = "LOWPASS"
 local FilterGraphic = include("mist-system/lib/graphics/FilterGraphic")
 local filter_graphic
 local lpf_lfo
-local ENGINE_LPF_FREQ = sym.get_id("lpf_freq")
-local ENGINE_LPF_RES = sym.get_id("lpf_res")
-local ENGINE_LPF_DRY = sym.get_id("lpf_dry")
+local ENGINE_LPF_FREQ = mist_engine.get_id("lpf_freq")
+local ENGINE_LPF_RES = mist_engine.get_id("lpf_res")
+local ENGINE_LPF_DRY = mist_engine.get_id("lpf_dry")
 local last_freq
 
 local function adjust_freq(d)
-    misc_util.adjust_param(d, ENGINE_LPF_FREQ, sym.params.specs["lpf_freq"].quantum)
+    misc_util.adjust_param(d, ENGINE_LPF_FREQ, mist_engine.params.specs["lpf_freq"].quantum)
 end
 
 local function adjust_res(d)
-    misc_util.adjust_param(d, ENGINE_LPF_RES, sym.params.specs["lpf_res"].quantum)
+    misc_util.adjust_param(d, ENGINE_LPF_RES, mist_engine.params.specs["lpf_res"].quantum)
 end
 
 local function cycle_lfo()

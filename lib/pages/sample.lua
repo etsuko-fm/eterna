@@ -89,8 +89,8 @@ function page:update_loop_ranges()
         -- end point is where the next slice starts
         local end_pos = start_pos + (slice_length * .999) -- leave a small gap to prevent overlap
 
-        local voice_loop_start = sym.get_id("voice_loop_start", voice)
-        local voice_loop_end = sym.get_id("voice_loop_end", voice)
+        local voice_loop_start = mist_engine.get_id("voice_loop_start", voice)
+        local voice_loop_end = mist_engine.get_id("voice_loop_end", voice)
         params:set(voice_loop_start, start_pos)
         params:set(voice_loop_end, end_pos)
     end
@@ -119,49 +119,49 @@ function page:load_sample(file)
         -- load file to buffer corresponding to channel
         ready[channel] = false
         local buffer = channel
-        if sym.load_file(file, channel, buffer) then
+        if mist_engine.load_file(file, channel, buffer) then
             active_channels = num_channels
             self.graphic.num_channels = num_channels
         end
     end
 end
 
-function sym.on_normalize(buffer)
+function mist_engine.on_normalize(buffer)
     print("buffer " .. buffer .. " normalized")
-    sym.get_waveform(buffer, 64)
+    mist_engine.get_waveform(buffer, 64)
 end
 
-function sym.on_duration(duration)
+function mist_engine.on_duration(duration)
     page:set_sample_duration(duration)
 end
 
-function sym.on_waveform(waveform, channel)
+function mist_engine.on_waveform(waveform, channel)
     print("Lua: /waveform received from SC")
     page.graphic.waveform_graphics[channel].samples = waveform
 end
 
-function sym.on_file_load_success(path, channel, buffer)
+function mist_engine.on_file_load_success(path, channel, buffer)
     print('successfully loaded channel ' .. channel .. " of " .. path .. " to buffer " .. buffer)
     print('normalizing...')
     ready[channel] = true
-    sym.normalize(buffer)
+    mist_engine.normalize(buffer)
     if all_true(ready) then
         for voice = 1, 6 do
             local buffer_idx = util.wrap(voice, 1, active_channels)
-            params:set(sym.get_id("voice_bufnum", voice), buffer_idx)
+            params:set(mist_engine.get_id("voice_bufnum", voice), buffer_idx)
             print("lua: voice " .. voice .. "set to buffer " .. buffer_idx)
         end
     end
 end
 
-function sym.on_file_load_fail(path, channel, buffer)
+function mist_engine.on_file_load_fail(path, channel, buffer)
     if retries[channel] == nil then
         retries[channel] = 0
     end
     if retries[channel] < MAX_RETRIES then
         -- try once more
         print("retry #" .. retries[channel])
-        sym.load_file(path, channel, buffer)
+        mist_engine.load_file(path, channel, buffer)
         retries[channel] = retries[channel] + 1
     else
         print('failed to load channel ' .. channel .. "of " .. path .. " to buffer " .. buffer)

@@ -60,10 +60,10 @@ function page:evaluate_step(x, y)
     local attack, decay = get_step_envelope(enable_mod, velocity)
     if on then
         -- using modulo check to prevent triggering every 1/16 when step size is larger
-        local voice_env_level = sym.get_id("voice_env_level", y)
-        local voice_lpg_freq = sym.get_id("voice_lpg_freq", y)
-        local voice_attack = sym.get_id("voice_attack", y)
-        local voice_decay = sym.get_id("voice_decay", y)
+        local voice_env_level = mist_engine.get_id("voice_env_level", y)
+        local voice_lpg_freq = mist_engine.get_id("voice_lpg_freq", y)
+        local voice_attack = mist_engine.get_id("voice_attack", y)
+        local voice_decay = mist_engine.get_id("voice_decay", y)
         params:set(voice_env_level, velocity)
         if enable_mod == "LPG" then
             -- applies envelope to a lowpass filter
@@ -75,7 +75,7 @@ function page:evaluate_step(x, y)
             params:set(voice_attack, attack)
             params:set(voice_decay, decay)
         end
-        sym.voice_trigger(y)
+        mist_engine.voice_trigger(y)
     end
 end
 

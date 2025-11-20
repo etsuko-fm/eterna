@@ -2,17 +2,17 @@ local page_name = "HIGHPASS"
 local FilterGraphic = include("mist-system/lib/graphics/FilterGraphic")
 local filter_graphic
 local hpf_lfo
-local ENGINE_HPF_FREQ = sym.get_id("hpf_freq")
-local ENGINE_HPF_RES = sym.get_id("hpf_res")
-local ENGINE_HPF_DRY = sym.get_id("hpf_dry")
+local ENGINE_HPF_FREQ = mist_engine.get_id("hpf_freq")
+local ENGINE_HPF_RES = mist_engine.get_id("hpf_res")
+local ENGINE_HPF_DRY = mist_engine.get_id("hpf_dry")
 local last_freq
 
 local function adjust_freq(d)
-    misc_util.adjust_param(d, ENGINE_HPF_FREQ, sym.params.specs["hpf_freq"].quantum)
+    misc_util.adjust_param(d, ENGINE_HPF_FREQ, mist_engine.params.specs["hpf_freq"].quantum)
 end
 
 local function adjust_res(d)
-    misc_util.adjust_param(d, ENGINE_HPF_RES, sym.params.specs["hpf_res"].quantum)
+    misc_util.adjust_param(d, ENGINE_HPF_RES, mist_engine.params.specs["hpf_res"].quantum)
 end
 
 local function cycle_lfo()

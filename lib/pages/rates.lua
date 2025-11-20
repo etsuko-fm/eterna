@@ -35,7 +35,7 @@ local function calculate_rates()
         if params:get(get_voice_direction_id(voice)) == 2 then -- todo: lookuptable 2>rev, 1>fwd
             rate = -rate
         end
-        local voice_rate = sym.get_id("voice_rate", voice)
+        local voice_rate = mist_engine.get_id("voice_rate", voice)
         params:set(voice_rate, rate)
         -- graph is linear while rate is exponential 
         page.graphic.voice_pos[i] = -math.log(math.abs(rate), 2)

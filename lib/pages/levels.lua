@@ -83,7 +83,7 @@ local function recalculate_levels()
     local sigma = amp_to_sigma(params:get(ID_LEVELS_AMP))
     local levels = gaussian.calculate_gaussian_levels(params:get(ID_LEVELS_POS), sigma)
     for i = 1, 6 do
-        local voice_level = sym.get_id("voice_level", i)
+        local voice_level = mist_engine.get_id("voice_level", i)
         params:set(voice_level, levels[i])
     end
 end
