@@ -294,7 +294,7 @@ ID_LPF_LFO = get_id(PROCESSOR, "lpf_lfo")
 ID_LPF_FREQ_MOD = get_id(PROCESSOR, "lpf_freq_mod")
 ID_LPF_LFO_RATE = get_id(PROCESSOR, "lpf_lfo_rate")
 
-LPF_LFO_SHAPES = { "off", "sine" }
+LPF_LFO_SHAPES = { "off", "sine", "up", "down", "random" }
 DRY_WET_TYPES = { "DRY", "50/50", "WET" }
 
 -- multiplies with cutoff value
@@ -318,7 +318,7 @@ ID_HPF_LFO = get_id(PROCESSOR, "hpf_lfo")
 ID_HPF_FREQ_MOD = get_id(PROCESSOR, "hpf_freq_mod")
 ID_HPF_LFO_RATE = get_id(PROCESSOR, "hpf_lfo_rate")
 DRY_WET_TYPES = { "DRY", "50/50", "WET" }
-HPF_LFO_SHAPES = { "off", "sine" }
+HPF_LFO_SHAPES = { "off", "sine", "up", "down", "random" }
 
 -- multiplies with cutoff value
 controlspec_hpf_freq_mod = controlspec.def {
