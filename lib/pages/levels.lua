@@ -1,6 +1,6 @@
 local page_name = "Levels"
-local LevelsGraphic = include("computer/lib/graphics/LevelsGraphic")
-local gaussian = include("computer/lib/util/gaussian")
+local LevelsGraphic = include(from_root("lib/graphics/LevelsGraphic"))
+local gaussian = include(from_root("lib/util/gaussian"))
 local level_graphic
 local graph_x = 36 -- (128 - graph_width) / 2
 local graph_y = 40
@@ -83,7 +83,7 @@ local function recalculate_levels()
     local sigma = amp_to_sigma(params:get(ID_LEVELS_AMP))
     local levels = gaussian.calculate_gaussian_levels(params:get(ID_LEVELS_POS), sigma)
     for i = 1, 6 do
-        local voice_level = mist_engine.get_id("voice_level", i)
+        local voice_level = engine_lib.get_id("voice_level", i)
         params:set(voice_level, levels[i])
     end
 end

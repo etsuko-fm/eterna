@@ -1,19 +1,19 @@
-local MasterGraphic = include("computer/lib/graphics/MasterGraphic")
+local MasterGraphic = include(from_root("lib/graphics/MasterGraphic"))
 local page_name = "MASTER"
 local master_graphic
 
-local ENGINE_MASTER_COMP_DRIVE = mist_engine.get_id("comp_drive")
-local ENGINE_MASTER_OUTPUT = mist_engine.get_id("comp_out_level")
-local ENGINE_BASS_MONO_FREQ = mist_engine.get_id("bass_mono_freq")
-local ENGINE_COMP_RATIO = mist_engine.get_id("comp_ratio")
-local ENGINE_COMP_THRESHOLD = mist_engine.get_id("comp_threshold")
+local ENGINE_MASTER_COMP_DRIVE = engine_lib.get_id("comp_drive")
+local ENGINE_MASTER_OUTPUT = engine_lib.get_id("comp_out_level")
+local ENGINE_BASS_MONO_FREQ = engine_lib.get_id("bass_mono_freq")
+local ENGINE_COMP_RATIO = engine_lib.get_id("comp_ratio")
+local ENGINE_COMP_THRESHOLD = engine_lib.get_id("comp_threshold")
 
 local function adjust_drive(d)
-    misc_util.adjust_param(d, ENGINE_MASTER_COMP_DRIVE, mist_engine.params.specs["comp_drive"].quantum)
+    misc_util.adjust_param(d, ENGINE_MASTER_COMP_DRIVE, engine_lib.params.specs["comp_drive"].quantum)
 end
 
 local function adjust_output(d)
-    misc_util.adjust_param(d, ENGINE_MASTER_OUTPUT, mist_engine.params.specs["comp_out_level"].quantum)
+    misc_util.adjust_param(d, ENGINE_MASTER_OUTPUT, engine_lib.params.specs["comp_out_level"].quantum)
 end
 
 local function cycle_mono()
@@ -56,7 +56,7 @@ end
 
 function page:render()
     self.window:render()
-    mist_engine.request_amp_history()
+    engine_lib.request_amp_history()
 
     pre_comp_left_poll:update()
     pre_comp_right_poll:update()
@@ -79,7 +79,7 @@ function page:render()
     page.footer.button_text.k2.value = BASS_MONO_FREQS_STR[mono_freq]
     page.footer.button_text.k3.value = COMP_AMOUNTS[comp_amount]
     page.footer.button_text.e2.value = util.round(drive, 0.1)
-    if output == mist_engine.master_out_min then
+    if output == engine_lib.master_out_min then
         page.footer.button_text.e3.value = "-INF"
     else
         page.footer.button_text.e3.value = util.round(output, 0.1)
@@ -115,11 +115,11 @@ function page:initialize()
 end
 
 function page:enter()
-    params:set(mist_engine.get_id("metering_rate"), 500)
+    params:set(engine_lib.get_id("metering_rate"), 500)
 end
 
 function page:exit()
-    params:set(mist_engine.get_id("metering_rate"), 0)
+    params:set(engine_lib.get_id("metering_rate"), 0)
 end
 
 

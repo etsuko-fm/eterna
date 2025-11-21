@@ -1,4 +1,4 @@
-local PanningGraphic = include("computer/lib/graphics/PanningGraphic")
+local PanningGraphic = include(from_root("lib/graphics/PanningGraphic"))
 local page_name = "PANNING"
 local panning_graphic
 local panning_lfo
@@ -10,7 +10,7 @@ local function calculate_pan_positions()
         local voice = i + 1
         local angle = (twist + i / 6) * (math.pi * 2) -- Divide the range of radians into 6 equal parts, add offset
         local pan =  spread * math.cos(angle)
-        local voice_pan = mist_engine.get_id("voice_pan", voice)
+        local voice_pan = engine_lib.get_id("voice_pan", voice)
         params:set(voice_pan, pan)
         panning_graphic.pans[voice] = pan
     end

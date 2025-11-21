@@ -1,5 +1,5 @@
-local SequencerGraphic = include("computer/lib/graphics/SequencerGraphic")
-local Sequencer = include("computer/lib/Sequencer")
+local SequencerGraphic = include(from_root("lib/graphics/SequencerGraphic"))
+local Sequencer = include(from_root("lib/Sequencer"))
 local page_name = "SEQUENCER"
 local PERLIN_ZOOM = 10 / 3 ---4 / 3 -- empirically tuned
 local main_seq_clock_id
@@ -60,10 +60,10 @@ function page:evaluate_step(x, y)
     local attack, decay = get_step_envelope(enable_mod, velocity)
     if on then
         -- using modulo check to prevent triggering every 1/16 when step size is larger
-        local voice_env_level = mist_engine.get_id("voice_env_level", y)
-        local voice_lpg_freq = mist_engine.get_id("voice_lpg_freq", y)
-        local voice_attack = mist_engine.get_id("voice_attack", y)
-        local voice_decay = mist_engine.get_id("voice_decay", y)
+        local voice_env_level = engine_lib.get_id("voice_env_level", y)
+        local voice_lpg_freq = engine_lib.get_id("voice_lpg_freq", y)
+        local voice_attack = engine_lib.get_id("voice_attack", y)
+        local voice_decay = engine_lib.get_id("voice_decay", y)
         params:set(voice_env_level, velocity)
         if enable_mod == "LPG" then
             -- applies envelope to a lowpass filter
@@ -75,7 +75,7 @@ function page:evaluate_step(x, y)
             params:set(voice_attack, attack)
             params:set(voice_decay, decay)
         end
-        mist_engine.voice_trigger(y)
+        engine_lib.voice_trigger(y)
     end
 end
 
@@ -157,6 +157,10 @@ function page:render()
     page.footer:render()
 end
 
+function page:update_grid_step(x, y, v)
+    self.graphic.sequences[y][x] = v
+end
+
 
 local function toggle_redraw()
     redraw_sequence = true
@@ -175,6 +179,11 @@ function page:add_params()
     params:set_action(ID_SEQ_PERLIN_Z, toggle_redraw)
     params:set_action(ID_SEQ_DENSITY, toggle_redraw)
     params:set_action(ID_SEQ_SPEED, function(v) self:action_sequence_speed(v) end)
+    for y = 1, SEQ_TRACKS do
+        for x = 1, SEQ_STEPS do
+            params:set_action(ID_SEQ_STEP[y][x], function(v) self:update_grid_step(x, y, v) end)
+        end
+    end
 end
 
 function page:initialize()

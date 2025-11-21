@@ -1,18 +1,18 @@
 local page_name = "HIGHPASS"
-local FilterGraphic = include("computer/lib/graphics/FilterGraphic")
+local FilterGraphic = include(from_root("lib/graphics/FilterGraphic"))
 local filter_graphic
 local hpf_lfo
-local ENGINE_HPF_FREQ = mist_engine.get_id("hpf_freq")
-local ENGINE_HPF_RES = mist_engine.get_id("hpf_res")
-local ENGINE_HPF_DRY = mist_engine.get_id("hpf_dry")
+local ENGINE_HPF_FREQ = engine_lib.get_id("hpf_freq")
+local ENGINE_HPF_RES = engine_lib.get_id("hpf_res")
+local ENGINE_HPF_DRY = engine_lib.get_id("hpf_dry")
 local last_freq
 
 local function adjust_freq(d)
-    misc_util.adjust_param(d, ENGINE_HPF_FREQ, mist_engine.params.specs["hpf_freq"].quantum)
+    misc_util.adjust_param(d, ENGINE_HPF_FREQ, engine_lib.params.specs["hpf_freq"].quantum)
 end
 
 local function adjust_res(d)
-    misc_util.adjust_param(d, ENGINE_HPF_RES, mist_engine.params.specs["hpf_res"].quantum)
+    misc_util.adjust_param(d, ENGINE_HPF_RES, engine_lib.params.specs["hpf_res"].quantum)
 end
 
 local function cycle_lfo()

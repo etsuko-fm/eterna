@@ -1,18 +1,18 @@
 local page_name = "LOWPASS"
-local FilterGraphic = include("computer/lib/graphics/FilterGraphic")
+local FilterGraphic = include(from_root("lib/graphics/FilterGraphic"))
 local filter_graphic
 local lpf_lfo
-local ENGINE_LPF_FREQ = mist_engine.get_id("lpf_freq")
-local ENGINE_LPF_RES = mist_engine.get_id("lpf_res")
-local ENGINE_LPF_DRY = mist_engine.get_id("lpf_dry")
+local ENGINE_LPF_FREQ = engine_lib.get_id("lpf_freq")
+local ENGINE_LPF_RES = engine_lib.get_id("lpf_res")
+local ENGINE_LPF_DRY = engine_lib.get_id("lpf_dry")
 local last_freq
 
 local function adjust_freq(d)
-    misc_util.adjust_param(d, ENGINE_LPF_FREQ, mist_engine.params.specs["lpf_freq"].quantum)
+    misc_util.adjust_param(d, ENGINE_LPF_FREQ, engine_lib.params.specs["lpf_freq"].quantum)
 end
 
 local function adjust_res(d)
-    misc_util.adjust_param(d, ENGINE_LPF_RES, mist_engine.params.specs["lpf_res"].quantum)
+    misc_util.adjust_param(d, ENGINE_LPF_RES, engine_lib.params.specs["lpf_res"].quantum)
 end
 
 local function cycle_lfo()

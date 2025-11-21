@@ -1,4 +1,4 @@
-local RatesGraphic = include("computer/lib/graphics/RatesGraphic")
+local RatesGraphic = include(from_root("lib/graphics/RatesGraphic"))
 local page_name = "PLAYBACK RATES"
 local page
 
@@ -35,7 +35,7 @@ local function calculate_rates()
         if params:get(get_voice_direction_id(voice)) == 2 then -- todo: lookuptable 2>rev, 1>fwd
             rate = -rate
         end
-        local voice_rate = mist_engine.get_id("voice_rate", voice)
+        local voice_rate = engine_lib.get_id("voice_rate", voice)
         params:set(voice_rate, rate)
         -- graph is linear while rate is exponential 
         page.graphic.voice_pos[i] = -math.log(math.abs(rate), 2)

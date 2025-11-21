@@ -1,3 +1,5 @@
+local Waveform = include(from_root("lib/graphics/Waveform"))
+
 SampleGraphic = {
     slice_len = 1,
     num_slices = 1,

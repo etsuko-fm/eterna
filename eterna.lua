@@ -1,39 +1,42 @@
--- computer
+-- eterna
 -- 0.9.14 @etsuko.fm
 -- E1: scroll pages
 --
 -- Other controls, see footer:
 -- | K2 | K3 | E2 | E3 |
-engine.name = 'Mist'
+engine.name = 'Eterna'
 
 _lfos = require 'lfo'
 MusicUtil = require "musicutil"
+local script = "eterna"
+function from_root(path)
+  return script .. "/" .. path
+end
 
+Page = include(from_root("lib/Page"))
+Window = include(from_root("lib/graphics/Window"))
+Footer = include(from_root("lib/graphics/Footer"))
+audio_util = include(from_root("lib/util/audio_util"))
+lfo_util = include(from_root("lib/util/lfo"))
+misc_util = include(from_root("lib/util/misc"))
+sequence_util = include(from_root("lib/util/sequence"))
+graphic_util = include(from_root("lib/util/graphic"))
 
-Page = include("computer/lib/Page")
-Window = include("computer/lib/graphics/Window")
-Footer = include("computer/lib/graphics/Footer")
-audio_util = include("computer/lib/util/audio_util")
-lfo_util = include("computer/lib/util/lfo")
-misc_util = include("computer/lib/util/misc")
-sequence_util = include("computer/lib/util/sequence")
-graphic_util = include("computer/lib/util/graphic")
+include(from_root("lib/parameters"))
 
-include("computer/lib/parameters")
+engine_lib = include(from_root("lib/eterna-engine"))
 
-mist_engine = include('computer/lib/mist-engine')
-
-local page_sample = include("computer/lib/pages/sample")
-page_sequencer = include("computer/lib/pages/sequencer")
-local page_envelopes = include("computer/lib/pages/envelopes")
-local page_lpf = include("computer/lib/pages/lpf")
-local page_hpf = include("computer/lib/pages/hpf")
-local page_echo = include("computer/lib/pages/echo")
-local page_master = include("computer/lib/pages/master")
-page_control = include("computer/lib/pages/control")
-local page_panning = include("computer/lib/pages/panning")
-local page_rates = include("computer/lib/pages/rates")
-local page_levels = include("computer/lib/pages/levels")
+local page_sample = include(from_root("lib/pages/sample"))
+page_sequencer = include(from_root("lib/pages/sequencer"))
+local page_envelopes = include(from_root("lib/pages/envelopes"))
+local page_lpf = include(from_root("lib/pages/lpf"))
+local page_hpf = include(from_root("lib/pages/hpf"))
+local page_echo = include(from_root("lib/pages/echo"))
+local page_master = include(from_root("lib/pages/master"))
+page_control = include(from_root("lib/pages/control"))
+local page_panning = include(from_root("lib/pages/panning"))
+local page_rates = include(from_root("lib/pages/rates"))
+local page_levels = include(from_root("lib/pages/levels"))
 local fps = 45
 local ready
 
@@ -95,7 +98,7 @@ local function count()
   ready = true -- used for fps
 end
 
-function mist_engine.on_amp_history(left, right)
+function engine_lib.on_amp_history(left, right)
   page_master.amp_history[1] = left
   page_master.amp_history[2] = right
 end
@@ -132,17 +135,17 @@ function init()
   end
 
   -- Enable engine module to process OSC from SuperCollider
-  mist_engine.install_osc_hook()
+  engine_lib.install_osc_hook()
 
   -- Setup polls
-  pre_comp_left_poll, pre_comp_right_poll = mist_engine.get_polls("pre_comp")
-  post_comp_left_poll, post_comp_right_poll = mist_engine.get_polls("post_comp")
-  post_gain_left_poll, post_gain_right_poll = mist_engine.get_polls("post_gain")
-  master_left_poll, master_right_poll = mist_engine.get_polls("master")
-  amp_polls = mist_engine.get_polls("voice_amp", false)
-  env_polls = mist_engine.get_polls("voice_env", false)
+  pre_comp_left_poll, pre_comp_right_poll = engine_lib.get_polls("pre_comp")
+  post_comp_left_poll, post_comp_right_poll = engine_lib.get_polls("post_comp")
+  post_gain_left_poll, post_gain_right_poll = engine_lib.get_polls("post_gain")
+  master_left_poll, master_right_poll = engine_lib.get_polls("master")
+  amp_polls = engine_lib.get_polls("voice_amp", false)
+  env_polls = engine_lib.get_polls("voice_env", false)
 
-  mist_engine.add_params()
+  engine_lib.add_params()
 
   -- Initialize pages
   for _, page in ipairs(pages) do

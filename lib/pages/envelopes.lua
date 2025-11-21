@@ -1,4 +1,4 @@
-local EnvGraphic = include("computer/lib/graphics/EnvGraphic")
+local EnvGraphic = include(from_root("lib/graphics/EnvGraphic"))
 
 local page_name = "ENVELOPES"
 local envelope_graphic
@@ -42,8 +42,8 @@ local function recalculate_time(time, shape)
         -- only modify envelopes if env modulation is off; otherwise delegated to sequencer
         local attack = get_attack(time, shape)
         local decay = get_decay(time, shape)
-        mist_engine.each_voice_attack(attack)
-        mist_engine.each_voice_decay(decay)
+        engine_lib.each_voice_attack(attack)
+        engine_lib.each_voice_decay(decay)
     end
 end
 
@@ -57,7 +57,7 @@ local function action_mod(v)
     local shape = params:get(ID_ENVELOPES_SHAPE)
     local time = params:get(ID_ENVELOPES_TIME)
     local val = ENVELOPE_MOD_OPTIONS[v] == "LPG" and 1 or 0
-    mist_engine.each_voice_enable_lpg(val)
+    engine_lib.each_voice_enable_lpg(val)
     recalculate_time(time, shape)
 end
 
@@ -67,7 +67,7 @@ local function action_shape(shape)
 end
 
 local function action_curve(idx)
-    mist_engine.each_voice_env_curve(ENVELOPE_CURVES[idx])
+    engine_lib.each_voice_env_curve(ENVELOPE_CURVES[idx])
 end
 
 local function add_params()

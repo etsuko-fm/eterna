@@ -1,4 +1,4 @@
-Engine_Mist : CroneEngine {
+Engine_Eterna : CroneEngine {
   // Audio buses
   var lowpassBus, highpassBus, echoBus, bassMonoBus, compBus;
 

@@ -1,4 +1,4 @@
-local ControlGraphic = include("computer/lib/graphics/ControlGraphic")
+local ControlGraphic = include(from_root("lib/graphics/ControlGraphic"))
 local page_name = "SEQUENCE CONTROL"
 local MIN_BPM = 20 -- minimum for Ableton Link
 local function adjust_bpm(d)

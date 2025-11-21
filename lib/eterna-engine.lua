@@ -242,7 +242,7 @@ Symbiosis.get_polls        = function(name, as_tuple)
     -- Returns poll instances corresponding to the mapping in Symbiosis.available_polls
     -- Usage:
     --[[
-          left, right = mist_engine.enable_poll("pre_comp")
+          left, right = engine_lib.enable_poll("pre_comp")
     ---]]
     if as_tuple == nil then as_tuple = true end -- default to returning tuple
     local t = Symbiosis.available_polls[name]
@@ -401,7 +401,7 @@ function Symbiosis.process_amp_history(args)
     function osc.event(path, args, from)
         local values
         if path == "/amp_history" then
-            left, right = mist_engine.process_amp_history(args)
+            left, right = engine_lib.process_amp_history(args)
         end
     end
   ]] --
@@ -535,7 +535,7 @@ function Symbiosis.osc_event(path, args, from)
         Symbiosis.on_duration(duration)
         --
     elseif path == "/amp_history" then
-        local left, right = mist_engine.process_amp_history(args)
+        local left, right = engine_lib.process_amp_history(args)
         Symbiosis.on_amp_history(left, right)
         --
     elseif path == "/file_load_result" then
