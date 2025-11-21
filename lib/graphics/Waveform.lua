@@ -8,7 +8,6 @@ Waveform = {
     fill_default = 5,
     waveform_width = 64,
     brightness = 12,
-    half = false, -- draw half a waveform (space saving)
 }
 
 function Waveform:new(o)
@@ -30,18 +29,20 @@ function Waveform:render()
     local sample = 0
     for i = 1, #self.samples, iter_size do
         if sample < self.waveform_width then
-            local height = math.max(1, util.round(math.abs(self.samples[i]) * self.vertical_scale))
-            -- local brightness = math.max(1, util.round(math.abs(self.samples[i]) * self.vertical_scale)) * 2
-            screen.level(self.brightness)
-            if self.half then
-                screen.move(x_pos, self.y)
-                screen.line_rel(0, -height)
-            else
+            if i % 2 == 0 then
+                local height = math.max(1, util.round(math.abs(self.samples[i]) * self.vertical_scale))
+                -- local brightness = math.max(1, util.round(math.abs(self.samples[i]) * self.vertical_scale)) * 2
+                screen.level(self.brightness)
                 screen.move(x_pos, self.y - height)
                 screen.line_rel(0, -1 + 2 * height)
+                screen.stroke()
+            else
+                -- screen.move(x_pos, self.y)
+                -- screen.line_rel(0, -1)
+
             end
 
-            screen.stroke()
+            
             x_pos = x_pos + 1
             sample = sample + 1
         end

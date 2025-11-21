@@ -1,5 +1,5 @@
 -- eterna
--- 0.9.14 @etsuko.fm
+-- 0.9.15 @etsuko.fm
 -- E1: scroll pages
 --
 -- Other controls, see footer:
@@ -39,7 +39,6 @@ local page_rates = include(from_root("lib/pages/rates"))
 local page_levels = include(from_root("lib/pages/levels"))
 local fps = 45
 local ready
-
 
 UPDATE_SLICES = false
 
@@ -156,6 +155,7 @@ function init()
   -- metro for screen refresh
   c = metro.init(count, 1 / fps)
   c:start()
+
 end
 
 clock.tempo_change_handler = function(bpm)
@@ -277,5 +277,6 @@ end
 
 function cleanup()
   metro.free_all()
-  poll.clear_all()
+  -- poll.clear_all()
+  current_page:exit()
 end

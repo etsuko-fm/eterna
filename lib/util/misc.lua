@@ -81,12 +81,22 @@ local function adjust_param(d, param_id, quantum)
 end
 
 
+local function table_contains(tbl, value)
+    for _, v in ipairs(tbl) do
+        if v == value then
+            return true
+        end
+    end
+    return false
+end
+
 return {
     linexp = linexp,
     explin = explin,
     trim = trim,
     list_to_set = list_to_set,
     set_contains = set_contains,
+    table_contains = table_contains,
     cycle_param = cycle_param,
     adjust_param = adjust_param,
 }

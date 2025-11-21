@@ -201,6 +201,8 @@ function page:initialize()
 
     self.window = Window:new({ title = "SEQUENCER", font_face = TITLE_FONT })
     self.graphic = SequencerGraphic:new()
+
+
     page.footer = Footer:new({
         button_text = {
             k2 = { name = "PLAY", value = "" },
@@ -219,7 +221,8 @@ end
 
 function page:enable_env_polls()
     for i = 1, 6 do
-        env_polls[i].callback = function(v) self.graphic.voice_env[i] = amp_to_log(v) end
+        env_polls[i].callback = function(v) self.graphic.voice_env[i] = amp_to_log(v)
+        end
     end
 end
 

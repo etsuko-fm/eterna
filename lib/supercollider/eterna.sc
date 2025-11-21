@@ -219,6 +219,11 @@ Engine_Eterna : CroneEngine {
       };
     });
 
+    this.addCommand("flush", "", { |msg| 
+      voices.do {|voice|voice.free};
+      "all voices flushed".postln;
+    });
+
   	this.addCommand("normalize", "i", { |msg|
       var index = msg[1].asInteger;
       var r = Routine {
@@ -400,6 +405,7 @@ Engine_Eterna : CroneEngine {
   }
   
   free {
+    "Freeing up Eterna".postln;
     Buffer.freeAll;
     buffers.free;
 
@@ -419,9 +425,10 @@ Engine_Eterna : CroneEngine {
     bassMono.free;
     master.free;
     
-    ampBuses.do(_.free);
+    ampBuses.do(_.free(true));
     ampBuses.free;
-    envBuses.do(_.free);
+    // free & clear; clear prevents value sticking after reloading script
+    envBuses.do(_.free(true)); 
     envBuses.free;
 
     // Control buses

@@ -105,8 +105,8 @@ local function all_true(t)
 end
 
 
-
 function page:load_sample(file)
+    engine.flush()
     print("page:load_sample(" .. file .. ")")
     -- use specified `file` as a sample and store enabled length of buffer in state
     if not file or file == "-" then return end
@@ -148,7 +148,8 @@ function engine_lib.on_file_load_success(path, channel, buffer)
         for voice = 1, 6 do
             local buffer_idx = util.wrap(voice, 1, active_channels)
             params:set(engine_lib.get_id("voice_bufnum", voice), buffer_idx)
-            print("lua: voice " .. voice .. "set to buffer " .. buffer_idx)
+            page.graphic.voice_to_buffer[voice] = buffer_idx
+            print("lua: voice " .. voice .. " set to buffer " .. buffer_idx)
         end
     end
 end
