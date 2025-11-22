@@ -37,7 +37,7 @@ page_control = include(from_root("lib/pages/control"))
 local page_panning = include(from_root("lib/pages/panning"))
 local page_rates = include(from_root("lib/pages/rates"))
 local page_levels = include(from_root("lib/pages/levels"))
-local fps = 45
+local fps = 60
 local ready
 
 UPDATE_SLICES = false
@@ -257,7 +257,7 @@ function refresh()
     ready = false
     screen.clear()
     current_page:render()
-    if enc1n ~= 0 and counter > 120 then
+    if enc1n ~= 0 and counter > 90 then
       enc1n = 0
       counter = 0
     end

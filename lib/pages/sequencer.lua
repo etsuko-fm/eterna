@@ -138,6 +138,11 @@ end
 
 function page:render()
     self.window:render()
+    self:render_graphic()
+    self:render_footer()
+end
+
+function page:render_graphic()
     if redraw_sequence then
         -- condition prevents updating perlin values more often than the screen refreshes.
         generate_perlin_seq()
@@ -148,14 +153,20 @@ function page:render()
         env_polls[i]:update()
     end
 
-    self.footer.button_text.k2.value = self.seq.transport_on and "ON" or "OFF"
-    self.footer.button_text.k3.value = sequence_util.sequence_speeds[params:get(ID_SEQ_SPEED)]
     self.graphic.num_steps = self.seq.steps
     self.graphic:render()
+end
+
+
+function page:render_footer()
+    self.footer.button_text.k2.value = self.seq.transport_on and "ON" or "OFF"
+    self.footer.button_text.k3.value = sequence_util.sequence_speeds[params:get(ID_SEQ_SPEED)]
+
     page.footer.button_text.e2.value = params:get(ID_SEQ_PERLIN_X)
     page.footer.button_text.e3.value = params:get(ID_SEQ_DENSITY)
     page.footer:render()
 end
+
 
 function page:update_grid_step(x, y, v)
     self.graphic.sequences[y][x] = v
@@ -193,6 +204,9 @@ function page:initialize()
     page.e3 = e3
     seq.on_step = function(step) page:on_step(step) end
     seq.on_tick = on_tick
+
+    -- footer 1 / 2 acts as different 'pages'; different controls, same graphic
+    page.selected_footer = 1
     self:add_params()
 
     for i = 1, 6 do

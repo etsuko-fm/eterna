@@ -106,7 +106,6 @@ end
 
 
 function page:load_sample(file)
-    engine.flush()
     print("page:load_sample(" .. file .. ")")
     -- use specified `file` as a sample and store enabled length of buffer in state
     if not file or file == "-" then return end
