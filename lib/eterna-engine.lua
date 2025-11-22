@@ -1,14 +1,14 @@
-local Symbiosis            = {}
+local Eterna            = {}
 
 -- constants that may be read by scripts
-Symbiosis.master_drive_min = -12
-Symbiosis.master_drive_max = 18
-Symbiosis.master_out_min   = -60
-Symbiosis.master_out_max   = 0
-Symbiosis.env_time_min     = 0.0015
-Symbiosis.env_time_max     = 5
+Eterna.master_drive_min = -12
+Eterna.master_drive_max = 18
+Eterna.master_out_min   = -60
+Eterna.master_out_max   = 0
+Eterna.env_time_min     = 0.0015
+Eterna.env_time_max     = 5
 
-local engine_prefix        = "symbiosis_"
+local engine_prefix        = "eterna_"
 
 -- -.-
 local sc_to_lua            = {
@@ -28,7 +28,7 @@ local lua_to_sc            = {
     [5] = 4,
     [6] = 5,
 }
-Symbiosis.echo_styles      = { "CLEAR", "MIST" }
+Eterna.echo_styles      = { "CLEAR", "MIST" }
 
 local filter_spec          = controlspec.def {
     min = 20,
@@ -52,7 +52,7 @@ local simple_spec          = controlspec.def {
     wrap = false
 }
 
-Symbiosis.params           = {
+Eterna.params           = {
     specs   = {
         ["echo_wet"] = simple_spec,
         ["echo_time"] = controlspec.def {
@@ -97,7 +97,7 @@ Symbiosis.params           = {
             step = 0.01,
             default = 0,
             units = 'dB',
-            quantum = 0.2 / (Symbiosis.master_drive_max - Symbiosis.master_drive_min),
+            quantum = 0.2 / (Eterna.master_drive_max - Eterna.master_drive_min),
             wrap = false
         },
         ["comp_ratio"] = controlspec.def {
@@ -121,13 +121,13 @@ Symbiosis.params           = {
             wrap = false
         },
         ["comp_out_level"] = controlspec.def {
-            min = Symbiosis.master_out_min,
-            max = Symbiosis.master_out_max,
+            min = Eterna.master_out_min,
+            max = Eterna.master_out_max,
             warp = 'lin',
             step = 0.1,
             default = 1,
             units = 'dB',
-            quantum = 0.2 / (Symbiosis.master_out_max - Symbiosis.master_out_min),
+            quantum = 0.2 / (Eterna.master_out_max - Eterna.master_out_min),
             wrap = false
         },
         ["bass_mono_freq"] = controlspec.def {
@@ -152,7 +152,7 @@ Symbiosis.params           = {
     },
     options = {
         ["echo_style"] = {
-            options = Symbiosis.echo_styles,
+            options = Eterna.echo_styles,
         },
     },
     voices  = {
@@ -182,14 +182,14 @@ Symbiosis.params           = {
                 wrap = false
             },
             ["voice_attack"] = {
-                min = Symbiosis.env_time_min,
-                max = Symbiosis.env_time_max,
+                min = Eterna.env_time_min,
+                max = Eterna.env_time_max,
                 default = 0.1,
                 wrap = false
             },
             ["voice_decay"] = {
-                min = Symbiosis.env_time_min,
-                max = Symbiosis.env_time_max,
+                min = Eterna.env_time_min,
+                max = Eterna.env_time_max,
                 default = 1,
                 wrap = false
             },
@@ -213,7 +213,7 @@ Symbiosis.params           = {
 }
 
 -- All voice params available in supercollider
-Symbiosis.voice_params     = {
+Eterna.voice_params     = {
     "voice_attack",
     "voice_decay",
     "voice_enable_lpg",
@@ -229,7 +229,7 @@ Symbiosis.voice_params     = {
 }
 
 -- All polls defined in the engine
-Symbiosis.available_polls  = {
+Eterna.available_polls  = {
     ["pre_comp"] = { "pre_comp_left", "pre_comp_right" },
     ["post_comp"] = { "post_comp_left", "post_comp_right" },
     ["post_gain"] = { "post_gain_left", "post_gain_right" },
@@ -238,14 +238,14 @@ Symbiosis.available_polls  = {
     ["voice_env"] = { "voice1env", "voice2env", "voice3env", "voice4env", "voice5env", "voice6env" },
 }
 
-Symbiosis.get_polls        = function(name, as_tuple)
-    -- Returns poll instances corresponding to the mapping in Symbiosis.available_polls
+Eterna.get_polls        = function(name, as_tuple)
+    -- Returns poll instances corresponding to the mapping in Eterna.available_polls
     -- Usage:
     --[[
           left, right = engine_lib.enable_poll("pre_comp")
     ---]]
     if as_tuple == nil then as_tuple = true end -- default to returning tuple
-    local t = Symbiosis.available_polls[name]
+    local t = Eterna.available_polls[name]
     local result = {}
     if t then
         for n, poll_name in pairs(t) do
@@ -264,7 +264,7 @@ end
 
 local function no_underscore(s) return s:gsub("_", " ") end
 
-Symbiosis.get_id = function(command, voice_id)
+Eterna.get_id = function(command, voice_id)
     -- 1 <= voice id <= 6
     if voice_id ~= nil then
         if voice_id >= 1 and voice_id <= 6 then
@@ -278,29 +278,29 @@ Symbiosis.get_id = function(command, voice_id)
 end
 
 -- Voice helper methods
-for _, param in pairs(Symbiosis.voice_params) do
+for _, param in pairs(Eterna.voice_params) do
     -- create methods that sets all 6 voices to the same value for a given param
-    -- e.g. Symbiosis.each_voice_level(v)
-    Symbiosis["each_" .. param] = function(v)
+    -- e.g. Eterna.each_voice_level(v)
+    Eterna["each_" .. param] = function(v)
         for i = 1, 6 do
-            params:set(Symbiosis.get_id(param, i), v)
+            params:set(Eterna.get_id(param, i), v)
         end
     end
 
     -- create methods that set an engine param for a given voice id,
     -- translating the lua 1-based indexes to Supercollider 0-based array indexes
-    Symbiosis[param] = function(i, v)
+    Eterna[param] = function(i, v)
         if i < 1 or i > 6 then
             print("Error: voice for voice_" .. param .. "() should be 1..6, got " .. i)
             return
         end
         -- Utilize param system to pass value to SuperCollider;
         -- advantage is that state becomes saveable
-        params:set(Symbiosis.get_id(param, i), v)
+        params:set(Eterna.get_id(param, i), v)
     end
 end
 
-function Symbiosis.voice_trigger(voice)
+function Eterna.voice_trigger(voice)
     if voice >= 1 and voice <= 6 then
         engine.voice_trigger(lua_to_sc[voice])
     else
@@ -308,7 +308,7 @@ function Symbiosis.voice_trigger(voice)
     end
 end
 
-function Symbiosis.load_file(path, channel, buffer)
+function Eterna.load_file(path, channel, buffer)
     -- Perform sanity checks before sending to engine
     if util.file_exists(path) then
         local channels, samples, samplerate = audio.file_info(path)
@@ -340,7 +340,7 @@ function Symbiosis.load_file(path, channel, buffer)
     end
 end
 
-function Symbiosis.normalize(buffer)
+function Eterna.normalize(buffer)
     if buffer > 6 or buffer < 1 then
         print("buffer should be 1..6")
         return false
@@ -351,12 +351,12 @@ function Symbiosis.normalize(buffer)
     return true
 end
 
-function Symbiosis.get_waveform(buffer, num_samples)
+function Eterna.get_waveform(buffer, num_samples)
     print('Requesting waveform for buffer ' .. buffer)
     engine.get_waveform(lua_to_sc[buffer], num_samples)
 end
 
-function Symbiosis.request_amp_history()
+function Eterna.request_amp_history()
     -- Upon receiving this command, the engine sends back an OSC message
     -- to /amp_history
     -- with the int8 values of the last 32 samples that were recorded for this purpose.
@@ -393,10 +393,10 @@ local function blob_to_table(blob, len)
     return ints
 end
 
-function Symbiosis.process_amp_history(args)
+function Eterna.process_amp_history(args)
     -- usage:
     --[[
-    sym = include('lib/symbiosis_engine')
+    sym = include('lib/eterna_engine')
 
     function osc.event(path, args, from)
         local values
@@ -410,7 +410,7 @@ function Symbiosis.process_amp_history(args)
     return blob_to_table(left), blob_to_table(right)
 end
 
-function Symbiosis.process_waveform(args)
+function Eterna.process_waveform(args)
     local blob = args[1]   -- the int8 array from OSC
     local buffer = args[2] -- 0-5
     buffer = sc_to_lua[buffer]
@@ -422,7 +422,7 @@ function Symbiosis.process_waveform(args)
     return buffer, waveform
 end
 
-function Symbiosis.add_params()
+function Eterna.add_params()
     -- Script has to call this method in order to add params. All will be hidden by default,
     -- as there're so many they may not make much sense to the end user.
     -- Scripts may still expose (a selection of ) these,
@@ -430,8 +430,8 @@ function Symbiosis.add_params()
     -- tuned to their desired range, steps, formatting, grouping, etc.
 
     -- add controlspec-based params
-    for command, spec in pairs(Symbiosis.params.specs) do
-        local id = Symbiosis.get_id(command)
+    for command, spec in pairs(Eterna.params.specs) do
+        local id = Eterna.get_id(command)
         params:add {
             type = "control",
             id = id,
@@ -443,8 +443,8 @@ function Symbiosis.add_params()
     end
 
     -- add option-based params
-    for command, entry in pairs(Symbiosis.params.options) do
-        local id = Symbiosis.get_id(command)
+    for command, entry in pairs(Eterna.params.options) do
+        local id = Eterna.get_id(command)
         params:add {
             type = "option",
             id = id,
@@ -456,9 +456,9 @@ function Symbiosis.add_params()
     end
 
     -- add controlspec-based voice params (define one per voice)
-    for command, entry in pairs(Symbiosis.params.voices.specs) do
+    for command, entry in pairs(Eterna.params.voices.specs) do
         for voice = 1, 6 do
-            local id = Symbiosis.get_id(command, voice)
+            local id = Eterna.get_id(command, voice)
             params:add({
                 type = "control",
                 id = id,
@@ -471,9 +471,9 @@ function Symbiosis.add_params()
     end
 
     -- add toggle-based voice params (define one per voice)
-    for _, command in pairs(Symbiosis.params.voices.toggles) do
+    for _, command in pairs(Eterna.params.voices.toggles) do
         for voice = 1, 6 do
-            local id = Symbiosis.get_id(command, voice)
+            local id = Eterna.get_id(command, voice)
             params:add({
                 type = "binary",
                 behavior = "toggle",
@@ -488,9 +488,9 @@ function Symbiosis.add_params()
     end
 
     -- add options-based voice params (define one per voice)
-    for command, entry in pairs(Symbiosis.params.voices.options) do
+    for command, entry in pairs(Eterna.params.voices.options) do
         for voice = 1, 6 do
-            local id = Symbiosis.get_id(command, voice)
+            local id = Eterna.get_id(command, voice)
             params:add({
                 type = "option",
                 id = id,
@@ -505,11 +505,11 @@ function Symbiosis.add_params()
     end
 
     -- add number-based voice params (define one per voice)
-    for command, entry in pairs(Symbiosis.params.voices.numbers) do
+    for command, entry in pairs(Eterna.params.voices.numbers) do
         print("adding " .. command)
         for i = 1, 6 do
             local sc_idx = i - 1
-            local id = Symbiosis.get_id(command, i)
+            local id = Eterna.get_id(command, i)
             params:add({
                 type = "number",
                 id = id,
@@ -525,18 +525,18 @@ function Symbiosis.add_params()
     end
 end
 
-function Symbiosis.osc_event(path, args, from)
+function Eterna.osc_event(path, args, from)
     if path == "/waveform" then
-        channel, waveform = Symbiosis.process_waveform(args)
-        Symbiosis.on_waveform(waveform, channel)
+        channel, waveform = Eterna.process_waveform(args)
+        Eterna.on_waveform(waveform, channel)
         --
     elseif path == "/duration" then
         local duration = tonumber(args[1])
-        Symbiosis.on_duration(duration)
+        Eterna.on_duration(duration)
         --
     elseif path == "/amp_history" then
         local left, right = engine_lib.process_amp_history(args)
-        Symbiosis.on_amp_history(left, right)
+        Eterna.on_amp_history(left, right)
         --
     elseif path == "/file_load_result" then
         local success = args[1]
@@ -544,29 +544,29 @@ function Symbiosis.osc_event(path, args, from)
         local channel = sc_to_lua[args[3]]
         local buffer = sc_to_lua[args[4]]
         if success == 1 then
-            Symbiosis.on_file_load_success(file_path, channel, buffer)
+            Eterna.on_file_load_success(file_path, channel, buffer)
         else
-            Symbiosis.on_file_load_fail(file_path, channel, buffer)
+            Eterna.on_file_load_fail(file_path, channel, buffer)
         end
         --
     elseif path == "/normalized" then
         local voice = sc_to_lua[args[1]]
-        Symbiosis.on_normalize(voice)
+        Eterna.on_normalize(voice)
     end
 end
 
 -- These functions can be overloaded by script
-function Symbiosis.on_normalize(voice) end
+function Eterna.on_normalize(voice) end
 
-function Symbiosis.on_duration(duration) end
+function Eterna.on_duration(duration) end
 
-function Symbiosis.on_waveform(waveform, channel) end
+function Eterna.on_waveform(waveform, channel) end
 
-function Symbiosis.on_file_load_success(path, channel, buffer) end
+function Eterna.on_file_load_success(path, channel, buffer) end
 
-function Symbiosis.on_amp_history(left, right) end
+function Eterna.on_amp_history(left, right) end
 
-function Symbiosis.install_osc_hook()
+function Eterna.install_osc_hook()
     -- Allows this module to process SuperCollider's OSC events;
     -- if a script also defines its own osc.event function,
     -- this hook should be invoked after that definition.
@@ -577,7 +577,7 @@ function Symbiosis.install_osc_hook()
     -- capture osc events
     osc.event = function(path, args, from)
         -- process event within this engine
-        Symbiosis.osc_event(path, args, from)
+        Eterna.osc_event(path, args, from)
 
         -- pass to original handler
         if original then
@@ -586,4 +586,4 @@ function Symbiosis.install_osc_hook()
     end
 end
 
-return Symbiosis
+return Eterna
