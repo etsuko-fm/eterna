@@ -1,4 +1,4 @@
-local create_filter_page = include(from_root("lib/pages/filter_page"))
+local create_filter_page = include(from_root("lib/pages/factories/filter"))
 
 return create_filter_page({
     page_name = "HIGHPASS",
@@ -15,7 +15,7 @@ return create_filter_page({
     res_param_name  = "hpf_res",
 
     lfo_shapes = HPF_LFO_SHAPES,
-    filter_graphic_type = 1,
+    filter_graphic_type = "HP",
 
     lfo_defaults = function(last_freq)
         return {

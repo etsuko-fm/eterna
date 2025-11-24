@@ -27,7 +27,7 @@ end
 
 -- Convert exponential range [slo, shi] to linear range [dlo, dhi]
 local function explin(slo, shi, dlo, dhi, f, exp)
-    exp = exp or 1  -- exponentiality factor (1 = plain log scaling)
+    exp = exp or 1 -- exponentiality factor (1 = plain log scaling)
 
     -- sanity checks
     if slo == 0 or shi == 0 or (slo * shi < 0) then
@@ -36,7 +36,7 @@ local function explin(slo, shi, dlo, dhi, f, exp)
 
     -- normalize input exponentially
     local t = (math.log(math.abs(f)) - math.log(math.abs(slo))) /
-              (math.log(math.abs(shi)) - math.log(math.abs(slo)))
+        (math.log(math.abs(shi)) - math.log(math.abs(slo)))
 
     -- apply exponentiality factor
     t = t ^ exp
@@ -47,7 +47,7 @@ end
 
 -- Convert linear range [slo, shi] to exponential range [dlo, dhi]
 local function linexp(slo, shi, dlo, dhi, f, exp)
-    exp = exp or 1  -- exponentiality factor (1 = plain log scaling)
+    exp = exp or 1 -- exponentiality factor (1 = plain log scaling)
 
     -- sanity checks
     if dlo == 0 or dhi == 0 or (dlo * dhi < 0) then
@@ -72,6 +72,13 @@ local function cycle_param(param_id, tbl)
     local new = util.wrap(v + 1, 1, #tbl)
     params:set(param_id, new)
 end
+
+local function toggle_param(param_id)
+    local v = params:get(param_id)
+    local new = 1 - v
+    params:set(param_id, new)
+end
+
 
 local function adjust_param(d, param_id, quantum)
     local incr = d * quantum
@@ -99,5 +106,5 @@ return {
     table_contains = table_contains,
     cycle_param = cycle_param,
     adjust_param = adjust_param,
+    toggle_param = toggle_param,
 }
-

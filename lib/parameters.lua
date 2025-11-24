@@ -1,4 +1,4 @@
-local app = "symbiosis"
+local app = "eterna"
 
 -- Components, for creating param ids
 META  = "meta"
@@ -291,10 +291,11 @@ DEFAULT_PANNING_LFO_RATE_IDX = 16
 ID_LPF_WET = get_id(PROCESSOR, "lpf_wet")
 ID_LPF_TYPE = get_id(PROCESSOR, "lpf_type")
 ID_LPF_LFO = get_id(PROCESSOR, "lpf_lfo")
+ID_LPF_LFO_SHAPE = get_id(PROCESSOR, "lpf_lfo_shape")
 ID_LPF_FREQ_MOD = get_id(PROCESSOR, "lpf_freq_mod")
 ID_LPF_LFO_RATE = get_id(PROCESSOR, "lpf_lfo_rate")
 
-LPF_LFO_SHAPES = { "off", "sine", "up", "down", "random" }
+LPF_LFO_SHAPES = { "sine", "up", "down", "random" }
 DRY_WET_TYPES = { "DRY", "50/50", "WET" }
 
 -- multiplies with cutoff value
@@ -315,10 +316,11 @@ controlspec_lpf_freq_mod = controlspec.def {
 ID_HPF_WET = get_id(PROCESSOR, "hpf_wet")
 ID_HPF_TYPE = get_id(PROCESSOR, "hpf_type")
 ID_HPF_LFO = get_id(PROCESSOR, "hpf_lfo")
+ID_HPF_LFO_SHAPE = get_id(PROCESSOR, "hpf_lfo_shape")
 ID_HPF_FREQ_MOD = get_id(PROCESSOR, "hpf_freq_mod")
 ID_HPF_LFO_RATE = get_id(PROCESSOR, "hpf_lfo_rate")
 DRY_WET_TYPES = { "DRY", "50/50", "WET" }
-HPF_LFO_SHAPES = { "off", "sine", "up", "down", "random" }
+HPF_LFO_SHAPES = { "sine", "up", "down", "random" }
 
 -- multiplies with cutoff value
 controlspec_hpf_freq_mod = controlspec.def {
@@ -357,7 +359,7 @@ COMP_AMOUNTS = {"OFF", "SOFT", "MEDIUM", "HARD", "MEDIUM", "SOFT"}
 
 
 --- MENU
-params:add_separator("SYMBIOSIS", "SYMBIOSIS")
+params:add_separator("ETERNA", "ETERNA")
 
 params:add_text(ID_VERSION, "version", VERSION_STRING)
 params:hide(ID_VERSION)
@@ -375,6 +377,27 @@ for voice = 1, 6 do
     params:hide(ID_SAMPLER_SECTIONS[voice].loop_start)
     params:hide(ID_SAMPLER_SECTIONS[voice].loop_end)
 end
+
+params:add_separator("ENVELOPE", "ENVELOPE")
+params:add_option(ID_ENVELOPES_MOD, "mod", ENVELOPE_MOD_OPTIONS, 2)
+params:add_control(ID_ENVELOPES_TIME, "time", controlspec_env_time)
+params:add_control(ID_ENVELOPES_SHAPE, "shape", controlspec_env_shape)
+params:add_option(ID_ENVELOPES_CURVE, "curve", ENVELOPE_CURVES)
+params:add_control(ID_ENVELOPES_FILTER_ENV, "filter env", controlspec_env_filter)
+
+params:add_separator("PLAYBACK_RATES", "PLAYBACK RATES")
+params:add_option(ID_RATES_RANGE, 'range', RANGE_TABLE, RANGE_DEFAULT)
+params:add_control(ID_RATES_CENTER, "center", controlspec_rates_center)
+params:add_control(ID_RATES_SPREAD, "spread", controlspec_rates_spread)
+params:add_option(ID_RATES_DIRECTION, "direction", PLAYBACK_TABLE, 1)
+
+for voice = 1, 6 do
+    -- add params for playback direction per voice
+    local param_id = get_voice_direction_id(voice)
+    params:add_option(param_id, param_id, PLAYBACK_TABLE, 1)
+    params:hide(param_id)
+end
+
 
 params:add_separator("SEQUENCER", "SEQUENCER")
 params:add_control(ID_SEQ_NUM_STEPS, "steps", controlspec_num_steps)
@@ -398,25 +421,6 @@ for track = 1, SEQ_TRACKS do
     end
 end
 
-params:add_separator("ENVELOPE", "ENVELOPE")
-params:add_option(ID_ENVELOPES_MOD, "mod", ENVELOPE_MOD_OPTIONS, 2)
-params:add_control(ID_ENVELOPES_TIME, "time", controlspec_env_time)
-params:add_control(ID_ENVELOPES_SHAPE, "shape", controlspec_env_shape)
-params:add_option(ID_ENVELOPES_CURVE, "curve", ENVELOPE_CURVES)
-params:add_control(ID_ENVELOPES_FILTER_ENV, "filter env", controlspec_env_filter)
-
-params:add_separator("PLAYBACK_RATES", "PLAYBACK RATES")
-params:add_option(ID_RATES_RANGE, 'range', RANGE_TABLE, RANGE_DEFAULT)
-params:add_control(ID_RATES_CENTER, "center", controlspec_rates_center)
-params:add_control(ID_RATES_SPREAD, "spread", controlspec_rates_spread)
-params:add_option(ID_RATES_DIRECTION, "direction", PLAYBACK_TABLE, 1)
-
-for voice = 1, 6 do
-    -- add params for playback direction per voice
-    local param_id = get_voice_direction_id(voice)
-    params:add_option(param_id, param_id, PLAYBACK_TABLE, 1)
-    params:hide(param_id)
-end
 
 params:add_separator("VOICE LEVELS", "LEVELS")
 params:add_option(ID_LEVELS_LFO, "LFO", LEVELS_LFO_SHAPES)
@@ -431,7 +435,8 @@ params:add_control(ID_PANNING_TWIST, "twist", controlspec_pan_twist)
 params:add_control(ID_PANNING_SPREAD, "spread", controlspec_pan_spread)
 
 params:add_separator("LPF", "LPF")
-params:add_option(ID_LPF_LFO, "LFO shape", LPF_LFO_SHAPES, 1)
+params:add_binary(ID_LPF_LFO, "toggle", "LFO", LPF_LFO_SHAPES)
+params:add_option(ID_LPF_LFO_SHAPE, "LFO shape", LPF_LFO_SHAPES, 1)
 params:add_option(ID_LPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 8)
 params:add_option(ID_LPF_WET, "dry/wet", DRY_WET_TYPES, 1)
 params:add_control(ID_LPF_FREQ_MOD, "frequency_mod", controlspec_lpf_freq_mod)
@@ -439,7 +444,8 @@ params:add_control(ID_LPF_FREQ_MOD, "frequency_mod", controlspec_lpf_freq_mod)
 params:hide(ID_LPF_FREQ_MOD) -- to be modified by lfo only
 
 params:add_separator("HPF", "HPF")
-params:add_option(ID_HPF_LFO, "LFO shape", HPF_LFO_SHAPES, 1)
+params:add_binary(ID_HPF_LFO, "toggle", "LFO", HPF_LFO_SHAPES)
+params:add_option(ID_HPF_LFO_SHAPE, "LFO shape", HPF_LFO_SHAPES, 1)
 params:add_option(ID_HPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 8)
 params:add_option(ID_HPF_WET, "dry/wet", DRY_WET_TYPES, 1)
 params:add_control(ID_HPF_FREQ_MOD, "frequency_mod", controlspec_hpf_freq_mod)

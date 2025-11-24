@@ -97,6 +97,7 @@ end
 
 local function action_lfo(v, lfo, shapes, phase)
     -- helper method to enable/disable LFO and set LFO shape
+    -- TODO: remove once implemented everywhere w on/off button
     local selection = shapes[v]
     if selection == "off" then
         lfo:stop()
@@ -105,6 +106,22 @@ local function action_lfo(v, lfo, shapes, phase)
         lfo:set('shape', selection)
     end
     if phase ~= nil then lfo:set('phase', phase) end
+end
+
+local function action_lfo_toggle(v, lfo, phase)
+    -- helper method to enable/disable LFO
+    if v == 0 then
+        lfo:stop()
+    else
+        lfo:start()
+    end
+    if phase ~= nil then lfo:set('phase', phase) end
+end
+
+local function action_lfo_shape(v, lfo, shapes, phase)
+    -- helper method to set LFO shape
+    local selection = shapes[v]
+    lfo:set('shape', selection)
 end
 
 
@@ -117,4 +134,6 @@ return {
     toggle_shape = toggle_shape,
     adjust_lfo_rate_quant = adjust_lfo_rate_quant,
     action_lfo=action_lfo,
+    action_lfo_toggle=action_lfo_toggle,
+    action_lfo_shape=action_lfo_shape,
 }

@@ -14,7 +14,7 @@ local max_freq = 20000
 local off_db = -32
 local max_db = 0
 local norm_db = -18
-local graph_w = 64
+local graph_w = 62
 local graph_h = 30
 local offset_y = 11
 local margin_x = 12
@@ -187,7 +187,7 @@ local function draw_stripes()
         screen.stroke()
     end
 end
-function FilterGraphic:render()
+function FilterGraphic:render(draw_lfo_range)
     if self.hide then return end
     -- add filter off graphic if mix is dry or 50/50
     if self.mix == 0.5 then
@@ -197,15 +197,15 @@ function FilterGraphic:render()
 
     screen.level(15)
     if self.mix > 0 then screen.level(15) else screen.level(3) end
-    if self.type == 1 then
+    if self.type == "HP" then
         draw_highpass(self.freq, self.res)
-    elseif self.type == 2 then
+    elseif self.type == "LP" thenq
         draw_lowpass(self.freq, self.res)
     end
 
     draw_stripes()
     screen.line_width(1)
-    screen.level(3)
+    screen.level(1)
     screen.rect(start_x, 15, graph_w, graph_h - 3)
     screen.stroke()
     -- hide out of range stuff
@@ -213,6 +213,14 @@ function FilterGraphic:render()
     screen.rect(0, 15, start_x - 1, graph_h)
     screen.rect(start_x + graph_w, 15, 32, graph_h)
     screen.fill()
+    if draw_lfo_range then
+        screen.move(64, 44)
+        screen.level(4)
+        screen.line_rel(0,2)
+        screen.line_rel(18,0)
+        screen.line_rel(0,-2)
+        screen.stroke()
+    end
 end
 
 return FilterGraphic

@@ -29,8 +29,9 @@ engine_lib = include(from_root("lib/eterna-engine"))
 local page_sample = include(from_root("lib/pages/sample"))
 page_sequencer = include(from_root("lib/pages/sequencer"))
 local page_envelopes = include(from_root("lib/pages/envelopes"))
-local page_lpf = include(from_root("lib/pages/lpf"))
-local page_hpf = include(from_root("lib/pages/hpf"))
+page_lpf = include(from_root("lib/pages/lpf"))
+local page_lpf_lfo = include(from_root("lib/pages/lpf_lfo"))
+page_hpf = include(from_root("lib/pages/hpf"))
 local page_echo = include(from_root("lib/pages/echo"))
 local page_master = include(from_root("lib/pages/master"))
 page_control = include(from_root("lib/pages/control"))
@@ -60,6 +61,7 @@ local pages = {
   page_control,
   -- processing
   page_lpf,
+  page_lpf_lfo,
   page_hpf,
   page_echo,
   -- output
