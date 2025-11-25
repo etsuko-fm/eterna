@@ -113,6 +113,7 @@ local function action_lfo_toggle(v, lfo, phase)
     if v == 0 then
         lfo:stop()
     else
+        print('lfo started')
         lfo:start()
     end
     if phase ~= nil then lfo:set('phase', phase) end

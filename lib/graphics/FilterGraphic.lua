@@ -1,26 +1,31 @@
 FilterGraphic = {
     x = 64,
     y = 25,
-    radius = 12,
     hide = false,
     freq = 1000,
     res = 0,
     type = 1, -- 1 HP / 2 LP
     mix = 1,  -- 0 to 1, but only 0, 0.5 and 1 are currently supported
+    graph_w = 50,
+    graph_h = 26,
 }
+
+function FilterGraphic:new(o)
+    o = o or {}           -- create state if not provided
+    setmetatable(o, self) -- define prototype
+    self.__index = self
+    return o              -- return instance
+end
 
 local min_freq = 20
 local max_freq = 20000
 local off_db = -32
 local max_db = 0
 local norm_db = -18
-local graph_w = 62
-local graph_h = 30
 local offset_y = 11
 local margin_x = 12
-local res_max_db = 12
+local res_max_db = 11
 local line_w = 2
-local start_x = (128 / 2 - graph_w / 2) -- - margin_x
 
 -- NB: Playing around on https://cubic-bezier.com
 --- helps determining control coordinates
@@ -28,7 +33,7 @@ local start_x = (128 / 2 - graph_w / 2) -- - margin_x
 -- Maps `freq` (within `min_freq` to `max_freq`) to a horizontal
 -- position in the graph. Uses a logarithmic scale, so equal ratios
 -- in frequency appear as equal distances on the graph.
-local function freq_to_x(freq)
+function FilterGraphic:freq_to_x(freq)
     -- distance from minimum freq to cutoff freq,
     -- so that freq_normalized = 0 when it equals min_freq
     local freq_normalized = math.log(freq) - math.log(min_freq)
@@ -40,22 +45,32 @@ local function freq_to_x(freq)
     local pos = freq_normalized / range
 
     -- x position
-    return start_x + pos * (graph_w - 1) -- exclude edge
+    return self:get_start_x() + pos * (self.graph_w - 1) -- exclude edge
 end
 
-local function db_to_y(db)
+function FilterGraphic:set_size(w, h)
+    self.graph_w = w
+    self.graph_h = h
+end
+
+function FilterGraphic:get_start_x()
+    return (128 / 2 - self.graph_w / 2)
+end
+
+function FilterGraphic:db_to_y(db)
+    -- TODO: include max resonance in calculation
     local db_range = off_db - max_db
     local norm = (db - max_db) / db_range
-    return offset_y + norm * graph_h
+    return offset_y + norm * self.graph_h
 end
 
-local flat_y = db_to_y(norm_db)
-local off_y = db_to_y(off_db)
+function FilterGraphic:get_control_points_up(type, cutoff_hz)
+    local flat_y = self:db_to_y(norm_db)
+    local off_y = self:db_to_y(off_db)
 
-local function get_control_points_up(type, cutoff_hz)
     -- calculate 2 control points for the cubic bezier curve from
     -- the flat 0dB line to the to peak cutoff/resonance poiont
-    local cutoff_x = freq_to_x(cutoff_hz)
+    local cutoff_x = self:freq_to_x(cutoff_hz)
     local margin
 
     -- for lowpass, control point is before the cutoff (subtract margin)
@@ -77,14 +92,15 @@ local function get_control_points_up(type, cutoff_hz)
     end
 end
 
-local function get_control_points_down(type, cutoff_hz)
+function FilterGraphic:get_control_points_down(type, cutoff_hz)
     -- calculate 2 control points for the cubic bezier curve from
     -- the cutoff point to the to the bottom of the graph (-INF dB)
+    local off_y = self:db_to_y(off_db)
 
-    local cutoff_x = freq_to_x(cutoff_hz)
+    local cutoff_x = self:freq_to_x(cutoff_hz)
     if type == "LP" then margin = margin_x else margin = -margin_x end
 
-    local p1 = { x = cutoff_x + margin / 2, y = db_to_y(norm_db - 3) }
+    local p1 = { x = cutoff_x + margin / 2, y = self:db_to_y(norm_db - 3) }
     local p2 = { x = cutoff_x + margin, y = off_y }
 
     -- swap points depending on low/highpass
@@ -100,29 +116,32 @@ end
 -- Draw a low-pass filter curve with adjustable cutoff and resonance.
 -- cutoff_hz: 20 - 20000
 -- resonance: 0.0 - 1.0
-local function draw_lowpass(cutoff_hz, resonance)
+function FilterGraphic:draw_lowpass(cutoff_hz, resonance)
+    local flat_y = self:db_to_y(norm_db)
+    local off_y = self:db_to_y(off_db)
+
     local res_db = resonance * res_max_db
 
     -- starting point
-    local cutoff_x = freq_to_x(cutoff_hz)
+    local cutoff_x = self:freq_to_x(cutoff_hz)
     local peak_db = norm_db + res_db -- up to +6 dB boost at cutoff
 
     -- start left, out of graph range; helps draw curve correctly for lowest frequencies
-    local left_x = start_x - margin_x
+    local left_x = self:get_start_x() - margin_x
     screen.move(left_x, flat_y)
 
     -- draw curve towards resonance
     -- control points are placed nearly under the cutoff x,
     -- to create exponential curve
-    local control_points_up = get_control_points_up("LP", cutoff_hz)
+    local control_points_up = self:get_control_points_up("LP", cutoff_hz)
     local cp1 = control_points_up.c1
     local cp2 = control_points_up.c2
-    local dest1 = { x = cutoff_x, y = db_to_y(peak_db) }
+    local dest1 = { x = cutoff_x, y = self:db_to_y(peak_db) }
 
     screen.curve(cp1.x, cp1.y, cp2.x, cp2.y, dest1.x, dest1.y)
     -- Slope after cutoff: down to -24 dB/octave visually
 
-    local control_points_down = get_control_points_down("LP", cutoff_hz)
+    local control_points_down = self:get_control_points_down("LP", cutoff_hz)
     local cp3 = control_points_down.c1
     local cp4 = control_points_down.c2
     local dest2 = { x = cutoff_x + margin_x, y = off_y }
@@ -132,24 +151,25 @@ local function draw_lowpass(cutoff_hz, resonance)
     screen.stroke()
 end
 
-
-local function draw_highpass(cutoff_hz, resonance)
+function FilterGraphic:draw_highpass(cutoff_hz, resonance)
+    local flat_y = self:db_to_y(norm_db)
+    local off_y = self:db_to_y(off_db)
     local res_db = resonance * res_max_db
 
-    local cutoff_x = freq_to_x(cutoff_hz)
+    local cutoff_x = self:freq_to_x(cutoff_hz)
     local peak_db = norm_db + res_db
-    local end_x = start_x + graph_w + 2 * margin_x
+    local end_x = self:get_start_x() + self.graph_w + 2 * margin_x
 
     -- left side slope up to cutoff
-    local control_points_down = get_control_points_down("HP", cutoff_hz)
+    local control_points_down = self:get_control_points_down("HP", cutoff_hz)
     local cp1 = control_points_down.c1
     local cp2 = control_points_down.c2
-    local dest1 = { x = cutoff_x, y = db_to_y(peak_db) }
+    local dest1 = { x = cutoff_x, y = self:db_to_y(peak_db) }
 
     screen.move(cutoff_x - margin_x, off_y)
     screen.curve(cp1.x, cp1.y, cp2.x, cp2.y, dest1.x, dest1.y)
 
-    local control_points = get_control_points_up("HP", cutoff_hz)
+    local control_points = self:get_control_points_up("HP", cutoff_hz)
 
     local cp3 = control_points.c1
     local cp4 = control_points.c2
@@ -162,21 +182,16 @@ local function draw_highpass(cutoff_hz, resonance)
     screen.stroke()
 end
 
-local function draw_filter_off()
+function FilterGraphic:draw_filter_off()
+    local flat_y = self:db_to_y(norm_db)
+    local off_y = self:db_to_y(off_db)
     screen.line_width(line_w)
-    screen.move(start_x, flat_y)
-    screen.line(start_x + graph_w + 2 * margin_x, flat_y)
+    screen.move(self:get_start_x(), flat_y)
+    screen.line(self:get_start_x() + self.graph_w + 2 * margin_x, flat_y)
     screen.stroke()
 end
 
-function FilterGraphic:new(o)
-    o = o or {}           -- create state if not provided
-    setmetatable(o, self) -- define prototype
-    self.__index = self
-    return o              -- return instance
-end
-
-local function draw_stripes()
+function FilterGraphic:draw_stripes()
     -- draw vertical black lines to make graphic less intense
     for i = 1, 64 do
         local x = i * 2
@@ -187,38 +202,39 @@ local function draw_stripes()
         screen.stroke()
     end
 end
+
 function FilterGraphic:render(draw_lfo_range)
     if self.hide then return end
     -- add filter off graphic if mix is dry or 50/50
     if self.mix == 0.5 then
         screen.level(2)
-        draw_filter_off()
+        self:draw_filter_off()
     end
 
     screen.level(15)
     if self.mix > 0 then screen.level(15) else screen.level(3) end
     if self.type == "HP" then
-        draw_highpass(self.freq, self.res)
-    elseif self.type == "LP" thenq
-        draw_lowpass(self.freq, self.res)
+        self:draw_highpass(self.freq, self.res)
+    elseif self.type == "LP" then
+        self:draw_lowpass(self.freq, self.res)
     end
 
-    draw_stripes()
+    self:draw_stripes()
     screen.line_width(1)
     screen.level(1)
-    screen.rect(start_x, 15, graph_w, graph_h - 3)
+    screen.rect(self:get_start_x(), 15, self.graph_w, self.graph_h - 3)
     screen.stroke()
     -- hide out of range stuff
     screen.level(0)
-    screen.rect(0, 15, start_x - 1, graph_h)
-    screen.rect(start_x + graph_w, 15, 32, graph_h)
+    screen.rect(0, 15, self:get_start_x() - 1, self.graph_h)
+    screen.rect(self:get_start_x() + self.graph_w, 15, 32, self.graph_h)
     screen.fill()
     if draw_lfo_range then
-        screen.move(64, 44)
+        screen.move(64, 39)
         screen.level(4)
-        screen.line_rel(0,2)
-        screen.line_rel(18,0)
-        screen.line_rel(0,-2)
+        screen.line_rel(0, 3)
+        screen.line_rel(18, 0)
+        screen.line_rel(0, -3)
         screen.stroke()
     end
 end

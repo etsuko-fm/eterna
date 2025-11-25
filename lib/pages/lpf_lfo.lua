@@ -2,22 +2,24 @@ local create_filter_lfo_page = include(from_root("lib/pages/factories/filter_lfo
 
 return create_filter_lfo_page({
     page_name        = "LOWPASS LFO",
-    engine_mod_range = engine_lib.get_id("lpf_mod_range"),
     engine_freq      = engine_lib.get_id("lpf_freq"),
-    parent_page = page_lpf,
+    parent_page      = page_lpf,
+    lfo_shapes       = LPF_LFO_SHAPES,
+    spec_freq_mod    = controlspec_lpf_freq_mod,
+    spec_lfo_range   = controlspec_lpf_lfo_range,
 
     id_lfo           = ID_LPF_LFO,
     id_lfo_shape     = ID_LPF_LFO_SHAPE,
     id_wet           = ID_LPF_WET,
     id_freq_mod      = ID_LPF_FREQ_MOD,
     id_lfo_rate      = ID_LPF_LFO_RATE,
+    id_lfo_range     = ID_LPF_LFO_RANGE,
 
     freq_param_name  = "lpf_freq",
-    res_param_name   = "lpf_res",
+    range_param_name = "lpf_res",
 
-    lfo_shapes       = LPF_LFO_SHAPES,
 
-    lfo_defaults     = function(last_freq)
+    lfo_defaults = function(last_freq)
         return {
             shape = 'sine',
             min = 0,
@@ -27,6 +29,8 @@ return create_filter_lfo_page({
             period = 8,
             phase = 0,
             action = function(scaled)
+                -- map the lfo value to the range of the controlspec
+                print('lfo action' .. controlspec_lpf_freq_mod:map(scaled))
                 params:set(ID_LPF_FREQ_MOD, controlspec_lpf_freq_mod:map(scaled), false)
             end
         }

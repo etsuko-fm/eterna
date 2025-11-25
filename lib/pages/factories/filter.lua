@@ -5,7 +5,6 @@ local function create_filter_page(cfg)
     -- cfg contains all filter-specific parameters
 
     local page_name = cfg.page_name
-    local filter_graphic
 
     local ENGINE_FREQ = cfg.engine_freq
     local ENGINE_RES  = cfg.engine_res
@@ -55,6 +54,7 @@ local function create_filter_page(cfg)
 
     function page:render()
         self.window:render()
+        self.graphic:set_size(64, 30)
         self:render_graphic()
         self:render_footer()
     end
@@ -64,11 +64,11 @@ local function create_filter_page(cfg)
         local res  = params:get(ENGINE_RES)
         local drywet = params:get(ID_WET)
 
-        filter_graphic.freq = freq
-        filter_graphic.res  = res
-        filter_graphic.type = FILTER_TYPE
-        filter_graphic.mix  = (drywet - 1) / 2
-        filter_graphic:render(draw_lfo_range)
+        self.graphic.freq = freq
+        self.graphic.res  = res
+        self.graphic.type = FILTER_TYPE
+        self.graphic.mix  = (drywet - 1) / 2
+        self.graphic:render(draw_lfo_range)
     end
 
     function page:render_footer()
@@ -87,7 +87,7 @@ local function create_filter_page(cfg)
         add_params()
 
         self.window = Window:new({ title = page_name, font_face = TITLE_FONT })
-        filter_graphic = FilterGraphic:new()
+        self.graphic = FilterGraphic:new()
 
         self.footer = Footer:new({
             button_text = {

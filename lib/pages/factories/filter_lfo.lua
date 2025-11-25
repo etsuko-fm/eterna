@@ -1,24 +1,27 @@
 local function create_filter_lfo_page(cfg)
     -- cfg contains all filter-specific parameters
 
-    local page_name    = cfg.page_name
-    local parent_page = cfg.parent_page
+    local page_name        = cfg.page_name
+    local parent_page      = cfg.parent_page
     local lfo
     local last_freq
-
-    local ENGINE_FREQ  = cfg.engine_freq
+    local lfo_shapes       = cfg.lfo_shapes
+    local spec_freq_mod    = cfg.spec_freq_mod
+    local spec_lfo_range   = cfg.spec_lfo_range
+    local ENGINE_FREQ      = cfg.engine_freq
     local ENGINE_MOD_RANGE = cfg.engine_mod_range
-    local ID_LFO       = cfg.id_lfo
-    local ID_LFO_SHAPE = cfg.id_lfo_shape
-    local ID_FREQ_MOD  = cfg.id_freq_mod
-    local ID_LFO_RATE  = cfg.id_lfo_rate
-    local LFO_SHAPES   = cfg.lfo_shapes
-    
+    local ID_LFO           = cfg.id_lfo
+    local ID_LFO_SHAPE     = cfg.id_lfo_shape
+    local ID_LFO_RANGE     = cfg.id_lfo_range
+    local ID_FREQ_MOD      = cfg.id_freq_mod
+    local ID_LFO_RATE      = cfg.id_lfo_rate
+    local LFO_SHAPES       = cfg.lfo_shapes
+
 
     local function adjust_range(d)
         misc_util.adjust_param(
-            d, ENGINE_MOD_RANGE,
-            engine_lib.params.specs[cfg.res_param_name].quantum
+            d, ID_LFO_RANGE,
+            spec_lfo_range.quantum
         )
     end
 
@@ -43,6 +46,7 @@ local function create_filter_lfo_page(cfg)
     })
 
     local function action_lfo_toggle(v)
+        print(v)
         lfo_util.action_lfo_toggle(v, lfo, params:get(ENGINE_FREQ))
         -- store last frequency when toggling LFO on, so it can be set back to that value
         if v == 1 then
@@ -61,12 +65,18 @@ local function create_filter_lfo_page(cfg)
         lfo:set('period', lfo_util.lfo_period_label_values[params:string(ID_LFO_RATE)])
     end
 
+    local function action_range(v)
+        spec_freq_mod.minval = 1 / v
+        spec_freq_mod.maxval = v
+    end
     local function action_freq_mod(v)
         params:set(ENGINE_FREQ, v * last_freq)
     end
 
     local function add_params()
         params:set_action(ID_FREQ_MOD, action_freq_mod)
+        params:set_action(ID_LFO_RANGE, action_range)
+
         params:set_action(ID_LFO, action_lfo_toggle)
         params:set_action(ID_LFO_SHAPE, action_lfo_shape)
         params:set_action(ID_LFO_RATE, action_lfo_rate)
@@ -74,8 +84,24 @@ local function create_filter_lfo_page(cfg)
 
     function page:render()
         self.window:render()
+        parent_page.graphic:set_size(56, 26)
         parent_page:render_graphic(true)
-        page.footer:render()
+        page:render_footer()
+    end
+
+    function page:render_footer()
+        local lfo_enabled = params:get(ID_LFO)
+        local shape = string.upper(lfo_shapes[params:get(ID_LFO_SHAPE)])
+        local period = lfo:get('period')
+        local range = params:get(ID_LFO_RANGE)
+        self.footer.button_text.e2.name = "RATE"
+        self.footer.button_text.e2.value = lfo_util.lfo_period_value_labels[period]
+
+        self.footer.button_text.k2.value = lfo_enabled == 1 and "ON" or "OFF"
+        self.footer.button_text.k3.value = shape
+        self.footer.button_text.e3.value = range
+
+        self.footer:render()
     end
 
     function page:initialize()
@@ -98,8 +124,15 @@ local function create_filter_lfo_page(cfg)
         lfo:set('reset_target', 'mid: rising')
     end
 
+    function page:enter()
+        --
+    end
+
+    function page:exit()
+        --
+    end
+
     return page
 end
 
 return create_filter_lfo_page
-

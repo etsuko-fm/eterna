@@ -294,6 +294,7 @@ ID_LPF_LFO = get_id(PROCESSOR, "lpf_lfo")
 ID_LPF_LFO_SHAPE = get_id(PROCESSOR, "lpf_lfo_shape")
 ID_LPF_FREQ_MOD = get_id(PROCESSOR, "lpf_freq_mod")
 ID_LPF_LFO_RATE = get_id(PROCESSOR, "lpf_lfo_rate")
+ID_LPF_LFO_RANGE = get_id(PROCESSOR, "lpf_lfo_range")
 
 LPF_LFO_SHAPES = { "sine", "up", "down", "random" }
 DRY_WET_TYPES = { "DRY", "50/50", "WET" }
@@ -302,6 +303,17 @@ DRY_WET_TYPES = { "DRY", "50/50", "WET" }
 controlspec_lpf_freq_mod = controlspec.def {
     min = 0.5,
     max = 2,
+    warp = 'lin',
+    step = 0.001,
+    default = 1,
+    quantum = 0.005,
+    wrap = false
+}
+
+-- sets range of filter lfo
+controlspec_lpf_lfo_range = controlspec.def {
+    min = 1,
+    max = 16,
     warp = 'lin',
     step = 0.001,
     default = 1,
@@ -435,16 +447,16 @@ params:add_control(ID_PANNING_TWIST, "twist", controlspec_pan_twist)
 params:add_control(ID_PANNING_SPREAD, "spread", controlspec_pan_spread)
 
 params:add_separator("LPF", "LPF")
-params:add_binary(ID_LPF_LFO, "toggle", "LFO", LPF_LFO_SHAPES)
+params:add_binary(ID_LPF_LFO, "toggle", "LFO")
 params:add_option(ID_LPF_LFO_SHAPE, "LFO shape", LPF_LFO_SHAPES, 1)
 params:add_option(ID_LPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 8)
 params:add_option(ID_LPF_WET, "dry/wet", DRY_WET_TYPES, 1)
-params:add_control(ID_LPF_FREQ_MOD, "frequency_mod", controlspec_lpf_freq_mod)
-
+params:add_control(ID_LPF_FREQ_MOD, "freq mod", controlspec_lpf_freq_mod)
+params:add_control(ID_LPF_LFO_RANGE, "LFO range", controlspec_lpf_lfo_range)
 params:hide(ID_LPF_FREQ_MOD) -- to be modified by lfo only
 
 params:add_separator("HPF", "HPF")
-params:add_binary(ID_HPF_LFO, "toggle", "LFO", HPF_LFO_SHAPES)
+params:add_binary(ID_HPF_LFO, "toggle", "LFO")
 params:add_option(ID_HPF_LFO_SHAPE, "LFO shape", HPF_LFO_SHAPES, 1)
 params:add_option(ID_HPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 8)
 params:add_option(ID_HPF_WET, "dry/wet", DRY_WET_TYPES, 1)
