@@ -11,6 +11,7 @@ return create_filter_lfo_page({
     id_lfo           = ID_LPF_LFO,
     id_lfo_shape     = ID_LPF_LFO_SHAPE,
     id_wet           = ID_LPF_WET,
+    id_base_freq     = ID_LPF_BASE_FREQ,
     id_freq_mod      = ID_LPF_FREQ_MOD,
     id_lfo_rate      = ID_LPF_LFO_RATE,
     id_lfo_range     = ID_LPF_LFO_RANGE,
@@ -30,7 +31,6 @@ return create_filter_lfo_page({
             phase = 0,
             action = function(scaled)
                 -- map the lfo value to the range of the controlspec
-                print('lfo action' .. controlspec_lpf_freq_mod:map(scaled))
                 params:set(ID_LPF_FREQ_MOD, controlspec_lpf_freq_mod:map(scaled), false)
             end
         }

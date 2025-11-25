@@ -4,18 +4,20 @@ local FilterGraphic = include(from_root("lib/graphics/FilterGraphic"))
 local function create_filter_page(cfg)
     -- cfg contains all filter-specific parameters
 
-    local page_name = cfg.page_name
+    local page_name    = cfg.page_name
 
-    local ENGINE_FREQ = cfg.engine_freq
-    local ENGINE_RES  = cfg.engine_res
-    local ENGINE_DRY  = cfg.engine_dry
-    local ID_WET      = cfg.id_wet
-    local FILTER_TYPE = cfg.filter_graphic_type
+    local ENGINE_FREQ  = cfg.engine_freq
+    local ENGINE_RES   = cfg.engine_res
+    local ENGINE_DRY   = cfg.engine_dry
+    local ID_WET       = cfg.id_wet
+    local ID_BASE_FREQ = cfg.id_base_freq
+    local FILTER_TYPE  = cfg.filter_graphic_type
+    local ID_LFO = cfg.id_lfo
 
     local function adjust_freq(d)
         misc_util.adjust_param(
-            d, ENGINE_FREQ,
-            engine_lib.params.specs[cfg.freq_param_name].quantum
+            d, ID_BASE_FREQ,
+            controlspec_filter_freq.quantum
         )
     end
 
@@ -26,7 +28,7 @@ local function create_filter_page(cfg)
         )
     end
 
-    local function toggle_drywet()
+    local function toggle_mix()
         misc_util.cycle_param(ID_WET, DRY_WET_TYPES)
     end
 
@@ -34,8 +36,8 @@ local function create_filter_page(cfg)
         name = page_name,
         e2 = adjust_freq,
         e3 = adjust_res,
-        k2_off = nil,
-        k3_off = toggle_drywet,
+        k2_off = toggle_mix,
+        k3_off = nil,
     })
 
     local function action_wet(v)
@@ -48,8 +50,15 @@ local function create_filter_page(cfg)
         end
     end
 
+    local function action_base_freq(v)
+        if params:get(ID_LFO) == 0 then
+            params:set(ENGINE_FREQ, v)
+        end
+    end
+
     local function add_params()
         params:set_action(ID_WET, action_wet)
+        params:set_action(ID_BASE_FREQ, action_base_freq)
     end
 
     function page:render()
@@ -60,9 +69,9 @@ local function create_filter_page(cfg)
     end
 
     function page:render_graphic(draw_lfo_range)
-        local freq = params:get(ENGINE_FREQ)
-        local res  = params:get(ENGINE_RES)
-        local drywet = params:get(ID_WET)
+        local freq        = params:get(ENGINE_FREQ)
+        local res         = params:get(ENGINE_RES)
+        local drywet      = params:get(ID_WET)
 
         self.graphic.freq = freq
         self.graphic.res  = res
@@ -72,13 +81,14 @@ local function create_filter_page(cfg)
     end
 
     function page:render_footer()
-        local freq = params:get(ENGINE_FREQ)
-        local drywet = params:get(ID_WET)
-        local res  = params:get(ENGINE_RES)
+        local base_freq                  = params:get(ID_BASE_FREQ)
+        local live_freq                  = params:get(ENGINE_FREQ)
+        local drywet                     = params:get(ID_WET)
+        local res                        = params:get(ENGINE_RES)
 
-        self.footer.button_text.e2.name = "FREQ"
-        self.footer.button_text.e2.value = misc_util.trim(tostring(freq), 5)
-        self.footer.button_text.k3.value = DRY_WET_TYPES[drywet]
+        self.footer.button_text.e2.name  = "FREQ"
+        self.footer.button_text.e2.value = misc_util.trim(tostring(base_freq), 5)
+        self.footer.button_text.k2.value = DRY_WET_TYPES[drywet]
         self.footer.button_text.e3.value = misc_util.trim(tostring(res), 5)
         self.footer:render()
     end
@@ -91,10 +101,10 @@ local function create_filter_page(cfg)
 
         self.footer = Footer:new({
             button_text = {
-                k2 = { name = "LFO", value = "" },
-                k3 = { name = "MIX", value = "" },
+                k2 = { name = "MIX", value = "" },
+                k3 = { name = "", value = "" },
                 e2 = { name = "FREQ", value = "" },
-                e3 = { name = "RES",  value = "" },
+                e3 = { name = "RES", value = "" },
             },
             font_face = FOOTER_FONT,
         })

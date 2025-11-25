@@ -16,6 +16,7 @@ local function create_filter_lfo_page(cfg)
     local ID_FREQ_MOD      = cfg.id_freq_mod
     local ID_LFO_RATE      = cfg.id_lfo_rate
     local LFO_SHAPES       = cfg.lfo_shapes
+    local ID_BASE_FREQ     = cfg.id_base_freq
 
 
     local function adjust_range(d)
@@ -46,14 +47,10 @@ local function create_filter_lfo_page(cfg)
     })
 
     local function action_lfo_toggle(v)
-        print(v)
         lfo_util.action_lfo_toggle(v, lfo, params:get(ENGINE_FREQ))
         -- store last frequency when toggling LFO on, so it can be set back to that value
-        if v == 1 then
-            last_freq = params:get(ENGINE_FREQ)
-        else
+        if v == 0 then
             params:set(ID_FREQ_MOD, 1)
-            if last_freq then params:set(ENGINE_FREQ, last_freq) end
         end
     end
 
@@ -70,7 +67,8 @@ local function create_filter_lfo_page(cfg)
         spec_freq_mod.maxval = v
     end
     local function action_freq_mod(v)
-        params:set(ENGINE_FREQ, v * last_freq)
+        local base_freq = params:get(ID_BASE_FREQ)
+        params:set(ENGINE_FREQ, v * base_freq)
     end
 
     local function add_params()

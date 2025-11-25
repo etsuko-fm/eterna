@@ -1,18 +1,18 @@
-local app = "eterna"
+local app        = "eterna"
 
 -- Components, for creating param ids
-META  = "meta"
-SAMPLER = "sampler"
-SEQUENCER = "sequencer"
-PROCESSOR = "processor"
-MASTER = "master"
+META             = "meta"
+SAMPLER          = "sampler"
+SEQUENCER        = "sequencer"
+PROCESSOR        = "processor"
+MASTER           = "master"
 
 local components = {
-    [META]=true,
-    [SAMPLER]=true,
-    [SEQUENCER]=true,
-    [PROCESSOR]=true,
-    [MASTER]=true,
+    [META] = true,
+    [SAMPLER] = true,
+    [SEQUENCER] = true,
+    [PROCESSOR] = true,
+    [MASTER] = true,
 }
 
 local function get_id(component, param)
@@ -24,7 +24,7 @@ local function get_id(component, param)
 end
 
 -- VERSIONING
-local VERSION_STRING = "0.9.15"
+local VERSION_STRING = "0.10.0"
 local ID_VERSION = get_id(META, "version")
 
 ---
@@ -176,9 +176,9 @@ controlspec_env_filter = controlspec.def {
 ---
 
 function get_voice_direction_id(voice)
-  -- 1 <= voice <= 6
-  -- get playback direction param ID for voice; also used for other pages, hence global
-  return get_id(SAMPLER, "rates_voice_" .. voice .. "_direction")
+    -- 1 <= voice <= 6
+    -- get playback direction param ID for voice; also used for other pages, hence global
+    return get_id(SAMPLER, "rates_voice_" .. voice .. "_direction")
 end
 
 controlspec_rates_center = controlspec.def {
@@ -222,22 +222,22 @@ RANGE_DEFAULT = 2 -- 5 octaves by default
 ---
 
 -- Sigma (σ in normal distribution)
-LEVELS_SIGMA_MIN = 0.3
-LEVELS_SIGMA_MAX = 15
-LEVELS_LFO_SHAPES = { "off", "up", "down", "random" }
+LEVELS_SIGMA_MIN                    = 0.3
+LEVELS_SIGMA_MAX                    = 15
+LEVELS_LFO_SHAPES                   = { "off", "up", "down", "random" }
 
-controlspec_pos = controlspec.def {
+controlspec_pos                     = controlspec.def {
     min = 0,
     max = 1,
     warp = 'lin',
-    step = 1/180,
+    step = 1 / 180,
     default = 0.42,
-    quantum = 1/180,
+    quantum = 1 / 180,
     wrap = true
 }
 
 -- Amp maps the arbitrary sigma range from 0 to 1
-controlspec_amp = controlspec.def {
+controlspec_amp                     = controlspec.def {
     min = 0,
     max = 1,
     warp = 'lin',
@@ -247,17 +247,17 @@ controlspec_amp = controlspec.def {
     wrap = false
 }
 
-ID_LEVELS_LFO = get_id(PROCESSOR, "levels_lfo")
-ID_LEVELS_LFO_RATE = get_id(PROCESSOR, "levels_lfo_rate")
-ID_LEVELS_POS = get_id(PROCESSOR, "levels_pos")
-ID_LEVELS_AMP = get_id(PROCESSOR, "levels_amp")
+ID_LEVELS_LFO                       = get_id(PROCESSOR, "levels_lfo")
+ID_LEVELS_LFO_RATE                  = get_id(PROCESSOR, "levels_lfo_rate")
+ID_LEVELS_POS                       = get_id(PROCESSOR, "levels_pos")
+ID_LEVELS_AMP                       = get_id(PROCESSOR, "levels_amp")
 
 local LEVELS_LFO_DEFAULT_RATE_INDEX = 20
 
 ---
 --- PANNING
 ---
-controlspec_pan_twist = controlspec.def {
+controlspec_pan_twist               = controlspec.def {
     min = 0,
     max = 1,
     warp = 'lin',
@@ -267,7 +267,7 @@ controlspec_pan_twist = controlspec.def {
     wrap = true
 }
 
-controlspec_pan_spread = controlspec.def {
+controlspec_pan_spread              = controlspec.def {
     min = 0,
     max = 1,
     warp = 'lin',
@@ -277,30 +277,44 @@ controlspec_pan_spread = controlspec.def {
     wrap = false
 }
 
-ID_PANNING_LFO = get_id(PROCESSOR, "panning_lfo")
-ID_PANNING_LFO_RATE = get_id(PROCESSOR, "panning_lfo_rate")
-ID_PANNING_TWIST = get_id(PROCESSOR, "panning_twist")
-ID_PANNING_SPREAD = get_id(PROCESSOR, "panning_spread")
-PANNING_LFO_SHAPES = { "off", "up", "down", "random" }
-DEFAULT_PANNING_LFO_RATE_IDX = 16
+ID_PANNING_LFO                      = get_id(PROCESSOR, "panning_lfo")
+ID_PANNING_LFO_RATE                 = get_id(PROCESSOR, "panning_lfo_rate")
+ID_PANNING_TWIST                    = get_id(PROCESSOR, "panning_twist")
+ID_PANNING_SPREAD                   = get_id(PROCESSOR, "panning_spread")
+PANNING_LFO_SHAPES                  = { "off", "up", "down", "random" }
+DEFAULT_PANNING_LFO_RATE_IDX        = 16
 
 ---
 --- Lowpass filter params
 ---
 
-ID_LPF_WET = get_id(PROCESSOR, "lpf_wet")
-ID_LPF_TYPE = get_id(PROCESSOR, "lpf_type")
-ID_LPF_LFO = get_id(PROCESSOR, "lpf_lfo")
-ID_LPF_LFO_SHAPE = get_id(PROCESSOR, "lpf_lfo_shape")
-ID_LPF_FREQ_MOD = get_id(PROCESSOR, "lpf_freq_mod")
-ID_LPF_LFO_RATE = get_id(PROCESSOR, "lpf_lfo_rate")
-ID_LPF_LFO_RANGE = get_id(PROCESSOR, "lpf_lfo_range")
+ID_LPF_WET                          = get_id(PROCESSOR, "lpf_wet")
+ID_LPF_TYPE                         = get_id(PROCESSOR, "lpf_type")
+ID_LPF_LFO                          = get_id(PROCESSOR, "lpf_lfo")
+ID_LPF_LFO_SHAPE                    = get_id(PROCESSOR, "lpf_lfo_shape")
+ID_LPF_BASE_FREQ                    = get_id(PROCESSOR, "lpf_freq")
+ID_LPF_FREQ_MOD                     = get_id(PROCESSOR, "lpf_freq_mod")
+ID_LPF_LFO_RATE                     = get_id(PROCESSOR, "lpf_lfo_rate")
+ID_LPF_LFO_RANGE                    = get_id(PROCESSOR, "lpf_lfo_range")
 
-LPF_LFO_SHAPES = { "sine", "up", "down", "random" }
-DRY_WET_TYPES = { "DRY", "50/50", "WET" }
+LPF_LFO_SHAPES                      = { "sine", "up", "down", "random" }
+DRY_WET_TYPES                       = { "DRY", "50/50", "WET" }
+
+-- this exists next to the engine freq, but allows a base frequency to change,
+-- while the engine freq is being modulated by the lfo
+controlspec_filter_freq             = controlspec.def {
+    min = 20,
+    max = 20000,
+    warp = 'exp',
+    step = 0.01,
+    default = 1000,
+    units = 'Hz',
+    quantum = 0.005,
+    wrap = false
+}
 
 -- multiplies with cutoff value
-controlspec_lpf_freq_mod = controlspec.def {
+controlspec_lpf_freq_mod            = controlspec.def {
     min = 0.5,
     max = 2,
     warp = 'lin',
@@ -311,7 +325,7 @@ controlspec_lpf_freq_mod = controlspec.def {
 }
 
 -- sets range of filter lfo
-controlspec_lpf_lfo_range = controlspec.def {
+controlspec_lpf_lfo_range           = controlspec.def {
     min = 1,
     max = 16,
     warp = 'lin',
@@ -325,19 +339,32 @@ controlspec_lpf_lfo_range = controlspec.def {
 --- Highpass filter params
 ---
 
-ID_HPF_WET = get_id(PROCESSOR, "hpf_wet")
-ID_HPF_TYPE = get_id(PROCESSOR, "hpf_type")
-ID_HPF_LFO = get_id(PROCESSOR, "hpf_lfo")
-ID_HPF_LFO_SHAPE = get_id(PROCESSOR, "hpf_lfo_shape")
-ID_HPF_FREQ_MOD = get_id(PROCESSOR, "hpf_freq_mod")
-ID_HPF_LFO_RATE = get_id(PROCESSOR, "hpf_lfo_rate")
-DRY_WET_TYPES = { "DRY", "50/50", "WET" }
-HPF_LFO_SHAPES = { "sine", "up", "down", "random" }
+ID_HPF_WET                          = get_id(PROCESSOR, "hpf_wet")
+ID_HPF_TYPE                         = get_id(PROCESSOR, "hpf_type")
+ID_HPF_LFO                          = get_id(PROCESSOR, "hpf_lfo")
+ID_HPF_LFO_SHAPE                    = get_id(PROCESSOR, "hpf_lfo_shape")
+ID_HPF_FREQ_MOD                     = get_id(PROCESSOR, "hpf_freq_mod")
+ID_HPF_BASE_FREQ                    = get_id(PROCESSOR, "hpf_freq")
+ID_HPF_LFO_RATE                     = get_id(PROCESSOR, "hpf_lfo_rate")
+ID_HPF_LFO_RANGE                    = get_id(PROCESSOR, "hpf_lfo_range")
+
+DRY_WET_TYPES                       = { "DRY", "50/50", "WET" }
+HPF_LFO_SHAPES                      = { "sine", "up", "down", "random" }
 
 -- multiplies with cutoff value
-controlspec_hpf_freq_mod = controlspec.def {
+controlspec_hpf_freq_mod            = controlspec.def {
     min = 0.5,
     max = 2,
+    warp = 'lin',
+    step = 0.001,
+    default = 1,
+    quantum = 0.005,
+    wrap = false
+}
+
+controlspec_hpf_lfo_range           = controlspec.def {
+    min = 1,
+    max = 16,
     warp = 'lin',
     step = 0.001,
     default = 1,
@@ -348,26 +375,26 @@ controlspec_hpf_freq_mod = controlspec.def {
 ---
 --- ECHO params
 ---
-local componentid = "echo_"
+local componentid                   = "echo_"
 
-ID_ECHO_TIME = componentid .. "time"
+ID_ECHO_TIME                        = componentid .. "time"
 
 -- TODO: zip so time/name is defined together
-ECHO_TIME_AMOUNTS = { 0.0625, 0.125, 0.1875, 0.25, 0.3125, 0.375, 0.5, 0.625, 0.75}
-ECHO_TIME_NAMES =   {"1/64", "1/32", "1/32D", "1/16", "5/64", "1/16D", "1/8", "5/32", "1/8D"}
+ECHO_TIME_AMOUNTS                   = { 0.0625, 0.125, 0.1875, 0.25, 0.3125, 0.375, 0.5, 0.625, 0.75 }
+ECHO_TIME_NAMES                     = { "1/64", "1/32", "1/32D", "1/16", "5/64", "1/16D", "1/8", "5/32", "1/8D" }
 
 ---
 --- MASTER params
 ---
 
-ID_MASTER_MONO_FREQ = get_id(MASTER, "bass_mono_freq")
-ID_MASTER_COMP_AMOUNT = get_id(MASTER, "comp_amount")
+ID_MASTER_MONO_FREQ                 = get_id(MASTER, "bass_mono_freq")
+ID_MASTER_COMP_AMOUNT               = get_id(MASTER, "comp_amount")
 
-BASS_MONO_FREQS_STR = {"OFF", "50Hz", "100Hz", "200Hz", "FULL"}
-BASS_MONO_FREQS_INT = {20, 50, 100, 200, 20000}
+BASS_MONO_FREQS_STR                 = { "OFF", "50Hz", "100Hz", "200Hz", "FULL" }
+BASS_MONO_FREQS_INT                 = { 20, 50, 100, 200, 20000 }
 
 -- cycling FWD+REV here because the gain difference is large otherwise
-COMP_AMOUNTS = {"OFF", "SOFT", "MEDIUM", "HARD", "MEDIUM", "SOFT"}
+COMP_AMOUNTS                        = { "OFF", "SOFT", "MEDIUM", "HARD", "MEDIUM", "SOFT" }
 
 
 --- MENU
@@ -451,6 +478,7 @@ params:add_binary(ID_LPF_LFO, "toggle", "LFO")
 params:add_option(ID_LPF_LFO_SHAPE, "LFO shape", LPF_LFO_SHAPES, 1)
 params:add_option(ID_LPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 8)
 params:add_option(ID_LPF_WET, "dry/wet", DRY_WET_TYPES, 1)
+params:add_control(ID_LPF_BASE_FREQ, "base frequency", controlspec_filter_freq)
 params:add_control(ID_LPF_FREQ_MOD, "freq mod", controlspec_lpf_freq_mod)
 params:add_control(ID_LPF_LFO_RANGE, "LFO range", controlspec_lpf_lfo_range)
 params:hide(ID_LPF_FREQ_MOD) -- to be modified by lfo only
@@ -460,7 +488,9 @@ params:add_binary(ID_HPF_LFO, "toggle", "LFO")
 params:add_option(ID_HPF_LFO_SHAPE, "LFO shape", HPF_LFO_SHAPES, 1)
 params:add_option(ID_HPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 8)
 params:add_option(ID_HPF_WET, "dry/wet", DRY_WET_TYPES, 1)
+params:add_control(ID_HPF_BASE_FREQ, "base frequency", controlspec_filter_freq)
 params:add_control(ID_HPF_FREQ_MOD, "frequency_mod", controlspec_hpf_freq_mod)
+params:add_control(ID_HPF_LFO_RANGE, "LFO range", controlspec_hpf_lfo_range)
 params:hide(ID_HPF_FREQ_MOD) -- to be modified by lfo only
 
 params:add_separator("ECHO", "ECHO")

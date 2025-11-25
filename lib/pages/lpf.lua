@@ -8,6 +8,7 @@ return create_filter_page({
 
     id_lfo              = ID_LPF_LFO,
     id_wet              = ID_LPF_WET,
+    id_base_freq        = ID_LPF_BASE_FREQ,
     id_freq_mod         = ID_LPF_FREQ_MOD,
     id_lfo_rate         = ID_LPF_LFO_RATE,
 
