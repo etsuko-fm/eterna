@@ -24,7 +24,7 @@ local function get_id(component, param)
 end
 
 -- VERSIONING
-local VERSION_STRING = "0.10.0"
+local VERSION_STRING = "0.10.1"
 local ID_VERSION = get_id(META, "version")
 
 ---
@@ -326,12 +326,12 @@ controlspec_lpf_freq_mod            = controlspec.def {
 
 -- sets range of filter lfo
 controlspec_lpf_lfo_range           = controlspec.def {
-    min = 1,
-    max = 16,
+    min = 0,
+    max = 10,
     warp = 'lin',
-    step = 0.001,
+    step = 0.01,
     default = 1,
-    quantum = 0.005,
+    quantum = 0.01,
     wrap = false
 }
 
@@ -363,12 +363,12 @@ controlspec_hpf_freq_mod            = controlspec.def {
 }
 
 controlspec_hpf_lfo_range           = controlspec.def {
-    min = 1,
-    max = 16,
+    min = 0,
+    max = 10,
     warp = 'lin',
-    step = 0.001,
+    step = 0.01,
     default = 1,
-    quantum = 0.005,
+    quantum = 0.01,
     wrap = false
 }
 

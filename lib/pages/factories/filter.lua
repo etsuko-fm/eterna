@@ -5,6 +5,7 @@ local function create_filter_page(cfg)
     -- cfg contains all filter-specific parameters
 
     local page_name    = cfg.page_name
+    local spec_freq_mod    = cfg.spec_freq_mod
 
     local ENGINE_FREQ  = cfg.engine_freq
     local ENGINE_RES   = cfg.engine_res
@@ -12,7 +13,8 @@ local function create_filter_page(cfg)
     local ID_WET       = cfg.id_wet
     local ID_BASE_FREQ = cfg.id_base_freq
     local FILTER_TYPE  = cfg.filter_graphic_type
-    local ID_LFO = cfg.id_lfo
+    local ID_LFO       = cfg.id_lfo
+    local ID_LFO_RANGE     = cfg.id_lfo_range
 
     local function adjust_freq(d)
         misc_util.adjust_param(
@@ -50,10 +52,21 @@ local function create_filter_page(cfg)
         end
     end
 
+    local function get_modulated(base, mod)
+        return base * 2 ^ mod
+    end
+
+    local function get_lfo_range()
+        return params:get(ID_BASE_FREQ), get_modulated(params:get(ID_BASE_FREQ), params:get(ID_LFO_RANGE))
+    end
+
     local function action_base_freq(v)
         if params:get(ID_LFO) == 0 then
             params:set(ENGINE_FREQ, v)
         end
+        local min, max = get_lfo_range()
+        spec_freq_mod.minval = min
+        spec_freq_mod.maxval = max
     end
 
     local function add_params()
@@ -73,7 +86,8 @@ local function create_filter_page(cfg)
         local res         = params:get(ENGINE_RES)
         local drywet      = params:get(ID_WET)
 
-        self.graphic.freq = freq
+        -- render non-modulated frequency
+        self.graphic.freq = params:get(ID_BASE_FREQ)
         self.graphic.res  = res
         self.graphic.type = FILTER_TYPE
         self.graphic.mix  = (drywet - 1) / 2

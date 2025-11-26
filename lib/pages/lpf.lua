@@ -11,9 +11,11 @@ return create_filter_page({
     id_base_freq        = ID_LPF_BASE_FREQ,
     id_freq_mod         = ID_LPF_FREQ_MOD,
     id_lfo_rate         = ID_LPF_LFO_RATE,
+    id_lfo_range        = ID_LPF_LFO_RANGE,
 
     freq_param_name     = "lpf_freq",
     res_param_name      = "lpf_res",
+    spec_freq_mod       = controlspec_lpf_freq_mod,
 
     lfo_shapes          = LPF_LFO_SHAPES,
     filter_graphic_type = "LP",

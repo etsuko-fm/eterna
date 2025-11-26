@@ -4,10 +4,11 @@ FilterGraphic = {
     hide = false,
     freq = 1000,
     res = 0,
-    type = 1, -- 1 HP / 2 LP
+    type = nil, -- "HP" / "LP"
     mix = 1,  -- 0 to 1, but only 0, 0.5 and 1 are currently supported
     graph_w = 50,
     graph_h = 26,
+    lfo_range = {}, -- start / end freq
 }
 
 function FilterGraphic:new(o)
@@ -38,11 +39,11 @@ function FilterGraphic:freq_to_x(freq)
     -- so that freq_normalized = 0 when it equals min_freq
     local freq_normalized = math.log(freq) - math.log(min_freq)
 
-    -- supported frequency range
+    -- supported frequency range, approx 7 when min=20, max=20k
     local range = math.log(max_freq) - math.log(min_freq)
 
     -- fraction of the current frequency compared to max frequency
-    local pos = freq_normalized / range
+    local pos = util.clamp(freq_normalized / range, 0, 1)
 
     -- x position
     return self:get_start_x() + pos * (self.graph_w - 1) -- exclude edge
@@ -52,6 +53,12 @@ function FilterGraphic:set_size(w, h)
     self.graph_w = w
     self.graph_h = h
 end
+
+function FilterGraphic:set_lfo_range(start, _end)
+    self.lfo_range["start"] = start
+    self.lfo_range["end"] = _end
+end
+
 
 function FilterGraphic:get_start_x()
     return (128 / 2 - self.graph_w / 2)
@@ -230,10 +237,10 @@ function FilterGraphic:render(draw_lfo_range)
     screen.rect(self:get_start_x() + self.graph_w, 15, 32, self.graph_h)
     screen.fill()
     if draw_lfo_range then
-        screen.move(64, 39)
+        screen.move(self:freq_to_x(self.lfo_range["start"]), 39)
         screen.level(4)
         screen.line_rel(0, 3)
-        screen.line_rel(18, 0)
+        screen.line(self:freq_to_x(self.lfo_range["end"]), 42)
         screen.line_rel(0, -3)
         screen.stroke()
     end

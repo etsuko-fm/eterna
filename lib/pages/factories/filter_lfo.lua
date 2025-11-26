@@ -9,14 +9,17 @@ local function create_filter_lfo_page(cfg)
     local spec_freq_mod    = cfg.spec_freq_mod
     local spec_lfo_range   = cfg.spec_lfo_range
     local ENGINE_FREQ      = cfg.engine_freq
+    local ENGINE_RES       = cfg.engine_res
     local ENGINE_MOD_RANGE = cfg.engine_mod_range
     local ID_LFO           = cfg.id_lfo
     local ID_LFO_SHAPE     = cfg.id_lfo_shape
     local ID_LFO_RANGE     = cfg.id_lfo_range
     local ID_FREQ_MOD      = cfg.id_freq_mod
+    local ID_WET           = cfg.id_wet
     local ID_LFO_RATE      = cfg.id_lfo_rate
     local LFO_SHAPES       = cfg.lfo_shapes
     local ID_BASE_FREQ     = cfg.id_base_freq
+    local FILTER_TYPE      = cfg.filter_graphic_type
 
 
     local function adjust_range(d)
@@ -62,13 +65,21 @@ local function create_filter_lfo_page(cfg)
         lfo:set('period', lfo_util.lfo_period_label_values[params:string(ID_LFO_RATE)])
     end
 
-    local function action_range(v)
-        spec_freq_mod.minval = 1 / v
-        spec_freq_mod.maxval = v
+    local function get_modulated(base, mod)
+        return base * 2 ^ mod
     end
-    local function action_freq_mod(v)
-        local base_freq = params:get(ID_BASE_FREQ)
-        params:set(ENGINE_FREQ, v * base_freq)
+
+    local function get_lfo_range()
+        return params:get(ID_BASE_FREQ), get_modulated(params:get(ID_BASE_FREQ), params:get(ID_LFO_RANGE))
+    end
+
+    local function action_range(v)
+        local min, max = get_lfo_range()
+        spec_freq_mod.minval = min
+        spec_freq_mod.maxval = max
+    end
+    local function action_freq_mod(modulated_freq)
+        params:set(ENGINE_FREQ, modulated_freq)
     end
 
     local function add_params()
@@ -82,9 +93,27 @@ local function create_filter_lfo_page(cfg)
 
     function page:render()
         self.window:render()
-        parent_page.graphic:set_size(56, 26)
-        parent_page:render_graphic(true)
+        self:render_graphic()
         page:render_footer()
+    end
+
+
+    function page:render_graphic()
+        local freq      = params:get(ENGINE_FREQ)
+        local res       = params:get(ENGINE_RES)
+        local drywet    = params:get(ID_WET)
+
+        local low, high = get_lfo_range()
+
+        self.graphic:set_lfo_range(low, high)
+        self.graphic:set_size(56, 26)
+
+        -- render non-modulated frequency
+        self.graphic.freq = freq
+        self.graphic.res  = res
+        self.graphic.type = FILTER_TYPE
+        self.graphic.mix  = (drywet - 1) / 2
+        self.graphic:render(true)
     end
 
     function page:render_footer()
@@ -107,6 +136,8 @@ local function create_filter_lfo_page(cfg)
         add_params()
 
         self.window = Window:new({ title = page_name, font_face = TITLE_FONT })
+        self.graphic = FilterGraphic:new()
+        self.graphic:set_size(56,26)
 
         page.footer = Footer:new({
             button_text = {
@@ -118,7 +149,20 @@ local function create_filter_lfo_page(cfg)
             font_face = FOOTER_FONT,
         })
 
-        lfo = _lfos:add(cfg.lfo_defaults(last_freq))
+        lfo = _lfos:add({
+            shape = 'sine',
+            min = 0,
+            max = 1,
+            depth = 1,
+            mode = 'clocked',
+            period = 8,
+            phase = 0,
+            action = function(scaled)
+                -- map the lfo value to the range of the controlspec
+                -- if math.random() > 0.5 then print (controlspec_lpf_freq_mod:map(scaled)) end
+                params:set(ID_FREQ_MOD, spec_freq_mod:map(scaled), false)
+            end
+        })
         lfo:set('reset_target', 'mid: rising')
     end
 
