@@ -1,3 +1,4 @@
+local ControlGraphic = include(from_root("lib/graphics/ControlGraphic"))
 local page_name = "SEQUENCE CONTROL"
 local MIN_BPM = 20 -- minimum for Ableton Link
 local function adjust_bpm(d)
@@ -31,23 +32,27 @@ end
 
 function page:render()
     self.window:render()
-    page_sequencer:render_graphic()
-    self:render_footer()
-end
-
-function page:render_footer()
     local tempo_trimmed = util.round(params:get("clock_tempo"))
+    local is_playing = page_sequencer.seq.transport_on
     self.footer.button_text.e2.value = tempo_trimmed
     self.footer.button_text.e3.value = page_sequencer.seq.steps
-    self.footer.button_text.k2.value = page_sequencer.seq.transport_on and "ON" or "OFF"
+    self.footer.button_text.k2.value = is_playing and "ON" or "OFF"
+    self.graphic.num_steps = page_sequencer.seq.steps
+    self.graphic.bpm = tempo_trimmed
+    self.graphic.is_playing = is_playing
+    self.graphic.current_beat = self.current_beat
+    self.graphic.current_step = self.current_step
+    self.graphic.cue = page_sequencer.seq.cued_ticks_per_step
+    self.graphic:render()
     self.footer:render()
 end
 
 function page:initialize()
     add_params()
-    self.parent = "sequencer"
     self.window = Window:new({ title = page_name, font_face = TITLE_FONT })
-    self.footer = Footer:new({
+    -- graphics
+    self.graphic = ControlGraphic:new()
+    page.footer = Footer:new({
         button_text = {
             k2 = { name = "PLAY", value = "" },
             k3 = { name = "", value = "" },
@@ -56,14 +61,6 @@ function page:initialize()
         },
         font_face = FOOTER_FONT,
     })
-end
-
-function page:enter()
-    page_sequencer:enter()
-end
-
-function page:exit()
-    page_sequencer:exit()
 end
 
 return page
