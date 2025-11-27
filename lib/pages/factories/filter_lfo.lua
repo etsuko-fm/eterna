@@ -2,16 +2,13 @@ local function create_filter_lfo_page(cfg)
     -- cfg contains all filter-specific parameters
 
     local page_name        = cfg.page_name
-    local parent_page      = cfg.parent_page
     local lfo
-    local last_freq
     local lfo_shapes       = cfg.lfo_shapes
     local spec_freq_mod    = cfg.spec_freq_mod
     local spec_lfo_range   = cfg.spec_lfo_range
     local ENGINE_FREQ      = cfg.engine_freq
     local ENGINE_RES       = cfg.engine_res
-    local ENGINE_MOD_RANGE = cfg.engine_mod_range
-    local ID_LFO           = cfg.id_lfo
+    local ID_LFO           = cfg.id_lfo_enabled
     local ID_LFO_SHAPE     = cfg.id_lfo_shape
     local ID_LFO_RANGE     = cfg.id_lfo_range
     local ID_FREQ_MOD      = cfg.id_freq_mod
@@ -97,7 +94,6 @@ local function create_filter_lfo_page(cfg)
         page:render_footer()
     end
 
-
     function page:render_graphic()
         local freq      = params:get(ENGINE_FREQ)
         local res       = params:get(ENGINE_RES)
@@ -137,7 +133,7 @@ local function create_filter_lfo_page(cfg)
 
         self.window = Window:new({ title = page_name, font_face = TITLE_FONT })
         self.graphic = FilterGraphic:new()
-        self.graphic:set_size(56,26)
+        self.graphic:set_size(56, 26)
 
         page.footer = Footer:new({
             button_text = {

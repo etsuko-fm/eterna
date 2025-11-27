@@ -24,7 +24,7 @@ local function get_id(component, param)
 end
 
 -- VERSIONING
-local VERSION_STRING = "0.10.2"
+local VERSION_STRING = "0.10.3"
 local ID_VERSION = get_id(META, "version")
 
 ---
@@ -186,7 +186,7 @@ controlspec_rates_center = controlspec.def {
     max = 2,
     warp = 'lin',
     step = 1,
-    default = -1,
+    default = 0,
     quantum = 1,
     wrap = false
 }
@@ -224,7 +224,7 @@ RANGE_DEFAULT = 2 -- 5 octaves by default
 -- Sigma (σ in normal distribution)
 LEVELS_SIGMA_MIN                    = 0.3
 LEVELS_SIGMA_MAX                    = 15
-LEVELS_LFO_SHAPES                   = { "off", "up", "down", "random" }
+LEVELS_LFO_SHAPES                   = { "up", "down", "random" }
 
 controlspec_pos                     = controlspec.def {
     min = 0,
@@ -247,7 +247,8 @@ controlspec_amp                     = controlspec.def {
     wrap = false
 }
 
-ID_LEVELS_LFO                       = get_id(PROCESSOR, "levels_lfo")
+ID_LEVELS_LFO_ENABLED               = get_id(PROCESSOR, "levels_lfo_enabled")
+ID_LEVELS_LFO_SHAPE                 = get_id(PROCESSOR, "levels_lfo_shape")
 ID_LEVELS_LFO_RATE                  = get_id(PROCESSOR, "levels_lfo_rate")
 ID_LEVELS_POS                       = get_id(PROCESSOR, "levels_pos")
 ID_LEVELS_AMP                       = get_id(PROCESSOR, "levels_amp")
@@ -272,16 +273,17 @@ controlspec_pan_spread              = controlspec.def {
     max = 1,
     warp = 'lin',
     step = 0.01,
-    default = 0.8,
+    default = 1,
     quantum = 0.01,
     wrap = false
 }
 
-ID_PANNING_LFO                      = get_id(PROCESSOR, "panning_lfo")
+ID_PANNING_LFO_ENABLED              = get_id(PROCESSOR, "panning_lfo_enabled")
+ID_PANNING_LFO_SHAPE                = get_id(PROCESSOR, "panning_lfo_shape")
 ID_PANNING_LFO_RATE                 = get_id(PROCESSOR, "panning_lfo_rate")
 ID_PANNING_TWIST                    = get_id(PROCESSOR, "panning_twist")
 ID_PANNING_SPREAD                   = get_id(PROCESSOR, "panning_spread")
-PANNING_LFO_SHAPES                  = { "off", "up", "down", "random" }
+PANNING_LFO_SHAPES                  = { "up", "down", "random" }
 DEFAULT_PANNING_LFO_RATE_IDX        = 16
 
 ---
@@ -290,7 +292,7 @@ DEFAULT_PANNING_LFO_RATE_IDX        = 16
 
 ID_LPF_WET                          = get_id(PROCESSOR, "lpf_wet")
 ID_LPF_TYPE                         = get_id(PROCESSOR, "lpf_type")
-ID_LPF_LFO                          = get_id(PROCESSOR, "lpf_lfo")
+ID_LPF_LFO_ENABLED                  = get_id(PROCESSOR, "lpf_lfo")
 ID_LPF_LFO_SHAPE                    = get_id(PROCESSOR, "lpf_lfo_shape")
 ID_LPF_BASE_FREQ                    = get_id(PROCESSOR, "lpf_freq")
 ID_LPF_FREQ_MOD                     = get_id(PROCESSOR, "lpf_freq_mod")
@@ -341,7 +343,7 @@ controlspec_lpf_lfo_range           = controlspec.def {
 
 ID_HPF_WET                          = get_id(PROCESSOR, "hpf_wet")
 ID_HPF_TYPE                         = get_id(PROCESSOR, "hpf_type")
-ID_HPF_LFO                          = get_id(PROCESSOR, "hpf_lfo")
+ID_HPF_LFO_ENABLED                  = get_id(PROCESSOR, "hpf_lfo")
 ID_HPF_LFO_SHAPE                    = get_id(PROCESSOR, "hpf_lfo_shape")
 ID_HPF_FREQ_MOD                     = get_id(PROCESSOR, "hpf_freq_mod")
 ID_HPF_BASE_FREQ                    = get_id(PROCESSOR, "hpf_freq")
@@ -462,19 +464,21 @@ end
 
 
 params:add_separator("VOICE LEVELS", "LEVELS")
-params:add_option(ID_LEVELS_LFO, "LFO", LEVELS_LFO_SHAPES)
+params:add_binary(ID_LEVELS_LFO_ENABLED, "toggle", "LFO")
+params:add_option(ID_LEVELS_LFO_SHAPE, "LFO shape", LEVELS_LFO_SHAPES)
 params:add_option(ID_LEVELS_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, LEVELS_LFO_DEFAULT_RATE_INDEX)
 params:add_control(ID_LEVELS_POS, "position", controlspec_pos)
 params:add_control(ID_LEVELS_AMP, "amp", controlspec_amp)
 
 params:add_separator("PANNING", "PANNING")
-params:add_option(ID_PANNING_LFO, "LFO", PANNING_LFO_SHAPES)
+params:add_binary(ID_PANNING_LFO_ENABLED, "toggle", "LFO")
+params:add_option(ID_PANNING_LFO_SHAPE, "LFO", PANNING_LFO_SHAPES)
 params:add_option(ID_PANNING_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, DEFAULT_PANNING_LFO_RATE_IDX)
 params:add_control(ID_PANNING_TWIST, "twist", controlspec_pan_twist)
 params:add_control(ID_PANNING_SPREAD, "spread", controlspec_pan_spread)
 
 params:add_separator("LPF", "LPF")
-params:add_binary(ID_LPF_LFO, "toggle", "LFO")
+params:add_binary(ID_LPF_LFO_ENABLED, "toggle", "LFO")
 params:add_option(ID_LPF_LFO_SHAPE, "LFO shape", LPF_LFO_SHAPES, 1)
 params:add_option(ID_LPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 8)
 params:add_option(ID_LPF_WET, "dry/wet", DRY_WET_TYPES, 1)
@@ -484,7 +488,7 @@ params:add_control(ID_LPF_LFO_RANGE, "LFO range", controlspec_lpf_lfo_range)
 params:hide(ID_LPF_FREQ_MOD) -- to be modified by lfo only
 
 params:add_separator("HPF", "HPF")
-params:add_binary(ID_HPF_LFO, "toggle", "LFO")
+params:add_binary(ID_HPF_LFO_ENABLED, "toggle", "LFO")
 params:add_option(ID_HPF_LFO_SHAPE, "LFO shape", HPF_LFO_SHAPES, 1)
 params:add_option(ID_HPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 8)
 params:add_option(ID_HPF_WET, "dry/wet", DRY_WET_TYPES, 1)

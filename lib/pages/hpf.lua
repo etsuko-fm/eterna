@@ -6,7 +6,7 @@ return create_filter_page({
     engine_res          = engine_lib.get_id("hpf_res"),
     engine_dry          = engine_lib.get_id("hpf_dry"),
 
-    id_lfo              = ID_HPF_LFO,
+    id_lfo_enabled      = ID_HPF_LFO_ENABLED,
     id_wet              = ID_HPF_WET,
     id_base_freq        = ID_HPF_BASE_FREQ,
     id_freq_mod         = ID_HPF_FREQ_MOD,

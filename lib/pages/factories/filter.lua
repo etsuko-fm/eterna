@@ -4,17 +4,17 @@ local FilterGraphic = include(from_root("lib/graphics/FilterGraphic"))
 local function create_filter_page(cfg)
     -- cfg contains all filter-specific parameters
 
-    local page_name    = cfg.page_name
-    local spec_freq_mod    = cfg.spec_freq_mod
+    local page_name     = cfg.page_name
+    local spec_freq_mod = cfg.spec_freq_mod
 
-    local ENGINE_FREQ  = cfg.engine_freq
-    local ENGINE_RES   = cfg.engine_res
-    local ENGINE_DRY   = cfg.engine_dry
-    local ID_WET       = cfg.id_wet
-    local ID_BASE_FREQ = cfg.id_base_freq
-    local FILTER_TYPE  = cfg.filter_graphic_type
-    local ID_LFO       = cfg.id_lfo
-    local ID_LFO_RANGE     = cfg.id_lfo_range
+    local ENGINE_FREQ   = cfg.engine_freq
+    local ENGINE_RES    = cfg.engine_res
+    local ENGINE_DRY    = cfg.engine_dry
+    local ID_WET        = cfg.id_wet
+    local ID_BASE_FREQ  = cfg.id_base_freq
+    local FILTER_TYPE   = cfg.filter_graphic_type
+    local ID_LFO        = cfg.id_lfo_enabled
+    local ID_LFO_RANGE  = cfg.id_lfo_range
 
     local function adjust_freq(d)
         misc_util.adjust_param(

@@ -4,12 +4,11 @@ return create_filter_lfo_page({
     page_name           = "LOWPASS LFO",
     engine_freq         = engine_lib.get_id("lpf_freq"),
     engine_res          = engine_lib.get_id("lpf_res"),
-    parent_page         = page_lpf,
     lfo_shapes          = LPF_LFO_SHAPES,
     spec_freq_mod       = controlspec_lpf_freq_mod,
     spec_lfo_range      = controlspec_lpf_lfo_range,
 
-    id_lfo              = ID_LPF_LFO,
+    id_lfo_enabled              = ID_LPF_LFO_ENABLED,
     id_lfo_shape        = ID_LPF_LFO_SHAPE,
     id_wet              = ID_LPF_WET,
     id_base_freq        = ID_LPF_BASE_FREQ,
