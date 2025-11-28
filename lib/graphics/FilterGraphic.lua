@@ -222,22 +222,11 @@ end
 function FilterGraphic:render(draw_lfo_range)
     if self.hide then return end
 
-    -- draw bounding box
-    -- screen.line_width(1)
-    -- if draw_lfo_range then
-    --     screen.level(1)
-    --     screen.rect(self:get_start_x(), 15, self.graph_w, self.graph_h)
-    --     screen.fill()
-    -- end
-
-    -- add filter off graphic if mix is dry or 50/50
-    if self.mix == 0.5 then
-        screen.level(2)
-        self:draw_filter_off()
-    end
-
     screen.level(15)
-    if self.mix > 0 then screen.level(15) else screen.level(3) end
+    if self.mix < 0.5 then screen.level(1)
+    elseif self.mix < 0.99 then screen.level(5)
+    else screen.level(15) end
+
     if self.type == "HP" then
         self:draw_highpass(self.freq, self.res)
     elseif self.type == "LP" then
@@ -260,7 +249,8 @@ function FilterGraphic:render(draw_lfo_range)
 
     if draw_lfo_range then
         local y = self.y + self.graph_h + 1
-        screen.move(self:freq_to_x(self.lfo_range["start"]), y)
+        -- compensate 1px for stroke width
+        screen.move(1+self:freq_to_x(self.lfo_range["start"]), y)
         screen.level(4)
         screen.line_rel(0, 3)
         screen.line(self:freq_to_x(self.lfo_range["end"]), y+3)
