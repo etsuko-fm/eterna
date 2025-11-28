@@ -3,9 +3,10 @@ FilterGraphic = {
     y = 15,
     hide = false,
     freq = 1000,
+    lfo_freq = nil,
     res = 0,
     type = nil, -- "HP" / "LP"
-    mix = 1,  -- 0 to 1, but only 0, 0.5 and 1 are currently supported
+    mix = 1,    -- 0 to 1, but only 0, 0.5 and 1 are currently supported
     graph_w = 50,
     graph_h = 23,
     lfo_range = {}, -- start / end freq
@@ -63,7 +64,7 @@ end
 
 function FilterGraphic:db_to_y(db)
     -- graph boundaries
-    local offset_y = self.y + self.graph_h - line_w/2
+    local offset_y = self.y + self.graph_h - line_w / 2
 
     -- difference in dB between lowest and highest supported amplitude
     local min_db = off_db
@@ -207,41 +208,57 @@ end
 
 function FilterGraphic:draw_stripes(level)
     -- draw vertical black lines to make graphic less intense
-    local start = self:get_start_x()/2+1 -- compensate 1px for stroke start, one for avoiding the first line
-    local to = (self:get_start_x() + self.graph_w)/2 - 1
+    local start = self:get_start_x() / 2 + 1 -- compensate 1px for stroke start, one for avoiding the first line
+    local to = (self:get_start_x() + self.graph_w) / 2 - 1
     for i = start, to do
         local x = i * 2
         screen.level(level)
         screen.line_width(1)
         screen.move(x, self.y)
-        screen.line(x, self.y+self.graph_h-1)
+        screen.line(x, self.y + self.graph_h - 1)
         screen.stroke()
     end
 end
 
+function FilterGraphic:screen_level_from_mix()
+    if self.mix < 0.5 then
+        screen.level(1)
+    elseif self.mix < 0.99 then
+        screen.level(5)
+    else
+        screen.level(15)
+    end
+end
 function FilterGraphic:render(draw_lfo_range)
     if self.hide then return end
 
     screen.level(15)
-    if self.mix < 0.5 then screen.level(1)
-    elseif self.mix < 0.99 then screen.level(5)
-    else screen.level(15) end
 
-    if self.type == "HP" then
-        self:draw_highpass(self.freq, self.res)
-    elseif self.type == "LP" then
-        self:draw_lowpass(self.freq, self.res)
+    local draw_filter =
+        (self.type == "HP") and self.draw_highpass or
+        (self.type == "LP") and self.draw_lowpass
+
+    if draw_filter then
+        if self.lfo_freq ~= nil and self.mix > 0 then
+            screen.level(1)
+            draw_filter(self, self.lfo_freq, self.res)
+        end
+        self:screen_level_from_mix()
+        draw_filter(self, self.freq, self.res)
     end
 
     local level = 0
+
+    -- create "dashed" graphic
     self:draw_stripes(level)
+
     -- hide out of range stuff
     screen.level(0)
     screen.rect(0, self.y, self:get_start_x() - 1, self.graph_h)
     screen.rect(self:get_start_x() + self.graph_w, 15, self.x, self.graph_h)
     screen.fill()
 
-    --draw edge
+    -- draw edge
     screen.line_width(1)
     screen.level(1)
     screen.rect(self:get_start_x(), 15, self.graph_w, self.graph_h)
@@ -250,10 +267,10 @@ function FilterGraphic:render(draw_lfo_range)
     if draw_lfo_range then
         local y = self.y + self.graph_h + 1
         -- compensate 1px for stroke width
-        screen.move(1+self:freq_to_x(self.lfo_range["start"]), y)
+        screen.move(1 + self:freq_to_x(self.lfo_range["start"]), y)
         screen.level(4)
         screen.line_rel(0, 3)
-        screen.line(self:freq_to_x(self.lfo_range["end"]), y+3)
+        screen.line(self:freq_to_x(self.lfo_range["end"]), y + 3)
         screen.line_rel(0, -3)
         screen.stroke()
     end

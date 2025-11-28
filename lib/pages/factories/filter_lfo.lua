@@ -63,7 +63,7 @@ local function create_filter_lfo_page(cfg)
     end
 
     local function get_modulated(base, mod)
-        return base * 2 ^ mod
+        return util.clamp(base * 2 ^ mod, 20, 20000)
     end
 
     local function get_lfo_range()
@@ -71,11 +71,15 @@ local function create_filter_lfo_page(cfg)
     end
 
     local function action_range(v)
-        local min, max = get_lfo_range()
-        spec_freq_mod.minval = min
-        spec_freq_mod.maxval = max
+        -- updating range changes the maximum value of the modulation spec; 
+        -- this is e.g. 0 - 16, which is used as a power of 2 to produce
+        -- equal travel time per octave -> see fn get_modulated(base, mod)
+        spec_freq_mod.maxval = v
+        print('range: '..spec_freq_mod.minval..','..spec_freq_mod.maxval)
     end
-    local function action_freq_mod(modulated_freq)
+
+    local function action_freq_mod(mod_amount)
+        local modulated_freq = get_modulated(params:get(ID_BASE_FREQ), mod_amount)
         params:set(ENGINE_FREQ, modulated_freq)
     end
 
@@ -157,6 +161,12 @@ local function create_filter_lfo_page(cfg)
                 -- map the lfo value to the range of the controlspec
                 -- if math.random() > 0.5 then print (controlspec_lpf_freq_mod:map(scaled)) end
                 params:set(ID_FREQ_MOD, spec_freq_mod:map(scaled), false)
+                -- 2: starts extremely fast, ends extremely slow
+                -- 1: starts too fast, ends too slow
+                -- 0.5: starts too fast, ends too slow
+                -- 0.3: pretty linear in the middle,, slow at the start, slows down towards the end
+                -- 0.2: seems alright but it actually stops at 0
+                -- 0.1: starts very slow, ends very fast
             end
         })
         lfo:set('reset_target', 'mid: rising')

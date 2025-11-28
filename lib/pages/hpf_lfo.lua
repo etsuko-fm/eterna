@@ -19,21 +19,4 @@ return create_filter_lfo_page({
     freq_param_name     = "hpf_freq",
     range_param_name    = "hpf_res",
     filter_graphic_type = "HP",
-
-
-    lfo_defaults = function(last_freq)
-        return {
-            shape = 'sine',
-            min = 0,
-            max = 1,
-            depth = 1,
-            mode = 'clocked',
-            period = 8,
-            phase = 0,
-            action = function(scaled)
-                -- map the lfo value to the range of the controlspec
-                params:set(ID_HPF_FREQ_MOD, controlspec_hpf_freq_mod:map(scaled), false)
-            end
-        }
-    end
 })

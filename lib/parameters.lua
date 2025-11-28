@@ -323,7 +323,7 @@ controlspec_filter_freq             = controlspec.def {
 
 -- multiplies with cutoff value
 controlspec_lpf_freq_mod            = controlspec.def {
-    min = 0.5,
+    min = 0,
     max = 2,
     warp = 'lin',
     step = 0.001,
@@ -361,7 +361,7 @@ HPF_LFO_SHAPES                      = { "sine", "up", "down", "random" }
 
 -- multiplies with cutoff value
 controlspec_hpf_freq_mod            = controlspec.def {
-    min = 0.5,
+    min = 0,
     max = 2,
     warp = 'lin',
     step = 0.001,
