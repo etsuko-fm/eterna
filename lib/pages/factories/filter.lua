@@ -13,7 +13,7 @@ local function create_filter_page(cfg)
     local ID_WET        = cfg.id_wet
     local ID_BASE_FREQ  = cfg.id_base_freq
     local FILTER_TYPE   = cfg.filter_graphic_type
-    local ID_LFO        = cfg.id_lfo_enabled
+    local ID_LFO_ENABLED        = cfg.id_lfo_enabled
     local ID_LFO_RANGE  = cfg.id_lfo_range
 
     local function adjust_freq(d)
@@ -53,7 +53,7 @@ local function create_filter_page(cfg)
     end
 
     local function action_base_freq(v)
-        if params:get(ID_LFO) == 0 then
+        if params:get(ID_LFO_ENABLED) == 0 then
             params:set(ENGINE_FREQ, v)
         end
     end
@@ -77,6 +77,8 @@ local function create_filter_page(cfg)
         -- render non-modulated frequency
         self.graphic.freq = params:get(ID_BASE_FREQ)
         self.graphic.lfo_freq = freq
+
+        -- print(self.graphic.freq .. "->"..self.graphic.lfo_freq)
         self.graphic.res  = res
         self.graphic.type = FILTER_TYPE
         self.graphic.mix  = (drywet - 1) / 2
@@ -98,10 +100,10 @@ local function create_filter_page(cfg)
 
     function page:initialize()
         add_params()
-
         self.window = Window:new({ title = page_name, font_face = TITLE_FONT })
         self.graphic = FilterGraphic:new()
         self.graphic:set_size(62, 27)
+        self.graphic.lfo_freq = params:get(ID_BASE_FREQ)
 
         self.footer = Footer:new({
             button_text = {

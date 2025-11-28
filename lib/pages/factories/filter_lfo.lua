@@ -50,7 +50,7 @@ local function create_filter_lfo_page(cfg)
         lfo_util.action_lfo_toggle(v, lfo, params:get(ENGINE_FREQ))
         -- store last frequency when toggling LFO on, so it can be set back to that value
         if v == 0 then
-            params:set(ID_FREQ_MOD, 1)
+            params:set(ID_FREQ_MOD, 0)
         end
     end
 
@@ -81,6 +81,7 @@ local function create_filter_lfo_page(cfg)
     local function action_freq_mod(mod_amount)
         local modulated_freq = get_modulated(params:get(ID_BASE_FREQ), mod_amount)
         params:set(ENGINE_FREQ, modulated_freq)
+        print('action_freq_mod: engine freq set to ' ..modulated_freq)
     end
 
     local function add_params()

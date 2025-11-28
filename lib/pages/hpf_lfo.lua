@@ -5,8 +5,8 @@ return create_filter_lfo_page({
     engine_freq         = engine_lib.get_id("hpf_freq"),
     engine_res          = engine_lib.get_id("hpf_res"),
     lfo_shapes          = HPF_LFO_SHAPES,
-    spec_freq_mod       = controlspec_hpf_freq_mod,
-    spec_lfo_range      = controlspec_hpf_lfo_range,
+    spec_freq_mod       = controlspec_freq_mod,
+    spec_lfo_range      = controlspec_lfo_range,
 
     id_lfo_enabled      = ID_HPF_LFO_ENABLED,
     id_lfo_shape        = ID_HPF_LFO_SHAPE,

@@ -322,7 +322,7 @@ controlspec_filter_freq             = controlspec.def {
 }
 
 -- multiplies with cutoff value
-controlspec_lpf_freq_mod            = controlspec.def {
+controlspec_freq_mod            = controlspec.def {
     min = 0,
     max = 2,
     warp = 'lin',
@@ -333,12 +333,12 @@ controlspec_lpf_freq_mod            = controlspec.def {
 }
 
 -- sets range of filter lfo
-controlspec_lpf_lfo_range           = controlspec.def {
+controlspec_lfo_range           = controlspec.def {
     min = 0,
     max = 10,
     warp = 'lin',
     step = 0.01,
-    default = 1,
+    default = 0,
     quantum = 0.01,
     wrap = false
 }
@@ -358,27 +358,6 @@ ID_HPF_LFO_RANGE                    = get_id(PROCESSOR, "hpf_lfo_range")
 
 DRY_WET_TYPES                       = { "DRY", "50/50", "WET" }
 HPF_LFO_SHAPES                      = { "sine", "up", "down", "random" }
-
--- multiplies with cutoff value
-controlspec_hpf_freq_mod            = controlspec.def {
-    min = 0,
-    max = 2,
-    warp = 'lin',
-    step = 0.001,
-    default = 1,
-    quantum = 0.005,
-    wrap = false
-}
-
-controlspec_hpf_lfo_range           = controlspec.def {
-    min = 0,
-    max = 10,
-    warp = 'lin',
-    step = 0.01,
-    default = 1,
-    quantum = 0.01,
-    wrap = false
-}
 
 ---
 --- ECHO params
@@ -492,8 +471,8 @@ params:add_option(ID_LPF_LFO_SHAPE, "LFO shape", LPF_LFO_SHAPES, 1)
 params:add_option(ID_LPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 8)
 params:add_option(ID_LPF_WET, "dry/wet", DRY_WET_TYPES, 1)
 params:add_control(ID_LPF_BASE_FREQ, "base frequency", controlspec_filter_freq)
-params:add_control(ID_LPF_FREQ_MOD, "freq mod", controlspec_lpf_freq_mod)
-params:add_control(ID_LPF_LFO_RANGE, "LFO range", controlspec_lpf_lfo_range)
+params:add_control(ID_LPF_FREQ_MOD, "freq mod", controlspec_freq_mod)
+params:add_control(ID_LPF_LFO_RANGE, "LFO range", controlspec_lfo_range)
 params:hide(ID_LPF_FREQ_MOD) -- to be modified by lfo only
 
 params:add_separator("HPF", "HPF")
@@ -502,8 +481,8 @@ params:add_option(ID_HPF_LFO_SHAPE, "LFO shape", HPF_LFO_SHAPES, 1)
 params:add_option(ID_HPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 8)
 params:add_option(ID_HPF_WET, "dry/wet", DRY_WET_TYPES, 1)
 params:add_control(ID_HPF_BASE_FREQ, "base frequency", controlspec_filter_freq)
-params:add_control(ID_HPF_FREQ_MOD, "frequency_mod", controlspec_hpf_freq_mod)
-params:add_control(ID_HPF_LFO_RANGE, "LFO range", controlspec_hpf_lfo_range)
+params:add_control(ID_HPF_FREQ_MOD, "frequency_mod", controlspec_freq_mod)
+params:add_control(ID_HPF_LFO_RANGE, "LFO range", controlspec_lfo_range)
 params:hide(ID_HPF_FREQ_MOD) -- to be modified by lfo only
 
 params:add_separator("ECHO", "ECHO")
