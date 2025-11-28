@@ -67,7 +67,8 @@ local function create_filter_lfo_page(cfg)
     end
 
     local function get_lfo_range()
-        return params:get(ID_BASE_FREQ), get_modulated(params:get(ID_BASE_FREQ), params:get(ID_LFO_RANGE))
+        local base_freq = params:get(ID_BASE_FREQ)
+        return base_freq, get_modulated(base_freq, params:get(ID_LFO_RANGE))
     end
 
     local function action_range(v)

@@ -24,7 +24,7 @@ local function get_id(component, param)
 end
 
 -- VERSIONING
-local VERSION_STRING = "0.11.0"
+local VERSION_STRING = "0.11.1"
 local ID_VERSION = get_id(META, "version")
 
 ---
@@ -338,7 +338,7 @@ controlspec_lfo_range           = controlspec.def {
     max = 10,
     warp = 'lin',
     step = 0.01,
-    default = 0,
+    default = 5,
     quantum = 0.01,
     wrap = false
 }

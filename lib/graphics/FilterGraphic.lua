@@ -267,10 +267,12 @@ function FilterGraphic:render(draw_lfo_range)
     if draw_lfo_range then
         local y = self.y + self.graph_h + 1
         -- compensate 1px for stroke width
-        screen.move(1 + self:freq_to_x(self.lfo_range["start"]), y)
+        local x1 = 1 + self:freq_to_x(self.lfo_range["start"])
+        screen.move(x1, y)
         screen.level(4)
         screen.line_rel(0, 3)
-        screen.line(self:freq_to_x(self.lfo_range["end"]), y + 3)
+        local x2 = math.max(x1, self:freq_to_x(self.lfo_range["end"]))
+        screen.line(x2, y + 3)
         screen.line_rel(0, -3)
         screen.stroke()
     end
