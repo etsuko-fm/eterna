@@ -1,5 +1,5 @@
 -- eterna
--- 0.10.3 @etsuko.fm
+-- 0.11.0 @etsuko.fm
 -- E1: scroll pages
 --
 -- Other controls, see footer:
@@ -22,11 +22,13 @@ misc_util = include(from_root("lib/util/misc"))
 sequence_util = include(from_root("lib/util/sequence"))
 graphic_util = include(from_root("lib/util/graphic"))
 
-include(from_root("lib/parameters"))
-
 engine_lib = include(from_root("lib/eterna-engine"))
 
+include(from_root("lib/parameters"))
+
+
 local page_sample = include(from_root("lib/pages/sample"))
+page_slice = include(from_root("lib/pages/slice"))
 page_sequencer = include(from_root("lib/pages/sequencer"))
 local page_envelopes = include(from_root("lib/pages/envelopes"))
 page_lpf = include(from_root("lib/pages/lpf"))
@@ -53,6 +55,7 @@ FOOTER_FONT = 68
 local pages = {
   -- sound source
   page_sample,
+  page_slice,
   page_envelopes,
   page_rates,
   page_levels,

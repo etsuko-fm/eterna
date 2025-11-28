@@ -24,13 +24,19 @@ local function get_id(component, param)
 end
 
 -- VERSIONING
-local VERSION_STRING = "0.10.3"
+local VERSION_STRING = "0.11.0"
 local ID_VERSION = get_id(META, "version")
 
 ---
---- SAMPLER
+--- SAMPLE
 ---
+ID_SAMPLER_AUDIO_FILE = get_id(SAMPLER, "sample_path")
+ID_SAMPLER_DRIVE = get_id(SAMPLER, "drive")
+controlspec_sample_drive = engine_lib.params.voices.specs["voice_drive"]
 
+---
+--- SLICES
+---
 controlspec_num_slices = controlspec.def {
     min = 1,
     max = 32,
@@ -51,20 +57,20 @@ controlspec_slice_start = controlspec.def {
     wrap = true
 }
 
-ID_SAMPLER_AUDIO_FILE = get_id(SAMPLER, "sample_path")
 ID_SAMPLER_NUM_SLICES = get_id(SAMPLER, "num_slices")
-ID_SAMPLER_START = get_id(SAMPLER, "start_slice")
-ID_SAMPLER_LFO = get_id(SAMPLER, "slice_lfo")
-SLICE_START_LFO_SHAPES = { "off", "up", "down", "random" }
+ID_SAMPLER_SLICE_START = get_id(SAMPLER, "start_slice")
+ID_SLICE_LFO_ENABLED = get_id(SAMPLER, "slice_lfo_enabled")
+ID_SLICE_LFO_SHAPE = get_id(SAMPLER, "slice_lfo_shape")
+SLICE_START_LFO_SHAPES = { "up", "down", "random" }
 
 ID_SAMPLER_SECTIONS = {}
 
 function get_slice_start_param_id(voice)
-    return "slices_" .. voice .. "_start"
+    return get_id(SAMPLER, "slices_" .. voice .. "_start")
 end
 
 function get_slice_end_param_id(voice)
-    return "slices_" .. voice .. "_end"
+    return get_id(SAMPLER, "slices_" .. voice .. "_end")
 end
 
 for voice = 1, 6 do
@@ -201,10 +207,10 @@ controlspec_rates_spread = controlspec.def {
     wrap = false
 }
 
-ID_RATES_DIRECTION = "rates_direction"
-ID_RATES_RANGE = "rates_range"
-ID_RATES_CENTER = "rates_center"
-ID_RATES_SPREAD = "rates_spread"
+ID_RATES_DIRECTION = get_id(SAMPLER, "rates_direction")
+ID_RATES_RANGE = get_id(SAMPLER, "rates_range")
+ID_RATES_CENTER = get_id(SAMPLER, "rates_center")
+ID_RATES_SPREAD = get_id(SAMPLER, "rates_spread")
 
 FWD = "FWD"
 REV = "REV"
@@ -278,11 +284,11 @@ controlspec_pan_spread              = controlspec.def {
     wrap = false
 }
 
-ID_PANNING_LFO_ENABLED              = get_id(PROCESSOR, "panning_lfo_enabled")
-ID_PANNING_LFO_SHAPE                = get_id(PROCESSOR, "panning_lfo_shape")
-ID_PANNING_LFO_RATE                 = get_id(PROCESSOR, "panning_lfo_rate")
-ID_PANNING_TWIST                    = get_id(PROCESSOR, "panning_twist")
-ID_PANNING_SPREAD                   = get_id(PROCESSOR, "panning_spread")
+ID_PANNING_LFO_ENABLED              = get_id(SAMPLER, "panning_lfo_enabled")
+ID_PANNING_LFO_SHAPE                = get_id(SAMPLER, "panning_lfo_shape")
+ID_PANNING_LFO_RATE                 = get_id(SAMPLER, "panning_lfo_rate")
+ID_PANNING_TWIST                    = get_id(SAMPLER, "panning_twist")
+ID_PANNING_SPREAD                   = get_id(SAMPLER, "panning_spread")
 PANNING_LFO_SHAPES                  = { "up", "down", "random" }
 DEFAULT_PANNING_LFO_RATE_IDX        = 16
 
@@ -377,9 +383,8 @@ controlspec_hpf_lfo_range           = controlspec.def {
 ---
 --- ECHO params
 ---
-local componentid                   = "echo_"
 
-ID_ECHO_TIME                        = componentid .. "time"
+ID_ECHO_TIME                        = get_id(PROCESSOR, "echo_time")
 
 -- TODO: zip so time/name is defined together
 ECHO_TIME_AMOUNTS                   = { 0.0625, 0.125, 0.1875, 0.25, 0.3125, 0.375, 0.5, 0.625, 0.75 }
@@ -405,11 +410,15 @@ params:add_separator("ETERNA", "ETERNA")
 params:add_text(ID_VERSION, "version", VERSION_STRING)
 params:hide(ID_VERSION)
 
-params:add_separator("SAMPLE_SLICES", "SAMPLE SLICES")
+params:add_separator("SAMPLE", "SAMPLE")
 params:add_file(ID_SAMPLER_AUDIO_FILE, 'sample', nil)
-params:add_option(ID_SAMPLER_LFO, "lfo", SLICE_START_LFO_SHAPES)
+params:add_control(ID_SAMPLER_DRIVE, "drive", controlspec_sample_drive)
+
+params:add_separator("SAMPLE_SLICES", "SLICES")
+params:add_binary(ID_SLICE_LFO_ENABLED, "LFO", "toggle")
+params:add_option(ID_SLICE_LFO_SHAPE, "LFO shape", SLICE_START_LFO_SHAPES)
 params:add_control(ID_SAMPLER_NUM_SLICES, "slices", controlspec_num_slices)
-params:add_control(ID_SAMPLER_START, "start", controlspec_slice_start)
+params:add_control(ID_SAMPLER_SLICE_START, "start", controlspec_slice_start)
 
 for voice = 1, 6 do
     -- ranges per voice; each voice plays 1 slice
@@ -464,21 +473,21 @@ end
 
 
 params:add_separator("VOICE LEVELS", "LEVELS")
-params:add_binary(ID_LEVELS_LFO_ENABLED, "toggle", "LFO")
+params:add_binary(ID_LEVELS_LFO_ENABLED, "LFO", "toggle")
 params:add_option(ID_LEVELS_LFO_SHAPE, "LFO shape", LEVELS_LFO_SHAPES)
 params:add_option(ID_LEVELS_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, LEVELS_LFO_DEFAULT_RATE_INDEX)
 params:add_control(ID_LEVELS_POS, "position", controlspec_pos)
 params:add_control(ID_LEVELS_AMP, "amp", controlspec_amp)
 
 params:add_separator("PANNING", "PANNING")
-params:add_binary(ID_PANNING_LFO_ENABLED, "toggle", "LFO")
+params:add_binary(ID_PANNING_LFO_ENABLED,"LFO", "toggle")
 params:add_option(ID_PANNING_LFO_SHAPE, "LFO", PANNING_LFO_SHAPES)
 params:add_option(ID_PANNING_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, DEFAULT_PANNING_LFO_RATE_IDX)
 params:add_control(ID_PANNING_TWIST, "twist", controlspec_pan_twist)
 params:add_control(ID_PANNING_SPREAD, "spread", controlspec_pan_spread)
 
 params:add_separator("LPF", "LPF")
-params:add_binary(ID_LPF_LFO_ENABLED, "toggle", "LFO")
+params:add_binary(ID_LPF_LFO_ENABLED, "LFO", "toggle")
 params:add_option(ID_LPF_LFO_SHAPE, "LFO shape", LPF_LFO_SHAPES, 1)
 params:add_option(ID_LPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 8)
 params:add_option(ID_LPF_WET, "dry/wet", DRY_WET_TYPES, 1)
@@ -488,7 +497,7 @@ params:add_control(ID_LPF_LFO_RANGE, "LFO range", controlspec_lpf_lfo_range)
 params:hide(ID_LPF_FREQ_MOD) -- to be modified by lfo only
 
 params:add_separator("HPF", "HPF")
-params:add_binary(ID_HPF_LFO_ENABLED, "toggle", "LFO")
+params:add_binary(ID_HPF_LFO_ENABLED, "LFO", "toggle")
 params:add_option(ID_HPF_LFO_SHAPE, "LFO shape", HPF_LFO_SHAPES, 1)
 params:add_option(ID_HPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 8)
 params:add_option(ID_HPF_WET, "dry/wet", DRY_WET_TYPES, 1)

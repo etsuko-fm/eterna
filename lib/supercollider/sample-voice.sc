@@ -6,6 +6,7 @@ Voice {
 			s.waitForBoot {
 				SynthDef("SampleVoice", {
 					arg out, 
+					drive = 0, // drive in dB, think of it as gain, except it's limited using tanh
 					rate = 0, // playback rate
 					bufnum=0, // buffer assigned to voice
 					loop=1,  // 0 for one-shot, 1 for looping playback
@@ -90,10 +91,10 @@ Voice {
 
 					var amp; // for reporting amplitude
 
-					playback1 = playback1 * percEnv1 * EnvGen.ar(openEnv1, gate: t_1);
+					playback1 = (playback1 * drive.dbamp).tanh * percEnv1 * EnvGen.ar(openEnv1, gate: t_1);
 					playback1 = Select.ar(enable_lpg, [playback1, SVF.ar(playback1, percEnv1 * lpg_freq, res, 1.0, 0.0, 0.0)]);
 
-					playback2 = playback2 * percEnv2 * EnvGen.ar(openEnv2, gate: t_2);
+					playback2 = (playback2 * drive.dbamp).tanh * percEnv2 * EnvGen.ar(openEnv2, gate: t_2);
 					playback2 = Select.ar(enable_lpg, [playback2, SVF.ar(playback2, percEnv2 * lpg_freq, res, 1.0, 0.0, 0.0)]);
 
 					playback = XFade2.ar(playback1, playback2, crossfade);

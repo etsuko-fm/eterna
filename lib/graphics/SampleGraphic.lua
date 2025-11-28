@@ -11,8 +11,10 @@ SampleGraphic = {
     waveform_graphics = {},
     num_channels = 1,
     voice_env = { 0, 0, 0, 0, 0, 0, }, -- realtime envelope level of each voice
-    voice_to_buffer = {},                -- maps voice (key) to buffer (value)
+    voice_to_buffer = {},              -- maps voice (key) to buffer (value)
     is_playing = nil,
+    waveform_midpoints = {},
+    sample_duration = nil,
 }
 
 function SampleGraphic:new(o)
@@ -49,7 +51,41 @@ local function rect_midpoint_y(box_height, rect_h, num_rects, idx)
     return midpoint
 end
 
-function SampleGraphic:render()
+function SampleGraphic:render_slice_stripes()
+    for slice = 1, self.num_slices do
+        local zero_index = slice - 1
+
+        -- draw a line under the waveform for each available slice
+        local startx = self.x + (w * self.slice_len * zero_index)
+        local rect_w = w * self.slice_len - 1
+
+        screen.rect(startx, y, rect_w, 1)
+        screen.fill()
+        -- indicate starting slice with a little dot, if user selected between 2 and 6 slices
+        if self.num_slices <= 6 and self.num_slices > 1 and slice == self.active_slices[1] then
+            screen.level(5)
+            screen.rect(startx, y, 1, 1)
+            screen.fill()
+        end
+    end
+end
+
+function SampleGraphic:render_trigger_flash(index, flash_x, flash_y, flash_w, flash_h)
+    -- flash which waveform slice is playing
+    -- get buffer id based on current voice index
+    local buffer_idx = self.voice_to_buffer[index]
+    if buffer_idx and self.waveform_midpoints[buffer_idx] then
+        -- brightness of flash based on position of envelope
+        local mod = self.voice_env[index] or 0
+        graphic_util.screen_level(level_bright, mod * (level_trigger - level_bright), 0)
+        screen.blend_mode(13)
+        screen.rect(flash_x, flash_y, flash_w, flash_h)
+        screen.fill()
+        screen.blend_mode(0)
+    end
+end
+
+function SampleGraphic:render(render_slices)
     if self.hide then return end
 
     local box_height = 33
@@ -63,30 +99,25 @@ function SampleGraphic:render()
     -- number of channels that should fit
     local max_scale = math.floor((box_height - total_spacing) / self.num_channels / 2)
     local scale = util.clamp(max_scale, 2, 8)
-    local waveform_midpoints = {}
+    self.waveform_midpoints = {}
 
     for i = 1, 6 do
-        local slice = self.active_slices[i]
         if i <= self.num_channels then
             self.waveform_graphics[i].hide = false
-            waveform_midpoints[i] = min_y + rect_midpoint_y(box_height, scale * 2, self.num_channels, i)
-            self.waveform_graphics[i].y = waveform_midpoints[i]
+            self.waveform_midpoints[i] = min_y + rect_midpoint_y(box_height, scale * 2, self.num_channels, i)
+            self.waveform_graphics[i].y = self.waveform_midpoints[i]
             self.waveform_graphics[i].vertical_scale = scale
         else
             self.waveform_graphics[i].hide = true
         end
-
-        -- draw which waveform slice is playing
-        local mod = self.voice_env[i] or 0
-        graphic_util.screen_level(level_bright, mod * (level_trigger - level_bright), 0)
-        local buffer_idx = self.voice_to_buffer[i]
-        if buffer_idx and waveform_midpoints[buffer_idx] then
-            local startx = self.x + (w * self.slice_len * (slice-1))
-            local rect_w = w * self.slice_len - 1
-            screen.blend_mode(13)
-            screen.rect(startx, waveform_midpoints[buffer_idx] + scale - 1, rect_w, -scale * 2 + 1)
-            screen.fill()
-            screen.blend_mode(0)
+        if render_slices then
+            local slice = self.active_slices[i]
+            local buffer_idx = self.voice_to_buffer[i]
+            local flash_x = self.x + (w * self.slice_len * (slice - 1))
+            local flash_y = self.waveform_midpoints[buffer_idx] + scale - 1
+            local flash_w = w * self.slice_len - 1
+            local flash_h = -scale * 2 + 1
+            self:render_trigger_flash(i, flash_x, flash_y, flash_w, flash_h)
         end
     end
 
@@ -96,21 +127,8 @@ function SampleGraphic:render()
         self.waveform_graphics[i]:render()
     end
 
-    for slice = 1, self.num_slices do
-        local zero_index = slice - 1
-
-        -- draw a line under the waveform for each available slice
-        local startx = self.x + (w * self.slice_len * zero_index)
-        local rect_w = w * self.slice_len - 1
-
-        screen.rect(startx, y, rect_w, 1)
-        screen.fill()
-        -- indicate starting slice with a little dot, if user selected between 2 and 6 slices
-        -- if self.num_slices <= 6 and self.num_slices > 1 and slice == self.active_slices[1] then
-        --     screen.level(5)
-        --     screen.rect(startx, y, 1, 1)
-        --     screen.fill()
-        -- end
+    if render_slices then
+        self:render_slice_stripes()
     end
 end
 

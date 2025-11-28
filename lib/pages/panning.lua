@@ -110,7 +110,7 @@ function page:initialize()
                 value = "",
             },
             k3 = {
-                name = "SHAPE",
+                name = "LFO WV",
                 value = "",
             },
             e2 = {

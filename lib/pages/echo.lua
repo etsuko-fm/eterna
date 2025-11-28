@@ -7,11 +7,11 @@ local ID_ECHO_STYLE = engine_lib.get_id("echo_style")
 local ID_ECHO_FEEDBACK = engine_lib.get_id("echo_feedback")
 
 local function adjust_wet(d)
-    misc_util.adjust_param(d, ID_ECHO_WET, engine_lib.params.specs["echo_wet"].quantum)
+    engine_lib.echo_wet(d, true)
 end
 
 local function adjust_feedback(d)
-    misc_util.adjust_param(d, ID_ECHO_FEEDBACK, engine_lib.params.specs["echo_feedback"].quantum)
+    engine_lib.echo_feedback(d, true)
 end
 
 local function cycle_time()

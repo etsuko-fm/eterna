@@ -48,6 +48,7 @@ Engine_Eterna : CroneEngine {
     var voiceCommands = [
       "attack",
       "decay",
+      "drive",
       "pan",
       "loop_start",
       "loop_end",
@@ -90,6 +91,7 @@ Engine_Eterna : CroneEngine {
         \attack, 0.05,
         \decay, 4.0,
         \pan, 0.0,
+        \drive, 1.0,
         \loop_start, 0.0,
         \loop_end, 4.0,
         \level, 1.0,

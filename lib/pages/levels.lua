@@ -140,7 +140,7 @@ function page:initialize()
     page.footer = Footer:new({
         button_text = {
             k2 = { name = "LFO", value = "" },
-            k3 = { name = "SHAPE", value = "" },
+            k3 = { name = "LFO WV", value = "" },
             e2 = { name = "POS", value = "" },
             e3 = { name = "AMP", value = "" },
         },

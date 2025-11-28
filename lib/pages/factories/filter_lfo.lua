@@ -138,7 +138,7 @@ local function create_filter_lfo_page(cfg)
         page.footer = Footer:new({
             button_text = {
                 k2 = { name = "LFO", value = "" },
-                k3 = { name = "SHAPE", value = "" },
+                k3 = { name = "LFO WV", value = "" },
                 e2 = { name = "RATE", value = "" },
                 e3 = { name = "RANGE", value = "" },
             },

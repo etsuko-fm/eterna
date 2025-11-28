@@ -8,10 +8,10 @@ Eterna.master_out_max   = 0
 Eterna.env_time_min     = 0.0015
 Eterna.env_time_max     = 5
 
-local engine_prefix        = "eterna_"
+local engine_prefix     = "eterna_engine_"
 
 -- -.-
-local sc_to_lua            = {
+local sc_to_lua         = {
     [0] = 1,
     [1] = 2,
     [2] = 3,
@@ -20,7 +20,7 @@ local sc_to_lua            = {
     [5] = 6,
 }
 
-local lua_to_sc            = {
+local lua_to_sc         = {
     [1] = 0,
     [2] = 1,
     [3] = 2,
@@ -30,7 +30,7 @@ local lua_to_sc            = {
 }
 Eterna.echo_styles      = { "CLEAR", "MIST" }
 
-local filter_spec          = controlspec.def {
+local filter_spec       = controlspec.def {
     min = 20,
     max = 20000,
     warp = 'exp',
@@ -41,7 +41,7 @@ local filter_spec          = controlspec.def {
     wrap = false
 }
 
-local simple_spec          = controlspec.def {
+local simple_spec       = controlspec.def {
     min = 0,
     max = 1,
     warp = 'lin',
@@ -161,6 +161,15 @@ Eterna.params           = {
             ["voice_level"] = simple_spec,
             ["voice_lpg_freq"] = filter_spec,
             ["voice_pan"] = controlspec.PAN,
+            ["voice_drive"] = controlspec.def {
+                min = 0,
+                max = 24,
+                warp = "lin",
+                step = 0.01,
+                default = 0,
+                units = 'dB',
+                quantum = 0.01,
+            }
         },
         numbers = {
             ["voice_loop_start"] = {
@@ -212,22 +221,6 @@ Eterna.params           = {
     }
 }
 
--- All voice params available in supercollider
-Eterna.voice_params     = {
-    "voice_attack",
-    "voice_decay",
-    "voice_enable_lpg",
-    "voice_env_curve",
-    "voice_env_level",
-    "voice_level",
-    "voice_loop_start",
-    "voice_loop_end",
-    "voice_lpg_freq",
-    "voice_pan",
-    "voice_rate",
-    "voice_bufnum",
-}
-
 -- All polls defined in the engine
 Eterna.available_polls  = {
     ["pre_comp"] = { "pre_comp_left", "pre_comp_right" },
@@ -277,27 +270,163 @@ Eterna.get_id = function(command, voice_id)
     end
 end
 
--- Voice helper methods
-for _, param in pairs(Eterna.voice_params) do
-    -- create methods that sets all 6 voices to the same value for a given param
-    -- e.g. Eterna.each_voice_level(v)
-    Eterna["each_" .. param] = function(v)
-        for i = 1, 6 do
-            params:set(Eterna.get_id(param, i), v)
-        end
-    end
+-- Generic helpers
+local function set_param_by_delta(d, param_id, quantum)
+    local incr = d * quantum
+    local curr = params:get_raw(param_id)
+    local new = curr + incr
+    params:set_raw(param_id, new)
+end
 
-    -- create methods that set an engine param for a given voice id,
-    -- translating the lua 1-based indexes to Supercollider 0-based array indexes
-    Eterna[param] = function(i, v)
-        if i < 1 or i > 6 then
-            print("Error: voice for voice_" .. param .. "() should be 1..6, got " .. i)
-            return
+local function modify(param_id, v, is_delta)
+    if is_delta then
+        local spec = Eterna.params.specs[param_id]
+        local quantum
+        if spec then
+            quantum = spec.quantum
+        else
+            quantum = 1 / 100
         end
-        -- Utilize param system to pass value to SuperCollider;
-        -- advantage is that state becomes saveable
+        set_param_by_delta(v, Eterna.get_id(param_id), quantum)
+    else
+        params:set(param_id, v)
+    end
+end
+
+local function set_each_voice_param(param, v)
+    for i = 1, 6 do
         params:set(Eterna.get_id(param, i), v)
     end
+end
+
+local function modify_voice(param, i, v, is_delta)
+    if i < 1 or i > 6 then
+        print("Error: voice for " .. param .. "() should be 1..6, got " .. i)
+        return
+    end
+
+    local param_id = Eterna.get_id(param, i)
+
+    if is_delta then
+        local spec = Eterna.params.voices.specs[param_id]
+        local quantum
+        if spec then
+            quantum = spec.quantum
+        else
+            quantum = 1 / 100
+        end
+        set_param_by_delta(v, param_id, quantum)
+    else
+        params:set(param_id, v)
+    end
+end
+
+
+-- Voice helper methods
+function Eterna.each_voice_attack(v)
+    set_each_voice_param("voice_attack", v)
+end
+
+function Eterna.voice_attack(i, v)
+    modify_voice("voice_attack", i, v)
+end
+
+function Eterna.each_voice_decay(v)
+    set_each_voice_param("voice_decay", v)
+end
+
+function Eterna.voice_decay(i, v)
+    modify_voice("voice_decay", i, v)
+end
+
+function Eterna.each_voice_enable_lpg(v)
+    set_each_voice_param("voice_enable_lpg", v)
+end
+
+function Eterna.voice_enable_lpg(i, v)
+    modify_voice("voice_enable_lpg", i, v)
+end
+
+function Eterna.each_voice_env_curve(v)
+    set_each_voice_param("voice_env_curve", v)
+end
+
+function Eterna.voice_env_curve(i, v)
+    modify_voice("voice_env_curve", i, v)
+end
+
+function Eterna.each_voice_env_level(v)
+    set_each_voice_param("voice_env_level", v)
+end
+
+function Eterna.voice_env_level(i, v)
+    modify_voice("voice_env_level", i, v)
+end
+
+function Eterna.each_voice_level(v)
+    set_each_voice_param("voice_level", v)
+end
+
+function Eterna.voice_level(i, v)
+    modify_voice("voice_level", i, v)
+end
+
+function Eterna.each_voice_loop_start(v)
+    set_each_voice_param("voice_loop_start", v)
+end
+
+function Eterna.voice_loop_start(i, v)
+    modify_voice("voice_loop_start", i, v)
+end
+
+function Eterna.each_voice_loop_end(v)
+    set_each_voice_param("voice_loop_end", v)
+end
+
+function Eterna.voice_loop_end(i, v)
+    modify_voice("voice_loop_end", i, v)
+end
+
+function Eterna.each_voice_lpg_freq(v)
+    set_each_voice_param("voice_lpg_freq", v)
+end
+
+function Eterna.voice_lpg_freq(i, v)
+    modify_voice("voice_lpg_freq", i, v)
+end
+
+function Eterna.each_voice_pan(v)
+    set_each_voice_param("voice_pan", v)
+end
+
+function Eterna.voice_pan(i, v)
+    modify_voice("voice_pan", i, v)
+end
+
+function Eterna.each_voice_rate(v)
+    set_each_voice_param("voice_rate", v)
+end
+
+function Eterna.voice_rate(i, v)
+    modify_voice("voice_rate", i, v)
+end
+
+function Eterna.each_voice_bufnum(v)
+    set_each_voice_param("voice_bufnum", v)
+end
+
+function Eterna.voice_bufnum(i, v)
+    modify_voice("voice_bufnum", i, v)
+end
+
+function Eterna.each_voice_drive(v, is_delta)
+    for i = 1, 6 do
+        modify_voice("voice_drive", i, v, is_delta)
+    end
+end
+
+function Eterna.voice_drive(i, v)
+    modify_voice("voice_drive", i, v)
 end
 
 function Eterna.voice_trigger(voice)
@@ -306,6 +435,72 @@ function Eterna.voice_trigger(voice)
     else
         print("voice should be between 1 and 6, found " .. voice)
     end
+end
+
+-- Echo
+function Eterna.echo_wet(v, is_delta)
+    modify("echo_wet", v, is_delta)
+end
+
+function Eterna.echo_time(v, is_delta)
+    modify("echo_time", v, is_delta)
+end
+
+function Eterna.echo_feedback(v, is_delta)
+    modify("echo_feedback", v, is_delta)
+end
+
+-- LPF
+function Eterna.lpf_freq(v, is_delta)
+    modify("lpf_freq", v, is_delta)
+end
+
+function Eterna.lpf_res(v, is_delta)
+    modify("lpf_res", v, is_delta)
+end
+
+function Eterna.lpf_dry(v, is_delta)
+    modify("lpf_dry", v, is_delta)
+end
+
+-- HPF
+function Eterna.hpf_freq(v, is_delta)
+    modify("hpf_freq", v, is_delta)
+end
+
+function Eterna.hpf_res(v, is_delta)
+    modify("hpf_res", v, is_delta)
+end
+
+function Eterna.hpf_dry(v, is_delta)
+    modify("hpf_dry", v, is_delta)
+end
+
+-- Compressor
+function Eterna.comp_drive(v, is_delta)
+    modify("comp_drive", v, is_delta)
+end
+
+function Eterna.comp_ratio(v, is_delta)
+    modify("comp_ratio", v, is_delta)
+end
+
+function Eterna.comp_threshold(v, is_delta)
+    modify("comp_threshold", v, is_delta)
+end
+
+function Eterna.comp_out_level(v, is_delta)
+    modify("comp_out_level", v, is_delta)
+end
+
+-- Bass mono
+function Eterna.bass_mono_freq(v, is_delta)
+    modify("bass_mono_freq", v, is_delta)
+end
+
+-- Metering
+function Eterna.metering_rate(v, is_delta)
+    modify("metering_rate", v, is_delta)
 end
 
 function Eterna.load_file(path, channel, buffer)
@@ -320,7 +515,7 @@ function Eterna.load_file(path, channel, buffer)
         print("  duration:\t" .. duration .. " sec")
         if samplerate ~= 48000 then
             print("Sample rate of 48KHz expected, found " ..
-            samplerate .. ". The file will load but playback on wrong pitch.")
+                samplerate .. ". The file will load but playback on wrong pitch.")
         end
         if duration > 349 then
             print("Files longer than 349 seconds are truncated")
