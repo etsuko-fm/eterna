@@ -51,7 +51,7 @@ local function rect_midpoint_y(box_height, rect_h, num_rects, idx)
     return midpoint
 end
 
-function SampleGraphic:render_slice_stripes()
+function SampleGraphic:render_slice_stripes(ypos)
     for slice = 1, self.num_slices do
         local zero_index = slice - 1
 
@@ -59,12 +59,12 @@ function SampleGraphic:render_slice_stripes()
         local startx = self.x + (w * self.slice_len * zero_index)
         local rect_w = w * self.slice_len - 1
 
-        screen.rect(startx, y, rect_w, 1)
+        screen.rect(startx, ypos, rect_w, 1)
         screen.fill()
         -- indicate starting slice with a little dot, if user selected between 2 and 6 slices
         if self.num_slices <= 6 and self.num_slices > 1 and slice == self.active_slices[1] then
             screen.level(5)
-            screen.rect(startx, y, 1, 1)
+            screen.rect(startx, ypos, 1, 1)
             screen.fill()
         end
     end
@@ -128,7 +128,10 @@ function SampleGraphic:render(render_slices)
     end
 
     if render_slices then
-        self:render_slice_stripes()
+        local margin = 2
+        local ypos = self.waveform_midpoints[self.num_channels] + scale + margin
+        -- alternative: just use the y var local to this module
+        self:render_slice_stripes(ypos)
     end
 end
 
