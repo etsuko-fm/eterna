@@ -16,6 +16,8 @@ local env_w = 32
 local env_h = 16
 local env_x = math.floor(screen_w / 2 - env_w / 2)
 local env_y = 35
+local bg_fill = 2
+local fg_fill = 15
 
 function EnvGraphic:new(o)
     o = o or {}           -- create state if not provided
@@ -24,20 +26,16 @@ function EnvGraphic:new(o)
     return o              -- return instance
 end
 
-local bg_fill = 2
-local fg_fill = 15
 
 
 local function draw_slider(x, y, w, h, fraction, mod)
-    --bg
-    screen.level(bg_fill)
-    screen.rect(x, y, w, h)
-    screen.fill()
+    screen.level(1)
+    for i = 0, w-1, 2 do
+        screen.rect(x + i, y, 1, h)
+        screen.fill()
+    end
     local full_w = math.floor(w * fraction)
     local mod_w = math.floor(w * fraction * (1-mod))
-
-    screen.level(fg_fill)
-    --fg
     if mod > 0 then
         local xmod = x+mod_w
         local wmod = math.max(full_w - mod_w, 1)
@@ -49,11 +47,17 @@ local function draw_slider(x, y, w, h, fraction, mod)
             screen.fill()
         end
         screen.fill()
+        for i = 1, w-1, 2 do
+            screen.level(0)
+            screen.rect(x + i, y, 1, h)
+            screen.fill()
+        end
     else
         screen.level(fg_fill)
-        screen.rect(x, y, w * fraction, h)
+        screen.rect(1 + math.floor((x + (w-2) * fraction) / 2) * 2, y, 1, h)
         screen.fill()
     end
+
 end
 
 local function bezier_controls(x0, y0, x3, y3, k, t)
