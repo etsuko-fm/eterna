@@ -76,7 +76,7 @@ local function create_filter_page(cfg)
 
     function page:render()
         self.window:render()
-        self.graphic:set_size(64, 30)
+        self.graphic:set_size(62, 27)
         self:render_graphic()
         self:render_footer()
     end

@@ -1,13 +1,13 @@
 FilterGraphic = {
-    x = 64,
-    y = 25,
+    x = 33,
+    y = 15,
     hide = false,
     freq = 1000,
     res = 0,
     type = nil, -- "HP" / "LP"
     mix = 1,  -- 0 to 1, but only 0, 0.5 and 1 are currently supported
     graph_w = 50,
-    graph_h = 26,
+    graph_h = 23,
     lfo_range = {}, -- start / end freq
 }
 
@@ -21,11 +21,9 @@ end
 local min_freq = 20
 local max_freq = 20000
 local off_db = -32
-local max_db = 0
-local norm_db = -18
-local offset_y = 11
+local norm_db = 0
 local margin_x = 12
-local res_max_db = 11
+local res_max_db = 24
 local line_w = 2
 
 -- NB: Playing around on https://cubic-bezier.com
@@ -59,16 +57,25 @@ function FilterGraphic:set_lfo_range(start, _end)
     self.lfo_range["end"] = _end
 end
 
-
 function FilterGraphic:get_start_x()
     return (128 / 2 - self.graph_w / 2)
 end
 
 function FilterGraphic:db_to_y(db)
-    -- TODO: include max resonance in calculation
-    local db_range = off_db - max_db
-    local norm = (db - max_db) / db_range
-    return offset_y + norm * self.graph_h
+    -- graph boundaries
+    local offset_y = self.y + self.graph_h - line_w/2
+
+    -- difference in dB between lowest and highest supported amplitude
+    local min_db = off_db
+    local max_db = res_max_db
+    local range = (max_db - min_db)
+
+    -- fraction of total range
+    local fraction = (db - min_db) / range
+
+    -- multiply fraction with graph height
+    local y = fraction * -(self.graph_h - line_w)
+    return offset_y + y
 end
 
 function FilterGraphic:get_control_points_up(type, cutoff_hz)
@@ -131,7 +138,7 @@ function FilterGraphic:draw_lowpass(cutoff_hz, resonance)
 
     -- starting point
     local cutoff_x = self:freq_to_x(cutoff_hz)
-    local peak_db = norm_db + res_db -- up to +6 dB boost at cutoff
+    local peak_db = norm_db + res_db
 
     -- start left, out of graph range; helps draw curve correctly for lowest frequencies
     local left_x = self:get_start_x() - margin_x
@@ -198,20 +205,31 @@ function FilterGraphic:draw_filter_off()
     screen.stroke()
 end
 
-function FilterGraphic:draw_stripes()
+function FilterGraphic:draw_stripes(level)
     -- draw vertical black lines to make graphic less intense
-    for i = 1, 64 do
+    local start = self:get_start_x()/2+1 -- compensate 1px for stroke start, one for avoiding the first line
+    local to = (self:get_start_x() + self.graph_w)/2 - 1
+    for i = start, to do
         local x = i * 2
-        screen.level(0)
+        screen.level(level)
         screen.line_width(1)
-        screen.move(x, 10)
-        screen.line(x, 54)
+        screen.move(x, self.y)
+        screen.line(x, self.y+self.graph_h-1)
         screen.stroke()
     end
 end
 
 function FilterGraphic:render(draw_lfo_range)
     if self.hide then return end
+
+    -- draw bounding box
+    -- screen.line_width(1)
+    -- if draw_lfo_range then
+    --     screen.level(1)
+    --     screen.rect(self:get_start_x(), 15, self.graph_w, self.graph_h)
+    --     screen.fill()
+    -- end
+
     -- add filter off graphic if mix is dry or 50/50
     if self.mix == 0.5 then
         screen.level(2)
@@ -226,21 +244,26 @@ function FilterGraphic:render(draw_lfo_range)
         self:draw_lowpass(self.freq, self.res)
     end
 
-    self:draw_stripes()
-    screen.line_width(1)
-    screen.level(1)
-    screen.rect(self:get_start_x(), 15, self.graph_w, self.graph_h - 3)
-    screen.stroke()
+    local level = 0
+    self:draw_stripes(level)
     -- hide out of range stuff
     screen.level(0)
-    screen.rect(0, 15, self:get_start_x() - 1, self.graph_h)
-    screen.rect(self:get_start_x() + self.graph_w, 15, 32, self.graph_h)
+    screen.rect(0, self.y, self:get_start_x() - 1, self.graph_h)
+    screen.rect(self:get_start_x() + self.graph_w, 15, self.x, self.graph_h)
     screen.fill()
+
+    --draw edge
+    screen.line_width(1)
+    screen.level(1)
+    screen.rect(self:get_start_x(), 15, self.graph_w, self.graph_h)
+    screen.stroke()
+
     if draw_lfo_range then
-        screen.move(self:freq_to_x(self.lfo_range["start"]), 39)
+        local y = self.y + self.graph_h + 1
+        screen.move(self:freq_to_x(self.lfo_range["start"]), y)
         screen.level(4)
         screen.line_rel(0, 3)
-        screen.line(self:freq_to_x(self.lfo_range["end"]), 42)
+        screen.line(self:freq_to_x(self.lfo_range["end"]), y+3)
         screen.line_rel(0, -3)
         screen.stroke()
     end
