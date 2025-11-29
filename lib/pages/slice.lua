@@ -136,7 +136,7 @@ function page:render()
 
         if lfo_enabled == 1 then
             -- When LFO is disabled, E2 controls LFO rate
-            page.footer.button_text.e2.name = "RATE?"
+            page.footer.button_text.e2.name = "RATE"
             -- convert period to label representation
             local period = slice_lfo:get('period')
             page.footer.button_text.e2.value = lfo_util.lfo_period_value_labels[period]
@@ -201,7 +201,7 @@ function page:initialize()
     page.footer = Footer:new({
         button_text = {
             k2 = { name = "LFO", value = "" },
-            k3 = { name = "LFO WV", value = "" },
+            k3 = { name = "WAVE", value = "" },
             e2 = { name = "START", value = "" },
             e3 = { name = "SLCS", value = "" },
         },

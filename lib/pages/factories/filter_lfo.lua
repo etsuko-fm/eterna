@@ -8,7 +8,7 @@ local function create_filter_lfo_page(cfg)
     local spec_lfo_range = cfg.spec_lfo_range
     local ENGINE_FREQ    = cfg.engine_freq
     local ENGINE_RES     = cfg.engine_res
-    local ID_LFO         = cfg.id_lfo_enabled
+    local ID_LFO_ENABLED         = cfg.id_lfo_enabled
     local ID_LFO_SHAPE   = cfg.id_lfo_shape
     local ID_LFO_RANGE   = cfg.id_lfo_range
     local ID_FREQ_MOD    = cfg.id_freq_mod
@@ -31,7 +31,7 @@ local function create_filter_lfo_page(cfg)
     end
 
     local function toggle_lfo()
-        misc_util.toggle_param(ID_LFO)
+        misc_util.toggle_param(ID_LFO_ENABLED)
     end
 
     local function adjust_lfo_rate(d)
@@ -87,7 +87,7 @@ local function create_filter_lfo_page(cfg)
         params:set_action(ID_FREQ_MOD, action_freq_mod)
         params:set_action(ID_LFO_RANGE, action_range)
 
-        params:set_action(ID_LFO, action_lfo_toggle)
+        params:set_action(ID_LFO_ENABLED, action_lfo_toggle)
         params:set_action(ID_LFO_SHAPE, action_lfo_shape)
         params:set_action(ID_LFO_RATE, action_lfo_rate)
     end
@@ -112,13 +112,12 @@ local function create_filter_lfo_page(cfg)
         self.graphic.res           = res
         self.graphic.type          = FILTER_TYPE
         self.graphic.mix           = (drywet - 1) / 2
-        print('frac'..params:get(ID_LFO_RATE) ..'/'..#lfo_util.lfo_period_labels)
         self.graphic.rate_fraction = params:get(ID_LFO_RATE) / #lfo_util.lfo_period_labels
         self.graphic:render(true)
     end
 
     function page:render_footer()
-        local lfo_enabled = params:get(ID_LFO)
+        local lfo_enabled = params:get(ID_LFO_ENABLED)
         local shape = string.upper(lfo_shapes[params:get(ID_LFO_SHAPE)])
         local period = lfo:get('period')
         local range = params:get(ID_LFO_RANGE)
@@ -146,7 +145,7 @@ local function create_filter_lfo_page(cfg)
         page.footer = Footer:new({
             button_text = {
                 k2 = { name = "LFO", value = "" },
-                k3 = { name = "LFO WV", value = "" },
+                k3 = { name = "WAVE", value = "" },
                 e2 = { name = "RATE", value = "" },
                 e3 = { name = "RANGE", value = "" },
             },

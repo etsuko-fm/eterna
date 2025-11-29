@@ -24,7 +24,7 @@ local function get_id(component, param)
 end
 
 -- VERSIONING
-local VERSION_STRING = "0.11.3"
+local VERSION_STRING = "0.11.4"
 local ID_VERSION = get_id(META, "version")
 
 ---
@@ -306,7 +306,6 @@ ID_LPF_LFO_RATE                     = get_id(PROCESSOR, "lpf_lfo_rate")
 ID_LPF_LFO_RANGE                    = get_id(PROCESSOR, "lpf_lfo_range")
 
 LPF_LFO_SHAPES                      = { "sine", "up", "down", "random" }
-DRY_WET_TYPES                       = { "DRY", "50/50", "WET" }
 
 -- this exists next to the engine freq, but allows a base frequency to change,
 -- while the engine freq is being modulated by the lfo
@@ -356,7 +355,7 @@ ID_HPF_BASE_FREQ                    = get_id(PROCESSOR, "hpf_freq")
 ID_HPF_LFO_RATE                     = get_id(PROCESSOR, "hpf_lfo_rate")
 ID_HPF_LFO_RANGE                    = get_id(PROCESSOR, "hpf_lfo_range")
 
-DRY_WET_TYPES                       = { "DRY", "50/50", "WET" }
+DRY_WET_TYPES                       = { "DRY", "50%", "WET" }
 HPF_LFO_SHAPES                      = { "sine", "up", "down", "random" }
 
 ---
@@ -469,7 +468,7 @@ params:add_separator("LPF", "LPF")
 params:add_binary(ID_LPF_LFO_ENABLED, "LFO", "toggle")
 params:add_option(ID_LPF_LFO_SHAPE, "LFO shape", LPF_LFO_SHAPES, 1)
 params:add_option(ID_LPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 8)
-params:add_option(ID_LPF_WET, "dry/wet", DRY_WET_TYPES, 1)
+params:add_option(ID_LPF_WET, "dry/wet", DRY_WET_TYPES, 2)
 params:add_control(ID_LPF_BASE_FREQ, "base frequency", controlspec_filter_freq)
 params:add_control(ID_LPF_FREQ_MOD, "freq mod", controlspec_freq_mod)
 params:add_control(ID_LPF_LFO_RANGE, "LFO range", controlspec_lfo_range)
@@ -479,7 +478,7 @@ params:add_separator("HPF", "HPF")
 params:add_binary(ID_HPF_LFO_ENABLED, "LFO", "toggle")
 params:add_option(ID_HPF_LFO_SHAPE, "LFO shape", HPF_LFO_SHAPES, 1)
 params:add_option(ID_HPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 8)
-params:add_option(ID_HPF_WET, "dry/wet", DRY_WET_TYPES, 1)
+params:add_option(ID_HPF_WET, "dry/wet", DRY_WET_TYPES, 2)
 params:add_control(ID_HPF_BASE_FREQ, "base frequency", controlspec_filter_freq)
 params:add_control(ID_HPF_FREQ_MOD, "frequency_mod", controlspec_freq_mod)
 params:add_control(ID_HPF_LFO_RANGE, "LFO range", controlspec_lfo_range)

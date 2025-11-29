@@ -196,7 +196,6 @@ end
 
 function FilterGraphic:draw_filter_off()
     local flat_y = self:db_to_y(norm_db)
-    local off_y = self:db_to_y(off_db)
     screen.line_width(line_w)
     screen.move(self.x, flat_y)
     screen.line(self.x + self.graph_w + 2 * margin_x, flat_y)
@@ -219,11 +218,9 @@ end
 
 function FilterGraphic:screen_level_from_mix()
     if self.mix < 0.5 then
-        screen.level(1)
-    elseif self.mix < 0.99 then
-        screen.level(5)
+        return 2
     else
-        screen.level(15)
+        return 15
     end
 end
 
@@ -256,14 +253,31 @@ function FilterGraphic:render(draw_lfo_range)
         (self.type == "HP") and self.draw_highpass or
         (self.type == "LP") and self.draw_lowpass
 
+    if self.mix == 0.5 and not draw_lfo_range then
+        -- 50% mix; draw behind filter
+        screen.level(3)
+        self:draw_filter_off()
+    end
+    
+    local main_graph_level = self:screen_level_from_mix()
+
     if draw_filter then
-        if self.lfo_freq ~= nil and self.mix > 0 then
-            screen.level(1)
+        if self.lfo_freq ~= nil then
+            -- Draw faint LFO graph behind the base frequency
+            screen.level(math.ceil(main_graph_level / 2))
             draw_filter(self, self.lfo_freq, self.res)
         end
-        self:screen_level_from_mix()
+        -- draw filter over LFO graph
+        screen.level(main_graph_level)
         draw_filter(self, self.freq, self.res)
     end
+
+    if self.mix == 0 and not draw_lfo_range then
+        -- 0% mix; draw over filter
+        screen.level(15)
+        self:draw_filter_off()
+    end
+
 
     local level = 0
 

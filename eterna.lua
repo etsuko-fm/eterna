@@ -1,5 +1,5 @@
 -- eterna
--- 0.11.3 @etsuko.fm
+-- 0.11.4 @etsuko.fm
 -- E1: scroll pages
 --
 -- Other controls, see footer:
@@ -257,6 +257,5 @@ end
 
 function cleanup()
   metro.free_all()
-  -- poll.clear_all()
   current_page:exit()
 end

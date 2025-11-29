@@ -28,7 +28,11 @@ local function create_filter_page(cfg)
         )
     end
 
-    local function toggle_mix()
+    local function toggle_lfo()
+        misc_util.toggle_param(ID_LFO_ENABLED)
+    end
+
+    local function cycle_mix()
         misc_util.cycle_param(ID_WET, DRY_WET_TYPES)
     end
 
@@ -36,8 +40,8 @@ local function create_filter_page(cfg)
         name = page_name,
         e2 = adjust_freq,
         e3 = adjust_res,
-        k2_off = toggle_mix,
-        k3_off = nil,
+        k2_off = toggle_lfo,
+        k3_off = cycle_mix,
     })
 
     local function action_wet(v)
@@ -76,7 +80,6 @@ local function create_filter_page(cfg)
         self.graphic.freq     = params:get(ID_BASE_FREQ)
         self.graphic.lfo_freq = freq
 
-        -- print(self.graphic.freq .. "->"..self.graphic.lfo_freq)
         self.graphic.res      = res
         self.graphic.type     = FILTER_TYPE
         self.graphic.mix      = (drywet - 1) / 2
@@ -87,10 +90,12 @@ local function create_filter_page(cfg)
         local base_freq                  = params:get(ID_BASE_FREQ)
         local drywet                     = params:get(ID_WET)
         local res                        = params:get(ENGINE_RES)
+        local lfo_enabled                = params:get(ID_LFO_ENABLED)
 
         self.footer.button_text.e2.name  = "FREQ"
         self.footer.button_text.e2.value = misc_util.trim(tostring(base_freq), 5)
-        self.footer.button_text.k2.value = DRY_WET_TYPES[drywet]
+        self.footer.button_text.k2.value = lfo_enabled == 1 and "ON" or "OFF"
+        self.footer.button_text.k3.value = DRY_WET_TYPES[drywet]
         self.footer.button_text.e3.value = misc_util.trim(tostring(res), 5)
         self.footer:render()
     end
@@ -109,8 +114,8 @@ local function create_filter_page(cfg)
 
         self.footer = Footer:new({
             button_text = {
-                k2 = { name = "MIX", value = "" },
-                k3 = { name = "", value = "" },
+                k2 = { name = "LFO", value = "" },
+                k3 = { name = "MIX", value = "" },
                 e2 = { name = "FREQ", value = "" },
                 e3 = { name = "RES", value = "" },
             },
