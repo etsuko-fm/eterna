@@ -67,9 +67,20 @@ local function linexp(slo, shi, dlo, dhi, f, exp)
     )
 end
 
-local function cycle_param(param_id, tbl)
+local function cycle_param(param_id, tbl, delta, wrap)
+    -- for a table-based param, set the param to the next index (+1) or 
+    -- a specified delta
+    if delta == nil then delta = 1 end
+    if wrap == nil then wrap = true end
     local v = params:get(param_id)
-    local new = util.wrap(v + 1, 1, #tbl)
+    local new
+
+    if wrap then
+        new = util.wrap(v + delta, 1, #tbl)
+    else
+        new = util.clamp(v + delta, 1, #tbl)
+    end
+
     params:set(param_id, new)
 end
 

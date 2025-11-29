@@ -36,7 +36,7 @@ end
 
 local function e2(d)
     if lfo:get("enabled") == 1 then
-        lfo_util.adjust_lfo_rate_quant(d, lfo)
+        lfo_util.adjust_lfo_rate(d, lfo)
     else
         adjust_twist(d)
     end

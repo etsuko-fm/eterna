@@ -4,17 +4,15 @@ local FilterGraphic = include(from_root("lib/graphics/FilterGraphic"))
 local function create_filter_page(cfg)
     -- cfg contains all filter-specific parameters
 
-    local page_name     = cfg.page_name
-    local spec_freq_mod = cfg.spec_freq_mod
+    local page_name      = cfg.page_name
 
-    local ENGINE_FREQ   = cfg.engine_freq
-    local ENGINE_RES    = cfg.engine_res
-    local ENGINE_DRY    = cfg.engine_dry
-    local ID_WET        = cfg.id_wet
-    local ID_BASE_FREQ  = cfg.id_base_freq
-    local FILTER_TYPE   = cfg.filter_graphic_type
-    local ID_LFO_ENABLED        = cfg.id_lfo_enabled
-    local ID_LFO_RANGE  = cfg.id_lfo_range
+    local ENGINE_FREQ    = cfg.engine_freq
+    local ENGINE_RES     = cfg.engine_res
+    local ENGINE_DRY     = cfg.engine_dry
+    local ID_WET         = cfg.id_wet
+    local ID_BASE_FREQ   = cfg.id_base_freq
+    local FILTER_TYPE    = cfg.filter_graphic_type
+    local ID_LFO_ENABLED = cfg.id_lfo_enabled
 
     local function adjust_freq(d)
         misc_util.adjust_param(
@@ -70,24 +68,23 @@ local function create_filter_page(cfg)
     end
 
     function page:render_graphic(draw_lfo_range)
-        local freq        = params:get(ENGINE_FREQ)
-        local res         = params:get(ENGINE_RES)
-        local drywet      = params:get(ID_WET)
+        local freq            = params:get(ENGINE_FREQ)
+        local res             = params:get(ENGINE_RES)
+        local drywet          = params:get(ID_WET)
 
         -- render non-modulated frequency
-        self.graphic.freq = params:get(ID_BASE_FREQ)
+        self.graphic.freq     = params:get(ID_BASE_FREQ)
         self.graphic.lfo_freq = freq
 
         -- print(self.graphic.freq .. "->"..self.graphic.lfo_freq)
-        self.graphic.res  = res
-        self.graphic.type = FILTER_TYPE
-        self.graphic.mix  = (drywet - 1) / 2
+        self.graphic.res      = res
+        self.graphic.type     = FILTER_TYPE
+        self.graphic.mix      = (drywet - 1) / 2
         self.graphic:render(draw_lfo_range)
     end
 
     function page:render_footer()
         local base_freq                  = params:get(ID_BASE_FREQ)
-        local live_freq                  = params:get(ENGINE_FREQ)
         local drywet                     = params:get(ID_WET)
         local res                        = params:get(ENGINE_RES)
 
@@ -103,6 +100,12 @@ local function create_filter_page(cfg)
         self.window = Window:new({ title = page_name, font_face = TITLE_FONT })
         self.graphic = FilterGraphic:new()
         self.graphic:set_size(62, 27)
+        local w = 62
+        local h = 27
+        local screen_width = 128
+        self.graphic:set_size(w, h)
+        self.graphic.x = screen_width / 2 - w / 2
+
         self.graphic.lfo_freq = params:get(ID_BASE_FREQ)
 
         self.footer = Footer:new({

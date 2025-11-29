@@ -15,23 +15,7 @@ return create_filter_page({
 
     freq_param_name     = "lpf_freq",
     res_param_name      = "lpf_res",
-    spec_freq_mod       = controlspec_lpf_freq_mod,
 
     lfo_shapes          = LPF_LFO_SHAPES,
     filter_graphic_type = "LP",
-
-    lfo_defaults        = function(last_freq)
-        return {
-            shape = 'sine',
-            min = 0,
-            max = 1,
-            depth = 1,
-            mode = 'clocked',
-            period = 8,
-            phase = 0,
-            action = function(scaled)
-                params:set(ID_LPF_FREQ_MOD, controlspec_lpf_freq_mod:map(scaled), false)
-            end
-        }
-    end
 })

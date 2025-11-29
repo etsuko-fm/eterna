@@ -10,6 +10,7 @@ FilterGraphic = {
     graph_w = 50,
     graph_h = 23,
     lfo_range = {}, -- start / end freq
+    rate_fraction = nil,
 }
 
 function FilterGraphic:new(o)
@@ -45,7 +46,7 @@ function FilterGraphic:freq_to_x(freq)
     local pos = util.clamp(freq_normalized / range, 0, 1)
 
     -- x position
-    return self:get_start_x() + pos * (self.graph_w - 1) -- exclude edge
+    return self.x + pos * (self.graph_w - 1) -- exclude edge
 end
 
 function FilterGraphic:set_size(w, h)
@@ -56,10 +57,6 @@ end
 function FilterGraphic:set_lfo_range(start, _end)
     self.lfo_range["start"] = start
     self.lfo_range["end"] = _end
-end
-
-function FilterGraphic:get_start_x()
-    return (128 / 2 - self.graph_w / 2)
 end
 
 function FilterGraphic:db_to_y(db)
@@ -142,7 +139,7 @@ function FilterGraphic:draw_lowpass(cutoff_hz, resonance)
     local peak_db = norm_db + res_db
 
     -- start left, out of graph range; helps draw curve correctly for lowest frequencies
-    local left_x = self:get_start_x() - margin_x
+    local left_x = self.x - margin_x
     screen.move(left_x, flat_y)
 
     -- draw curve towards resonance
@@ -173,7 +170,7 @@ function FilterGraphic:draw_highpass(cutoff_hz, resonance)
 
     local cutoff_x = self:freq_to_x(cutoff_hz)
     local peak_db = norm_db + res_db
-    local end_x = self:get_start_x() + self.graph_w + 2 * margin_x
+    local end_x = self.x + self.graph_w + 2 * margin_x
 
     -- left side slope up to cutoff
     local control_points_down = self:get_control_points_down("HP", cutoff_hz)
@@ -201,15 +198,15 @@ function FilterGraphic:draw_filter_off()
     local flat_y = self:db_to_y(norm_db)
     local off_y = self:db_to_y(off_db)
     screen.line_width(line_w)
-    screen.move(self:get_start_x(), flat_y)
-    screen.line(self:get_start_x() + self.graph_w + 2 * margin_x, flat_y)
+    screen.move(self.x, flat_y)
+    screen.line(self.x + self.graph_w + 2 * margin_x, flat_y)
     screen.stroke()
 end
 
 function FilterGraphic:draw_stripes(level)
     -- draw vertical black lines to make graphic less intense
-    local start = self:get_start_x() / 2 + 1 -- compensate 1px for stroke start, one for avoiding the first line
-    local to = (self:get_start_x() + self.graph_w) / 2 - 1
+    local start = self.x / 2 + 1 -- compensate 1px for stroke start, one for avoiding the first line
+    local to = (self.x + self.graph_w) / 2 - 1
     for i = start, to do
         local x = i * 2
         screen.level(level)
@@ -229,6 +226,27 @@ function FilterGraphic:screen_level_from_mix()
         screen.level(15)
     end
 end
+
+local function draw_slider(x, y, w, h, fraction)
+  -- h is expected to be uneven
+  screen.level(1)
+
+  -- index of bar to light up to indicate current fraction
+  local target = math.floor((h * (1 - fraction)) / 2) * 2
+
+  for i = 0, h - 1, 2 do
+    if i == target then
+      screen.level(15)
+    else
+      screen.level(1)
+    end
+
+    screen.rect(x, y + i, w, 1)
+    screen.fill()
+  end
+end
+
+
 function FilterGraphic:render(draw_lfo_range)
     if self.hide then return end
 
@@ -254,14 +272,14 @@ function FilterGraphic:render(draw_lfo_range)
 
     -- hide out of range stuff
     screen.level(0)
-    screen.rect(0, self.y, self:get_start_x() - 1, self.graph_h)
-    screen.rect(self:get_start_x() + self.graph_w, 15, self.x, self.graph_h)
+    screen.rect(0, self.y, self.x - 1, self.graph_h)
+    screen.rect(self.x + self.graph_w, 15, self.x, self.graph_h)
     screen.fill()
 
     -- draw edge
     screen.line_width(1)
     screen.level(1)
-    screen.rect(self:get_start_x(), 15, self.graph_w, self.graph_h)
+    screen.rect(self.x, 15, self.graph_w, self.graph_h)
     screen.stroke()
 
     if draw_lfo_range then
@@ -275,6 +293,8 @@ function FilterGraphic:render(draw_lfo_range)
         screen.line(x2, y + 3)
         screen.line_rel(0, -3)
         screen.stroke()
+
+        draw_slider(self.x - 7, self.y - 1, 4, self.graph_h + 1, self.rate_fraction)
     end
 end
 

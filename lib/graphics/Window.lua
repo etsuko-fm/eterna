@@ -8,6 +8,10 @@ Window = {
     font_face = 68, -- TITLE_FONT
     brightness = 15,
     bar_height = 7,
+    pages = nil,
+    current_page = nil,
+    enc1n=nil,
+
 }
 
 function Window:new(o)
@@ -15,6 +19,57 @@ function Window:new(o)
     setmetatable(o, self) -- define prototype
     self.__index = self
     return o
+end
+
+local page_breaks = {1, 2,3,4,5, 7, 9, 11, 12}
+
+local function spacing_for(i)
+  local s = 0
+  for _, b in ipairs(page_breaks) do
+    if i > b then
+      s = s + 1
+    end
+  end
+  return s
+end
+
+function Window:draw_page_indicator()
+  -- draw stripes on top left that indicate which page is active
+  screen.level(11)
+  local h
+  local y
+
+  for i = 0, #self.pages - 1 do
+    h = 3
+    local extra_spacing = spacing_for(i)
+    local x = 2 + i * 1 + extra_spacing
+    if i > 0 then extra_spacing = 1 end
+    if i > 4 then extra_spacing = 2 end
+    if i > 6 then extra_spacing = 3 end
+    if i > 8 then extra_spacing = 4 end
+    if i > 10 then extra_spacing = 5 end
+    if i > 11 then extra_spacing = 6 end
+
+    if self.pages[i + 1] == self.current_page then
+      y = 2
+      screen.level(0)
+      screen.rect(x, y, 1, h)
+      screen.fill()
+      screen.level(3)
+      if self.enc1n > 0 then
+        -- line from bottom to top
+        screen.rect(x, y, 1, self.enc1n)
+      elseif self.enc1n < 0 then
+        -- line from top to bottom
+        screen.rect(x, y + 3, 1, self.enc1n)
+      end
+    else
+      screen.level(6)
+      y = 2
+      screen.rect(x, y, 1, h)
+    end
+    screen.fill()
+  end
 end
 
 function Window:render()

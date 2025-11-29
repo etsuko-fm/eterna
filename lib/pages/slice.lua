@@ -112,7 +112,7 @@ end
 local function e2(d)
     -- todo: can you make this a function of the lfo util?
     if slice_lfo:get("enabled") == 1 then
-        lfo_util.adjust_lfo_rate_quant(d, slice_lfo)
+        lfo_util.adjust_lfo_rate(d, slice_lfo)
     else
         page:adjust_slice_start(d)
     end

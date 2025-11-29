@@ -26,8 +26,6 @@ function EnvGraphic:new(o)
     return o              -- return instance
 end
 
-
-
 local function draw_slider(x, y, w, h, fraction, mod)
     screen.level(1)
     for i = 0, w-1, 2 do
@@ -57,7 +55,6 @@ local function draw_slider(x, y, w, h, fraction, mod)
         screen.rect(1 + math.floor((x + (w-2) * fraction) / 2) * 2, y, 1, h)
         screen.fill()
     end
-
 end
 
 local function bezier_controls(x0, y0, x3, y3, k, t)

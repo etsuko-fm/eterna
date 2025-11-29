@@ -1,7 +1,7 @@
 local lfo_period_values = {
     1 / 16, 1 / 8, 1 / 4, 1 / 2,
     1, 2, 4, 8, 12, 16, 20,
-    24,28,32,36,40,44, 48,
+    24, 28, 32, 36, 40, 44, 48,
     52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96,
     100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 148, 152,
     156, 160, 164, 168, 172, 176, 180, 184, 188, 192, 196, 200, 204, 208,
@@ -59,7 +59,7 @@ for i, v in ipairs(lfo_period_values) do
     lfo_period_value_labels[v] = label
 end
 
-local function adjust_lfo_rate_quant(d, lfo)
+local function adjust_lfo_rate(d, lfo)
     -- d should be a positive or negative integer
     local values = lfo_period_values
     local current_val = lfo:get('period')
@@ -132,8 +132,8 @@ return {
     lfo_period_value_labels = lfo_period_value_labels,
     lfo_period_label_values = lfo_period_label_values,
     toggle_shape = toggle_shape,
-    adjust_lfo_rate_quant = adjust_lfo_rate_quant,
-    action_lfo=action_lfo,
-    action_lfo_toggle=action_lfo_toggle,
-    action_lfo_shape=action_lfo_shape,
+    adjust_lfo_rate = adjust_lfo_rate,
+    action_lfo = action_lfo,
+    action_lfo_toggle = action_lfo_toggle,
+    action_lfo_shape = action_lfo_shape,
 }

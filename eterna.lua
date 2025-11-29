@@ -226,18 +226,38 @@ function enc(n, d)
   end
 end
 
+local page_breaks = {1, 2,3,4,5, 7, 9, 11, 12}
+local function spacing_for(i)
+  local s = 0
+  for _, b in ipairs(page_breaks) do
+    if i > b then
+      s = s + 1
+    end
+  end
+  return s
+end
+
 local function draw_page_indicator()
   -- draw stripes on top left that indicate which page is active
   screen.level(11)
   local h
   local y
+  
   for i = 0, #pages - 1 do
     h = 3
-    local x = 2 + i * 2
+    local extra_spacing = spacing_for(i)
+    local x = 2 + i * 1 + extra_spacing
+    if i > 0 then extra_spacing = 1 end
+    if i > 4 then extra_spacing = 2 end
+    if i > 6 then extra_spacing = 3 end
+    if i > 8 then extra_spacing = 4 end
+    if i > 10 then extra_spacing = 5 end
+    if i > 11 then extra_spacing = 6 end
+
     if pages[i + 1] == current_page then
       y = 2
       screen.level(0)
-      screen.rect(2 + i * 2, y, 1, h)
+      screen.rect(x, y, 1, h)
       screen.fill()
       screen.level(3)
       if enc1n > 0 then

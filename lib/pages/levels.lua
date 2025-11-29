@@ -24,7 +24,7 @@ end
 
 
 local function adjust_lfo_rate(d)
-    lfo_util.adjust_lfo_rate_quant(d, lfo)
+    lfo_util.adjust_lfo_rate(d, lfo)
 end
 
 local function amp_to_sigma(v)
