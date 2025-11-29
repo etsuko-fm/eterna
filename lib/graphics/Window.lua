@@ -1,27 +1,27 @@
 Window = {
-    x = 0,
-    y = 0,
-    w = 128,
-    h = 64,
-    title = "WINDOW",
-    title_x = 64,
-    font_face = 68, -- TITLE_FONT
-    brightness = 15,
-    bar_height = 7,
-    pages = nil,
-    current_page = nil,
-    enc1n=nil,
-
+  x = 0,
+  y = 0,
+  w = 128,
+  h = 64,
+  title = "WINDOW",
+  title_x = 64,
+  font_face = 68,   -- TITLE_FONT
+  brightness = 15,
+  bar_height = 7,
+  num_pages = nil,
+  current_page = nil,
+  enc1n = 0,
+  page_indicator_disabled = false,
 }
 
 function Window:new(o)
-    o = o or {}           -- create state if not provided
-    setmetatable(o, self) -- define prototype
-    self.__index = self
-    return o
+  o = o or {}             -- create state if not provided
+  setmetatable(o, self)   -- define prototype
+  self.__index = self
+  return o
 end
 
-local page_breaks = {1, 2,3,4,5, 7, 9, 11, 12}
+local page_breaks = { 2, 3, 4, 5, 6, 8, 10, 12, 13 }
 
 local function spacing_for(i)
   local s = 0
@@ -36,22 +36,15 @@ end
 function Window:draw_page_indicator()
   -- draw stripes on top left that indicate which page is active
   screen.level(11)
-  local h
-  local y
+  local h = 3
+  local y = 2
 
-  for i = 0, #self.pages - 1 do
-    h = 3
-    local extra_spacing = spacing_for(i)
-    local x = 2 + i * 1 + extra_spacing
-    if i > 0 then extra_spacing = 1 end
-    if i > 4 then extra_spacing = 2 end
-    if i > 6 then extra_spacing = 3 end
-    if i > 8 then extra_spacing = 4 end
-    if i > 10 then extra_spacing = 5 end
-    if i > 11 then extra_spacing = 6 end
+  for page_id = 1, self.num_pages do
+    local zero_idx = page_id-1
+    local extra_spacing = spacing_for(page_id)
+    local x = 2 + zero_idx * 1 + extra_spacing
 
-    if self.pages[i + 1] == self.current_page then
-      y = 2
+    if page_id == self.current_page then
       screen.level(0)
       screen.rect(x, y, 1, h)
       screen.fill()
@@ -65,7 +58,6 @@ function Window:draw_page_indicator()
       end
     else
       screen.level(6)
-      y = 2
       screen.rect(x, y, 1, h)
     end
     screen.fill()
@@ -73,24 +65,28 @@ function Window:draw_page_indicator()
 end
 
 function Window:render()
-    if self.hide then return end
-    screen.font_size(8)
-    -- top bar
-    screen.line_width(1)
+  if self.hide then return end
+  screen.font_size(8)
+  -- top bar
+  screen.line_width(1)
 
-    screen.level(self.brightness)
+  screen.level(self.brightness)
 
-    screen.move(self.x, self.bar_height - 2)
+  screen.move(self.x, self.bar_height - 2)
 
-    screen.move(self.x, self.y)
-    screen.rect(self.x, self.y, self.w, self.bar_height)
-    screen.fill()
+  screen.move(self.x, self.y)
+  screen.rect(self.x, self.y, self.w, self.bar_height)
+  screen.fill()
 
-    -- title
-    screen.move(self.title_x, self.y + (self.bar_height - 1))
-    screen.level(0)
-    screen.font_face(self.font_face)
-    screen.text_center(self.title)
+  -- title
+  screen.move(self.title_x, self.y + (self.bar_height - 1))
+  screen.level(0)
+  screen.font_face(self.font_face)
+  screen.text_center(self.title)
+  if not self.page_indicator_disabled then
+    self:draw_page_indicator()
+  end
+
 end
 
 return Window

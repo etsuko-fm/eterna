@@ -62,7 +62,7 @@ local function create_filter_page(cfg)
     end
 
     function page:render()
-        self.window:render()
+        window:render()
         self:render_graphic()
         self:render_footer()
     end
@@ -97,7 +97,6 @@ local function create_filter_page(cfg)
 
     function page:initialize()
         add_params()
-        self.window = Window:new({ title = page_name, font_face = TITLE_FONT })
         self.graphic = FilterGraphic:new()
         self.graphic:set_size(62, 27)
         local w = 62
@@ -117,6 +116,10 @@ local function create_filter_page(cfg)
             },
             font_face = FOOTER_FONT,
         })
+    end
+
+    function page:enter()
+        window.title = page_name
     end
 
     return page

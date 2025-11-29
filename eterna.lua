@@ -1,5 +1,5 @@
 -- eterna
--- 0.11.2 @etsuko.fm
+-- 0.11.3 @etsuko.fm
 -- E1: scroll pages
 --
 -- Other controls, see footer:
@@ -44,18 +44,21 @@ local page_levels = include(from_root("lib/pages/levels"))
 local fps = 60
 local ready
 
+window = Window:new({ title = "ETERNA" })
+
 UPDATE_SLICES = false
 
-page_indicator_disabled = false
+window.page_indicator_disabled = false
 
 DEFAULT_FONT = 68
 TITLE_FONT = 68
 FOOTER_FONT = 68
 
 local pages = {
-  -- sound source
+  -- sample
   page_sample,
   page_slice,
+  -- voice settings
   page_envelopes,
   page_rates,
   page_levels,
@@ -73,11 +76,15 @@ local pages = {
   page_master,
 }
 
+
 amp_historyL = {}
 amp_historyR = {}
 
 local current_page_index = 1
 local current_page = pages[current_page_index]
+
+window.num_pages = #pages
+window.current_page = current_page_index
 
 local function switch_page(new_index)
   if new_index ~= current_page_index and pages[new_index] then
@@ -85,6 +92,7 @@ local function switch_page(new_index)
     current_page_index = new_index
     current_page = pages[current_page_index]
     current_page:enter()
+    window.current_page = current_page_index
   end
 end
 
@@ -194,7 +202,6 @@ function key(n, z)
   end
 end
 
-local enc1n = 0
 local counter = 0
 
 function enc(n, d)
@@ -202,15 +209,16 @@ function enc(n, d)
   if n == 1 then
     counter = 0 -- reset
     if (current_page_index < #pages and d > 0) or current_page_index > 1 and d < 0 then
-      enc1n = enc1n + d
+      window.enc1n = window.enc1n + d
     end
+    print(window.enc1n)
 
-    if enc1n > 3 then
+    if window.enc1n > 3 then
       page_forward()
-      enc1n = 0
-    elseif enc1n < -3 then
+      window.enc1n = 0
+    elseif window.enc1n < -3 then
       page_backward()
-      enc1n = 0
+      window.enc1n = 0
     end
   end
 
@@ -226,57 +234,6 @@ function enc(n, d)
   end
 end
 
-local page_breaks = {1, 2,3,4,5, 7, 9, 11, 12}
-local function spacing_for(i)
-  local s = 0
-  for _, b in ipairs(page_breaks) do
-    if i > b then
-      s = s + 1
-    end
-  end
-  return s
-end
-
-local function draw_page_indicator()
-  -- draw stripes on top left that indicate which page is active
-  screen.level(11)
-  local h
-  local y
-  
-  for i = 0, #pages - 1 do
-    h = 3
-    local extra_spacing = spacing_for(i)
-    local x = 2 + i * 1 + extra_spacing
-    if i > 0 then extra_spacing = 1 end
-    if i > 4 then extra_spacing = 2 end
-    if i > 6 then extra_spacing = 3 end
-    if i > 8 then extra_spacing = 4 end
-    if i > 10 then extra_spacing = 5 end
-    if i > 11 then extra_spacing = 6 end
-
-    if pages[i + 1] == current_page then
-      y = 2
-      screen.level(0)
-      screen.rect(x, y, 1, h)
-      screen.fill()
-      screen.level(3)
-      if enc1n > 0 then
-        -- line from bottom to top
-        screen.rect(x, y, 1, enc1n)
-      elseif enc1n < 0 then
-        -- line from top to bottom
-        screen.rect(x, y + 3, 1, enc1n)
-      end
-    else
-      screen.level(6)
-      y = 2
-      screen.rect(x, y, 1, h)
-    end
-    screen.fill()
-  end
-end
-
-
 function refresh()
   counter = counter + 1
   -- refresh screen
@@ -284,15 +241,11 @@ function refresh()
     ready = false
     screen.clear()
     current_page:render()
-    if enc1n ~= 0 and counter > 90 then
-      enc1n = 0
+    if window.enc1n ~= 0 and counter > 90 then
+      window.enc1n = 0
       counter = 0
     end
-    enc1n = enc1n
-    -- todo: move this rendering to the Window class
-    if not page_indicator_disabled then
-      draw_page_indicator()
-    end
+    -- enc1n = enc1n
     screen.update()
   end
 end

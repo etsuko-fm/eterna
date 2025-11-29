@@ -1,4 +1,4 @@
-local page_name = "Levels"
+local page_name = "LEVELS"
 local LevelsGraphic = include(from_root("lib/graphics/LevelsGraphic"))
 local gaussian = include(from_root("lib/util/gaussian"))
 local level_graphic
@@ -65,7 +65,7 @@ function page:render()
     self.footer.button_text.k2.value = lfo_enabled == 1 and "ON" or "OFF"
     page.footer.button_text.k3.value = string.upper(LEVELS_LFO_SHAPES[lfo_shape])
 
-    self.window:render()
+    window:render()
     if lfo:get("enabled") == 1 then
         -- When LFO is disabled, E2 controls LFO rate
         -- Switch POS to RATE
@@ -118,7 +118,7 @@ end
 function page:initialize()
     add_params()
 
-    self.window = Window:new({ title = "LEVELS", font_face = TITLE_FONT })
+    window.title = "LEVELS"
 
     -- graphics
     level_graphic = LevelsGraphic:new({
@@ -165,6 +165,7 @@ function page:initialize()
 end
 
 function page:enter()
+    window.title = page_name
     for i = 1, 6 do
         amp_polls[i].callback = function(v) level_graphic.voice_amp[i] = amp_to_log(v) end
     end

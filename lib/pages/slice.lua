@@ -149,7 +149,7 @@ function page:render()
         screen.move(64, 32)
     end
 
-    self.window:render()
+    window:render()
     page.footer:render()
 end
 
@@ -197,7 +197,6 @@ function page:initialize()
 
     self:add_params()
 
-    self.window = Window:new({ title = "SLICES" })
 
     page.footer = Footer:new({
         button_text = {
@@ -225,6 +224,7 @@ end
 
 function page:enter()
     self:enable_env_polls()
+    window.title = "SLICES"
 end
 
 function page:exit()

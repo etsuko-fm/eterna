@@ -55,7 +55,7 @@ local function add_params()
 end
 
 function page:render()
-    self.window:render()
+    window:render()
     engine_lib.request_amp_history()
 
     pre_comp_left_poll:update()
@@ -100,7 +100,7 @@ function page:initialize()
     master_left_poll.callback = function(v) master_graphic.out_levels[1] = amp_to_log(v) end
     master_right_poll.callback = function(v) master_graphic.out_levels[2] = amp_to_log(v) end
 
-    self.window = Window:new({ title = page_name, font_face = TITLE_FONT })
+    window.title = page_name
 
     -- graphics
     page.footer = Footer:new({
@@ -115,8 +115,10 @@ function page:initialize()
 end
 
 function page:enter()
+    window.title = page_name
     params:set(engine_lib.get_id("metering_rate"), 500)
 end
+
 
 function page:exit()
     params:set(engine_lib.get_id("metering_rate"), 0)

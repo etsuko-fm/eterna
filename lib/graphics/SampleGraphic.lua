@@ -110,7 +110,7 @@ function SampleGraphic:render(render_slices)
         else
             self.waveform_graphics[i].hide = true
         end
-        if render_slices then
+        if render_slices and self.slice_len then
             local slice = self.active_slices[i]
             local buffer_idx = self.voice_to_buffer[i]
             local flash_x = self.x + (w * self.slice_len * (slice - 1))

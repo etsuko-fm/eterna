@@ -125,7 +125,7 @@ page = Page:create({
 function page:render()
     for i = 1, 6 do env_polls[i]:update() end
 
-    self.window:render()
+    window:render()
     self.footer.button_text.k2.value = PLAYBACK_TABLE[params:get(ID_RATES_DIRECTION)]
     self.footer.button_text.k3.value = RANGE_TABLE[params:get(ID_RATES_RANGE)]
 
@@ -143,7 +143,6 @@ end
 
 function page:initialize()
     add_params()
-    self.window = Window:new({ title = page_name, font_face = TITLE_FONT })
 
     self.graphic = RatesGraphic:new()
     update_playback_dir(1)
@@ -159,6 +158,7 @@ function page:initialize()
 end
 
 function page:enter()
+    window.title = page_name
     for i = 1, 6 do
         env_polls[i].callback = function(v) self.graphic.voice_env[i] = amp_to_log(v) end
     end

@@ -12,7 +12,6 @@ return create_filter_page({
     id_freq_mod         = ID_HPF_FREQ_MOD,
     id_lfo_rate         = ID_HPF_LFO_RATE,
     id_lfo_range        = ID_HPF_LFO_RANGE,
-    spec_freq_mod       = controlspec_hpf_freq_mod,
 
     freq_param_name     = "hpf_freq",
     res_param_name      = "hpf_res",

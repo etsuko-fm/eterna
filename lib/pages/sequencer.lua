@@ -137,7 +137,7 @@ function clock.transport.stop()
 end
 
 function page:render()
-    self.window:render()
+    window:render()
     self:render_graphic()
     self:render_footer()
 end
@@ -213,7 +213,6 @@ function page:initialize()
         env_polls[i].callback = function(v) self.graphic.voice_env[i] = v end
     end
 
-    self.window = Window:new({ title = "SEQUENCER", font_face = TITLE_FONT })
     self.graphic = SequencerGraphic:new()
 
 
@@ -249,6 +248,7 @@ end
 
 function page:enter()
     self:enable_env_polls()
+    window.title = "SEQUENCER"
 end
 
 function page:exit()

@@ -73,7 +73,7 @@ local function add_params()
 end
 
 function page:render()
-    self.window:render()
+    window:render()
     local lfo_shape = params:get(ID_PANNING_LFO_SHAPE)
     local twist = params:get(ID_PANNING_TWIST)
     local spread = params:get(ID_PANNING_SPREAD)
@@ -99,7 +99,6 @@ end
 
 function page:initialize()
     add_params()
-    self.window = Window:new({ title = page_name, font_face = TITLE_FONT })
     -- graphics
     panning_graphic = PanningGraphic:new()
     calculate_pan_positions()
@@ -138,6 +137,10 @@ function page:initialize()
         end
     }
     lfo:set('reset_target', 'mid: rising')
+end
+
+function page:enter()
+    window.title = page_name
 end
 
 return page

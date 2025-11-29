@@ -248,7 +248,7 @@ Engine_Eterna : CroneEngine {
       
       // Function to retrieve a single buffer sample and store it in waveform array
       var next_sample = { |buf, buf_idx, n, factor, total| 
-        buf.getn(n*factor, 96, action: { |result|
+        buf.getn(n*factor, 1, action: { |result|
           var rawval = result.maxItem; // take highest out of 96 samples at requested point (2ms)
 
           // Positive or negative is irrelevant for waveform

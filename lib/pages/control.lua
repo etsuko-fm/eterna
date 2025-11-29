@@ -31,7 +31,7 @@ local function add_params()
 end
 
 function page:render()
-    self.window:render()
+    window:render()
     local tempo_trimmed = util.round(params:get("clock_tempo"))
     local is_playing = page_sequencer.seq.transport_on
     self.footer.button_text.e2.value = tempo_trimmed
@@ -49,7 +49,6 @@ end
 
 function page:initialize()
     add_params()
-    self.window = Window:new({ title = page_name, font_face = TITLE_FONT })
     -- graphics
     self.graphic = ControlGraphic:new()
     page.footer = Footer:new({
@@ -61,6 +60,10 @@ function page:initialize()
         },
         font_face = FOOTER_FONT,
     })
+end
+
+function page:enter()
+    window.title = page_name
 end
 
 return page

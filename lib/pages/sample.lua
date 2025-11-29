@@ -64,6 +64,14 @@ function page:load_sample(file)
     ready = {}
     -- TODO: Clear buffers not needed before loading new
     retries = {}
+    window.title = "LOADING..."
+    self.sample_duration_txt = nil
+    for _, p in ipairs({page, page_slice}) do
+        for channel=1, 6 do
+            p.graphic.waveform_graphics[channel].samples = {}
+        end
+    end
+
     for channel = 1, math.min(num_channels, 6) do
         -- load file to buffer corresponding to channel
         ready[channel] = false
@@ -130,11 +138,11 @@ local function select_sample()
             params:set(ID_SAMPLER_AUDIO_FILE, file_path)
         end
         page_disabled = false -- proceed with rendering page instead of file menu
-        page_indicator_disabled = false
+        window.page_indicator_disabled = false
     end
     fileselect.enter(_path.audio, callback, "audio")
     page_disabled = true           -- don't render current page
-    page_indicator_disabled = true -- hide page indicator
+    window.page_indicator_disabled = true -- hide page indicator
 end
 local function s_to_minsec(s)
     local minutes = math.floor(s / 60)
@@ -151,19 +159,20 @@ function page:render()
     end -- for rendering the fileselect interface
     if params:get(ID_SAMPLER_AUDIO_FILE) then
         -- show filename of selected sample in title bar
-        self.window.title = filename .. " (" .. self.sample_duration_txt .. ")"
+        if self.sample_duration_txt then
+            window.title = filename .. " (" .. self.sample_duration_txt .. ")"
+        end
         self.graphic.sample_duration = self.sample_duration
         self.graphic:render(false, true)
     else
         screen.level(3)
         screen.font_face(DEFAULT_FONT)
-        self.window.title = "SAMPLING"
         screen.move(64, 32)
         screen.text_center("PRESS K2 TO LOAD SAMPLE")
     end
     page.footer.button_text.e2.value = params:get(ID_SAMPLER_DRIVE)
 
-    self.window:render()
+    window:render()
     page.footer:render()
 end
 
@@ -204,7 +213,6 @@ function page:initialize()
         params:set(ID_SAMPLER_AUDIO_FILE, _path.dust .. preload_sample, true)
     end
 
-    self.window = Window:new({ title = "SAMPLING" })
 
     page.footer = Footer:new({
         button_text = {
@@ -215,6 +223,9 @@ function page:initialize()
         },
         font_face = FOOTER_FONT,
     })
+end
+function page:enter()
+    window.title = "SAMPLING"
 end
 
 
