@@ -105,7 +105,7 @@ function page:initialize()
     -- graphics
     page.footer = Footer:new({
         button_text = {
-            k2 = { name = "MONO", value = "4:1" },
+            k2 = { name = "MONO", value = "" },
             k3 = { name = "COMP", value = "" },
             e2 = { name = "DRIVE", value = "" },
             e3 = { name = "OUT", value = "" },

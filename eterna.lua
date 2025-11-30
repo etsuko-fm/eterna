@@ -1,5 +1,5 @@
 -- eterna
--- 0.11.4 @etsuko.fm
+-- 0.11.5 @etsuko.fm
 -- E1: scroll pages
 --
 -- Other controls, see footer:
@@ -253,6 +253,12 @@ end
 -- convenience methods for matron
 function rerun()
   norns.script.load(norns.state.script)
+end
+
+function shot()
+  local name = "screenshot-"..os.date("%Y-%m-%d-%H-%M-%S")
+  screen.export_screenshot(name)
+  print("screenshot saved to " .. name)
 end
 
 function cleanup()
