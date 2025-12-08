@@ -1,5 +1,5 @@
 -- eterna
--- 0.11.5 @etsuko.fm
+-- 0.11.6 @etsuko.fm
 -- E1: scroll pages
 --
 -- Other controls, see footer:

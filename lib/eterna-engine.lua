@@ -28,7 +28,7 @@ local lua_to_sc         = {
     [5] = 4,
     [6] = 5,
 }
-Eterna.echo_styles      = { "CLEAR", "MIST" }
+Eterna.echo_styles      = { "DUB", "MIST" }
 
 local filter_spec       = controlspec.def {
     min = 20,

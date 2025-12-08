@@ -1,9 +1,9 @@
-ClearEcho {
+DubEcho {
 	*initClass {
 		StartUp.add {
 			var s = Server.default;
 			s.waitForBoot {
-				SynthDef("ClearEcho", {
+				SynthDef("DubEcho", {
 					arg in, out, wet=0.5, feedback=0.8, time=0.1;
 					var input = In.ar(in, 2);
                     var output;

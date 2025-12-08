@@ -38,7 +38,7 @@ Engine_Eterna : CroneEngine {
     // Map echo names to corresponding SynthDef
     var echoMap = (
       MIST: "MistEcho",
-      CLEAR: "ClearEcho"
+      DUB: "DubEcho"
     );
     var currentEcho;
 
@@ -113,9 +113,9 @@ Engine_Eterna : CroneEngine {
     "All audio and control buses created".postln;
     
     // Setup routing chain
-    lpfSynth = Synth.new("SymSVF", target:context.xg, args: [\in, lowpassBus, \out, highpassBus, \filter_type, 1]);
-    hpfSynth = Synth.after(lpfSynth, "SymSVF", args: [\in, highpassBus, \out, echoBus, \filter_type, 0]);
-    echoSynth = Synth.after(hpfSynth, "ClearEcho", args: [\in, echoBus, \out, bassMonoBus]);
+    lpfSynth = Synth.new("ESVF", target:context.xg, args: [\in, lowpassBus, \out, highpassBus, \filter_type, 1]);
+    hpfSynth = Synth.after(lpfSynth, "ESVF", args: [\in, highpassBus, \out, echoBus, \filter_type, 0]);
+    echoSynth = Synth.after(hpfSynth, "DubEcho", args: [\in, echoBus, \out, bassMonoBus]);
     bassMono = Synth.after(echoSynth, "BassMono", args: [\in, bassMonoBus, \out, compBus]);
     master = Synth.after(bassMono, "Master", args: [
       \in, compBus, 

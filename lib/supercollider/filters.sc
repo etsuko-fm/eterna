@@ -1,9 +1,9 @@
-SymSVF {
+ESVF {
 	*initClass {
 		StartUp.add {
 			var s = Server.default;
 			s.waitForBoot {
-				SynthDef("SymSVF", {
+				SynthDef("ESVF", {
 					arg in, out, freq=2500.0, res = 0.2, dry=0.0, filter_type=0;
 					var input = In.ar(in, 2);
 					var safeFreq = Lag.kr(freq.clip(5.0, 24000.0));
