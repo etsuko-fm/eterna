@@ -1,5 +1,5 @@
 -- eterna
--- 0.11.6 @etsuko.fm
+-- 0.11.7 @etsuko.fm
 -- E1: scroll pages
 --
 -- Other controls, see footer:
@@ -167,6 +167,7 @@ function init()
   end
   params:bang()
 
+  current_page:enter()
   -- metro for screen refresh
   c = metro.init(count, 1 / fps)
   c:start()
@@ -211,7 +212,6 @@ function enc(n, d)
     if (current_page_index < #pages and d > 0) or current_page_index > 1 and d < 0 then
       window.enc1n = window.enc1n + d
     end
-    print(window.enc1n)
 
     if window.enc1n > 3 then
       page_forward()

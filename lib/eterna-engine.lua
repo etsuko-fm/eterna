@@ -515,7 +515,7 @@ function Eterna.load_file(path, channel, buffer)
         print("  duration:\t" .. duration .. " sec")
         if samplerate ~= 48000 then
             print("Sample rate of 48KHz expected, found " ..
-                samplerate .. ". The file will load but playback on wrong pitch.")
+                samplerate .. ". The file will load but playback at the wrong pitch.")
         end
         if duration > 349 then
             print("Files longer than 349 seconds are truncated")

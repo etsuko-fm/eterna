@@ -3,10 +3,9 @@ local SampleGraphic = include(from_root("lib/graphics/SampleGraphic"))
 local page_name = "SAMPLE"
 local fileselect = require('fileselect')
 local page_disabled = false
-local preload_sample = "audio/etsuko/chris/play-safe.wav"
+local preload_sample = nil --"audio/etsuko/chris/play-safe.wav"
 
 local filename = ""
--- local selected_sample = nil -- assign path to load a default sample on script startup (e.g. "audio/etsuko/chris/play-safe.wav")
 
 -- In rare cases sample loading may fail, these are for a retry mechanism
 local MAX_RETRIES = 1
@@ -16,10 +15,6 @@ local retries = {}
 local ready = {}
 
 local active_channels = 1
-
-
--- when true, preloads a sample
-local debug_mode = true
 
 local page = Page:create({
     name = page_name,
@@ -57,7 +52,6 @@ end
 
 
 function page:load_sample(file)
-    print("page:load_sample(" .. file .. ")")
     -- use specified `file` as a sample and store enabled length of buffer in state
     if not file or file == "-" then return end
     local num_channels = audio_util.num_channels(file)
@@ -101,7 +95,6 @@ end
 
 function engine_lib.on_file_load_success(path, channel, buffer)
     print('successfully loaded channel ' .. channel .. " of " .. path .. " to buffer " .. buffer)
-    print('normalizing...')
     ready[channel] = true
     -- engine_lib.normalize(buffer)
     engine_lib.get_waveform(buffer, 64)
@@ -157,7 +150,7 @@ function page:render()
         fileselect:redraw()
         return
     end -- for rendering the fileselect interface
-    if params:get(ID_SAMPLER_AUDIO_FILE) then
+    if params:get(ID_SAMPLER_AUDIO_FILE) ~= "-" then
         -- show filename of selected sample in title bar
         if self.sample_duration_txt then
             window.title = filename .. " (" .. self.sample_duration_txt .. ")"
@@ -208,7 +201,7 @@ function page:initialize()
         filename = to_sample_name(params:get(ID_SAMPLER_AUDIO_FILE))
         print("initialize, file load")
     end
-    if debug_mode then
+    if preload_sample then
         -- silent set, main module invokes params:bang() after initialization
         params:set(ID_SAMPLER_AUDIO_FILE, _path.dust .. preload_sample, true)
     end
