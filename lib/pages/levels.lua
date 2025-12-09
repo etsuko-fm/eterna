@@ -156,6 +156,7 @@ function page:initialize()
         mode = 'clocked',
         period = 8,
         phase = 0,
+        ppqn = 24,
         action = function(scaled, raw)
             level_graphic.scan_val = scaled
             params:set(ID_LEVELS_POS, controlspec_pos:map(scaled), false)

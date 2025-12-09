@@ -34,12 +34,14 @@ end
 
 local function e2(d)
     -- works for x, y, and z
+    -- TODO: use util
     local p = ID_SEQ_PERLIN_X
     local new = params:get(p) + controlspec_perlin.quantum * d
     params:set(p, new, false)
 end
 
 local function e3(d)
+    -- TODO: use util
     local new = params:get(ID_SEQ_DENSITY) + controlspec_perlin_density.quantum * d
     params:set(ID_SEQ_DENSITY, new, false)
 end
@@ -188,6 +190,8 @@ function page:add_params()
     params:set_action(ID_SEQ_PERLIN_X, toggle_redraw)
     params:set_action(ID_SEQ_PERLIN_Y, toggle_redraw)
     params:set_action(ID_SEQ_PERLIN_Z, toggle_redraw)
+
+    -- TODO: if just density changes, shouldn't recalculate perlin noise
     params:set_action(ID_SEQ_DENSITY, toggle_redraw)
     params:set_action(ID_SEQ_SPEED, function(v) self:action_sequence_speed(v) end)
     for y = 1, SEQ_TRACKS do

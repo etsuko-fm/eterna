@@ -160,16 +160,10 @@ local function create_filter_lfo_page(cfg)
             mode = 'clocked',
             period = 8,
             phase = 0,
+            ppqn = 24,
             action = function(scaled)
                 -- map the lfo value to the range of the controlspec
-                -- if math.random() > 0.5 then print (controlspec_lpf_freq_mod:map(scaled)) end
                 params:set(ID_FREQ_MOD, spec_freq_mod:map(scaled), false)
-                -- 2: starts extremely fast, ends extremely slow
-                -- 1: starts too fast, ends too slow
-                -- 0.5: starts too fast, ends too slow
-                -- 0.3: pretty linear in the middle,, slow at the start, slows down towards the end
-                -- 0.2: seems alright but it actually stops at 0
-                -- 0.1: starts very slow, ends very fast
             end
         })
         lfo:set('reset_target', 'mid: rising')

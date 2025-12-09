@@ -189,6 +189,7 @@ function page:initialize()
         mode = 'clocked',
         period = 8,
         phase = 0,
+        ppqn = 24,
         action = function(scaled, raw)
             params:set(ID_SAMPLER_SLICE_START, controlspec_slice_start:map(scaled))
         end
