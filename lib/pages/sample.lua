@@ -56,11 +56,14 @@ function page:load_sample(file)
     if not file or file == "-" then return end
     local num_channels = audio_util.num_channels(file)
     ready = {}
-    -- TODO: Clear buffers not needed before loading new
+    -- hard to reproduce, but a hypothesis is that
+    -- this flush might sometimes prevent supercollider from failing to load a sample
+    engine_lib.flush()
     retries = {}
     window.title = "LOADING..."
     self.sample_duration_txt = nil
     for _, p in ipairs({page, page_slice}) do
+        -- reset waveforms in both pages
         for channel=1, 6 do
             p.graphic.waveform_graphics[channel].samples = {}
         end
@@ -97,7 +100,10 @@ function engine_lib.on_file_load_success(path, channel, buffer)
     print('successfully loaded channel ' .. channel .. " of " .. path .. " to buffer " .. buffer)
     ready[channel] = true
     -- engine_lib.normalize(buffer)
+
+    -- see engine_lib.on_waveform for what happens next
     engine_lib.get_waveform(buffer, 64)
+
     if all_true(ready) then
         for voice = 1, 6 do
             local buffer_idx = util.wrap(voice, 1, active_channels)

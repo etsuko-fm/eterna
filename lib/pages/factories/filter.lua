@@ -45,9 +45,9 @@ local function create_filter_page(cfg)
     })
 
     local function action_wet(v)
-        if DRY_WET_TYPES[v] == "DRY" then
+        if DRY_WET_TYPES[v] == MIX_DRY then
             params:set(ENGINE_DRY, 1)
-        elseif DRY_WET_TYPES[v] == "50/50" then
+        elseif DRY_WET_TYPES[v] == MIX_PARALLEL then
             params:set(ENGINE_DRY, 0.5)
         else
             params:set(ENGINE_DRY, 0)

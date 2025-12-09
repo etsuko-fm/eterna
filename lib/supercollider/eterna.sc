@@ -273,7 +273,6 @@ Engine_Eterna : CroneEngine {
         // Generate new buffer with only as many samples as the required
         // number of points in the waveform, by downsampling the original buffer
         ("Generating waveform of" + points + "points for buffer"+idx).postln;
-        ("Factor:" + factor).postln;
         next_sample.(buffers[idx], idx, 0, factor, points);
       } {
         ("Skipped waveform for empty buffer" + idx).postln;
@@ -379,13 +378,20 @@ Engine_Eterna : CroneEngine {
     // Commands for visualization
     this.addCommand("metering_rate", "i", {  arg msg; 
       master.set(\metering_rate, msg[1]);
-      ("metering rate set to "++msg[1]).postln;
     });
 
     this.addCommand("request_amp_history", "", { 
       arg msg; 
       // TODO: could be a poll
       oscServer.sendBundle(0, ['/amp_history', amp_history[0], amp_history[1]]);
+    });
+
+    this.addCommand("ping", "", { |msg| 
+      if (s.serverRunning) {
+        oscServer.sendBundle(0, ['/pong']);
+      } {
+        "SC server not running".postln;
+      };
     });
 
     this.addPoll(\pre_comp_left, { preCompControlBuses[0].getSynchronous });
@@ -412,6 +418,7 @@ Engine_Eterna : CroneEngine {
     buffers.free;
 
     // Audio buses
+    "Freeing up audio buses".postln;
     lowpassBus.free;
     highpassBus.free;
     bassMonoBus.free;
@@ -419,6 +426,7 @@ Engine_Eterna : CroneEngine {
     echoBus.free;
 
     // SynthDefs
+    "Freeing up SynthDeffs".postln;
     voices.do(_.free);
     voices.free;
     lpfSynth.free;
@@ -427,6 +435,7 @@ Engine_Eterna : CroneEngine {
     bassMono.free;
     master.free;
     
+    "Freeing up control buses".postln;
     ampBuses.do(_.free(true));
     ampBuses.free;
     // free & clear; clear prevents value sticking after reloading script
@@ -443,6 +452,7 @@ Engine_Eterna : CroneEngine {
     masterOutControlBuses.do(_.free);
     masterOutControlBuses.free;
     
+    "Freeing up OSC server".postln;
     oscServer.free;
   }
 }

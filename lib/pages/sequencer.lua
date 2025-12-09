@@ -205,8 +205,6 @@ function page:initialize()
     seq.on_step = function(step) page:on_step(step) end
     seq.on_tick = on_tick
 
-    -- footer 1 / 2 acts as different 'pages'; different controls, same graphic
-    page.selected_footer = 1
     self:add_params()
 
     for i = 1, 6 do
@@ -228,8 +226,11 @@ function page:initialize()
     -- resets sequencer and sets transport_on variable
     self:stop()
 
-    -- provide starting grid (may be empty depending on initial density param)
+    -- provide starting grid (may be empty depending on default density param value)
     generate_perlin_seq()
+
+    -- start playback
+    self:start()
 end
 
 function page:enable_env_polls()

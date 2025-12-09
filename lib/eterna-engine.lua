@@ -54,7 +54,16 @@ local simple_spec       = controlspec.def {
 
 Eterna.params           = {
     specs   = {
-        ["echo_wet"] = simple_spec,
+        ["echo_wet"] = controlspec.def {
+            min = 0,
+            max = 1,
+            warp = 'lin',
+            step = 0.01,
+            default = 0.5,
+            units = '',
+            quantum = 0.01,
+            wrap = false
+        },
         ["echo_time"] = controlspec.def {
             min = 0,
             max = 2, -- seconds
@@ -65,7 +74,16 @@ Eterna.params           = {
             quantum = 0.001,
             wrap = false
         },
-        ["echo_feedback"] = simple_spec,
+        ["echo_feedback"] = controlspec.def {
+            min = 0,
+            max = 1,
+            warp = 'lin',
+            step = 0.01,
+            default = 0.4,
+            units = '',
+            quantum = 0.01,
+            wrap = false
+        },
         ["lpf_freq"] = filter_spec,
         ["hpf_freq"] = filter_spec,
         ["lpf_res"] = controlspec.def {
@@ -153,6 +171,7 @@ Eterna.params           = {
     options = {
         ["echo_style"] = {
             options = Eterna.echo_styles,
+            default = 2,
         },
     },
     voices  = {
@@ -508,11 +527,16 @@ function Eterna.load_file(path, channel, buffer)
     if util.file_exists(path) then
         local channels, samples, samplerate = audio.file_info(path)
         local duration = samples / samplerate
-        print("loading file: " .. path)
-        print("  channels:\t" .. channels)
-        print("  samples:\t" .. samples)
-        print("  sample rate:\t" .. samplerate .. "hz")
-        print("  duration:\t" .. duration .. " sec")
+        if channel == 1 then
+            print("loading file: " .. path)
+            print("  channels:\t" .. channels)
+            print("  samples:\t" .. samples)
+            print("  sample rate:\t" .. samplerate .. "hz")
+            print("  duration:\t" .. duration .. " sec")
+        else
+            print("loading channel "..channel)
+        end
+
         if samplerate ~= 48000 then
             print("Sample rate of 48KHz expected, found " ..
                 samplerate .. ". The file will load but playback at the wrong pitch.")
@@ -645,6 +669,7 @@ function Eterna.add_params()
             id = id,
             name = no_underscore(command),
             options = entry.options,
+            default = entry.default,
             action = function(v) engine[command](entry.options[v]) end
         }
         params:hide(id)
@@ -747,7 +772,19 @@ function Eterna.osc_event(path, args, from)
     elseif path == "/normalized" then
         local voice = sc_to_lua[args[1]]
         Eterna.on_normalize(voice)
-    end
+    elseif path == "/pong" then
+        Eterna.on_pong()
+    end 
+end
+
+function Eterna.ping()
+    -- Initiates connection check
+    engine.ping()
+end
+
+function Eterna.flush()
+    -- clears all voices
+    engine.flush()
 end
 
 -- These functions can be overloaded by script
@@ -760,6 +797,8 @@ function Eterna.on_waveform(waveform, channel) end
 function Eterna.on_file_load_success(path, channel, buffer) end
 
 function Eterna.on_amp_history(left, right) end
+
+function Eterna.on_pong() print("pong") end
 
 function Eterna.install_osc_hook()
     -- Allows this module to process SuperCollider's OSC events;

@@ -1,5 +1,5 @@
 -- eterna
--- 0.11.7 @etsuko.fm
+-- 0.11.8 @etsuko.fm
 -- E1: scroll pages
 --
 -- Other controls, see footer:
@@ -165,14 +165,25 @@ function init()
   for _, page in ipairs(pages) do
     page:initialize()
   end
+
   params:bang()
 
-  current_page:enter()
-  -- metro for screen refresh
-  c = metro.init(count, 1 / fps)
-  c:start()
-
+  -- check supercollider connection
+  print("pinging supercollider...")
+  engine_lib.ping()
 end
+
+c = nil
+engine_lib.on_pong = function()
+  print("connection verified")
+  if not c then
+    current_page:enter()
+    -- metro for screen refresh
+    c = metro.init(count, 1 / fps)
+    c:start()
+  end
+end
+
 
 clock.tempo_change_handler = function(bpm)
   recalculate_echo_time(bpm)
@@ -262,6 +273,7 @@ function shot()
 end
 
 function cleanup()
+  if c then c:stop() end
   metro.free_all()
   current_page:exit()
 end

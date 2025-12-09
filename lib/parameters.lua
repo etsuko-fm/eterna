@@ -24,7 +24,7 @@ local function get_id(component, param)
 end
 
 -- VERSIONING
-local VERSION_STRING = "0.11.7"
+local VERSION_STRING = "0.11.8"
 local ID_VERSION = get_id(META, "version")
 
 ---
@@ -108,7 +108,7 @@ controlspec_perlin_density = controlspec.def {
     max = 1,
     warp = 'lin',
     step = .001,
-    default = 0.0,
+    default = 0.1,
     quantum = .01,
     wrap = false
 }
@@ -355,7 +355,10 @@ ID_HPF_BASE_FREQ                    = get_id(PROCESSOR, "hpf_freq")
 ID_HPF_LFO_RATE                     = get_id(PROCESSOR, "hpf_lfo_rate")
 ID_HPF_LFO_RANGE                    = get_id(PROCESSOR, "hpf_lfo_range")
 
-DRY_WET_TYPES                       = { "DRY", "50%", "WET" }
+MIX_DRY = "DRY"
+MIX_PARALLEL = "50%"
+MIX_WET = "WET"
+DRY_WET_TYPES                       = { MIX_DRY, MIX_PARALLEL, MIX_WET }
 HPF_LFO_SHAPES                      = { "sine", "up", "down", "random" }
 
 ---
@@ -467,7 +470,7 @@ params:add_control(ID_PANNING_SPREAD, "spread", controlspec_pan_spread)
 params:add_separator("LPF", "LPF")
 params:add_binary(ID_LPF_LFO_ENABLED, "LFO", "toggle")
 params:add_option(ID_LPF_LFO_SHAPE, "LFO shape", LPF_LFO_SHAPES, 1)
-params:add_option(ID_LPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 8)
+params:add_option(ID_LPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 22)
 params:add_option(ID_LPF_WET, "dry/wet", DRY_WET_TYPES, 2)
 params:add_control(ID_LPF_BASE_FREQ, "base frequency", controlspec_filter_freq)
 params:add_control(ID_LPF_FREQ_MOD, "freq mod", controlspec_freq_mod)
@@ -477,7 +480,7 @@ params:hide(ID_LPF_FREQ_MOD) -- to be modified by lfo only
 params:add_separator("HPF", "HPF")
 params:add_binary(ID_HPF_LFO_ENABLED, "LFO", "toggle")
 params:add_option(ID_HPF_LFO_SHAPE, "LFO shape", HPF_LFO_SHAPES, 1)
-params:add_option(ID_HPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 8)
+params:add_option(ID_HPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 22)
 params:add_option(ID_HPF_WET, "dry/wet", DRY_WET_TYPES, 2)
 params:add_control(ID_HPF_BASE_FREQ, "base frequency", controlspec_filter_freq)
 params:add_control(ID_HPF_FREQ_MOD, "frequency_mod", controlspec_freq_mod)
