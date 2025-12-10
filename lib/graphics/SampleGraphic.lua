@@ -59,11 +59,12 @@ function SampleGraphic:render_slice_stripes(ypos)
         local startx = self.x + (w * self.slice_len * zero_index)
         local rect_w = w * self.slice_len - 1
 
+        screen.level(2)
         screen.rect(startx, ypos, rect_w, 1)
         screen.fill()
         -- indicate starting slice with a little dot, if user selected between 2 and 6 slices
         if self.num_slices <= 6 and self.num_slices > 1 and slice == self.active_slices[1] then
-            screen.level(5)
+            screen.level(1)
             screen.rect(startx, ypos, 1, 1)
             screen.fill()
         end
@@ -89,7 +90,7 @@ function SampleGraphic:render(render_slices)
     if self.hide then return end
 
     local box_height = 33
-    local min_y = 10
+    local min_y = 12
     local spacing = 1
 
     local total_spacing = (self.num_channels - 1) * spacing
@@ -128,7 +129,7 @@ function SampleGraphic:render(render_slices)
     end
 
     if render_slices then
-        local margin = 2
+        local margin = 1
         local ypos = self.waveform_midpoints[self.num_channels] + scale + margin
         -- alternative: just use the y var local to this module
         self:render_slice_stripes(ypos)
