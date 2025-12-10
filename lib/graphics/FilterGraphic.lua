@@ -73,7 +73,9 @@ function FilterGraphic:db_to_y(db)
 
     -- multiply fraction with graph height
     local y = fraction * -(self.graph_h - line_w)
-    return offset_y + y
+
+    -- TODO: the ceil is a bit of temp fix, I think math is 1px wrong, possibly due to stroke width
+    return math.ceil(offset_y + y)
 end
 
 function FilterGraphic:get_control_points_up(type, cutoff_hz)
@@ -249,6 +251,7 @@ function FilterGraphic:render(draw_lfo_range)
 
     screen.level(15)
 
+    -- select function to draw filter
     local draw_filter =
         (self.type == "HP") and self.draw_highpass or
         (self.type == "LP") and self.draw_lowpass
@@ -262,18 +265,19 @@ function FilterGraphic:render(draw_lfo_range)
     local main_graph_level = self:screen_level_from_mix()
 
     if draw_filter then
-        if self.lfo_freq ~= nil then
-            -- Draw faint LFO graph behind the base frequency
-            screen.level(math.ceil(main_graph_level / 2))
-            draw_filter(self, self.lfo_freq, self.res)
+        if self.mix > 0 then
+            if self.lfo_freq ~= nil then
+                -- Draw faint LFO graph behind the base frequency
+                screen.level(math.ceil(main_graph_level / 2))
+                draw_filter(self, self.lfo_freq, self.res)
+            end
+            -- draw filter over LFO graph
+            screen.level(main_graph_level)
+            draw_filter(self, self.freq, self.res)
         end
-        -- draw filter over LFO graph
-        screen.level(main_graph_level)
-        draw_filter(self, self.freq, self.res)
     end
-
-    if self.mix == 0 and not draw_lfo_range then
-        -- 0% mix; draw over filter
+    if self.mix == 0 then
+        -- 0% mix; only draw off line
         screen.level(15)
         self:draw_filter_off()
     end
