@@ -81,13 +81,13 @@ function page:action_slice_start(v)
 end
 
 function page:adjust_num_slices(d)
-    if params:get(ID_SAMPLER_AUDIO_FILE) then
+    if is_sample_selected() then
         misc_util.adjust_param(d, ID_SAMPLER_NUM_SLICES, controlspec_num_slices.quantum)
     end
 end
 
 function page:adjust_slice_start(d)
-    if params:get(ID_SAMPLER_AUDIO_FILE) then
+    if is_sample_selected() then
         local p = ID_SAMPLER_SLICE_START
         local max_slices = params:get(ID_SAMPLER_NUM_SLICES)
         local new = util.wrap(params:get(p) + d, 1, max_slices)
@@ -126,7 +126,7 @@ function page:render()
         env_polls[i]:update()
     end
 
-    if params:get(ID_SAMPLER_AUDIO_FILE) ~= "-" then
+    if is_sample_selected() then
         self.graphic:render(true)
 
         page.footer.button_text.e2.value = params:get(ID_SAMPLER_SLICE_START)

@@ -149,14 +149,16 @@ local function s_to_minsec(s)
     return string.format("%d'%02d", minutes, seconds)
 end
 
-
+function is_sample_selected()
+    return params:get(ID_SAMPLER_AUDIO_FILE) ~= "-" and params:get(ID_SAMPLER_AUDIO_FILE) ~= nil
+end
 
 function page:render()
     if page_disabled then
         fileselect:redraw()
         return
     end -- for rendering the fileselect interface
-    if params:get(ID_SAMPLER_AUDIO_FILE) ~= "-" then
+    if is_sample_selected() then
         -- show filename of selected sample in title bar
         if self.sample_duration_txt then
             window.title = filename .. " (" .. self.sample_duration_txt .. ")"
@@ -202,10 +204,8 @@ function page:initialize()
     self.e2 = encoder_drive
 
     self:add_params()
-    local selected_sample = params:get(ID_SAMPLER_AUDIO_FILE)
-    if selected_sample ~= nil and selected_sample ~= "-" then
+    if is_sample_selected() then
         filename = to_sample_name(params:get(ID_SAMPLER_AUDIO_FILE))
-        print("initialize, file load")
     end
     if preload_sample then
         -- silent set, main module invokes params:bang() after initialization
