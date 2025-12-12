@@ -24,7 +24,7 @@ local function get_id(component, param)
 end
 
 -- VERSIONING
-local VERSION_STRING = "0.11.13"
+local VERSION_STRING = "0.11.14"
 local ID_VERSION = get_id(META, "version")
 
 ---
@@ -200,7 +200,7 @@ controlspec_rates_spread = controlspec.def {
     max = 2,
     warp = 'lin',
     step = 1,
-    default = 1,
+    default = 0,
     quantum = 1/4,
     wrap = false
 }
