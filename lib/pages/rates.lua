@@ -101,13 +101,13 @@ local function toggle_range()
 end
 
 local function adjust_center(d)
-    params:set(ID_RATES_CENTER, params:get(ID_RATES_CENTER) + d * controlspec_rates_center.quantum, false)
+    misc_util.adjust_param(d, ID_RATES_CENTER, controlspec_rates_center.quantum)
     page.graphic.center = params:get(ID_RATES_CENTER) * -2 -- todo: why *-2?
 end
 
 local function adjust_spread(d)
     local p = ID_RATES_SPREAD
-    params:set(p, params:get(p) + d * controlspec_rates_spread.quantum)
+    misc_util.adjust_param(d, ID_RATES_SPREAD, controlspec_rates_spread.quantum)
 end
 
 page = Page:create({

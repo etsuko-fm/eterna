@@ -1,7 +1,7 @@
 local SequencerGraphic = include(from_root("lib/graphics/SequencerGraphic"))
 local Sequencer = include(from_root("lib/Sequencer"))
 local page_name = "SEQUENCER"
-local PERLIN_ZOOM = 10 / 3 ---4 / 3 -- empirically tuned
+local PERLIN_ZOOM = 3.3 -- empirically tuned; really low values (<1) make it more tetrisy
 local main_seq_clock_id
 local redraw_sequence = false
 local TICKS_PER_BEAT = 8 -- quarter note divided by 8, so 1/32nd [call ticks_per_beat?]
@@ -33,17 +33,11 @@ local function generate_perlin_seq()
 end
 
 local function e2(d)
-    -- works for x, y, and z
-    -- TODO: use util
-    local p = ID_SEQ_PERLIN_X
-    local new = params:get(p) + controlspec_perlin.quantum * d
-    params:set(p, new, false)
+    misc_util.adjust_param(d, ID_SEQ_PERLIN_X, controlspec_perlin.quantum)
 end
 
 local function e3(d)
-    -- TODO: use util
-    local new = params:get(ID_SEQ_DENSITY) + controlspec_perlin_density.quantum * d
-    params:set(ID_SEQ_DENSITY, new, false)
+    misc_util.adjust_param(d, ID_SEQ_DENSITY, controlspec_perlin_density.quantum)
 end
 
 local function get_step_envelope(enable_mod, velocity)

@@ -24,7 +24,7 @@ local function get_id(component, param)
 end
 
 -- VERSIONING
-local VERSION_STRING = "0.11.12"
+local VERSION_STRING = "0.11.13"
 local ID_VERSION = get_id(META, "version")
 
 ---
@@ -61,6 +61,7 @@ ID_SAMPLER_NUM_SLICES = get_id(SAMPLER, "num_slices")
 ID_SAMPLER_SLICE_START = get_id(SAMPLER, "start_slice")
 ID_SLICE_LFO_ENABLED = get_id(SAMPLER, "slice_lfo_enabled")
 ID_SLICE_LFO_SHAPE = get_id(SAMPLER, "slice_lfo_shape")
+ID_SLICE_LFO_RATE = get_id(SAMPLER, "slice_lfo_rate")
 SLICE_START_LFO_SHAPES = { "up", "down", "random" }
 
 ID_SAMPLER_SECTIONS = {}
@@ -85,21 +86,19 @@ end
 --- SEQUENCER
 ---
 
--- some values to seed the perlin noise, fact that they're primes is just for fun, can provide
--- any set of reasonably spread numbers
+-- some values to seed the perlin noise
 local primes = {
-    1, 2, 3, 5, 7, 11, 13, 17, 19, 23, 29,
-    31, 37, 41, 43, 47, 53, 59, 61, 67,
-    71, 73, 79, 83, 89, 97
+    1, 5, 7, 11, 13, 17, 19, 23, 29,
+    31, 37, 41, 43, 47
 }
 
 controlspec_perlin = controlspec.def {
     min = 0,
-    max = 100,
+    max = 50,
     warp = 'lin',
-    step = .01,
+    step = 1/1000,
     default = primes[math.floor(math.random(1, #primes))],
-    quantum = .05,
+    quantum = 1/1000,
     wrap = true
 }
 
@@ -139,7 +138,6 @@ SEQ_STEPS = 16
 ---
 ID_ENVELOPES_MOD = get_id(SAMPLER, "env_velocity_mod")
 ID_ENVELOPES_TIME = get_id(SAMPLER, "env_time")
-ID_ENVELOPES_FILTER_ENV = get_id(SAMPLER, "filter_env")
 ID_ENVELOPES_CURVE = get_id(SAMPLER, "env_curve")
 ID_ENVELOPES_SHAPE = get_id(SAMPLER, "env_shape")
 
@@ -193,7 +191,7 @@ controlspec_rates_center = controlspec.def {
     warp = 'lin',
     step = 1,
     default = 0,
-    quantum = 1,
+    quantum = 1/4,
     wrap = false
 }
 
@@ -203,7 +201,7 @@ controlspec_rates_spread = controlspec.def {
     warp = 'lin',
     step = 1,
     default = 1,
-    quantum = 1,
+    quantum = 1/4,
     wrap = false
 }
 
@@ -391,13 +389,13 @@ params:add_separator("ETERNA", "ETERNA")
 params:add_text(ID_VERSION, "version", VERSION_STRING)
 params:hide(ID_VERSION)
 
-params:add_separator("SAMPLE", "SAMPLE")
 params:add_file(ID_SAMPLER_AUDIO_FILE, 'sample', nil)
 params:add_control(ID_SAMPLER_DRIVE, "drive", controlspec_sample_drive)
 
 params:add_separator("SAMPLE_SLICES", "SLICES")
-params:add_binary(ID_SLICE_LFO_ENABLED, "LFO", "toggle")
+params:add_binary(ID_SLICE_LFO_ENABLED, "LFO enabeld", "toggle")
 params:add_option(ID_SLICE_LFO_SHAPE, "LFO shape", SLICE_START_LFO_SHAPES)
+params:add_option(ID_SLICE_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 6)
 params:add_control(ID_SAMPLER_NUM_SLICES, "slices", controlspec_num_slices)
 params:add_control(ID_SAMPLER_SLICE_START, "start", controlspec_slice_start)
 
@@ -413,8 +411,7 @@ params:add_separator("ENVELOPE", "ENVELOPE")
 params:add_option(ID_ENVELOPES_MOD, "mod", ENVELOPE_MOD_OPTIONS, 2)
 params:add_control(ID_ENVELOPES_TIME, "time", controlspec_env_time)
 params:add_control(ID_ENVELOPES_SHAPE, "shape", controlspec_env_shape)
-params:add_option(ID_ENVELOPES_CURVE, "curve", ENVELOPE_CURVES)
-params:add_control(ID_ENVELOPES_FILTER_ENV, "filter env", controlspec_env_filter)
+params:add_option(ID_ENVELOPES_CURVE, "curve", ENVELOPE_NAMES)
 
 params:add_separator("PLAYBACK_RATES", "PLAYBACK RATES")
 params:add_option(ID_RATES_RANGE, 'range', RANGE_TABLE, RANGE_DEFAULT)
@@ -429,6 +426,19 @@ for voice = 1, 6 do
     params:hide(param_id)
 end
 
+params:add_separator("VOICE_LEVELS", "LEVELS")
+params:add_binary(ID_LEVELS_LFO_ENABLED, "LFO enabled", "toggle")
+params:add_option(ID_LEVELS_LFO_SHAPE, "LFO shape", LEVELS_LFO_SHAPES)
+params:add_option(ID_LEVELS_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, LEVELS_LFO_DEFAULT_RATE_INDEX)
+params:add_control(ID_LEVELS_POS, "position", controlspec_pos)
+params:add_control(ID_LEVELS_AMP, "amp", controlspec_amp)
+
+params:add_separator("PANNING", "PANNING")
+params:add_binary(ID_PANNING_LFO_ENABLED,"LFO enabled", "toggle")
+params:add_option(ID_PANNING_LFO_SHAPE, "LFO shape", PANNING_LFO_SHAPES)
+params:add_option(ID_PANNING_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, DEFAULT_PANNING_LFO_RATE_IDX)
+params:add_control(ID_PANNING_TWIST, "twist", controlspec_pan_twist)
+params:add_control(ID_PANNING_SPREAD, "spread", controlspec_pan_spread)
 
 params:add_separator("SEQUENCER", "SEQUENCER")
 params:add_control(ID_SEQ_NUM_STEPS, "steps", controlspec_num_steps)
@@ -452,36 +462,21 @@ for track = 1, SEQ_TRACKS do
     end
 end
 
-
-params:add_separator("VOICE LEVELS", "LEVELS")
-params:add_binary(ID_LEVELS_LFO_ENABLED, "LFO", "toggle")
-params:add_option(ID_LEVELS_LFO_SHAPE, "LFO shape", LEVELS_LFO_SHAPES)
-params:add_option(ID_LEVELS_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, LEVELS_LFO_DEFAULT_RATE_INDEX)
-params:add_control(ID_LEVELS_POS, "position", controlspec_pos)
-params:add_control(ID_LEVELS_AMP, "amp", controlspec_amp)
-
-params:add_separator("PANNING", "PANNING")
-params:add_binary(ID_PANNING_LFO_ENABLED,"LFO", "toggle")
-params:add_option(ID_PANNING_LFO_SHAPE, "LFO", PANNING_LFO_SHAPES)
-params:add_option(ID_PANNING_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, DEFAULT_PANNING_LFO_RATE_IDX)
-params:add_control(ID_PANNING_TWIST, "twist", controlspec_pan_twist)
-params:add_control(ID_PANNING_SPREAD, "spread", controlspec_pan_spread)
-
 params:add_separator("LPF", "LPF")
-params:add_binary(ID_LPF_LFO_ENABLED, "LFO", "toggle")
+params:add_binary(ID_LPF_LFO_ENABLED, "LFO enabled", "toggle")
 params:add_option(ID_LPF_LFO_SHAPE, "LFO shape", LPF_LFO_SHAPES, 1)
-params:add_option(ID_LPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 22)
-params:add_option(ID_LPF_WET, "dry/wet", DRY_WET_TYPES, 2)
+params:add_option(ID_LPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 21)
+params:add_option(ID_LPF_WET, "dry/wet", DRY_WET_TYPES, 1)
 params:add_control(ID_LPF_BASE_FREQ, "base frequency", controlspec_filter_freq)
 params:add_control(ID_LPF_FREQ_MOD, "freq mod", controlspec_freq_mod)
 params:add_control(ID_LPF_LFO_RANGE, "LFO range", controlspec_lfo_range)
 params:hide(ID_LPF_FREQ_MOD) -- to be modified by lfo only
 
 params:add_separator("HPF", "HPF")
-params:add_binary(ID_HPF_LFO_ENABLED, "LFO", "toggle")
+params:add_binary(ID_HPF_LFO_ENABLED, "LFO enabled", "toggle")
 params:add_option(ID_HPF_LFO_SHAPE, "LFO shape", HPF_LFO_SHAPES, 1)
-params:add_option(ID_HPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 22)
-params:add_option(ID_HPF_WET, "dry/wet", DRY_WET_TYPES, 2)
+params:add_option(ID_HPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 21)
+params:add_option(ID_HPF_WET, "dry/wet", DRY_WET_TYPES, 1)
 params:add_control(ID_HPF_BASE_FREQ, "base frequency", controlspec_filter_freq)
 params:add_control(ID_HPF_FREQ_MOD, "frequency_mod", controlspec_freq_mod)
 params:add_control(ID_HPF_LFO_RANGE, "LFO range", controlspec_lfo_range)

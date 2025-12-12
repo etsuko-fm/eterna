@@ -60,7 +60,9 @@ function page:load_sample(file)
     -- this flush might sometimes prevent supercollider from failing to load a sample
     engine_lib.flush()
     retries = {}
-    window.title = "LOADING..."
+
+    -- todo: only change title when SAMPLE is the current page (otherwise shows for wrong window on pset load)
+    window.title = "LOADING..." 
     self.sample_duration_txt = nil
     for _, p in ipairs({page, page_slice}) do
         -- reset waveforms in both pages
