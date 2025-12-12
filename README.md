@@ -1,7 +1,7 @@
 # Eterna
 
 
-Eterna is a 6-voice sampler, sequencer and effects processor for creating rhythmic textures and patterns from a single existing sample. 
+Eterna is a 6-voice sampler and sequencer for creating rhythmic textures and patterns from a single audio file. 
 
 <link to video>
 
@@ -11,39 +11,6 @@ Eterna is a 6-voice sampler, sequencer and effects processor for creating rhythm
 - A WAV/AIFF sample (48kHz), which may be mono, stereo or up to 6 channels.
 
 Eterna is designed to have a fast and enjoyable workflow for users with just a Norns, yet future support for other hardware may be considered.
-
-
-## Background
-<details>
-
-##### Building a textural sampler
-
-Eterna is primarily inspired by Infinite Digit's Barcode and [Make Noise Morphagene](https://www.makenoisemusic.com/modules/morphagene/). The script started as an attempt to build a sampler that could create similar textures, but with a user interface that offers more direct control over parameters.
-
-As I refined the script, I realized I missed some of the more rhythmic possibilities I often used my [Elektron Digitakt](https://www.elektron.se/explore/digitakt-ii) for in live performances. This shift moved it away from purely continuous textures and opened up a wider range of sounds. 
-
-##### Sequencer
-
-The first logical addition to enable pattern creation was a sequencer. For this, I drew some inspiration from the many Perlin Noise experiments I've done in [TouchDesigner](http://derivative.ca/), and that led to a UX design that may remind of how [Mutable Instruments Grid](https://pichenettes.github.io/mutable-instruments-documentation/modules/grids/) works. 
-
-##### Softcut and Supercollider
-
-At this point the script was implemented using [softcut](https://monome.org/docs/norns/softcut/). I was missing options to polish the mix that resulted from the voices however, so I considered the use of Supercollider.
-
- I had to learn Supercollider from scratch here. At first I just tried to write some effects and route Softcut audio into it. However when I encountered a next limitation of softcut (implementing envelopes), I decided that rewriting the entire engine in Supercollider would eventually give me more flexibility. Massive thanks to [catfact](https://github.com/catfact) for his work though, otherwise I wouldn't have gotten to this point in the first place. While implementing the engine in supercollider, [a tutorial from InfiniteDigits](https://infinitedigits.co/posts/sampler/) was invaluable at a moment where I was stuck with voices full of clicks and pops.
-
-##### Reverb
-The challenge that I found most enjoyable (yet elusive), was designing a reverb for in the feedback path of the echo. If I hadn't found this [amazing lecture from Tom Erbe](https://youtu.be/Il_qdtQKnqk), I'd probably just settled with one of Supercollider's built-in reverbs.
-
-##### Dynamics
-I developed the pages of Eterna pretty much in the order that they appear; the Master page was the last one I worked on. I felt that when I had come this far, I could provide the user with some options for controlling dynamics and stereo field.
-
- I noticed that the way I implemented panning and (ping-pong) delay easily created very wide stereo fields, even for sub frequencies, so I decided to borrow the 'bass mono' functionality from [Ableton Live's utility device](https://www.ableton.com/en/manual/live-audio-effect-reference/). 
- 
-##### Visuals
-The master page was also the only page that I couldn't immediately imagine a straightforward visualization for. In the end I settled for a [lissajous curve](https://en.wikipedia.org/wiki/Lissajous_curve?wprov=sfti1), as it visualizes both audio level and phase, along with meters that show compression amount (in the style [Pro Tools' gain reduction meters](https://youtube.com/watch?v=d5IUWJY9b0Q&t=230s)). At a point that I thought I was practically finished this created an interesting new challenge for communication between Supercollider and Lua. Some credit to [markwheeler](https://github.com/markwheeler) for [Timber](https://github.com/markwheeler) is in order for inspiration - as well as the excellent [polling docs](https://monome.org/docs/norns/reference/poll). 
-
-</details>
 
 ## Documentation
 
@@ -66,26 +33,6 @@ The master page was also the only page that I couldn't immediately imagine a str
 
 ## Overview
 
-At the core of Eterna is a sample engine. The user selects a sample, which is then cut into 1-32 slices. Up to 6 of these are spread over the 6 voices.
-
-![Gif of slice page](assets/DSCF1078-slice-opt.gif)
-
-Each voice acts as a one-shot sample playback engine with configurable envelope, pan, level, lowpass gate and playback rate. Each of these parameters can be "vibe-configured" - using a combination of 2 parameters, they are adjusted for all voices at the same time. All available parameters of a a page are visible at the screen, and directly controllable with K2, K3, E2 and E3. Twisting E1 switches between pages.
-
-Playback of a voice is controlled using a perlin-noise based sequencer of variable length (1-16 steps). 
-
-![Photo of sequencer page](assets/DSCF1079-seq-opt.gif)
-
-A chain of a lowpass and highpass filter, echo and a compressor processes the audio produced by the six voices. Each filter may be modulated using a LFO. 
-
-![Gif of filter pages](assets/DSCF1081-filter-opt.gif)
-
-Two different echo engines are available, 'mist' and 'dub', characterized by different feedback loops: mist adds reverb, while dub saturates the buffer.
-
-![Gif of echo page](assets/DSCF1091-echo-opt.gif)
-
-On the master page, audio levels and phase are visualized using stereo meters and a lissajous curve. Audio can be driven with up to 24dB boost into the final compressor.
-![Gif of master page](assets/DSCF1080-liss-opt.gif)
 
 #### General controls
 The encoder/knob mapping is the same for every page:
@@ -93,8 +40,6 @@ The encoder/knob mapping is the same for every page:
 - E1: Selects page
 - K2 | K3 | E2 | E3: Change corresponding parameter as displayed in footer
 
-####  Parameter access
-The set of parameters available in the main UI corresponds exactly to the set of parameters available in the params menu. 
 
 ## Pages
 
