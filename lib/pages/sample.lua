@@ -62,7 +62,9 @@ function page:load_sample(file)
     retries = {}
 
     -- todo: only change title when SAMPLE is the current page (otherwise shows for wrong window on pset load)
-    window.title = "LOADING..." 
+    if self.active then
+        window.title = "LOADING..." 
+    end
     self.sample_duration_txt = nil
     for _, p in ipairs({page, page_slice}) do
         -- reset waveforms in both pages
@@ -227,7 +229,12 @@ function page:initialize()
 end
 function page:enter()
     window.title = "SAMPLING"
+    self.active = true
 end
+function page:exit()
+    self.active = false
+end
+
 
 
 return page
