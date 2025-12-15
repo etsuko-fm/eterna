@@ -140,6 +140,7 @@ local function select_sample()
         end
         page_disabled = false -- proceed with rendering page instead of file menu
         window.page_indicator_disabled = false
+        frame_finished = true
     end
     fileselect.enter(_path.audio, callback, "audio")
     page_disabled = true           -- don't render current page

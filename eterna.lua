@@ -42,8 +42,8 @@ local page_panning = include(from_root("lib/pages/panning"))
 local page_rates = include(from_root("lib/pages/rates"))
 local page_levels = include(from_root("lib/pages/levels"))
 local fps = 60
-local ready
-
+local draw_frame      -- indicates if the next frame should be drawn
+frame_finished = true -- indicates if the last frame has finished rendering
 window = Window:new({ title = "ETERNA" })
 
 UPDATE_SLICES = false
@@ -108,8 +108,12 @@ local function page_backward()
   end
 end
 
-local function count()
-  ready = true -- used for fps
+local function on_fps()
+  -- only if the previous frame is finished rendering, allow rendering a next one
+  if frame_finished then
+    draw_frame = true
+    frame_finished = false
+  end
 end
 
 function engine_lib.on_amp_history(left, right)
@@ -173,14 +177,14 @@ function init()
   engine_lib.ping()
 end
 
-c = nil
+fps_metro = nil
 engine_lib.on_pong = function()
   print("connection verified")
-  if not c then
+  if not fps_metro then
     current_page:enter()
     -- metro for screen refresh
-    c = metro.init(count, 1 / fps)
-    c:start()
+    fps_metro = metro.init(on_fps, 1 / fps)
+    fps_metro:start()
   end
 end
 
@@ -188,8 +192,6 @@ end
 clock.tempo_change_handler = function(bpm)
   recalculate_echo_time(bpm)
 end
-
-
 
 function key(n, z)
   -- K1/K2/K3 controls whatever is assigned to them on the current page
@@ -214,12 +216,12 @@ function key(n, z)
   end
 end
 
-local counter = 0
+local page_indicator_counter = 0
 
 function enc(n, d)
   -- E1 cycles pages
   if n == 1 then
-    counter = 0 -- reset
+    page_indicator_counter = 0 -- reset
     if (current_page_index < #pages and d > 0) or current_page_index > 1 and d < 0 then
       window.enc1n = window.enc1n + d
     end
@@ -246,18 +248,19 @@ function enc(n, d)
 end
 
 function refresh()
-  counter = counter + 1
+  page_indicator_counter = page_indicator_counter + 1
   -- refresh screen
-  if ready then
-    ready = false
+  if draw_frame then
+    draw_frame = false
     screen.clear()
     current_page:render()
-    if window.enc1n ~= 0 and counter > 90 then
-      window.enc1n = 0
-      counter = 0
-    end
-    -- enc1n = enc1n
     screen.update()
+    frame_finished = true
+
+    if window.enc1n ~= 0 and page_indicator_counter > 90 then
+      window.enc1n = 0
+      page_indicator_counter = 0
+    end
   end
 end
 
@@ -267,13 +270,13 @@ function rerun()
 end
 
 function shot()
-  local name = "screenshot-"..os.date("%Y-%m-%d-%H-%M-%S")
+  local name = "screenshot-" .. os.date("%Y-%m-%d-%H-%M-%S")
   screen.export_screenshot(name)
   print("screenshot saved to " .. name)
 end
 
 function cleanup()
-  if c then c:stop() end
+  if fps_metro then fps_metro:stop() end
   metro.free_all()
   current_page:exit()
 end
