@@ -42,8 +42,9 @@ local page_panning = include(from_root("lib/pages/panning"))
 local page_rates = include(from_root("lib/pages/rates"))
 local page_levels = include(from_root("lib/pages/levels"))
 local fps = 60
-local draw_frame      -- indicates if the next frame should be drawn
-frame_finished = true -- indicates if the last frame has finished rendering
+local frame_finished = true -- indicates if the last frame has finished rendering
+draw_frame = false      -- indicates if the next frame should be drawn
+
 window = Window:new({ title = "ETERNA" })
 
 UPDATE_SLICES = false
@@ -111,7 +112,10 @@ end
 local function on_fps()
   -- only if the previous frame is finished rendering, allow rendering a next one
   if frame_finished then
+    -- indicates the next frame should be rendered
     draw_frame = true
+
+    -- inidcates the next frame is not finished rendering yet
     frame_finished = false
   end
 end
@@ -248,20 +252,33 @@ function enc(n, d)
 end
 
 function refresh()
-  page_indicator_counter = page_indicator_counter + 1
-  -- refresh screen
-  if draw_frame then
-    draw_frame = false
-    screen.clear()
-    current_page:render()
-    screen.update()
-    frame_finished = true
+  -- called at the completion of an actual screen redraw: https://llllllll.co/t/norns-update-231114/64915/62?page=4
 
+  -- FPS-based timer for the page indicator animation
+  page_indicator_counter = page_indicator_counter + 1
+
+  if draw_frame then
+    -- prevent new screen events being queued until this frame is done;
+    -- automatically updated by fps metro, see on_fps()
+    draw_frame = false
+
+    -- actual render
+    render_frame()
+
+    -- for frame indicator animation (90fps until reset)
+    -- TODO this should really be time-based
     if window.enc1n ~= 0 and page_indicator_counter > 90 then
       window.enc1n = 0
       page_indicator_counter = 0
     end
   end
+end
+
+function render_frame()
+    screen.clear()
+    current_page:render()
+    screen.update()
+    frame_finished = true
 end
 
 -- convenience methods for matron
