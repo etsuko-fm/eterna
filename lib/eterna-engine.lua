@@ -522,8 +522,8 @@ function Eterna.metering_rate(v, is_delta)
     modify("metering_rate", v, is_delta)
 end
 
-function Eterna.load_file(path, channel, buffer)
-    -- Perform sanity checks before sending to engine
+function Eterna.verify_file(path, channel, buffer)
+    -- Perform sanity checks, this may be called prior to Eterna.load_file()
     if util.file_exists(path) then
         local channels, samples, samplerate = audio.file_info(path)
         local duration = samples / samplerate
@@ -551,12 +551,15 @@ function Eterna.load_file(path, channel, buffer)
             print("buffer should be 1..6")
             return false
         end
-        engine.load_channel_to_buffer(path, lua_to_sc[channel], lua_to_sc[buffer])
         return true
     else
         print('file not found: ' .. path .. ", loading cancelled")
         return false
     end
+end
+
+function Eterna.load_file(path, channel, buffer)
+    engine.load_channel_to_buffer(path, lua_to_sc[channel], lua_to_sc[buffer])
 end
 
 function Eterna.normalize(buffer)

@@ -19,9 +19,6 @@ Engine_Eterna : CroneEngine {
   alloc {
     var s = Server.default;
 
-    // For communicating to Lua whether user sample has been loaded
-    var isLoaded = false;
-
     // For file loading
     var file, numChannels, f;
 
@@ -59,6 +56,9 @@ Engine_Eterna : CroneEngine {
       "lpg_freq",
       "bufnum",
     ];
+
+    // For communicating to Lua whether user sample has been loaded
+    var isBufferLoaded = Array.fill(6, {|i| false });
 
     voices = Array.fill(6, {|i| nil});
     buffers = Array.fill(6, {|i| nil});
@@ -147,9 +147,15 @@ Engine_Eterna : CroneEngine {
   	this.addCommand("load_channel_to_buffer","sii", {
       arg msg;
       var numFrames;
+
+      // Path to audio file
       var path = msg[1].asString;
+
+      // Channel of audio file to load
       var channel = msg[2].asInteger;
-      var index = msg[3].asInteger;
+
+      // Buffer channel should be loaded to
+      var bufferIndex = msg[3].asInteger;
 
       var r = Routine {
         |in|
@@ -159,15 +165,13 @@ Engine_Eterna : CroneEngine {
         var exit = false;
         var file;
         var sampleRate;
-
-        (path + ": channel" + channel + "-> buffer" + index).postln;
-
-        isLoaded = false; 
-
+        (path + ": channel" + channel + "-> buffer" + bufferIndex).postln;
+        isBufferLoaded[bufferIndex] = false;
+        ("Buffer" + bufferIndex + "marked as not loaded").postln;
         // Free buffer
-        if (buffers[index].notNil) {
-            buffers[index].free;
-            buffers[index] = nil;
+        if (buffers[bufferIndex].notNil) {
+            buffers[bufferIndex].free;
+            buffers[bufferIndex] = nil;
         };
         
         // Get file metadata
@@ -180,13 +184,13 @@ Engine_Eterna : CroneEngine {
         
 
         // Allocate buffer
-        buffers[index] = Buffer.alloc(context.server, numFrames, numChannels: 1);
-        ("Buffer" + index + "allocated with" + buffers[index].numFrames + "frames").postln;
+        buffers[bufferIndex] = Buffer.alloc(context.server, numFrames, numChannels: 1);
+        ("Buffer" + bufferIndex + "allocated with" + buffers[bufferIndex].numFrames + "frames").postln;
         context.server.sync;
 
-        buffers[index].readChannel(path, 0, numFrames, channels: [channel], action: {
-          ("Loaded channel" + channel + "to buffer" + index).postln;
-          oscServer.sendBundle(0, ['/duration', buffers[index].duration]);
+        buffers[bufferIndex].readChannel(path, 0, numFrames, channels: [channel], action: {
+          ("Loaded channel" + channel + "to buffer" + bufferIndex).postln;
+          oscServer.sendBundle(0, ['/duration', buffers[bufferIndex].duration]);
           ready = true;
         });
 
@@ -196,16 +200,17 @@ Engine_Eterna : CroneEngine {
           if (elapsed > timeout) {
             exit = true;
           } {
-            ("Still loading buffer" + index + "..." + elapsed ++ "/" ++ timeout).postln;
+            ("Still loading buffer" + bufferIndex + "..." + elapsed ++ "/" ++ timeout).postln;
           };
         };
 
         if (ready) {
-          isLoaded = true;  
-          oscServer.sendBundle(0, ['/file_load_result', true, path, channel, index]);
+          isBufferLoaded[bufferIndex] = true;
+          ("Buffer" + bufferIndex + "marked as loaded").postln;
+          oscServer.sendBundle(0, ['/file_load_result', true, path, channel, bufferIndex]);
         } {
-          ("Operation timed out for buffer" + index ++ ", channel" + channel).postln;
-          oscServer.sendBundle(0, ['/file_load_result', false, path, channel, index]);
+          ("Operation timed out for buffer" + bufferIndex ++ ", channel" + channel).postln;
+          oscServer.sendBundle(0, ['/file_load_result', false, path, channel, bufferIndex]);
         };
       }.play;
     });
@@ -306,21 +311,26 @@ Engine_Eterna : CroneEngine {
 
     this.addCommand("voice_trigger", "i", { 
       arg msg;
-      var idx = msg[1]; // voice index
-
-      if (isLoaded) {
-        if (voices[idx].isPlaying) {
-          voices[idx].set(\t_trig, 1);
-        } {
-          // Create voice if doesn't exist (on-load script, after sample change)
-          voices[idx] = Synth.before(lpfSynth, "SampleVoice", voiceParams[idx].asPairs);
-          voices[idx].onFree { 
-              voices[idx] = nil;
+      var voiceIndex = msg[1]; // voice index
+      var bufnum = voiceParams[voiceIndex].at(\bufnum);
+      if (bufnum.isNil) {
+        "No buffer assigned to voice".postln;
+      }
+      {
+        if (isBufferLoaded[bufnum]) {
+          if (voices[voiceIndex].isPlaying) {
+            voices[voiceIndex].set(\t_trig, 1);
+          } {
+            // Create voice if doesn't exist (on-load script, after sample change)
+            voices[voiceIndex] = Synth.before(lpfSynth, "SampleVoice", voiceParams[voiceIndex].asPairs);
+            voices[voiceIndex].onFree { 
+                voices[voiceIndex] = nil;
+            };
           };
+        } { 
+          "buffer still loading, trigger skipped...".postln;
         };
-      } { 
-        // "new sample still loading, trigger skipped...".postln;
-      };
+      }
     });
 
     // Commands for LPF
@@ -426,7 +436,7 @@ Engine_Eterna : CroneEngine {
     echoBus.free;
 
     // SynthDefs
-    "Freeing up SynthDeffs".postln;
+    "Freeing up SynthDefs".postln;
     voices.do(_.free);
     voices.free;
     lpfSynth.free;

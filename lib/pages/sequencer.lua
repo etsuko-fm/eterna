@@ -132,6 +132,10 @@ function clock.transport.stop()
     end
 end
 
+function page:is_running()
+    return self.seq.transport_on
+end
+
 function page:render()
     window:render()
     self:render_graphic()
@@ -226,9 +230,6 @@ function page:initialize()
 
     -- provide starting grid (may be empty depending on default density param value)
     generate_perlin_seq()
-
-    -- start playback
-    self:start()
 end
 
 function page:enable_env_polls()
