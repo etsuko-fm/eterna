@@ -109,17 +109,6 @@ local function page_backward()
   end
 end
 
-local function on_fps()
-  -- only if the previous frame is finished rendering, allow rendering a next one
-  if frame_finished then
-    -- indicates the next frame should be rendered
-    draw_frame = true
-
-    -- inidcates the next frame is not finished rendering yet
-    frame_finished = false
-  end
-end
-
 function engine_lib.on_amp_history(left, right)
   page_master.amp_history[1] = left
   page_master.amp_history[2] = right
@@ -182,6 +171,14 @@ function init()
 end
 
 fps_metro = nil
+
+local function on_fps()
+  -- prevent rendering a next frame if the previous isn't finished
+  if frame_finished then
+    draw_frame = true -- indicates the next frame should be rendered
+    frame_finished = false -- inidcates if the last frame has finished rendering
+  end
+end
 
 local function init_fps_metro()
     -- metro for screen refresh
