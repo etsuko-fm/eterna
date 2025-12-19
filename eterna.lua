@@ -195,6 +195,11 @@ engine_lib.on_pong = function()
   end
 end
 
+params.action_read = function(filename, silent, number)
+  print("pset loaded!")
+  -- switch to first page after loading a pset
+  switch_page(1)
+end
 
 function key(n, z)
   -- K1/K2/K3 controls whatever is assigned to them on the current page
