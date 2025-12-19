@@ -14,13 +14,16 @@ local retries = {}
 -- State of loading file, per channel of file
 local ready = {}
 
-local active_channels = 1
+local active_channels = 1 -- number of channels in the currently loaded audio file
 
 local page = Page:create({
     name = page_name,
     --
     sample_duration = nil,
 })
+
+-- used to indicate if playback should be continued after loading a new sample
+local continue_sequencer = nil
 
 local function path_to_file_name(file_path)
     -- strips '/foo/bar/audio.wav' to 'audio.wav'
@@ -61,7 +64,6 @@ function page:load_sample(file)
     engine_lib.flush()
     retries = {}
 
-    -- todo: only change title when SAMPLE is the current page (otherwise shows for wrong window on pset load)
     if self.active then
         window.title = "LOADING..." 
     end
@@ -73,11 +75,19 @@ function page:load_sample(file)
         end
     end
 
+    -- if continue_sequencer == nil, it's the first time the page runs
+    continue_sequencer = page_sequencer:is_running() or continue_sequencer == nil
+
     for channel = 1, math.min(num_channels, 6) do
-        -- load file to buffer corresponding to channel
         ready[channel] = false
         local buffer = channel
-        if engine_lib.load_file(file, channel, buffer) then
+        if engine_lib.verify_file(file, channel, buffer) then
+            if page_sequencer:is_running() then
+                print('sequncer stopped for file load')
+                page_sequencer:stop()
+            end
+            -- load file to buffer corresponding to channel
+            engine_lib.load_file(file, channel, buffer)
             active_channels = num_channels
             self.graphic.num_channels = num_channels
             page_slice.graphic.num_channels = num_channels
@@ -115,6 +125,12 @@ function engine_lib.on_file_load_success(path, channel, buffer)
             page.graphic.voice_to_buffer[voice] = buffer_idx
             page_slice.graphic.voice_to_buffer[voice] = buffer_idx
             print("lua: voice " .. voice .. " set to buffer " .. buffer_idx)
+        end
+        if continue_sequencer then
+            page_sequencer:start()
+            print('sequencer started')
+        else
+            print('sequencer hold')
         end
     end
 end
@@ -236,7 +252,5 @@ end
 function page:exit()
     self.active = false
 end
-
-
 
 return page
