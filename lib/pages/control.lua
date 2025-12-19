@@ -9,8 +9,8 @@ end
 clock.tempo_change_handler = function(bpm)
     -- sync echo
     recalculate_echo_time(bpm)
-    -- save bpm to param for pset recalls
-    params:set(ID_SEQ_BPM, bpm)
+    -- save bpm to param for pset recalls; don't call action to prevent infinite loop
+    params:set(ID_SEQ_BPM, bpm, true)
 end
 
 local function toggle_transport(v)
@@ -33,8 +33,12 @@ local function action_num_steps(v)
     page_sequencer.seq.steps = v
 end
 
+local function action_set_bpm(bpm)
+    params:set("clock_tempo", bpm)
+end
 local function add_params()
     params:set_action(ID_SEQ_NUM_STEPS, action_num_steps)
+    params:set_action(ID_SEQ_BPM, action_set_bpm)
 end
 
 
