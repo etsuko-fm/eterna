@@ -182,13 +182,19 @@ function init()
 end
 
 fps_metro = nil
+
+local function init_fps_metro()
+    -- metro for screen refresh
+    if fps_metro then fps_metro:stop() end
+    fps_metro = metro.init(on_fps, 1 / fps)
+    fps_metro:start()
+end
+
 engine_lib.on_pong = function()
   print("connection verified")
   if not fps_metro then
+    init_fps_metro()
     current_page:enter()
-    -- metro for screen refresh
-    fps_metro = metro.init(on_fps, 1 / fps)
-    fps_metro:start()
   end
 end
 
@@ -251,13 +257,14 @@ function enc(n, d)
   end
 end
 
+local skipped_frames = 0
 function refresh()
   -- called at the completion of an actual screen redraw: https://llllllll.co/t/norns-update-231114/64915/62?page=4
-
   -- FPS-based timer for the page indicator animation
   page_indicator_counter = page_indicator_counter + 1
 
   if draw_frame then
+    skipped_frames = 0
     -- prevent new screen events being queued until this frame is done;
     -- automatically updated by fps metro, see on_fps()
     draw_frame = false
@@ -271,6 +278,15 @@ function refresh()
       window.enc1n = 0
       page_indicator_counter = 0
     end
+  else
+    skipped_frames = skipped_frames + 1
+  end
+  if skipped_frames > 10 then
+    -- Sometimes, after going to the params or file load menu, the fps_metro gets stopped
+    -- by the system, and the screen goes blank. This restarts the metro in those cases.
+    print("more than 10 skipped frames, re-initializing fps metro")
+    init_fps_metro()
+    skipped_frames = 0
   end
 end
 
