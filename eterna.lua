@@ -196,10 +196,6 @@ engine_lib.on_pong = function()
 end
 
 
-clock.tempo_change_handler = function(bpm)
-  recalculate_echo_time(bpm)
-end
-
 function key(n, z)
   -- K1/K2/K3 controls whatever is assigned to them on the current page
   if n == 1 and z == 0 and current_page.k1_off then current_page.k1_off() end

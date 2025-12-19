@@ -128,6 +128,7 @@ ID_SEQ_PERLIN_Y = get_id(SEQUENCER, "perlin_x")
 ID_SEQ_PERLIN_Z = get_id(SEQUENCER, "perlin_z")
 ID_SEQ_DENSITY = get_id(SEQUENCER, "density")
 ID_SEQ_STYLE = get_id(SEQUENCER, "style")
+ID_SEQ_BPM = get_id(SEQUENCER, "bpm")
 ID_SEQ_NUM_STEPS = get_id(SEQUENCER, "num_steps")
 ID_SEQ_STEP = {}
 SEQ_TRACKS = 6
@@ -447,9 +448,10 @@ params:add_control(ID_SEQ_PERLIN_X, "seed", controlspec_perlin)
 params:add_number(get_id(SEQUENCER, "perlin_y"), "perlin y", 0, 25, 10, nil, true)
 params:add_number(get_id(SEQUENCER, "perlin_z"), "perlin z", 0, 100, nil, true)
 params:add_control(ID_SEQ_DENSITY, "density", controlspec_perlin_density)
-
+params:add_number(ID_SEQ_BPM, "bpm", 1, 300)
 params:hide(get_id(SEQUENCER, "perlin_y"))
 params:hide(get_id(SEQUENCER, "perlin_z"))
+params:hide(ID_SEQ_BPM)
 
 -- add 6x16 params for sequence step status
 for track = 1, SEQ_TRACKS do

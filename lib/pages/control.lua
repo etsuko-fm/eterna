@@ -1,10 +1,17 @@
 local ControlGraphic = include(from_root("lib/graphics/ControlGraphic"))
 local page_name = "SEQUENCE CONTROL"
 local MIN_BPM = 20 -- minimum for Ableton Link
+
 local function adjust_bpm(d)
     params:set("clock_tempo", math.max(params:get('clock_tempo') + d, MIN_BPM))
 end
 
+clock.tempo_change_handler = function(bpm)
+    -- sync echo
+    recalculate_echo_time(bpm)
+    -- save bpm to param for pset recalls
+    params:set(ID_SEQ_BPM, bpm)
+end
 
 local function toggle_transport(v)
     page_sequencer:toggle_transport()
@@ -29,6 +36,7 @@ end
 local function add_params()
     params:set_action(ID_SEQ_NUM_STEPS, action_num_steps)
 end
+
 
 function page:render()
     window:render()
