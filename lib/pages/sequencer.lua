@@ -20,6 +20,8 @@ local page = Page:create({
 })
 
 local function generate_perlin_seq()
+    -- print('generate')
+    local start = util.time()
     local density = params:get(ID_SEQ_DENSITY)
     local x_seed = params:get(ID_SEQ_PERLIN_X)
 
@@ -27,6 +29,8 @@ local function generate_perlin_seq()
     for i, v in ipairs(sequence) do
         params:set(ID_SEQ_STEP[v.voice][v.step], v.value)
     end
+    local til = util.time() - start
+    -- print("total time:"..til)
 end
 
 local function e2(d)
@@ -140,18 +144,24 @@ function page:render()
 end
 
 function page:render_graphic()
+    local start = util.time()
     if redraw_sequence then
         -- condition prevents updating perlin values more often than the screen refreshes.
-        generate_perlin_seq()
         redraw_sequence = false
+        generate_perlin_seq()
     end
+    local total = (util.time() - start) *1000
+    if total > 3 then print('sequence time in ms: '..total) end
 
     for i = 1, 6 do
         env_polls[i]:update()
     end
 
+    start = util.time()
     self.graphic.num_steps = self.seq.steps
     self.graphic:render()
+    total = (util.time() - start) *1000
+    if total > 15  then print('render time in ms:'..total) end
 end
 
 
@@ -183,8 +193,6 @@ end
 
 function page:add_params()
     params:set_action(ID_SEQ_PERLIN_X, toggle_redraw)
-    params:set_action(ID_SEQ_PERLIN_Y, toggle_redraw)
-    params:set_action(ID_SEQ_PERLIN_Z, toggle_redraw)
 
     -- TODO: if just density changes, shouldn't recalculate perlin noise
     params:set_action(ID_SEQ_DENSITY, toggle_redraw)

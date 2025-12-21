@@ -284,6 +284,7 @@ function refresh()
     end
   else
     skipped_frames = skipped_frames + 1
+    print('skip!')
   end
   if skipped_frames > 10 then
     -- Sometimes, after going to the params or file load menu, the fps_metro gets stopped
