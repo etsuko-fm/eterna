@@ -1,5 +1,5 @@
 -- eterna
--- 0.11.15 @etsuko.fm
+-- 0.12.0 @etsuko.fm
 -- E1: scroll pages
 --
 -- Other controls, see footer:
@@ -41,9 +41,8 @@ page_control = include(from_root("lib/pages/control"))
 local page_panning = include(from_root("lib/pages/panning"))
 local page_rates = include(from_root("lib/pages/rates"))
 local page_levels = include(from_root("lib/pages/levels"))
-local fps = 60
-local ready
-
+draw_frame = false      -- indicates if the next frame should be drawn
+local page_indicator_counter = 0
 window = Window:new({ title = "ETERNA" })
 
 UPDATE_SLICES = false
@@ -108,10 +107,6 @@ local function page_backward()
   end
 end
 
-local function count()
-  ready = true -- used for fps
-end
-
 function engine_lib.on_amp_history(left, right)
   page_master.amp_history[1] = left
   page_master.amp_history[2] = right
@@ -173,15 +168,11 @@ function init()
   engine_lib.ping()
 end
 
-c = nil
+
 engine_lib.on_pong = function()
   print("connection verified")
-  if not c then
-    current_page:enter()
-    -- metro for screen refresh
-    c = metro.init(count, 1 / fps)
-    c:start()
-  end
+  current_page:enter()
+  draw_frame = true
 end
 
 params.action_read = function(filename, silent, number)
@@ -244,10 +235,28 @@ function enc(n, d)
 end
 
 function refresh()
-  counter = counter + 1
-  -- refresh screen
-  if ready then
-    ready = false
+  -- called at the completion of an actual screen redraw: https://llllllll.co/t/norns-update-231114/64915/62?page=4
+  -- driver runs at 1/60fps 
+  -- FPS-based timer for the page indicator animation
+  page_indicator_counter = page_indicator_counter + 1
+
+  if draw_frame then
+    -- prevent new screen events being queued until this frame is done
+    draw_frame = false
+
+    -- actual render
+    render_frame()
+
+    -- for frame indicator animation (90fps until reset)
+    -- TODO this should really be time-based
+    if window.enc1n ~= 0 and page_indicator_counter > 90 then
+      window.enc1n = 0
+      page_indicator_counter = 0
+    end
+  end
+end
+
+function render_frame()
     screen.clear()
     current_page:render()
     if window.enc1n ~= 0 and counter > 90 then
@@ -256,7 +265,7 @@ function refresh()
     end
     -- enc1n = enc1n
     screen.update()
-  end
+    draw_frame = true
 end
 
 -- convenience methods for matron
@@ -271,7 +280,6 @@ function shot()
 end
 
 function cleanup()
-  if c then c:stop() end
   metro.free_all()
   current_page:exit()
 end
