@@ -145,8 +145,8 @@ end
 function page:render_graphic()
     if redraw_sequence then
         -- condition prevents updating perlin values more often than the screen refreshes.
-        generate_perlin_seq()
         redraw_sequence = false
+        generate_perlin_seq()
     end
 
     for i = 1, 6 do

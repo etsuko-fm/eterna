@@ -8,7 +8,7 @@ SequencerGraphic = {
     flash_fill = 3,
     current_step = nil,
     sequences = { {}, {}, {}, {}, {}, {} }, -- pattern per voice
-    voice_env = { 0, 0, 0, 0, 0, 0, }, -- realtime envelope level of each voice
+    voice_env = { 0, 0, 0, 0, 0, 0, },      -- realtime envelope level of each voice
     num_steps = 16,
     is_playing = true,
     hide = false,
@@ -37,7 +37,7 @@ local indicator_h = 3
 local indicator_vmargin = indicator_h + margin_h
 local faint_fill = 1
 
-function SequencerGraphic:draw_env_meter(voice)
+function SequencerGraphic:queue_env_meter(voice, rects)
     if self.voice_env[voice] == nil then return end
     local zero_idx = voice - 1
 
@@ -45,71 +45,105 @@ function SequencerGraphic:draw_env_meter(voice)
     --- e.g. later in slice, is fainter brightness
 
     -- sometimes position comes to -0.0003, which troubles math.floor; hence +2 to have min brightness of 1
-    screen.level(2)
     local indicator_y = indicator_base_y + (indicator_vmargin * zero_idx)
     local v = self.voice_env[voice]
-    screen.level(1 + util.round(v * 14))
+    local level = 1 + util.round(v * 14)
     if v > 0 and self.is_playing then
-        screen.rect(indicator_x, indicator_y, indicator_w, indicator_h)
-        screen.fill()
+        -- brighten up according to envelope
+        level = 1 + util.round(v * 14)
     else
-        screen.rect(indicator_x, indicator_y, 1, indicator_h)
-        screen.fill()
+        -- dim brightness when voice is not playing
+        level = 2
+    end
+    table.insert(rects[level], { indicator_x, indicator_y, indicator_w, indicator_h })
+end
+
+function SequencerGraphic:compute_level(base, mod, min, max)
+    -- compute brightness level
+    return util.clamp(base + (util.round(mod) or 0), min or 1, max or 15)
+end
+
+function SequencerGraphic:queue_step_indicator(column, dim, rects)
+    if column >= self.num_steps then return end
+
+    -- compute brightness
+    local base_level =
+        (self.current_step == column and self.is_playing)
+        and 6
+        or faint_fill
+    local level = self:compute_level(base_level, dim)
+
+    -- compute coordinates
+    local x = basex + (column * (block_w + margin_w))
+    table.insert(rects[level], {x, indicator_y, 3, 1})
+end
+
+function SequencerGraphic:queue_grid_cell(voice, row, column, dim, rects)
+    local column_idx = column + 1
+    local x = basex + (block_w + margin_w) * column
+    local y = basey + (block_h + margin_h) * row
+
+    local step_value = self.sequences[voice][column_idx]
+    local step_active = step_value ~= 0.0
+    local is_current = (self.current_step == column and self.is_playing)
+
+    local level
+    if step_active then
+        if is_current then
+            -- compute brightness
+            -- if step triggered, different brightness
+            level = self:compute_level(self.flash_fill, dim)
+        else
+            -- step not triggered, but it is an active step in the sequence
+            local v = self.sequences[voice][column_idx]
+            local base_level = math.floor(2 + math.abs(v) * 13)
+            level = self:compute_level(base_level, dim, 2)
+        end
+    else
+        -- inactive step, lower level
+        level = self:compute_level(self.fill, dim, 1)
+    end
+    table.insert(rects[level], { x, y, block_w, block_h })
+end
+
+function SequencerGraphic:flush_rects(rects)
+    for level = 0, 15 do
+        local batch = rects[level]
+        if #batch > 0 then
+            screen.level(level)
+            for i = 1, #batch do
+                local r = batch[i]
+                screen.rect(r[1], r[2], r[3], r[4])
+                screen.fill()
+            end
+        end
     end
 end
 
 function SequencerGraphic:render()
     if self.hide then return end
-    local voice
-    local dim = 0
+
+    -- rects to draw, organized by their brightness level. each entry: { x, y, w, h }
+    -- As screen.level calls are expensive, this method allows the script to just
+    -- do a single such call per distinct brightness
+    local rects = {}
+    for i = 0, 15 do
+        rects[i] = {}
+    end
+
     for row = 0, rows - 1 do
-        voice = row + 1
-        self:draw_env_meter(voice)
+        local voice = row + 1
+        self:queue_env_meter(voice, rects)
+
         for column = 0, columns - 1 do
-            -- iterate over entire grid; row = voice, column = step
-            local column_idx = column + 1
-            local x = basex + (block_w + margin_w) * column
-            local y = basey + (block_h + margin_h) * row
-            local step_active = self.sequences[voice][column_idx] ~= 0.0
-
-            if column >= self.num_steps then dim = -10 else dim = 0 end
-
-            -- draw sequence step indicator
-            if self.current_step == column and self.is_playing then
-                graphic_util.screen_level(6, dim)
-            else
-                graphic_util.screen_level(faint_fill, dim)
-            end
-
-            if column < self.num_steps then
-                screen.rect(basex + (column * (block_w + margin_w)), indicator_y, 3, 1)
-                screen.fill()
-            end
-
-            -- draw grid
-            if step_active then
-                -- brighten if active
-                if self.current_step == column and self.is_playing then
-                    -- step triggered, flash block brightly
-                    graphic_util.screen_level(self.flash_fill, dim)
-                    screen.rect(x, y, block_w, block_h)
-                    screen.fill()
-                else
-                    -- step not triggered, but it is an active step in the sequence
-                    local v = self.sequences[voice][column_idx]
-                    local lev = math.floor(2 + math.abs(v) * 13)
-                    graphic_util.screen_level(lev, dim, 2)
-                    screen.rect(x, y, block_w, block_h)
-                    screen.fill()
-                end
-            else
-                -- inactive step
-                screen.rect(x, y, block_w, block_h)
-                graphic_util.screen_level(self.fill, dim, 1)
-                screen.fill()
-            end
+            local dim = (column >= self.num_steps) and -10 or 0
+            self:queue_step_indicator(column, dim, rects)
+            self:queue_grid_cell(voice, row, column, dim, rects)
         end
     end
+
+    -- draw the actual rects
+    self:flush_rects(rects)
 end
 
 return SequencerGraphic
