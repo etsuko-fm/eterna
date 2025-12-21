@@ -9,13 +9,27 @@ local convert_sequence_speed = {
     8,
 }
 
-local function generate_perlin_seq(rows, cols, x, y, z, density, zoom)
+local function generate_perlin_seq(rows, cols, x, y, z, zoom)
     local velocities = {}
     for row = 1, rows do
         local perlin_y = row * zoom + y
         for step = 1, cols do
             local perlin_x = step * zoom + x
             local pnoise = perlin:noise(perlin_x, perlin_y, z)
+            local velocity = util.linlin(-1, 1, 0, 1, pnoise)
+            table.insert(velocities, { value = util.round(velocity * 100, 2)/100, voice = row, step = step })
+        end
+    end
+    return velocities
+end
+
+local function read_perlin_seq(rows, cols, x, density)
+    local velocities = {}
+    local index = math.floor(x*20)
+    for row = 1, rows do
+        for step = 1, cols do
+            -- print("row:"..row)
+            local pnoise = sequences[index][row][step] / 100
             local velocity = util.linlin(-1, 1, 0, 1, pnoise)
             table.insert(velocities, { value = velocity, voice = row, step = step })
         end
@@ -29,6 +43,7 @@ local function generate_perlin_seq(rows, cols, x, y, z, density, zoom)
     end
     return velocities
 end
+
 
 local function get_step_envelope(max_time, max_shape, enable_mod, velocity)
     local mod_amt
@@ -53,4 +68,5 @@ return {
     convert_sequence_speed = convert_sequence_speed,
     generate_perlin_seq = generate_perlin_seq,
     get_step_envelope = get_step_envelope,
+    read_perlin_seq = read_perlin_seq,
 }

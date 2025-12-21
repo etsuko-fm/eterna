@@ -22,11 +22,8 @@ local page = Page:create({
 local function generate_perlin_seq()
     local density = params:get(ID_SEQ_DENSITY)
     local x_seed = params:get(ID_SEQ_PERLIN_X)
-    local y_seed = params:get(ID_SEQ_PERLIN_Y)
-    local z_seed = params:get(ID_SEQ_PERLIN_Z)
 
-    local sequence = sequence_util.generate_perlin_seq(SEQ_TRACKS, SEQ_STEPS, x_seed, y_seed, z_seed, density,
-        PERLIN_ZOOM)
+    local sequence = sequence_util.read_perlin_seq(SEQ_TRACKS, SEQ_STEPS, x_seed, density)
     for i, v in ipairs(sequence) do
         params:set(ID_SEQ_STEP[v.voice][v.step], v.value)
     end

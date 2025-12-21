@@ -26,7 +26,7 @@ engine_lib = include(from_root("lib/eterna-engine"))
 
 include(from_root("lib/parameters"))
 
-
+sequences = include(from_root("data/sequences"))
 local page_sample = include(from_root("lib/pages/sample"))
 page_slice = include(from_root("lib/pages/slice"))
 page_sequencer = include(from_root("lib/pages/sequencer"))
@@ -180,11 +180,17 @@ local function on_fps()
   end
 end
 
+local initializing_metro = false
+
 local function init_fps_metro()
     -- metro for screen refresh
-    if fps_metro then fps_metro:stop() end
-    fps_metro = metro.init(on_fps, 1 / fps)
-    fps_metro:start()
+    if not initializing_metro then
+      initializing_metro = true
+      if fps_metro then fps_metro:stop() end
+      fps_metro = metro.init(on_fps, 1 / fps)
+      fps_metro:start()
+      initializing_metro = false
+    end
 end
 
 engine_lib.on_pong = function()
@@ -310,4 +316,78 @@ function cleanup()
   if fps_metro then fps_metro:stop() end
   metro.free_all()
   current_page:exit()
+end
+
+local function serialize_sequence(seq_tbl, num_voices, num_steps)
+  local voice_parts = {}
+
+  for voice = 1, num_voices do
+    local steps = seq_tbl[voice] or {}
+    local step_parts = {}
+
+    for step = 1, num_steps do
+      local value = steps[step] or 0
+      step_parts[#step_parts + 1] = math.floor(value*100)  -- quantized
+    end
+
+    voice_parts[#voice_parts + 1] =
+      "{" .. table.concat(step_parts, ",") .. "}"
+  end
+
+  return "{" .. table.concat(voice_parts, ",") .. "}"
+end
+
+
+function generate_perlin_table()
+  -- for regenerating the pre-computed perlin sequences in ./data/sequences.lua
+  local z = 0
+  local y = 0
+  local zoom = 3.3
+
+  local file, err = io.open("/home/we/dust/code/eterna/data/sequences.lua", "w")
+  assert(file, err)
+
+  local min_x = 0
+  local max_x = 50
+  local spacing = 0.05
+
+  -- add comments
+  file:write("-- pre-computed perlin sequences\n")
+  file:write("-- seed range: "..min_x.."-"..max_x.."\n")
+  file:write("-- seed spacing per sequence: "..spacing.."\n")
+  -- initialize empty table
+  file:write("local t = {}\n")
+
+  local sequence_id = 1
+
+  for x = min_x, max_x, spacing do
+    -- generate sequence
+    local sequence =
+      sequence_util.generate_perlin_seq(
+        SEQ_TRACKS,
+        SEQ_STEPS,
+        x, y, z,
+        1.0,
+        zoom
+      )
+
+    local seq_tbl = {}
+
+    for _, v in ipairs(sequence) do
+      seq_tbl[v.voice] = seq_tbl[v.voice] or {}
+      seq_tbl[v.voice][v.step] = v.value
+    end
+
+    -- emit ONE line
+    file:write(string.format(
+      "t[%d] = %s\n",
+      sequence_id,
+      serialize_sequence(seq_tbl, SEQ_TRACKS, SEQ_STEPS)
+    ))
+
+    sequence_id = sequence_id + 1
+  end
+
+  file:write("return t\n")
+  file:close()
 end
