@@ -152,6 +152,7 @@ function MasterGraphic:render()
   self:draw_drive_slider(drive_slider_x, center_y - 11, 4, meters_h + 1)
   self:draw_final_out_level(master_out_x, meters_y)
   self:draw_lissajous()
+  self.rerender = false
 end
 
 return MasterGraphic

@@ -96,6 +96,7 @@ function ControlGraphic:render()
     else
         draw_play_button(x, y)
     end
+    self.rerender = false
 end
 
 return ControlGraphic

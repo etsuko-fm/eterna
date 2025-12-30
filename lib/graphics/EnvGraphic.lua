@@ -126,6 +126,7 @@ function EnvGraphic:render()
     local bar_w = 33
     local bar_h = 3
     draw_slider(64 - 17, 39, bar_w, bar_h, self.time, self.mod)
+    self.rerender = false
 end
 
 return EnvGraphic
