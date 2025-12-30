@@ -152,6 +152,9 @@ function Footer:render()
             if self.last_active_button == btn.name and util.round(self.brightness[btn.name]) == fill then
                 self.animation_finished = true
             end
+            if last_active_button == btn.name and util.round(self.brightness_state[btn.name]) == fill then
+                self.animation_finished = true
+            end
         end
 
         screen.level(util.round(fill))
@@ -181,6 +184,9 @@ function Footer:render()
         screen.text(self.button_text[btn.name].value)
     end
     screen.stroke()
+    if self.animation_finished then
+        self.rerender = false
+    end
 end
 
 return Footer
