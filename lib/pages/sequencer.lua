@@ -193,7 +193,7 @@ function page:initialize()
     end
 
     self.graphic = SequencerGraphic:new()
-
+    self.graphic:init()
 
     page.footer = Footer:new({
         button_text = {

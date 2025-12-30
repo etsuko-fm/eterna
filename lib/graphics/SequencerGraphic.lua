@@ -14,9 +14,13 @@ SequencerGraphic = {
     num_steps = 16,
     is_playing = true,
     hide = false,
+    background_grid = screen.create_image(67, 27),
+    image = screen.create_image(67, 27),
 }
 
 setmetatable(SequencerGraphic, { __index = GraphicBase })
+local screen_rect = screen.rect
+local screen_level = screen.level
 
 function SequencerGraphic:set_cell(voice, step, val)
     -- keeping this one simple because it's called a lot
@@ -24,22 +28,47 @@ function SequencerGraphic:set_cell(voice, step, val)
     self.changed = true
 end
 
-
 local rows = 6
 local columns = 16
 local block_w = 3
 local block_h = 3
 local margin_w = 1
 local margin_h = 1
-local basex = 32
-local basey = 16
-local indicator_x = 32 + (block_w + margin_w) * columns + 1
+local basex = 0
+local basey = 0
+local indicator_x = basex + (block_w + margin_w) * columns + 1
 local indicator_y = basey + (block_h + margin_h) * rows + 1
-local indicator_base_y = 16
+local indicator_base_y = basey
 local indicator_w = 1
 local indicator_h = 3
 local indicator_vmargin = indicator_h + margin_h
 local faint_fill = 1
+
+local function get_indicator_y(zero_idx)
+    -- zero_idx = integer representing voice number (0-5)
+    return indicator_base_y + (indicator_vmargin * zero_idx)
+end
+
+local function render_base_grid()
+    -- executes once to render the static grid into an image buffer
+    screen_level(1)
+    for row = 0, rows - 1 do
+        local indicator_y = get_indicator_y(row)
+        screen.rect(indicator_x, indicator_y, indicator_w, indicator_h)
+        screen.fill()
+
+        for column = 0, columns - 1 do
+            local x = basex + (block_w + margin_w) * column
+            local y = basey + (block_h + margin_h) * row
+            screen.rect(x, y, block_w, block_h)
+            screen.fill()
+        end
+    end
+end
+
+function SequencerGraphic:init()
+    screen.draw_to(self.background_grid, render_base_grid)
+end
 
 function SequencerGraphic:queue_env_meter(voice, rects)
     if self.voice_env[voice] == nil then return end
@@ -49,17 +78,14 @@ function SequencerGraphic:queue_env_meter(voice, rects)
     --- e.g. later in slice, is fainter brightness
 
     -- sometimes position comes to -0.0003, which troubles math.floor; hence +2 to have min brightness of 1
-    local indicator_y = indicator_base_y + (indicator_vmargin * zero_idx)
+    local indicator_y = get_indicator_y(zero_idx)
     local v = self.voice_env[voice]
     local level = 1 + util.round(v * 14)
     if v > 0 and self.is_playing then
         -- brighten up according to envelope
         level = 1 + util.round(v * 14)
-    else
-        -- dim brightness when voice is not playing
-        level = 2
+        table.insert(rects[level], { indicator_x, indicator_y, indicator_w, indicator_h })
     end
-    table.insert(rects[level], { indicator_x, indicator_y, indicator_w, indicator_h })
 end
 
 function SequencerGraphic:compute_level(base, mod, min, max)
@@ -103,26 +129,24 @@ function SequencerGraphic:queue_grid_cell(voice, row, column, dim, rects)
             local base_level = math.floor(2 + math.abs(v) * 13)
             level = self:compute_level(base_level, dim, 2)
         end
-    else
-        -- inactive step, lower level
-        level = self:compute_level(self.fill, dim, 1)
+        table.insert(rects[level], { x, y, block_w, block_h })
     end
-    table.insert(rects[level], { x, y, block_w, block_h })
 end
 
 function SequencerGraphic:flush_rects(rects)
     for level = 0, 15 do
         local batch = rects[level]
         if #batch > 0 then
-            screen.level(level)
+            screen_level(level)
             for i = 1, #batch do
                 local r = batch[i]
-                screen.rect(r[1], r[2], r[3], r[4])
+                screen_rect(r[1], r[2], r[3], r[4])
                 screen.fill()
             end
         end
     end
 end
+
 
 function SequencerGraphic:render()
     if self.hide then return end
@@ -147,7 +171,14 @@ function SequencerGraphic:render()
     end
 
     -- draw the actual rects
-    self:flush_rects(rects)
+    screen.draw_to(self.image,
+        function()
+            screen.clear()
+            self:flush_rects(rects)
+        end
+    )
+    screen.display_image(self.background_grid, self.x, self.y)
+    screen.display_image(self.image, self.x, self.y)
     self.rerender = false
 end
 

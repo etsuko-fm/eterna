@@ -72,6 +72,7 @@ function page:update_graphics_state()
         self.footer:set_name('e2', "RATE")
         self.footer:set_value('e2', rate_value)
     else
+        self.footer:set_value('e3', misc_util.trim(tostring(amp), 5))
         -- When LFO is disabled, E2 controls scan position
         self.footer:set_name('e2', "POS")
         -- map 0:1 to 0:5 because of 6 voices; indicates which voice has amp 1.0 (when pos is a whole number)
