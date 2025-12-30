@@ -37,7 +37,7 @@ end
 
 local function to_sample_name(path)
     local s = string.upper(remove_extension(path_to_file_name(path)))
-    return s:sub(1,11)
+    return s:sub(1, 11)
 end
 
 local function all_true(t)
@@ -65,13 +65,13 @@ function page:load_sample(file)
     retries = {}
 
     if self.active then
-        window.title = "LOADING..." 
+        window:set("title", "LOADING...")
     end
     self.sample_duration_txt = nil
-    for _, p in ipairs({page, page_slice}) do
+    for _, _page in ipairs({ page, page_slice }) do
         -- reset waveforms in both pages
-        for channel=1, 6 do
-            p.graphic.waveform_graphics[channel].samples = {}
+        for channel = 1, 6 do
+            _page.graphic.waveforms[channel]:clear()
         end
     end
 
@@ -89,8 +89,8 @@ function page:load_sample(file)
             -- load file to buffer corresponding to channel
             engine_lib.load_file(file, channel, buffer)
             active_channels = num_channels
-            self.graphic.num_channels = num_channels
-            page_slice.graphic.num_channels = num_channels
+            self.graphic:set('num_channels', num_channels)
+            page_slice.graphic:set('num_channels', num_channels)
         end
     end
 end
@@ -105,9 +105,9 @@ function engine_lib.on_duration(duration)
 end
 
 function engine_lib.on_waveform(waveform, channel)
-    print("Lua: /waveform received from SC")
-    page.graphic.waveform_graphics[channel].samples = waveform
-    page_slice.graphic.waveform_graphics[channel].samples = waveform
+    print("Lua: waveform received from SC for channel " .. channel)
+    page.graphic.waveforms[channel]:set('samples', waveform)
+    page_slice.graphic.waveforms[channel]:set('samples', waveform)
 end
 
 function engine_lib.on_file_load_success(path, channel, buffer)
@@ -122,8 +122,8 @@ function engine_lib.on_file_load_success(path, channel, buffer)
         for voice = 1, 6 do
             local buffer_idx = util.wrap(voice, 1, active_channels)
             params:set(engine_lib.get_id("voice_bufnum", voice), buffer_idx)
-            page.graphic.voice_to_buffer[voice] = buffer_idx
-            page_slice.graphic.voice_to_buffer[voice] = buffer_idx
+            page.graphic:set_table("voice_buffer_map",  voice, buffer_idx)
+            page_slice.graphic:set_table("voice_buffer_map",  voice, buffer_idx)
             print("lua: voice " .. voice .. " set to buffer " .. buffer_idx)
         end
         if continue_sequencer then
@@ -155,13 +155,15 @@ local function select_sample()
         if file_path ~= 'cancel' then
             print("setting path to " .. file_path)
             params:set(ID_SAMPLER_AUDIO_FILE, file_path)
+            page.graphic:set('sample_selected', true)
+            page_slice.graphic:set('sample_selected', true)
         end
         page_disabled = false -- proceed with rendering page instead of file menu
-        window.page_indicator_disabled = false
+        window:set("page_indicator_disabled", false)
     end
     fileselect.enter(_path.audio, callback, "audio")
-    page_disabled = true           -- don't render current page
-    window.page_indicator_disabled = true -- hide page indicator
+    page_disabled = true                        -- don't render current page
+    window:set("page_indicator_disabled", true) -- hide page indicator
 end
 local function s_to_minsec(s)
     local minutes = math.floor(s / 60)
@@ -173,28 +175,18 @@ function is_sample_selected()
     return params:get(ID_SAMPLER_AUDIO_FILE) ~= "-" and params:get(ID_SAMPLER_AUDIO_FILE) ~= nil
 end
 
-function page:render()
+function page:pre_render()
     if page_disabled then
+        screen.clear()
         fileselect:redraw()
-        return
-    end -- for rendering the fileselect interface
-    if is_sample_selected() then
-        -- show filename of selected sample in title bar
-        if self.sample_duration_txt then
-            window.title = filename .. " (" .. self.sample_duration_txt .. ")"
-        end
-        self.graphic.sample_duration = self.sample_duration
-        self.graphic:render(false, true)
-    else
-        screen.level(3)
-        screen.font_face(DEFAULT_FONT)
-        screen.move(64, 32)
-        screen.text_center("PRESS K2 TO LOAD SAMPLE")
+        screen.update()
+        return true -- skip normal render
     end
-    page.footer.button_text.e2.value = params:get(ID_SAMPLER_DRIVE)
+    return false
+end
 
-    window:render()
-    page.footer:render()
+function page:update_graphics_state()
+    self.footer:set_value('e2', params:get(ID_SAMPLER_DRIVE))
 end
 
 function page:add_params()
@@ -210,10 +202,16 @@ function page:add_params()
     params:set_action(ID_SAMPLER_DRIVE, engine_lib.each_voice_drive)
 end
 
+function page:get_sample_title()
+    return filename .. " (" .. self.sample_duration_txt .. ")"
+end
+
 function page:set_sample_duration(v)
     print('Sample duration: ' .. v)
     self.sample_duration = v
     self.sample_duration_txt = s_to_minsec(v)
+    window:set("title", self:get_sample_title())
+    self.graphic:set('sample_duration', self.sample_duration)
     page_slice.sample_duration = v
     page_slice:update_loop_ranges()
 end
@@ -243,10 +241,16 @@ function page:initialize()
         font_face = FOOTER_FONT,
     })
 end
+
 function page:enter()
-    window.title = "SAMPLING"
+    if not is_sample_selected() then
+        window:set("title", "SAMPLING")
+    else
+        window:set("title", self:get_sample_title())
+    end
     self.active = true
 end
+
 function page:exit()
     self.active = false
 end

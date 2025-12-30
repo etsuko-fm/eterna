@@ -38,7 +38,7 @@ local function calculate_rates()
         local voice_rate = engine_lib.get_id("voice_rate", voice)
         params:set(voice_rate, rate)
         -- graph is linear while rate is exponential 
-        page.graphic.voice_pos[i] = -math.log(math.abs(rate), 2)
+        page.graphic:set_table("voice_pos", i,  -math.log(math.abs(rate), 2))
     end
 end
 
@@ -47,23 +47,23 @@ local function update_playback_dir(new_val)
     if PLAYBACK_TABLE[new_val] == FWD then
         -- all forward
         for voice = 1, 6 do
-            page.graphic.voice_dir[voice] = FWD
+            page.graphic:set_table("voice_dir", voice, FWD)
             params:set(get_voice_direction_id(voice), 1)
         end
     elseif PLAYBACK_TABLE[new_val] == REV then
         -- all reverse
         for voice = 1, 6 do
-            page.graphic.voice_dir[voice] = REV
+            page.graphic:set_table("voice_dir", voice, REV)
             params:set(get_voice_direction_id(voice), 2)
         end
     else
         -- alternate forward/reverse
         for voice = 1, 5, 2 do
-            page.graphic.voice_dir[voice] = FWD
+            page.graphic:set_table("voice_dir", voice, FWD)
             params:set(get_voice_direction_id(voice), 1)
         end
         for voice = 2, 6, 2 do
-            page.graphic.voice_dir[voice] = REV
+            page.graphic:set_table("voice_dir", voice, REV)
             params:set(get_voice_direction_id(voice), 2)
         end
     end
@@ -102,7 +102,7 @@ end
 
 local function adjust_center(d)
     misc_util.adjust_param(d, ID_RATES_CENTER, controlspec_rates_center.quantum)
-    page.graphic.center = params:get(ID_RATES_CENTER) * -2 -- todo: why *-2?
+    page.graphic:set("center", params:get(ID_RATES_CENTER) * -2 ) -- todo: why *-2?
 end
 
 local function adjust_spread(d)
@@ -122,23 +122,16 @@ page = Page:create({
     k3_off = toggle_range,
 })
 
-function page:render()
+function page:update_graphics_state()
     for i = 1, 6 do env_polls[i]:update() end
 
-    window:render()
-    self.footer.button_text.k2.value = PLAYBACK_TABLE[params:get(ID_RATES_DIRECTION)]
-    self.footer.button_text.k3.value = RANGE_TABLE[params:get(ID_RATES_RANGE)]
+    local rates_center = misc_util.trim(tostring(params:get(ID_RATES_CENTER)), 5)
+    local rates_spread = misc_util.trim(tostring(params:get(ID_RATES_SPREAD)), 5)
 
-    self.footer.button_text.e2.value = misc_util.trim(tostring(
-        params:get(ID_RATES_CENTER)
-    ), 5)
-
-    self.footer.button_text.e3.value = misc_util.trim(tostring(
-        params:get(ID_RATES_SPREAD)
-    ), 5)
-
-    self.graphic:render()
-    self.footer:render()
+    self.footer:set_value('k2', PLAYBACK_TABLE[params:get(ID_RATES_DIRECTION)])
+    self.footer:set_value('k3', RANGE_TABLE[params:get(ID_RATES_RANGE)])
+    self.footer:set_value('e2', rates_center)
+    self.footer:set_value('e3', rates_spread)
 end
 
 function page:initialize()
@@ -160,7 +153,7 @@ end
 function page:enter()
     window.title = page_name
     for i = 1, 6 do
-        env_polls[i].callback = function(v) self.graphic.voice_env[i] = amp_to_log(v) end
+        env_polls[i].callback = function(v) self.graphic:set_table("voice_env", i, amp_to_log(v)) end
     end
 end
 
@@ -169,6 +162,5 @@ function page:exit()
         env_polls[i].callback = nil
     end
 end
-
 
 return page

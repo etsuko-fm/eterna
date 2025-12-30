@@ -1,3 +1,5 @@
+local GraphicBase = require(from_root("lib/graphics/GraphicBase"))
+
 MasterGraphic = {
   x = 32,
   y = 11,
@@ -9,15 +11,10 @@ MasterGraphic = {
   post_comp_levels = { 0, 0 },
   out_levels = { 0, 0 },
   out_level = 1.0,
-  amp_history = { {}, {} }
+  amp_history = { {}, {} },
 }
 
-function MasterGraphic:new(o)
-  o = o or {}
-  setmetatable(o, self)
-  self.__index = self
-  return o
-end
+setmetatable(MasterGraphic, { __index = GraphicBase })
 
 local prev_frames = {}
 

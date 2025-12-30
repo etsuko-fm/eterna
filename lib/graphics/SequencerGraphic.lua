@@ -1,3 +1,5 @@
+local GraphicBase = require(from_root("lib/graphics/GraphicBase"))
+
 SequencerGraphic = {
     x = 32,
     y = 16,
@@ -14,12 +16,14 @@ SequencerGraphic = {
     hide = false,
 }
 
-function SequencerGraphic:new(o)
-    o = o or {}
-    setmetatable(o, self)
-    self.__index = self
-    return o
+setmetatable(SequencerGraphic, { __index = GraphicBase })
+
+function SequencerGraphic:set_cell(voice, step, val)
+    -- keeping this one simple because it's called a lot
+    self.sequences[voice][step] = val
+    self.changed = true
 end
+
 
 local rows = 6
 local columns = 16
@@ -75,7 +79,7 @@ function SequencerGraphic:queue_step_indicator(column, dim, rects)
 
     -- compute coordinates
     local x = basex + (column * (block_w + margin_w))
-    table.insert(rects[level], {x, indicator_y, 3, 1})
+    table.insert(rects[level], { x, indicator_y, 3, 1 })
 end
 
 function SequencerGraphic:queue_grid_cell(voice, row, column, dim, rects)

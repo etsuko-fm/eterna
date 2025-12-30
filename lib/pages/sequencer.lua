@@ -76,16 +76,12 @@ function page:evaluate_step(x, y)
 end
 
 function page:on_step(step)
-    self.graphic.current_step = step
+    self.graphic:set("current_step", step)
     page_control.current_step = step
     -- evaluate current step, send commands to supercollider accordingly
     for y = 1, SEQ_TRACKS do
         self:evaluate_step(step, y)
     end
-end
-
-local function on_tick(tick, beat)
-    page_control.current_beat = beat
 end
 
 local function adjust_step_size()
@@ -106,13 +102,13 @@ end
 function page:stop()
     clock.transport.stop()
     self.seq:reset()
-    self.graphic.is_playing = false
+    self.graphic:set("is_playing", false)
     self:disable_env_polls()
 end
 
 function page:start()
     clock.transport.start()
-    self.graphic.is_playing = true
+    self.graphic:set("is_playing", true)
     self:enable_env_polls()
 end
 
@@ -136,13 +132,12 @@ function page:is_running()
     return self.seq.transport_on
 end
 
-function page:render()
-    window:render()
-    self:render_graphic()
-    self:render_footer()
-end
-
-function page:render_graphic()
+function page:update_graphics_state()
+    self.graphic:set("num_steps", self.seq.steps)
+    self.footer:set_value('k2', self.seq.transport_on and "ON" or "OFF")
+    self.footer:set_value('k3', sequence_util.sequence_speeds[params:get(ID_SEQ_SPEED)])
+    self.footer:set_value('e2', params:get(ID_SEQ_PERLIN_X))
+    self.footer:set_value('e3', params:get(ID_SEQ_DENSITY))
     if redraw_sequence then
         -- condition prevents updating perlin values more often than the screen refreshes.
         redraw_sequence = false
@@ -152,26 +147,11 @@ function page:render_graphic()
     for i = 1, 6 do
         env_polls[i]:update()
     end
-
-    self.graphic.num_steps = self.seq.steps
-    self.graphic:render()
 end
 
-
-function page:render_footer()
-    self.footer.button_text.k2.value = self.seq.transport_on and "ON" or "OFF"
-    self.footer.button_text.k3.value = sequence_util.sequence_speeds[params:get(ID_SEQ_SPEED)]
-
-    page.footer.button_text.e2.value = params:get(ID_SEQ_PERLIN_X)
-    page.footer.button_text.e3.value = params:get(ID_SEQ_DENSITY)
-    page.footer:render()
+function page:update_grid_step(step, voice, v)
+    self.graphic:set_cell(voice, step, v)
 end
-
-
-function page:update_grid_step(x, y, v)
-    self.graphic.sequences[y][x] = v
-end
-
 
 local function toggle_redraw()
     redraw_sequence = true
@@ -205,12 +185,11 @@ function page:initialize()
     page.e2 = e2
     page.e3 = e3
     seq.on_step = function(step) page:on_step(step) end
-    seq.on_tick = on_tick
 
     self:add_params()
 
     for i = 1, 6 do
-        env_polls[i].callback = function(v) self.graphic.voice_env[i] = v end
+        env_polls[i].callback = function(v) self.graphic:set_table("voice_env", i, v) end
     end
 
     self.graphic = SequencerGraphic:new()
@@ -234,7 +213,8 @@ end
 
 function page:enable_env_polls()
     for i = 1, 6 do
-        env_polls[i].callback = function(v) self.graphic.voice_env[i] = amp_to_log(v)
+        env_polls[i].callback = function(v)
+            self.graphic:set_table("voice_env", i, amp_to_log(v))
         end
     end
 end
@@ -242,7 +222,7 @@ end
 function page:disable_env_polls()
     for i = 1, 6 do
         env_polls[i].callback = nil
-        self.graphic.voice_env[i] = 0
+        self.graphic:set_table("voice_env", 0) -- todo: think not needed anymore
     end
 end
 

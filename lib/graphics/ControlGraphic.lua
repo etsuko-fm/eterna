@@ -1,3 +1,5 @@
+local GraphicBase = require(from_root("lib/graphics/GraphicBase"))
+
 ControlGraphic = {
     x = 0,
     y = 0,
@@ -7,22 +9,16 @@ ControlGraphic = {
     font_face = 1,
     bpm_font_face = 40,
     bpm_font_size = 12,
-    bpm = 120.0,
+    bpm = nil,
     bright = 15,
     default_level = 3,
     is_playing = true,
     current_step = 0,
-    current_beat = 0,
     cue = nil, -- has value when a step div change is cued
     num_steps = 16,
 }
 
-function ControlGraphic:new(o)
-    o = o or {}
-    setmetatable(o, self)
-    self.__index = self
-    return o
-end
+setmetatable(ControlGraphic, { __index = GraphicBase })
 
 local faint_level = 3
 local bright_level = 15
@@ -52,24 +48,10 @@ local function draw_pause_button(x, y)
     screen.fill()
 end
 
-function ControlGraphic:draw_beat_report(x, y)
-    -- 1/4 report
-    for i = 0, 3 do
-        if i == self.current_beat then
-            screen.level(bright_level)
-        else
-            screen.level(faint_level)
-        end
-        screen.rect(x + i * 4, y, 3, 1)
-        screen.fill()
-    end
-end
-
 function ControlGraphic:render()
     if self.hide then return end
     local dim = 0
 
-    -- self:draw_beat_report(rep_x, rep_y)
     -- sequence steps
     for step = 0, 15 do
         if step >= self.num_steps then

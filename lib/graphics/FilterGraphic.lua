@@ -1,3 +1,5 @@
+local GraphicBase = require(from_root("lib/graphics/GraphicBase"))
+
 FilterGraphic = {
     x = 33,
     y = 15,
@@ -11,14 +13,10 @@ FilterGraphic = {
     graph_h = 23,
     lfo_range = {}, -- start / end freq
     rate_fraction = nil,
+    draw_lfo_range = false, -- flag whether to differentiate between filter and filter LFO page
 }
 
-function FilterGraphic:new(o)
-    o = o or {}           -- create state if not provided
-    setmetatable(o, self) -- define prototype
-    self.__index = self
-    return o              -- return instance
-end
+setmetatable(FilterGraphic, { __index = GraphicBase })
 
 local min_freq = 20
 local max_freq = 20000
@@ -50,13 +48,13 @@ function FilterGraphic:freq_to_x(freq)
 end
 
 function FilterGraphic:set_size(w, h)
-    self.graph_w = w
-    self.graph_h = h
+    self:set("graph_w", w)
+    self:set("graph_h", h)
 end
 
 function FilterGraphic:set_lfo_range(start, _end)
-    self.lfo_range["start"] = start
-    self.lfo_range["end"] = _end
+    self:set_table("lfo_range", "start", start)
+    self:set_table("lfo_range", "end", _end)
 end
 
 function FilterGraphic:db_to_y(db)
@@ -227,26 +225,26 @@ function FilterGraphic:screen_level_from_mix()
 end
 
 local function draw_slider(x, y, w, h, fraction)
-  -- h is expected to be uneven
-  screen.level(1)
+    -- h is expected to be uneven
+    screen.level(1)
 
-  -- index of bar to light up to indicate current fraction
-  local target = math.floor((h * (1 - fraction)) / 2) * 2
+    -- index of bar to light up to indicate current fraction
+    local target = math.floor((h * (1 - fraction)) / 2) * 2
 
-  for i = 0, h - 1, 2 do
-    if i == target then
-      screen.level(15)
-    else
-      screen.level(1)
+    for i = 0, h - 1, 2 do
+        if i == target then
+            screen.level(15)
+        else
+            screen.level(1)
+        end
+
+        screen.rect(x, y + i, w, 1)
+        screen.fill()
     end
-
-    screen.rect(x, y + i, w, 1)
-    screen.fill()
-  end
 end
 
 
-function FilterGraphic:render(draw_lfo_range)
+function FilterGraphic:render()
     if self.hide then return end
 
     screen.level(15)
@@ -256,12 +254,12 @@ function FilterGraphic:render(draw_lfo_range)
         (self.type == "HP") and self.draw_highpass or
         (self.type == "LP") and self.draw_lowpass
 
-    if self.mix == 0.5 and not draw_lfo_range then
+    if self.mix == 0.5 and not self.draw_lfo_range then
         -- 50% mix; draw behind filter
         screen.level(3)
         self:draw_filter_off()
     end
-    
+
     local main_graph_level = self:screen_level_from_mix()
 
     if draw_filter then
@@ -300,7 +298,7 @@ function FilterGraphic:render(draw_lfo_range)
     screen.rect(self.x, 15, self.graph_w, self.graph_h)
     screen.stroke()
 
-    if draw_lfo_range then
+    if self.draw_lfo_range then
         local y = self.y + self.graph_h + 1
         -- compensate 1px for stroke width
         local x1 = 1 + self:freq_to_x(self.lfo_range["start"])

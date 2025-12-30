@@ -1,9 +1,11 @@
+local GraphicBase = require(from_root("lib/graphics/GraphicBase"))
+
 PanningGraphic = {
     -- PanningBars? HorizontalMetaPanner?
     x = 32,
     y = 11,
     pans = { 0, 0, 0, 0, 0, 0, },
-    pixel_width = 31.5, -- TODO: better name 
+    pixel_width = 31.5, -- TODO: better name
     bar_w = 2,
     bar_h = 4,
     margin_h = 2,
@@ -11,12 +13,7 @@ PanningGraphic = {
     hide = false,
 }
 
-function PanningGraphic:new(o)
-    o = o or {}
-    setmetatable(o, self)
-    self.__index = self
-    return o
-end
+setmetatable(PanningGraphic, { __index = GraphicBase })
 
 function PanningGraphic:render()
     if self.hide then return end

@@ -1,9 +1,6 @@
 local page_name = "LEVELS"
 local LevelsGraphic = include(from_root("lib/graphics/LevelsGraphic"))
 local gaussian = include(from_root("lib/util/gaussian"))
-local level_graphic
-local graph_x = 36 -- (128 - graph_width) / 2
-local graph_y = 40
 local lfo
 
 local function adjust_amp(d)
@@ -21,7 +18,6 @@ end
 local function toggle_lfo()
     misc_util.toggle_param(ID_LEVELS_LFO_ENABLED)
 end
-
 
 local function adjust_lfo_rate(d)
     lfo_util.adjust_lfo_rate(d, lfo)
@@ -48,42 +44,39 @@ local page = Page:create({
     k3_off = cycle_lfo_shape,
 })
 
-function page:render()
+function page:update_graphics_state()
     local sigma = amp_to_sigma(params:get(ID_LEVELS_AMP))
 
     for i = 1, 6 do amp_polls[i]:update() end
 
     local pos = params:get(ID_LEVELS_POS)
-    level_graphic.levels = gaussian.calculate_gaussian_levels(pos, sigma)
-    level_graphic.scan_val = pos
+    local amp = params:get(ID_LEVELS_AMP)
     local lfo_shape = params:get(ID_LEVELS_LFO_SHAPE)
-
-    screen.clear()
-    level_graphic:render()
     local lfo_enabled = params:get(ID_LEVELS_LFO_ENABLED)
 
-    self.footer.button_text.k2.value = lfo_enabled == 1 and "ON" or "OFF"
-    page.footer.button_text.k3.value = string.upper(LEVELS_LFO_SHAPES[lfo_shape])
+    -- TODO: this should use the set_table method
+    local levels = gaussian.calculate_gaussian_levels(pos, sigma)
+    for key, val in ipairs(levels) do
+        self.graphic:set_table("levels", key, val)
+    end
+    self.graphic:set("scan_val", pos)
 
-    window:render()
+    self.footer:set_value('k2', lfo_enabled == 1 and "ON" or "OFF")
+    self.footer:set_value('k3', string.upper(LEVELS_LFO_SHAPES[lfo_shape]))
+    self.footer:set_value('e3', misc_util.trim(tostring(amp), 5))
+
     if lfo:get("enabled") == 1 then
         -- When LFO is disabled, E2 controls LFO rate
-        -- Switch POS to RATE
-        page.footer.button_text.e2.name = "RATE"
-
-        -- convert period to label representation
         local period = lfo:get('period')
-        page.footer.button_text.e2.value = lfo_util.lfo_period_value_labels[period]
+        local rate_value = lfo_util.lfo_period_value_labels[period]
+        self.footer:set_name('e2', "RATE")
+        self.footer:set_value('e2', rate_value)
     else
         -- When LFO is disabled, E2 controls scan position
-        page.footer.button_text.k2.value = "OFF"
-        page.footer.button_text.e2.name = "POS"
-        -- multiply by 6 because of 6 voices; indicates which voice is fully audible
-        page.footer.button_text.e2.value = misc_util.trim(tostring(pos * 6), 4)
+        self.footer:set_name('e2', "POS")
+        -- map 0:1 to 0:5 because of 6 voices; indicates which voice has amp 1.0 (when pos is a whole number)
+        self.footer:set_value('e2', misc_util.trim(tostring(pos * 6), 4))
     end
-
-    page.footer.button_text.e3.value = misc_util.trim(tostring(params:get(ID_LEVELS_AMP)), 5)
-    page.footer:render()
 end
 
 local function recalculate_levels()
@@ -121,9 +114,9 @@ function page:initialize()
     window.title = "LEVELS"
 
     -- graphics
-    level_graphic = LevelsGraphic:new({
-        x = graph_x,
-        y = graph_y,
+    self.graphic = LevelsGraphic:new({
+        x = 36,
+        y = 40,
         bar_width = 6,
         max_bar_height = 24,
         num_level_graphic = 6,
@@ -134,8 +127,7 @@ function page:initialize()
 
     local sigma = amp_to_sigma(params:get(ID_LEVELS_AMP))
     local levels = gaussian.calculate_gaussian_levels(params:get(ID_LEVELS_POS), sigma)
-    level_graphic.levels = levels
-
+    self.graphic:set("levels", levels)
 
     page.footer = Footer:new({
         button_text = {
@@ -158,7 +150,7 @@ function page:initialize()
         phase = 0,
         ppqn = 24,
         action = function(scaled, raw)
-            level_graphic.scan_val = scaled
+            self.graphic:set("scan_val", scaled)
             params:set(ID_LEVELS_POS, controlspec_pos:map(scaled), false)
         end
     }
@@ -168,7 +160,7 @@ end
 function page:enter()
     window.title = page_name
     for i = 1, 6 do
-        amp_polls[i].callback = function(v) level_graphic.voice_amp[i] = amp_to_log(v) end
+        amp_polls[i].callback = function(v) self.graphic:set_table("voice_amp", i, amp_to_log(v)) end
     end
 end
 

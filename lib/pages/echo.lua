@@ -1,6 +1,5 @@
 local page_name = "ECHO"
 local EchoGraphic = include(from_root("lib/graphics/EchoGraphic"))
-local echo_graphic
 
 local ID_ECHO_WET = engine_lib.get_id("echo_wet")
 local ID_ECHO_STYLE = engine_lib.get_id("echo_style")
@@ -48,46 +47,33 @@ local function add_params()
     params:set_action(ID_ECHO_TIME, action_echo_time)
 end
 
-function page:render()
+function page:update_graphics_state()
     local time = ECHO_TIME_NAMES[params:get(ID_ECHO_TIME)]
     local wet = params:get(ID_ECHO_WET)
     local feedback = params:get(ID_ECHO_FEEDBACK)
     local style = engine_lib.echo_styles[params:get(ID_ECHO_STYLE)]
-    echo_graphic.time = params:get(ID_ECHO_TIME)
-    echo_graphic.feedback = params:get(ID_ECHO_FEEDBACK) -- 1 to 4
-    echo_graphic.wet = params:get(ID_ECHO_WET)
-    echo_graphic:render()
-    page.footer.button_text.k2.value = style
-    page.footer.button_text.k3.value = time
-    page.footer.button_text.e2.value = feedback
-    page.footer.button_text.e3.value = wet
-    page.footer:render()
-    window:render()
+
+    self.graphic:set("time", params:get(ID_ECHO_TIME))
+    self.graphic:set("feedback", params:get(ID_ECHO_FEEDBACK))
+    self.graphic:set("wet", params:get(ID_ECHO_WET))
+
+    self.footer:set_value("k2", style)
+    self.footer:set_value("k3", time)
+    self.footer:set_value("e2", feedback)
+    self.footer:set_value("e3", wet)
 end
 
 function page:initialize()
     add_params()
-    echo_graphic = EchoGraphic:new()
+    self.graphic = EchoGraphic:new()
 
     -- graphics
-    page.footer = Footer:new({
+    self.footer = Footer:new({
         button_text = {
-            k2 = {
-                name = "STYLE",
-                value = "",
-            },
-            k3 = {
-                name = "TIME",
-                value = "",
-            },
-            e2 = {
-                name = "FEEDB",
-                value = "",
-            },
-            e3 = {
-                name = "MIX",
-                value = "",
-            },
+            k2 = { name = "STYLE", value = "" },
+            k3 = { name = "TIME", value = "" },
+            e2 = { name = "FEEDB", value = "" },
+            e3 = { name = "MIX", value = "" },
         },
         font_face = FOOTER_FONT,
     })

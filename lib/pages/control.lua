@@ -41,22 +41,17 @@ local function add_params()
     params:set_action(ID_SEQ_BPM, action_set_bpm)
 end
 
-
-function page:render()
-    window:render()
+function page:update_graphics_state()
     local tempo_trimmed = util.round(params:get("clock_tempo"))
     local is_playing = page_sequencer.seq.transport_on
-    self.footer.button_text.e2.value = tempo_trimmed
-    self.footer.button_text.e3.value = page_sequencer.seq.steps
-    self.footer.button_text.k2.value = is_playing and "ON" or "OFF"
-    self.graphic.num_steps = page_sequencer.seq.steps
-    self.graphic.bpm = tempo_trimmed
-    self.graphic.is_playing = is_playing
-    self.graphic.current_beat = self.current_beat
-    self.graphic.current_step = self.current_step
-    self.graphic.cue = page_sequencer.seq.cued_ticks_per_step
-    self.graphic:render()
-    self.footer:render()
+    self.footer:set_value("e2", tempo_trimmed)
+    self.footer:set_value("e3", page_sequencer.seq.steps)
+    self.footer:set_value("k2", is_playing and "ON" or "OFF")
+    self.graphic:set("num_steps", page_sequencer.seq.steps)
+    self.graphic:set("bpm", tempo_trimmed)
+    self.graphic:set("is_playing", is_playing)
+    self.graphic:set("current_step", self.current_step)
+    self.graphic:set("cue", page_sequencer.seq.cued_ticks_per_step)
 end
 
 function page:initialize()

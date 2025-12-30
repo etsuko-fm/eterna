@@ -49,7 +49,7 @@ function page:update_loop_ranges()
         --- this works fine for n_slices > 6; else, voices need to recycle slices;
         --- hence the modulo.
         local slice_index = util.wrap(start + i, 1, n_slices)
-        self.graphic.active_slices[voice] = slice_index -- update slice graphic
+        self.graphic:set_table("active_slices", voice, slice_index) -- update slice graphic
         local start_pos = slice_start_timestamps[slice_index]
         -- loop start/end works as buffer range when loop not enabled
         -- end point is where the next slice starts
@@ -71,8 +71,8 @@ end
 function page:action_num_slices(v)
     -- update max start based on number of slices
     constrain_max_start(v)
-    self.graphic.slice_len = 1 / v
-    self.graphic.num_slices = v
+    self.graphic:set("slice_len", 1 / v)
+    self.graphic:set("num_slices", v)
     self:update_loop_ranges()
 end
 
@@ -118,8 +118,7 @@ local function e2(d)
     end
 end
 
-
-function page:render()
+function page:update_graphics_state()
     local lfo_enabled = params:get(ID_SLICE_LFO_ENABLED)
     local lfo_shape = SLICE_START_LFO_SHAPES[params:get(ID_SLICE_LFO_SHAPE)]
     for i = 1, 6 do
@@ -127,30 +126,21 @@ function page:render()
     end
 
     if is_sample_selected() then
-        self.graphic:render(true)
-
-        page.footer.button_text.e2.value = params:get(ID_SAMPLER_SLICE_START)
-        page.footer.button_text.e3.value = params:get(ID_SAMPLER_NUM_SLICES)
-        page.footer.button_text.k2.value = lfo_enabled == 1 and "ON" or "OFF"
-        page.footer.button_text.k3.value = string.upper(lfo_shape)
+        page.footer:set_value("e2", params:get(ID_SAMPLER_SLICE_START))
+        page.footer:set_value("e3", params:get(ID_SAMPLER_NUM_SLICES))
+        page.footer:set_value("k2", lfo_enabled == 1 and "ON" or "OFF")
+        page.footer:set_value("k3", string.upper(lfo_shape))
 
         if lfo_enabled == 1 then
             -- When LFO is disabled, E2 controls LFO rate
-            page.footer.button_text.e2.name = "RATE"
+            page.footer:set_name("e2", "RATE")
             -- convert period to label representation
-            local period = slice_lfo:get('period')
-            page.footer.button_text.e2.value = lfo_util.lfo_period_value_labels[period]
+            local period = slice_lfo:get("period")
+            page.footer:set_value("e2", lfo_util.lfo_period_value_labels[period])
         else
-            page.footer.button_text.e2.name = "START"
+            page.footer:set_name("e2", "START")
         end
-    else
-        screen.level(3)
-        screen.font_face(DEFAULT_FONT)
-        screen.move(64, 32)
     end
-
-    window:render()
-    page.footer:render()
 end
 
 function page:add_params()
@@ -168,13 +158,14 @@ function page:add_params()
 end
 
 function page:set_sample_duration(v)
-    print('Sample duration: ' .. v)
+    print("Sample duration: " .. v)
     self.sample_duration = v
     self:update_loop_ranges()
 end
 
 function page:initialize()
     self.graphic = SampleGraphic:new()
+    self.graphic.render_slices = true
     self.e2 = e2
     self.e3 = function(v) page:adjust_num_slices(v) end
     self.k2_off = toggle_lfo
@@ -182,11 +173,11 @@ function page:initialize()
 
     -- lfo
     slice_lfo = _lfos:add {
-        shape = 'up',
+        shape = "up",
         min = 0,
         max = 1,
         depth = 1,
-        mode = 'clocked',
+        mode = "clocked",
         period = 8,
         phase = 0,
         ppqn = 24,
@@ -194,7 +185,7 @@ function page:initialize()
             params:set(ID_SAMPLER_SLICE_START, controlspec_slice_start:map(scaled))
         end
     }
-    slice_lfo:set('reset_target', 'mid: rising')
+    slice_lfo:set("reset_target", "mid: rising")
 
     self:add_params()
 
@@ -211,24 +202,26 @@ function page:initialize()
 end
 
 function page:enable_env_polls()
-    for i = 1, 6 do
-        env_polls[i].callback = function(v) self.graphic.voice_env[i] = amp_to_log(v) end
+    -- setup poll callback for displaying envelope level per voice
+    for voice = 1, 6 do
+        env_polls[voice].callback = function(v) self.graphic:set_table("voice_env", voice, amp_to_log(v)) end
     end
 end
 
 function page:disable_env_polls()
-    for i = 1, 6 do
-        env_polls[i].callback = nil
-        self.graphic.voice_env[i] = 0
+    for voice = 1, 6 do
+        env_polls[voice].callback = nil
+        self.graphic:set_table("voice_env", voice, 0)
     end
 end
 
 function page:enter()
     self:enable_env_polls()
-    window.title = "SLICES"
+    window:set("title", "SLICES")
 end
 
 function page:exit()
+    -- disable polls to save cpu
     self:disable_env_polls()
 end
 

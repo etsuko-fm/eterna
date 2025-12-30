@@ -1,20 +1,6 @@
 local PanningGraphic = include(from_root("lib/graphics/PanningGraphic"))
 local page_name = "PANNING"
-local panning_graphic
 local lfo
-
-local function calculate_pan_positions()
-    local twist = params:get(ID_PANNING_TWIST)
-    local spread = params:get(ID_PANNING_SPREAD)
-    for i = 0, 5 do
-        local voice = i + 1
-        local angle = (twist + i / 6) * (math.pi * 2) -- Divide the range of radians into 6 equal parts, add offset
-        local pan = spread * math.cos(angle)
-        local voice_pan = engine_lib.get_id("voice_pan", voice)
-        params:set(voice_pan, pan)
-        panning_graphic.pans[voice] = pan
-    end
-end
 
 local function adjust_spread(d)
     local new_val = params:get(ID_PANNING_SPREAD) + d * controlspec_pan_spread.quantum
@@ -50,6 +36,20 @@ local page = Page:create({
     k3_off = cycle_lfo_shape,
 })
 
+local function calculate_pan_positions()
+    local twist = params:get(ID_PANNING_TWIST)
+    local spread = params:get(ID_PANNING_SPREAD)
+    for i = 0, 5 do
+        local voice = i + 1
+        local angle = (twist + i / 6) * (math.pi * 2) -- Divide the range of radians into 6 equal parts, add offset
+        local pan = spread * math.cos(angle)
+        local voice_pan = engine_lib.get_id("voice_pan", voice)
+        params:set(voice_pan, pan)
+        page.graphic:set_table("pans", voice, pan)
+    end
+end
+
+
 local function action_lfo_toggle(v)
     lfo_util.action_lfo_toggle(v, lfo, params:get(ID_PANNING_TWIST))
 end
@@ -72,54 +72,40 @@ local function add_params()
     params:set_action(ID_PANNING_SPREAD, calculate_pan_positions)
 end
 
-function page:render()
-    window:render()
+function page:update_graphics_state()
     local lfo_shape = params:get(ID_PANNING_LFO_SHAPE)
     local twist = params:get(ID_PANNING_TWIST)
     local spread = params:get(ID_PANNING_SPREAD)
-    panning_graphic:render()
     local lfo_enabled = params:get(ID_PANNING_LFO_ENABLED)
-    self.footer.button_text.k2.value = lfo_enabled == 1 and "ON" or "OFF"
-    page.footer.button_text.k3.value = string.upper(PANNING_LFO_SHAPES[lfo_shape])
+
+    self.footer:set_value('k2', lfo_enabled == 1 and "ON" or "OFF")
+    self.footer:set_value('k3', string.upper(PANNING_LFO_SHAPES[lfo_shape]))
+
     if lfo:get("enabled") == 1 then
         -- When LFO is disabled, E2 controls LFO rate
-
-        page.footer.button_text.e2.name = "RATE"
+        self.footer:set_name('e2', "RATE")
         -- convert period to label representation
         local period = lfo:get('period')
-        page.footer.button_text.e2.value = lfo_util.lfo_period_value_labels[period]
+        self.footer:set_value('e2', lfo_util.lfo_period_value_labels[period])
     else
         -- When LFO is disabled, E2 controls pan position
-        page.footer.button_text.e2.name = "TWIST"
-        page.footer.button_text.e2.value = misc_util.trim(tostring(twist), 5)
+        self.footer:set_name('e2', "TWIST")
+        self.footer:set_value('e2', misc_util.trim(tostring(twist), 5))
     end
-    page.footer.button_text.e3.value = misc_util.trim(tostring(spread), 5)
-    page.footer:render()
+    self.footer:set_value('e3', misc_util.trim(tostring(spread), 5))
 end
 
 function page:initialize()
     add_params()
     -- graphics
-    panning_graphic = PanningGraphic:new()
+    self.graphic = PanningGraphic:new()
     calculate_pan_positions()
     page.footer = Footer:new({
         button_text = {
-            k2 = {
-                name = "LFO",
-                value = "",
-            },
-            k3 = {
-                name = "WAVE",
-                value = "",
-            },
-            e2 = {
-                name = "TWIST",
-                value = "",
-            },
-            e3 = {
-                name = "WIDTH",
-                value = "",
-            },
+            k2 = { name = "LFO", value = "" },
+            k3 = { name = "WAVE", value = ""},
+            e2 = { name = "TWIST", value = ""},
+            e3 = { name = "WIDTH", value = ""},
         },
         font_face = FOOTER_FONT,
     })

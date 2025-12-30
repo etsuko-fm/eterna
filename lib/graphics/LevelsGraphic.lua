@@ -1,3 +1,5 @@
+local GraphicBase = require(from_root("lib/graphics/GraphicBase"))
+
 LevelsGraphic = {
     x = 0,
     y = 0,
@@ -13,12 +15,7 @@ LevelsGraphic = {
     voice_amp = {},
 }
 
-function LevelsGraphic:new(o)
-    o = o or {}
-    setmetatable(o, self)
-    self.__index = self
-    return o
-end
+setmetatable(LevelsGraphic, { __index = GraphicBase })
 
 local function draw_slider(x, y, w, h, fraction)
     -- draw background stripes

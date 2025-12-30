@@ -1,3 +1,5 @@
+local GraphicBase = require(from_root("lib/graphics/GraphicBase"))
+
 EnvGraphic = {
     x = 32,
     y = 24,
@@ -11,6 +13,8 @@ EnvGraphic = {
     shape = 0,
 }
 
+setmetatable(EnvGraphic, { __index = GraphicBase })
+
 local screen_w = 128
 local env_w = 32
 local env_h = 16
@@ -19,40 +23,33 @@ local env_y = 35
 local bg_fill = 2
 local fg_fill = 15
 
-function EnvGraphic:new(o)
-    o = o or {}           -- create state if not provided
-    setmetatable(o, self) -- define prototype
-    self.__index = self
-    return o              -- return instance
-end
-
 local function draw_slider(x, y, w, h, fraction, mod)
     screen.level(1)
-    for i = 0, w-1, 2 do
+    for i = 0, w - 1, 2 do
         screen.rect(x + i, y, 1, h)
         screen.fill()
     end
     local full_w = math.floor(w * fraction)
-    local mod_w = math.floor(w * fraction * (1-mod))
+    local mod_w = math.floor(w * fraction * (1 - mod))
     if mod > 0 then
-        local xmod = x+mod_w
+        local xmod = x + mod_w
         local wmod = math.max(full_w - mod_w, 1)
-        local max = math.max(1, wmod-1) 
+        local max = math.max(1, wmod - 1)
         for n = 0, max do
-            graphic_util.screen_level(fg_fill, (1/wmod*(wmod-n)) * -14, bg_fill+1)
+            graphic_util.screen_level(fg_fill, (1 / wmod * (wmod - n)) * -14, bg_fill + 1)
             if n == max or max < 2 then screen.level(15) end
-            screen.rect(xmod+n, y, 1, h)
+            screen.rect(xmod + n, y, 1, h)
             screen.fill()
         end
         screen.fill()
-        for i = 1, w-1, 2 do
+        for i = 1, w - 1, 2 do
             screen.level(0)
             screen.rect(x + i, y, 1, h)
             screen.fill()
         end
     else
         screen.level(fg_fill)
-        screen.rect(1 + math.floor((x + (w-2) * fraction) / 2) * 2, y, 1, h)
+        screen.rect(1 + math.floor((x + (w - 2) * fraction) / 2) * 2, y, 1, h)
         screen.fill()
     end
 end

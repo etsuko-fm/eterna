@@ -41,13 +41,13 @@ page_control = include(from_root("lib/pages/control"))
 local page_panning = include(from_root("lib/pages/panning"))
 local page_rates = include(from_root("lib/pages/rates"))
 local page_levels = include(from_root("lib/pages/levels"))
-draw_frame = false      -- indicates if the next frame should be drawn
+draw_frame = false -- indicates if the next frame should be drawn
 local page_indicator_counter = 0
 window = Window:new({ title = "ETERNA" })
 
 UPDATE_SLICES = false
 
-window.page_indicator_disabled = false
+window:set("page_indicator_disabled", false)
 
 DEFAULT_FONT = 68
 TITLE_FONT = 68
@@ -82,8 +82,8 @@ amp_historyR = {}
 local current_page_index = 1
 local current_page = pages[current_page_index]
 
-window.num_pages = #pages
-window.current_page = current_page_index
+window:set("num_pages", #pages)
+window:set("current_page", current_page_index)
 
 local function switch_page(new_index)
   if new_index ~= current_page_index and pages[new_index] then
@@ -168,7 +168,6 @@ function init()
   engine_lib.ping()
 end
 
-
 engine_lib.on_pong = function()
   print("connection verified")
   current_page:enter()
@@ -187,19 +186,19 @@ function key(n, z)
 
   if n == 2 and z == 0 and current_page.k2_off then
     current_page.k2_off()
-    current_page.footer.active_knob = "k2"
+    current_page.footer:set("active_knob", "k2")
   end
   if n == 2 and z == 1 and current_page.k2_on then
     current_page.k2_on()
-    current_page.footer.active_knob = "k2"
+    current_page.footer:set("active_knob", "k2")
   end
   if n == 3 and z == 0 and current_page.k3_off then
     current_page.k3_off()
-    current_page.footer.active_knob = "k3"
+    current_page.footer:set("active_knob", "k3")
   end
   if n == 3 and z == 1 and current_page.k3_on then
     current_page.k3_on()
-    current_page.footer.active_knob = "k3"
+    current_page.footer:set("active_knob", "k3")
   end
 end
 
@@ -210,33 +209,39 @@ function enc(n, d)
   if n == 1 then
     counter = 0 -- reset
     if (current_page_index < #pages and d > 0) or current_page_index > 1 and d < 0 then
-      window.enc1n = window.enc1n + d
+      window:set("enc1n", window.enc1n + d)
     end
 
     if window.enc1n > 3 then
       page_forward()
-      window.enc1n = 0
+      window:set("enc1n", 0)
     elseif window.enc1n < -3 then
       page_backward()
-      window.enc1n = 0
+      window:set("enc1n", 0)
     end
   end
 
   -- E2/E3 controls whatever is assigned to them on the current page
   if n == 2 and current_page.e2 then
     current_page.e2(d)
-    current_page.footer.active_knob = "e2"
+    current_page.footer:set("active_knob", "e2")
   end
 
   if n == 3 and current_page.e3 then
     current_page.e3(d)
-    current_page.footer.active_knob = "e3"
+    current_page.footer:set("active_knob", "e3")
   end
 end
 
-function refresh()
+function redraw()
+  -- called when returning from a sys menu
+  draw_frame = true
+  refresh(true)
+end
+
+function refresh(force)
   -- called at the completion of an actual screen redraw: https://llllllll.co/t/norns-update-231114/64915/62?page=4
-  -- driver runs at 1/60fps 
+  -- driver runs at 1/60fps
   -- FPS-based timer for the page indicator animation
   page_indicator_counter = page_indicator_counter + 1
 
@@ -245,27 +250,24 @@ function refresh()
     draw_frame = false
 
     -- actual render
-    render_frame()
+    render_frame(force)
 
     -- for frame indicator animation (90fps until reset)
     -- TODO this should really be time-based
     if window.enc1n ~= 0 and page_indicator_counter > 90 then
-      window.enc1n = 0
+      window:set("enc1n", 0)
       page_indicator_counter = 0
     end
   end
 end
 
-function render_frame()
-    screen.clear()
-    current_page:render()
-    if window.enc1n ~= 0 and counter > 90 then
-      window.enc1n = 0
-      counter = 0
-    end
-    -- enc1n = enc1n
-    screen.update()
-    draw_frame = true
+function render_frame(force)
+  if window.enc1n ~= 0 and counter > 90 then
+    window:set("enc1n", 0)
+    counter = 0
+  end
+  current_page:render(force)
+  draw_frame = true
 end
 
 -- convenience methods for matron
@@ -274,7 +276,7 @@ function rerun()
 end
 
 function shot()
-  local name = "screenshot-"..os.date("%Y-%m-%d-%H-%M-%S")
+  local name = "screenshot-" .. os.date("%Y-%m-%d-%H-%M-%S")
   screen.export_screenshot(name)
   print("screenshot saved to " .. name)
 end

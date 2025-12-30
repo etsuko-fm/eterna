@@ -65,52 +65,39 @@ local function create_filter_page(cfg)
         params:set_action(ID_BASE_FREQ, action_base_freq)
     end
 
-    function page:render()
-        window:render()
-        self:render_graphic()
-        self:render_footer()
-    end
-
-    function page:render_graphic(draw_lfo_range)
+    function page:update_graphics_state()
         local freq            = params:get(ENGINE_FREQ)
         local res             = params:get(ENGINE_RES)
         local drywet          = params:get(ID_WET)
+        local base_freq       = params:get(ID_BASE_FREQ)
+        local lfo_enabled     = params:get(ID_LFO_ENABLED)
 
         -- render non-modulated frequency
-        self.graphic.freq     = params:get(ID_BASE_FREQ)
-        self.graphic.lfo_freq = freq
+        self.graphic:set("freq", params:get(ID_BASE_FREQ))
+        self.graphic:set("lfo_freq", freq)
+        self.graphic:set("res", res)
+        self.graphic:set("type", FILTER_TYPE)
+        self.graphic:set("mix", (drywet - 1) / 2)
 
-        self.graphic.res      = res
-        self.graphic.type     = FILTER_TYPE
-        self.graphic.mix      = (drywet - 1) / 2
-        self.graphic:render(draw_lfo_range)
-    end
-
-    function page:render_footer()
-        local base_freq                  = params:get(ID_BASE_FREQ)
-        local drywet                     = params:get(ID_WET)
-        local res                        = params:get(ENGINE_RES)
-        local lfo_enabled                = params:get(ID_LFO_ENABLED)
-
-        self.footer.button_text.e2.name  = "FREQ"
-        self.footer.button_text.e2.value = misc_util.trim(tostring(base_freq), 5)
-        self.footer.button_text.k2.value = lfo_enabled == 1 and "ON" or "OFF"
-        self.footer.button_text.k3.value = DRY_WET_TYPES[drywet]
-        self.footer.button_text.e3.value = misc_util.trim(tostring(res), 5)
-        self.footer:render()
+        self.footer:set_name("e2", "FREQ")
+        self.footer:set_value("e2", misc_util.trim(tostring(base_freq), 5))
+        self.footer:set_value("k2", lfo_enabled == 1 and "ON" or "OFF")
+        self.footer:set_value("k3", DRY_WET_TYPES[drywet])
+        self.footer:set_value("e3", misc_util.trim(tostring(res), 5))
     end
 
     function page:initialize()
         add_params()
         self.graphic = FilterGraphic:new()
         self.graphic:set_size(62, 27)
+        self.graphic:set("draw_lfo_range", false)
         local w = 62
         local h = 27
         local screen_width = 128
         self.graphic:set_size(w, h)
-        self.graphic.x = screen_width / 2 - w / 2
+        self.graphic:set("x", screen_width / 2 - w / 2)
 
-        self.graphic.lfo_freq = params:get(ID_BASE_FREQ)
+        self.graphic:set("lfo_freq", params:get(ID_BASE_FREQ))
 
         self.footer = Footer:new({
             button_text = {

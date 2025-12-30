@@ -8,7 +8,7 @@ local function create_filter_lfo_page(cfg)
     local spec_lfo_range = cfg.spec_lfo_range
     local ENGINE_FREQ    = cfg.engine_freq
     local ENGINE_RES     = cfg.engine_res
-    local ID_LFO_ENABLED         = cfg.id_lfo_enabled
+    local ID_LFO_ENABLED = cfg.id_lfo_enabled
     local ID_LFO_SHAPE   = cfg.id_lfo_shape
     local ID_LFO_RANGE   = cfg.id_lfo_range
     local ID_FREQ_MOD    = cfg.id_freq_mod
@@ -86,49 +86,34 @@ local function create_filter_lfo_page(cfg)
     local function add_params()
         params:set_action(ID_FREQ_MOD, action_freq_mod)
         params:set_action(ID_LFO_RANGE, action_range)
-
         params:set_action(ID_LFO_ENABLED, action_lfo_toggle)
         params:set_action(ID_LFO_SHAPE, action_lfo_shape)
         params:set_action(ID_LFO_RATE, action_lfo_rate)
     end
 
-    function page:render()
-        window:render()
-        self:render_graphic()
-        page:render_footer()
-    end
-
-    function page:render_graphic()
+    function page:update_graphics_state()
         local freq      = params:get(ENGINE_FREQ)
         local res       = params:get(ENGINE_RES)
         local drywet    = params:get(ID_WET)
-
         local low, high = get_lfo_range()
-
-        self.graphic:set_lfo_range(low, high)
-
-        -- render non-modulated frequency
-        self.graphic.freq          = freq
-        self.graphic.res           = res
-        self.graphic.type          = FILTER_TYPE
-        self.graphic.mix           = (drywet - 1) / 2
-        self.graphic.rate_fraction = params:get(ID_LFO_RATE) / #lfo_util.lfo_period_labels
-        self.graphic:render(true)
-    end
-
-    function page:render_footer()
         local lfo_enabled = params:get(ID_LFO_ENABLED)
         local shape = string.upper(lfo_shapes[params:get(ID_LFO_SHAPE)])
         local period = lfo:get('period')
         local range = params:get(ID_LFO_RANGE)
-        self.footer.button_text.e2.name = "RATE"
-        self.footer.button_text.e2.value = lfo_util.lfo_period_value_labels[period]
 
-        self.footer.button_text.k2.value = lfo_enabled == 1 and "ON" or "OFF"
-        self.footer.button_text.k3.value = shape
-        self.footer.button_text.e3.value = range
+        self.footer:set_name("e2", "RATE")
+        self.footer:set_value("e2", lfo_util.lfo_period_value_labels[period])
+        self.footer:set_value("k2", lfo_enabled == 1 and "ON" or "OFF")
+        self.footer:set_value("k3", shape)
+        self.footer:set_value("e3", range)
 
-        self.footer:render()
+        -- render non-modulated frequency
+        self.graphic:set("freq", freq)
+        self.graphic:set_lfo_range(low, high)
+        self.graphic:set("res", res)
+        self.graphic:set("type", FILTER_TYPE)
+        self.graphic:set("mix", (drywet - 1) / 2)
+        self.graphic:set("rate_fraction", params:get(ID_LFO_RATE) / #lfo_util.lfo_period_labels)
     end
 
     function page:initialize()
@@ -139,8 +124,10 @@ local function create_filter_lfo_page(cfg)
         local w = 56
         local h = 26
         local screen_width = 128
+
         self.graphic:set_size(w, h)
-        self.graphic.x = screen_width / 2 - w / 2 + 3
+        self.graphic:set("x", screen_width / 2 - w / 2 + 3)
+        self.graphic:set("draw_lfo_range", true)
 
         page.footer = Footer:new({
             button_text = {

@@ -1,7 +1,6 @@
 local EnvGraphic = include(from_root("lib/graphics/EnvGraphic"))
 
 local page_name = "ENVELOPES"
-local envelope_graphic
 
 local function adjust_shape(d)
     misc_util.adjust_param(d, ID_ENVELOPES_SHAPE, controlspec_env_shape.quantum)
@@ -77,33 +76,28 @@ local function add_params()
     params:set_action(ID_ENVELOPES_MOD, action_mod)
 end
 
-function page:render()
-    window:render()
-
+function page:update_graphics_state()
     local time = params:get(ID_ENVELOPES_TIME)
     local shape = params:get(ID_ENVELOPES_SHAPE)
     local curve = ENVELOPE_NAMES[params:get(ID_ENVELOPES_CURVE)]
     local mod = params:get(ID_ENVELOPES_MOD)
 
-    envelope_graphic.time = misc_util.explin(controlspec_env_time.minval, controlspec_env_time.maxval, 0.001, 1, time, 4)
-    envelope_graphic.shape = shape
-    envelope_graphic.curve = curve
-    envelope_graphic.mod = ENVELOPE_MOD_OPTIONS[mod] ~= "OFF" and 0.5 or 0
+    -- map linear time value to exponential in the graphic
+    local graphic_time =  misc_util.explin(controlspec_env_time.minval, controlspec_env_time.maxval, 0.001, 1, time, 4)
+    self.graphic:set("time", graphic_time)
+    self.graphic:set("shape", shape)
+    self.graphic:set("curve", curve)
+    self.graphic:set("mod", ENVELOPE_MOD_OPTIONS[mod] ~= "OFF" and 0.5 or 0)
 
-    envelope_graphic:render()
-    page.footer.button_text.k2.value = ENVELOPE_MOD_OPTIONS[mod]
-    page.footer.button_text.k3.value = curve
-    page.footer.button_text.e2.value = misc_util.trim(tostring(time), 5)
-    page.footer.button_text.e3.value = misc_util.trim(tostring(shape), 5)
-    page.footer:render()
+    self.footer:set_value('k2', ENVELOPE_MOD_OPTIONS[mod])
+    self.footer:set_value('k3', curve)
+    self.footer:set_value('e2', misc_util.trim(tostring(time), 5))
+    self.footer:set_value('e3', misc_util.trim(tostring(shape), 5))
 end
-
 
 function page:initialize()
     add_params()
-
-    -- graphics
-    envelope_graphic = EnvGraphic:new()
+    self.graphic = EnvGraphic:new()
     page.footer = Footer:new({
         button_text = {
             k2 = { name = "MOD", value = "" },

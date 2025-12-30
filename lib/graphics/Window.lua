@@ -1,3 +1,5 @@
+local GraphicBase = require(from_root("lib/graphics/GraphicBase"))
+
 Window = {
   x = 0,
   y = 0,
@@ -5,7 +7,7 @@ Window = {
   h = 64,
   title = "WINDOW",
   title_x = 64,
-  font_face = 68,   -- TITLE_FONT
+  font_face = 68,
   brightness = 15,
   bar_height = 7,
   num_pages = nil,
@@ -14,13 +16,10 @@ Window = {
   page_indicator_disabled = false,
 }
 
-function Window:new(o)
-  o = o or {}             -- create state if not provided
-  setmetatable(o, self)   -- define prototype
-  self.__index = self
-  return o
-end
+setmetatable(Window, { __index = GraphicBase })
 
+-- places where the page indicator graphic inserts a space, to indicate which pages relate 
+-- to each other
 local page_breaks = { 2, 3, 4, 5, 6, 8, 10, 12, 13 }
 
 local function spacing_for(i)
@@ -86,7 +85,6 @@ function Window:render()
   if not self.page_indicator_disabled then
     self:draw_page_indicator()
   end
-
 end
 
 return Window

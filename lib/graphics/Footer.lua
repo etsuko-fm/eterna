@@ -1,3 +1,5 @@
+local GraphicBase = require(from_root("lib/graphics/GraphicBase"))
+
 Footer = {
     hide = false,
     active_fill = 10,    -- text brightness when corresponding button has been physically modified
@@ -22,16 +24,35 @@ Footer = {
             value = '',
         },
     },
+    -- the footer represents hardware 4 knobs (E2, E3, K2, K3);
+    -- this tracks which button has been last handled by the user
     active_knob = nil,
     font_face = 1,
-    brightness_state = {
+    brightness = {
         e2 = 1,
         e3 = 1,
         k2 = 1,
         k3 = 1,
-    }
+    },
+    last_active_button = nil,
+    animation_finished = true,
 }
 
+setmetatable(Footer, { __index = GraphicBase })
+
+function Footer:set_name(button, value)
+    if self.button_text[button].name ~= value then
+        self.button_text[button].name = value
+        self.changed = true
+    end
+end
+
+function Footer:set_value(button, value)
+    if self.button_text[button].value ~= value then
+        self.button_text[button].value = value
+        self.changed = true
+    end
+end
 
 local btn_width = 128 / 4 - 1
 local btn_height = 7
@@ -97,39 +118,44 @@ local buttons = {
     }
 }
 
-
 function Footer:render()
     if self.hide then return end
     screen.line_width(1)
     screen.font_size(8)
     screen.font_face(self.font_face)
-
-    -- draw 8 blocks
     screen.level(self.background_fill)
 
+    -- draw 8 lines indicating text fields
     for i = 1, 4 do
         screen.rect(rect_x_positions[i], base_y_row1 - 1, btn_width, 1)
-        screen.rect(rect_x_positions[i], base_y_row2, btn_width, 1) -- btn_height
+        screen.rect(rect_x_positions[i], base_y_row2, btn_width, 1)
     end
     screen.fill()
 
     local fill = self.foreground_fill
 
-    local active_button_switched = false
     for i, btn in ipairs(buttons) do
+        -- brighten active button
         if self.active_knob == btn.name then
             fill = self.active_fill
+            -- reset active knob (lets it act as a momentary switch)
+            self.last_active_button = self.active_knob
             self.active_knob = nil
-            active_button_switched = true
+            self.animation_finished = false
         else
+            -- decrease brightness over time
+            -- local brightness_metro = metro.init(function(stage)  end, 1/6, 15)
             fill = self.foreground_fill
-            if not active_button_switched and self.brightness_state[btn.name] ~= nil and self.brightness_state[btn.name] > fill then
-                fill = self.brightness_state[btn.name] - .1
+            if self.brightness[btn.name] ~= nil and self.brightness[btn.name] > fill then
+                fill = self.brightness[btn.name] - .1
+            end
+            if self.last_active_button == btn.name and util.round(self.brightness[btn.name]) == fill then
+                self.animation_finished = true
             end
         end
 
-        screen.level(math.floor(fill + .5))
-        self.brightness_state[btn.name] = fill
+        screen.level(util.round(fill))
+        self:set_table("brightness", btn.name, fill)
 
         if btn.type == "knob" then
             -- draw knob icon
@@ -154,7 +180,6 @@ function Footer:render()
         screen.move(rect_x_positions[i] + hor_txt_offset, text_y_row_2)
         screen.text(self.button_text[btn.name].value)
     end
-
     screen.stroke()
 end
 
