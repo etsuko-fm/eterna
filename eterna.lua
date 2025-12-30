@@ -1,5 +1,5 @@
 -- eterna
--- 0.12.0 @etsuko.fm
+-- 0.13.0 @etsuko.fm
 -- E1: scroll pages
 --
 -- Other controls, see footer:
@@ -163,6 +163,20 @@ function init()
 
   params:bang()
 
+  for _, device in pairs(midi.devices) do
+    if device.port ~= nil then
+      local conn = midi.connect(device.port)
+      print("connecting to midi device: ", device.name)
+      conn.event = function(data)
+        local msg = midi.to_msg(data)
+        if msg.type == 'continue' then
+          -- support midi continue messages
+          clock.transport.start()
+        end
+      end
+    end
+  end
+
   -- check supercollider connection
   print("pinging supercollider...")
   engine_lib.ping()
@@ -236,6 +250,7 @@ end
 function redraw()
   -- called when returning from a sys menu
   draw_frame = true
+  -- force refresh
   refresh(true)
 end
 

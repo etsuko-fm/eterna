@@ -84,7 +84,7 @@ function page:load_sample(file)
         if engine_lib.verify_file(file, channel, buffer) then
             if page_sequencer:is_running() then
                 print('sequncer stopped for file load')
-                page_sequencer:stop()
+                clock.transport.stop()
             end
             -- load file to buffer corresponding to channel
             engine_lib.load_file(file, channel, buffer)
@@ -127,7 +127,7 @@ function engine_lib.on_file_load_success(path, channel, buffer)
             print("lua: voice " .. voice .. " set to buffer " .. buffer_idx)
         end
         if continue_sequencer then
-            page_sequencer:start()
+            clock.transport.start()
             print('sequencer started')
         else
             print('sequencer hold')
@@ -155,8 +155,6 @@ local function select_sample()
         if file_path ~= 'cancel' then
             print("setting path to " .. file_path)
             params:set(ID_SAMPLER_AUDIO_FILE, file_path)
-            page.graphic:set('sample_selected', true)
-            page_slice.graphic:set('sample_selected', true)
         end
         page_disabled = false -- proceed with rendering page instead of file menu
         window:set("page_indicator_disabled", false)
@@ -196,6 +194,8 @@ function page:add_params()
             if file ~= "-" then
                 filename = to_sample_name(file)
                 self:load_sample(file)
+                page.graphic:set('sample_selected', true)
+                page_slice.graphic:set('sample_selected', true)
             end
         end
     )

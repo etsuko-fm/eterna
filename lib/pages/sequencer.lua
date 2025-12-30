@@ -99,32 +99,32 @@ function page:run_sequencer()
     end
 end
 
-function page:stop()
-    clock.transport.stop()
-    self.seq:reset()
-    self.graphic:set("is_playing", false)
-    self:disable_env_polls()
-end
-
-function page:start()
-    clock.transport.start()
-    self.graphic:set("is_playing", true)
-    self:enable_env_polls()
-end
-
 function page:toggle_transport()
-    if self.seq.transport_on then self:stop() else self:start() end
+    if self.seq.transport_on then
+        clock.transport.stop()
+    else
+        clock.transport.start()
+    end
 end
 
 function clock.transport.start()
-    page.seq.transport_on = true
-    main_seq_clock_id = clock.run(function() page:run_sequencer() end)
+    if not page.seq.transport_on then
+        page.seq.transport_on = true
+        main_seq_clock_id = clock.run(function() page:run_sequencer() end)
+        page.graphic:set("is_playing", true)
+        page:enable_env_polls()
+    end
 end
 
 function clock.transport.stop()
-    page.seq.transport_on = false
-    if main_seq_clock_id ~= nil then
-        clock.cancel(main_seq_clock_id)
+    if page.seq.transport_on then
+        page.seq.transport_on = false
+        if main_seq_clock_id ~= nil then
+            clock.cancel(main_seq_clock_id)
+            page.seq:reset()
+            page.graphic:set("is_playing", false)
+            page:disable_env_polls()
+        end
     end
 end
 
@@ -205,7 +205,7 @@ function page:initialize()
         font_face = FOOTER_FONT,
     })
     -- resets sequencer and sets transport_on variable
-    self:stop()
+    clock.transport.stop()
 
     -- provide starting grid (may be empty depending on default density param value)
     generate_perlin_seq()
