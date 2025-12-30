@@ -9,6 +9,10 @@ function GraphicBase:new(o)
     return o
 end
 
+function GraphicBase:init()
+    -- can be overridden
+end
+
 function GraphicBase:set(key, value)
     if self[key] ~= value then
         self[key] = value
