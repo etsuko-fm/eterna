@@ -148,6 +148,7 @@ function SequencerGraphic:render()
 
     -- draw the actual rects
     self:flush_rects(rects)
+    self.rerender = false
 end
 
 return SequencerGraphic
