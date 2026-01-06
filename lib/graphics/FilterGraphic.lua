@@ -274,17 +274,44 @@ function FilterGraphic:render()
             draw_filter(self, self.freq, self.res)
         end
     end
-    if self.mix == 0 then
-        -- 0% mix; only draw off line
-        screen.level(15)
-        self:draw_filter_off()
-    end
-
 
     local level = 0
 
     -- create "dashed" graphic
     self:draw_stripes(level)
+
+    local function draw_box_cross()
+        local boxsize = 8
+        local crossize = 5
+        local box_x = 64 - boxsize/2
+        local box_y = math.floor(self.y + self.graph_h/2 - boxsize/2)
+
+        screen.level(1)
+        screen.move(64,32)
+        screen.rect(box_x, box_y, boxsize, boxsize)
+        screen.line_width(1)
+        screen.stroke()
+
+        screen.level(3)
+
+        screen.move(box_x + 1, box_y + 1)
+        screen.line_rel(crossize, crossize)
+        screen.stroke()
+
+        screen.move(box_x + boxsize - 2, box_y + 1)
+        screen.line_rel(-crossize, crossize)
+        screen.stroke()
+    end
+
+    local function draw_off_text()
+        -- screen.font_face(DEFAULT_FONT)
+        -- screen.level(3)
+        -- screen.font_size(8)
+        screen.move(64,32)
+        screen.level(2)
+        screen.text_center("FILTER OFF")
+    end
+
 
     -- hide out of range stuff
     screen.level(0)
@@ -292,11 +319,17 @@ function FilterGraphic:render()
     screen.rect(self.x + self.graph_w, 15, self.x, self.graph_h)
     screen.fill()
 
-    -- draw edge
-    screen.line_width(1)
-    screen.level(1)
-    screen.rect(self.x, 15, self.graph_w, self.graph_h)
-    screen.stroke()
+    if self.mix == 0 and not self.draw_lfo_range then
+        -- 0% mix; only draw off line
+        -- draw_box_cross()
+        draw_off_text()
+    else
+        -- draw edge
+        screen.line_width(1)
+        screen.level(1)
+        screen.rect(self.x, 15, self.graph_w, self.graph_h)
+        screen.stroke()
+    end
 
     if self.draw_lfo_range then
         local y = self.y + self.graph_h + 1
