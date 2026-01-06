@@ -276,7 +276,7 @@ function FilterGraphic:render()
     end
     if self.mix == 0 then
         -- 0% mix; only draw off line
-        screen.level(15)
+        screen.level(2)
         self:draw_filter_off()
     end
 

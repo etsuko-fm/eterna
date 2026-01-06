@@ -77,13 +77,28 @@ local function create_filter_page(cfg)
         self.graphic:set("lfo_freq", freq)
         self.graphic:set("res", res)
         self.graphic:set("type", FILTER_TYPE)
+
+        -- drywet can be 1 (0%), 2 (50%) or 3 (100%)
         self.graphic:set("mix", (drywet - 1) / 2)
 
-        self.footer:set_name("e2", "FREQ")
-        self.footer:set_value("e2", misc_util.trim(tostring(base_freq), 5))
+        if drywet > 1 then
+            self.footer:set_name("e2", "FREQ")
+            self.footer:set_name("e3", "RES")
+            self.footer:set_value("e2", misc_util.trim(tostring(base_freq), 5))
+            self.footer:set_value("e3", misc_util.trim(tostring(res), 5))
+            self.e2 = adjust_freq
+            self.e3 = adjust_res
+
+        else
+            self.footer:set_name("e2", "")
+            self.footer:set_value("e2", "")
+            self.footer:set_name("e3", "")
+            self.footer:set_value("e3", "")
+            self.e2 = nil
+            self.e3 = nil
+        end
         self.footer:set_value("k2", lfo_enabled == 1 and "ON" or "OFF")
         self.footer:set_value("k3", DRY_WET_TYPES[drywet])
-        self.footer:set_value("e3", misc_util.trim(tostring(res), 5))
     end
 
     function page:initialize()
