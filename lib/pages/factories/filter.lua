@@ -28,7 +28,8 @@ local function create_filter_page(cfg)
         )
     end
 
-    local function toggle_lfo()
+    local function toggle_enabled()
+        -- todo: implement something logical, maybe migrate old psets
         misc_util.toggle_param(ID_LFO_ENABLED)
     end
 
@@ -40,7 +41,7 @@ local function create_filter_page(cfg)
         name = page_name,
         e2 = adjust_freq,
         e3 = adjust_res,
-        k2_off = toggle_lfo,
+        k2_off = toggle_enabled,
         k3_off = cycle_mix,
     })
 
@@ -70,20 +71,34 @@ local function create_filter_page(cfg)
         local res             = params:get(ENGINE_RES)
         local drywet          = params:get(ID_WET)
         local base_freq       = params:get(ID_BASE_FREQ)
-        local lfo_enabled     = params:get(ID_LFO_ENABLED)
 
         -- render non-modulated frequency
         self.graphic:set("freq", params:get(ID_BASE_FREQ))
         self.graphic:set("lfo_freq", freq)
         self.graphic:set("res", res)
         self.graphic:set("type", FILTER_TYPE)
+
+        -- drywet can be 1 (0%), 2 (50%) or 3 (100%)
         self.graphic:set("mix", (drywet - 1) / 2)
 
-        self.footer:set_name("e2", "FREQ")
-        self.footer:set_value("e2", misc_util.trim(tostring(base_freq), 5))
-        self.footer:set_value("k2", lfo_enabled == 1 and "ON" or "OFF")
+        if drywet > 1 then
+            self.footer:set_name("e2", "FREQ")
+            self.footer:set_name("e3", "RES")
+            self.footer:set_value("e2", misc_util.trim(tostring(base_freq), 5))
+            self.footer:set_value("e3", misc_util.trim(tostring(res), 5))
+            self.e2 = adjust_freq
+            self.e3 = adjust_res
+
+        else
+            self.footer:set_name("e2", "")
+            self.footer:set_value("e2", "")
+            self.footer:set_name("e3", "")
+            self.footer:set_value("e3", "")
+            self.e2 = nil
+            self.e3 = nil
+        end
+        self.footer:set_value("k2", DRY_WET_TYPES[drywet] ~= MIX_DRY and "ON" or "OFF")
         self.footer:set_value("k3", DRY_WET_TYPES[drywet])
-        self.footer:set_value("e3", misc_util.trim(tostring(res), 5))
     end
 
     function page:initialize()
@@ -101,7 +116,7 @@ local function create_filter_page(cfg)
 
         self.footer = Footer:new({
             button_text = {
-                k2 = { name = "LFO", value = "" },
+                k2 = { name = "ENABLE", value = "" },
                 k3 = { name = "MIX", value = "" },
                 e2 = { name = "FREQ", value = "" },
                 e3 = { name = "RES", value = "" },
