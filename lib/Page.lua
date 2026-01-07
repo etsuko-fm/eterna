@@ -41,7 +41,7 @@ end
 
 function Page:needs_rerender()
   return (self.graphic and self.graphic.changed)
-      or (self.footer and self.footer.changed)
+      or (self.footer and self.footer.changed or not self.footer.animation_finished)
       or (window and window.changed)
 end
 
