@@ -44,7 +44,7 @@ function Page:needs_rerender()
       or (self.footer and self.footer.changed or not self.footer.animation_finished)
       or (window and window.changed)
 end
-
+-- local a = 0
 function Page:render(force)
   -- hook to insert before rendering; if returns true, skips render
   if self:pre_render() then return end
@@ -57,6 +57,11 @@ function Page:render(force)
 
   -- render all layers
   screen.clear()
+
+  -- uncomment this and `local a = 0` to debug rendering logic
+  -- a = (a + 1) % 2
+  -- print('rerender:' .. a)
+
   window:render()
   window.changed = false
 

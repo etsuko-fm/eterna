@@ -27,6 +27,7 @@ local page = Page:create({
     e3 = adjust_num_steps,
     k2_off = toggle_transport,
     k3_on = function() page_sequencer:toggle_hold_step() end,
+    current_step = 0,
 })
 
 local function action_num_steps(v)

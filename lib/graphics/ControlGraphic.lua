@@ -5,7 +5,6 @@ ControlGraphic = {
     y = 0,
     w = 128,
     h = 64,
-    title = "WINDOW",
     font_face = 1,
     bpm_font_face = 40,
     bpm_font_size = 12,
@@ -13,7 +12,7 @@ ControlGraphic = {
     bright = 15,
     default_level = 3,
     is_playing = true,
-    current_step = 0,
+    current_step = 0, -- 0-based
     cue = nil, -- has value when a step div change is cued
     num_steps = 16,
 }
