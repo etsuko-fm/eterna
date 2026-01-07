@@ -64,7 +64,7 @@ function Page:render(force)
   self.graphic.changed = false
 
   self.footer:render()
-  self.footer.chnaged = false
+  self.footer.changed = false
 
   screen.update()
 end
