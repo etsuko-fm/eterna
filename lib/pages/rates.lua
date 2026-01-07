@@ -146,7 +146,7 @@ function page:initialize()
             e2 = { name = "CNTR", value = "0 OCT" },
             e3 = { name = "SPRD", value = "" },
         },
-        font_face = FOOTER_FONT
+        font_face = DEFAULT_FONT
     })
 end
 

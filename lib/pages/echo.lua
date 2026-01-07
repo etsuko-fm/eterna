@@ -75,7 +75,7 @@ function page:initialize()
             e2 = { name = "FEEDB", value = "" },
             e3 = { name = "MIX", value = "" },
         },
-        font_face = FOOTER_FONT,
+        font_face = DEFAULT_FONT,
     })
 end
 

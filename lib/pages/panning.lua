@@ -107,7 +107,7 @@ function page:initialize()
             e2 = { name = "TWIST", value = ""},
             e3 = { name = "WIDTH", value = ""},
         },
-        font_face = FOOTER_FONT,
+        font_face = DEFAULT_FONT,
     })
     -- lfo
     lfo = _lfos:add {

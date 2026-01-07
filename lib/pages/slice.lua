@@ -197,7 +197,7 @@ function page:initialize()
             e2 = { name = "START", value = "" },
             e3 = { name = "SLCS", value = "" },
         },
-        font_face = FOOTER_FONT,
+        font_face = DEFAULT_FONT,
     })
 end
 

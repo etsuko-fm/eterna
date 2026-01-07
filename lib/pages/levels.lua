@@ -136,7 +136,7 @@ function page:initialize()
             e2 = { name = "POS", value = "" },
             e3 = { name = "AMP", value = "" },
         },
-        font_face = FOOTER_FONT,
+        font_face = DEFAULT_FONT,
     })
 
     -- lfo

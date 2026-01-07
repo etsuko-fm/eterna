@@ -88,7 +88,6 @@ function RatesGraphic:render()
         end
         screen.stroke()
     end
-    self.rerender = false
 end
 
 return RatesGraphic

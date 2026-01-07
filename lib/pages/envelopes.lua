@@ -105,7 +105,7 @@ function page:initialize()
             e2 = { name = "TIME", value = "" },
             e3 = { name = "SHAPE", value = "" },
         },
-        font_face = FOOTER_FONT,
+        font_face = DEFAULT_FONT,
     })
 end
 function page:enter()

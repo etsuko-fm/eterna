@@ -202,7 +202,7 @@ function page:initialize()
             e2 = { name = "SEED", value = "" },
             e3 = { name = "DENS", value = "" },
         },
-        font_face = FOOTER_FONT,
+        font_face = DEFAULT_FONT,
     })
     -- resets sequencer and sets transport_on variable
     clock.transport.stop()

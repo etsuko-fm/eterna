@@ -49,9 +49,17 @@ UPDATE_SLICES = false
 
 window:set("page_indicator_disabled", false)
 
-DEFAULT_FONT = 68
-TITLE_FONT = 68
-FOOTER_FONT = 68
+local function get_font_id(name)
+  local font_lookup = tab.invert(screen.font_face_names)
+  local result = font_lookup[name]
+  if not result then
+    print("font not found: " .. result .. ", defaulting to norns.ttf")
+    return 1
+  end
+  return result
+end
+
+DEFAULT_FONT = get_font_id("Particle")
 
 local pages = {
   -- sample
@@ -134,6 +142,7 @@ function amp_to_log(amp)
   return (db - floor) / -floor -- normalize to 0..1
 end
 
+
 function init()
   -- Encoder sensitivity
   norns.enc.sens(1, 2)
@@ -142,6 +151,7 @@ function init()
     norns.enc.sens(i, 1)
     norns.enc.accel(i, false)
   end
+
 
   -- Enable engine module to process OSC from SuperCollider
   engine_lib.install_osc_hook()

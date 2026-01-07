@@ -42,7 +42,6 @@ function PanningGraphic:render()
         screen.rect(x, y, self.bar_w, self.bar_h)
         screen.fill()
     end
-    self.rerender = false
 end
 
 return PanningGraphic

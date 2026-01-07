@@ -27,7 +27,7 @@ Footer = {
     -- the footer represents hardware 4 knobs (E2, E3, K2, K3);
     -- this tracks which button has been last handled by the user
     active_knob = nil,
-    font_face = 1,
+    font_face = nil,
     brightness = {
         e2 = 1,
         e3 = 1,
@@ -72,18 +72,6 @@ local text_y_row_2 = base_y_row2 + 7
 local knob_y = 2
 local enc_y = 2
 local hor_txt_offset = 8
-
-function Footer:new(o)
-    -- create state if not provided
-    o = o or {}
-
-    -- define prototype
-    setmetatable(o, self)
-    self.__index = self
-
-    -- return instance
-    return o
-end
 
 local rect_x_positions = {}
 
@@ -180,7 +168,7 @@ function Footer:render()
         screen.move(rect_x_positions[i] + hor_txt_offset, text_y_row_2)
         screen.text(self.button_text[btn.name].value)
     end
-    screen.stroke()
+    -- screen.stroke()
 end
 
 return Footer

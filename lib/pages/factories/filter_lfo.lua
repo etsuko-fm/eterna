@@ -136,7 +136,7 @@ local function create_filter_lfo_page(cfg)
                 e2 = { name = "RATE", value = "" },
                 e3 = { name = "RANGE", value = "" },
             },
-            font_face = FOOTER_FONT,
+            font_face = DEFAULT_FONT,
         })
 
         lfo = _lfos:add({

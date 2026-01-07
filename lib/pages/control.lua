@@ -27,6 +27,7 @@ local page = Page:create({
     e3 = adjust_num_steps,
     k2_off = toggle_transport,
     k3_on = function() page_sequencer:toggle_hold_step() end,
+    current_step = 0,
 })
 
 local function action_num_steps(v)
@@ -65,7 +66,7 @@ function page:initialize()
             e2 = { name = "BPM", value = "" },
             e3 = { name = "STEPS", value = "" },
         },
-        font_face = FOOTER_FONT,
+        font_face = DEFAULT_FONT,
     })
 end
 

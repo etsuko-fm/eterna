@@ -107,7 +107,7 @@ function page:initialize()
             e2 = { name = "DRIVE", value = "" },
             e3 = { name = "OUT", value = "" },
         },
-        font_face = FOOTER_FONT,
+        font_face = DEFAULT_FONT,
     })
 end
 

@@ -106,7 +106,7 @@ local function create_filter_page(cfg)
                 e2 = { name = "FREQ", value = "" },
                 e3 = { name = "RES", value = "" },
             },
-            font_face = FOOTER_FONT,
+            font_face = DEFAULT_FONT,
         })
     end
 

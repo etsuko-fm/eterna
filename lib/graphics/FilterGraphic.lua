@@ -312,7 +312,6 @@ function FilterGraphic:render()
 
         draw_slider(self.x - 7, self.y - 1, 4, self.graph_h + 1, self.rate_fraction)
     end
-    self.rerender = false
 end
 
 return FilterGraphic

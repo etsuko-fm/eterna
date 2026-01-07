@@ -68,7 +68,6 @@ function LevelsGraphic:render()
     -- scan position slider
     local slider_y = self.y + scan_bar_v_margin
     draw_slider(self.x, slider_y, self.w, scan_bar_h, self.scan_val)
-    self.rerender = false
 end
 
 return LevelsGraphic

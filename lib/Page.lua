@@ -40,6 +40,7 @@ function Page:update_graphics_state()
 end
 
 function Page:needs_rerender()
+  -- print(self.footer.changed)
   return (self.graphic and self.graphic.changed)
       or (self.footer and self.footer.changed)
       or (window and window.changed)
@@ -64,7 +65,7 @@ function Page:render(force)
   self.graphic.changed = false
 
   self.footer:render()
-  self.footer.chnaged = false
+  self.footer.changed = false
 
   screen.update()
 end
