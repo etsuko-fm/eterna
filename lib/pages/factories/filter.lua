@@ -28,7 +28,8 @@ local function create_filter_page(cfg)
         )
     end
 
-    local function toggle_lfo()
+    local function toggle_enabled()
+        -- todo: implement something logical, maybe migrate old psets
         misc_util.toggle_param(ID_LFO_ENABLED)
     end
 
@@ -40,7 +41,7 @@ local function create_filter_page(cfg)
         name = page_name,
         e2 = adjust_freq,
         e3 = adjust_res,
-        k2_off = toggle_lfo,
+        k2_off = toggle_enabled,
         k3_off = cycle_mix,
     })
 
@@ -70,7 +71,6 @@ local function create_filter_page(cfg)
         local res             = params:get(ENGINE_RES)
         local drywet          = params:get(ID_WET)
         local base_freq       = params:get(ID_BASE_FREQ)
-        local lfo_enabled     = params:get(ID_LFO_ENABLED)
 
         -- render non-modulated frequency
         self.graphic:set("freq", params:get(ID_BASE_FREQ))
@@ -97,7 +97,7 @@ local function create_filter_page(cfg)
             self.e2 = nil
             self.e3 = nil
         end
-        self.footer:set_value("k2", lfo_enabled == 1 and "ON" or "OFF")
+        self.footer:set_value("k2", DRY_WET_TYPES[drywet] ~= MIX_DRY and "ON" or "OFF")
         self.footer:set_value("k3", DRY_WET_TYPES[drywet])
     end
 
@@ -116,7 +116,7 @@ local function create_filter_page(cfg)
 
         self.footer = Footer:new({
             button_text = {
-                k2 = { name = "LFO", value = "" },
+                k2 = { name = "ENABLE", value = "" },
                 k3 = { name = "MIX", value = "" },
                 e2 = { name = "FREQ", value = "" },
                 e3 = { name = "RES", value = "" },
