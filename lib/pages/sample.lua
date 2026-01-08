@@ -53,6 +53,51 @@ local function encoder_drive(d)
     misc_util.adjust_param(d, ID_SAMPLER_DRIVE, controlspec_sample_drive.quantum)
 end
 
+local function file_info(path)
+    if util.file_exists(path) then
+        local channels, samples, samplerate = audio.file_info(path)
+        local duration = samples / samplerate
+        print("loading file: " .. path)
+        print("  channels:\t" .. channels)
+        print("  samples:\t" .. samples)
+        print("  sample rate:\t" .. samplerate .. "hz")
+        print("  duration:\t" .. duration .. " sec")
+        return {
+            path = path,
+            channels = channels,
+            samples = samples,
+            samplerate = samplerate,
+        }
+    else
+        print('file not found: ' .. path .. ", loading cancelled")
+        return false
+    end
+end
+
+local function load_file(path, num_channels)
+    local metadata = file_info(path)
+    if not metadata then print('no metadata') return end
+    engine_lib.log_restraints(metadata)
+    if page_sequencer:is_running() then
+        print('sequncer stopped for file load')
+        clock.transport.stop()
+    end
+
+    for channel = 1,  num_channels do
+        print('channel '.. channel)
+        ready[channel] = false
+        local buffer = channel
+
+        -- load file to buffer corresponding to channel
+        engine_lib.load_file(metadata, channel, buffer)
+        active_channels = num_channels
+        page.graphic:set('num_channels', num_channels)
+        page_slice.graphic:set('num_channels', num_channels)
+        if channel < num_channels then
+            coroutine.yield()
+        end
+    end
+end
 
 function page:load_sample(file)
     -- use specified `file` as a sample and store enabled length of buffer in state
@@ -77,22 +122,9 @@ function page:load_sample(file)
 
     -- if continue_sequencer == nil, it's the first time the page runs
     continue_sequencer = page_sequencer:is_running() or continue_sequencer == nil
-
-    for channel = 1, math.min(num_channels, 6) do
-        ready[channel] = false
-        local buffer = channel
-        if engine_lib.verify_file(file, channel, buffer) then
-            if page_sequencer:is_running() then
-                print('sequncer stopped for file load')
-                clock.transport.stop()
-            end
-            -- load file to buffer corresponding to channel
-            engine_lib.load_file(file, channel, buffer)
-            active_channels = num_channels
-            self.graphic:set('num_channels', num_channels)
-            page_slice.graphic:set('num_channels', num_channels)
-        end
-    end
+    self.load_coroutine = coroutine.create(load_file)
+    local result = coroutine.resume(self.load_coroutine, file, num_channels)
+    if result then print(result) end
 end
 
 -- function engine_lib.on_normalize(buffer)
@@ -113,6 +145,12 @@ end
 function engine_lib.on_file_load_success(path, channel, buffer)
     print('successfully loaded channel ' .. channel .. " of " .. path .. " to buffer " .. buffer)
     ready[channel] = true
+    if coroutine.status(page.load_coroutine) ~= "dead" then
+        print('resuming coroutine with next channel')
+        coroutine.resume(page.load_coroutine)
+    else
+        print('loading coroutine finished')
+    end
     -- engine_lib.normalize(buffer)
 
     -- see engine_lib.on_waveform for what happens next
@@ -124,7 +162,7 @@ function engine_lib.on_file_load_success(path, channel, buffer)
             params:set(engine_lib.get_id("voice_channel", voice), buffer_idx)
             page.graphic:set_table("voice_buffer_map",  voice, buffer_idx)
             page_slice.graphic:set_table("voice_buffer_map",  voice, buffer_idx)
-            print("lua: voice " .. voice .. " set to buffer " .. buffer_idx)
+            print("voice " .. voice .. " set to channel " .. buffer_idx)
         end
         if continue_sequencer then
             clock.transport.start()

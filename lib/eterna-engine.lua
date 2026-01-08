@@ -523,44 +523,31 @@ function Eterna.metering_rate(v, is_delta)
     modify("metering_rate", v, is_delta)
 end
 
-function Eterna.verify_file(path, channel, buffer)
-    -- Perform sanity checks, this may be called prior to Eterna.load_file()
-    if util.file_exists(path) then
-        local channels, samples, samplerate = audio.file_info(path)
-        local duration = samples / samplerate
-        if channel == 1 then
-            print("loading file: " .. path)
-            print("  channels:\t" .. channels)
-            print("  samples:\t" .. samples)
-            print("  sample rate:\t" .. samplerate .. "hz")
-            print("  duration:\t" .. duration .. " sec")
-        else
-            print("loading channel "..channel)
-        end
-
-        if samplerate ~= 48000 then
-            print("Sample rate of 48KHz expected, found " ..
-                samplerate .. ". The file will load but playback at the wrong pitch.")
-        end
-        if duration > 349 then
-            print("Files longer than 349 seconds are truncated")
-        end
-        if channel > channels then
-            print("Can't load channel " .. channel .. ', file only has' .. channels .. ' channels')
-            return false
-        elseif buffer > 6 or buffer < 1 then
-            print("buffer should be 1..6")
-            return false
-        end
-        return true
-    else
-        print('file not found: ' .. path .. ", loading cancelled")
-        return false
+function Eterna.log_restraints(metadata)
+    if metadata.samplerate ~= 48000 then
+        print("Sample rate of 48KHz expected, found " ..
+            metadata.samplerate .. ". The file will load but playback at the wrong pitch.")
+    end
+    if metadata.samples > 16777216 then
+        print("Files with more than 2^24 samples (5m48s at 48khz) are truncated")
+    end
+    if metadata.channels > 6 then
+        print("File has " .. metadata.channels .. " channels, no more than 6 can be loaded")
     end
 end
 
-function Eterna.load_file(path, channel, buffer)
-    engine.load_channel_to_buffer(path, lua_to_sc[channel], lua_to_sc[buffer])
+function Eterna.load_file(metadata, channel, buffer)
+    if not metadata.path then print("path not provided") end
+    if buffer > 6 or buffer < 1 then
+        print("buffer should be 1..6")
+        return false
+    end
+    if channel > metadata.channels then
+        print("Can't load channel " .. channel .. ', file only has' .. metadata.channels .. ' channels')
+        return false
+    end
+    print("loading channel " .. channel)
+    engine.load_channel_to_buffer(metadata.path, lua_to_sc[channel], lua_to_sc[buffer])
 end
 
 function Eterna.normalize(buffer)
@@ -730,7 +717,6 @@ function Eterna.add_params()
 
     -- add number-based voice params (define one per voice)
     for command, entry in pairs(Eterna.params.voices.numbers) do
-        print("adding " .. command)
         for i = 1, 6 do
             local sc_idx = i - 1
             local id = Eterna.get_id(command, i)

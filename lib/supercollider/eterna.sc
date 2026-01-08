@@ -61,7 +61,7 @@ Engine_Eterna : CroneEngine {
 
     // which channel of the wav is assigned to which voice
     var voiceChannels = Array.fill(6, {|i| nil});
-    
+
     var setVoiceParam;
     var setVoiceChannel;
     var updateBuffer;
@@ -205,7 +205,7 @@ Engine_Eterna : CroneEngine {
           if (elapsed > timeout) {
             exit = true;
           } {
-            ("Still loading buffer" + bufferIndex + "..." + elapsed ++ "/" ++ timeout).postln;
+            ("Time elapsed for buffer " + bufferIndex + "..." + elapsed ++ "/" ++ timeout).postln;
           };
         };
 
@@ -292,7 +292,7 @@ Engine_Eterna : CroneEngine {
 
     setVoiceParam = { |voice, param, val|
         // Helper method for configuring a parameter of a SampleVoice synthdef. If the voice
-        // exists, it should be updated; and it should always be stored in case the synthdef 
+        // exists, it should be updated; and it should always be stored in case the synthdef
         // instance is later (re)created.
         if (voices[voice].isPlaying) {
             // if voice exists, set directly
@@ -310,7 +310,7 @@ Engine_Eterna : CroneEngine {
         setVoiceParam.(voice, \bufnum, buffer);
     };
 
-    voiceCommands.do { |param| 
+    voiceCommands.do { |param|
       // Concise way to create commands for all voice parameters that take a voice index and some value
       // Only valid for parameters that are configured directly on the SampleVoice from lua side
       this.addCommand("voice_"++param, "if", { |msg|
