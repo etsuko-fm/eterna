@@ -121,7 +121,7 @@ function engine_lib.on_file_load_success(path, channel, buffer)
     if all_true(ready) then
         for voice = 1, 6 do
             local buffer_idx = util.wrap(voice, 1, active_channels)
-            params:set(engine_lib.get_id("voice_bufnum", voice), buffer_idx)
+            params:set(engine_lib.get_id("voice_channel", voice), buffer_idx)
             page.graphic:set_table("voice_buffer_map",  voice, buffer_idx)
             page_slice.graphic:set_table("voice_buffer_map",  voice, buffer_idx)
             print("lua: voice " .. voice .. " set to buffer " .. buffer_idx)

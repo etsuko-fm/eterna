@@ -233,7 +233,7 @@ Eterna.params           = {
             "voice_enable_lpg",
         },
         options = {
-            ["voice_bufnum"] = {
+            ["voice_channel"] = {
                 options = { 0, 1, 2, 3, 4, 5 },
             },
         }
@@ -430,12 +430,13 @@ function Eterna.voice_rate(i, v)
     modify_voice("voice_rate", i, v)
 end
 
-function Eterna.each_voice_bufnum(v)
-    set_each_voice_param("voice_bufnum", v)
+function Eterna.each_voice_channel(v)
+    set_each_voice_param("voice_channel", v)
 end
 
-function Eterna.voice_bufnum(i, v)
-    modify_voice("voice_bufnum", i, v)
+function Eterna.voice_channel(i, v)
+    print('engine lib: setting voice ' .. i .. ' to buf index ' .. v)
+    modify_voice("voice_channel", i, v)
 end
 
 function Eterna.each_voice_drive(v, is_delta)

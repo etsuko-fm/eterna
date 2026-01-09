@@ -8,7 +8,7 @@ Voice {
 					arg out, 
 					drive = 0, // drive in dB, think of it as gain, except it's limited using tanh
 					rate = 0, // playback rate
-					bufnum=0, // buffer assigned to voice
+					bufnum=nil, // buffer assigned to voice
 					loop=1,  // 0 for one-shot, 1 for looping playback
 					loop_start=0.0, loop_end=0.0, // start/end pos in seconds
 					t_trig=1, // if 1, triggers the voice; it will then be reset back to zero because it starts with t_. Defaults to 1, because assumed voice is created only when it should be triggered

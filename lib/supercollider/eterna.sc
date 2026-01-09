@@ -54,11 +54,17 @@ Engine_Eterna : CroneEngine {
       "env_curve",
       "rate",
       "lpg_freq",
-      "bufnum",
     ];
 
     // For communicating to Lua whether user sample has been loaded
     var isBufferLoaded = Array.fill(6, {|i| false });
+
+    // which channel of the wav is assigned to which voice
+    var voiceChannels = Array.fill(6, {|i| nil});
+    
+    var setVoiceParam;
+    var setVoiceChannel;
+    var updateBuffer;
 
     voices = Array.fill(6, {|i| nil});
     buffers = Array.fill(6, {|i| nil});
@@ -99,14 +105,13 @@ Engine_Eterna : CroneEngine {
         \env_curve, 0,
         \rate, 1.0,
         \lpg_freq, 20000,
-        \numChannels, 1,
         \enable_lpg, 0,
         \ampBus, ampBuses[i].index,
         \envBus, envBuses[i].index,
         \out, lowpassBus,
         \bufnum, nil, 
       ])
-    });    
+    });
 
     // Ensure all buses have been created
     context.server.sync;
@@ -154,7 +159,7 @@ Engine_Eterna : CroneEngine {
       // Channel of audio file to load
       var channel = msg[2].asInteger;
 
-      // Buffer channel should be loaded to
+      // Index of bufferArray channel should be loaded to
       var bufferIndex = msg[3].asInteger;
 
       var r = Routine {
@@ -285,18 +290,51 @@ Engine_Eterna : CroneEngine {
 
     });
 
-    voiceCommands.do { |param| 
-      this.addCommand("voice_"++param, "if", { |msg|
-        var idx = msg[1].asInteger; // voice index
-        var val = msg[2]; // float value
-        if (voices[idx].isPlaying) {
-          // if voice exists, set directly
-          voices[idx].set(param.asSymbol, val);
+    setVoiceParam = { |voice, param, val|
+        // Helper method for configuring a parameter of a SampleVoice synthdef. If the voice
+        // exists, it should be updated; and it should always be stored in case the synthdef 
+        // instance is later (re)created.
+        if (voices[voice].isPlaying) {
+            // if voice exists, set directly
+            voices[voice].set(param.asSymbol, val);
         };
         // store value for when voice is recreated
-        voiceParams[idx].put(param.asSymbol, val);
+        voiceParams[voice].put(param.asSymbol, val);
+    };
+
+    updateBuffer = { |voice|
+        // Configures a SampleVoice instance with the current buffer matching the voice's assigned channel
+        var channel = voiceChannels[voice];
+        var buffer = buffers[channel];
+        ("Updating buffer for voice" + voice + ": set to channel" + channel + ", buffer" + buffer).postln;
+        setVoiceParam.(voice, \bufnum, buffer);
+    };
+
+    voiceCommands.do { |param| 
+      // Concise way to create commands for all voice parameters that take a voice index and some value
+      // Only valid for parameters that are configured directly on the SampleVoice from lua side
+      this.addCommand("voice_"++param, "if", { |msg|
+        var voice = msg[1].asInteger;
+        var val = msg[2];
+        setVoiceParam.(voice, param, val);
       });
     };
+
+    setVoiceChannel = { |voice, channel|
+        // Helper method to convert a channel index to a buffer index, and assign it to a SampleVoice instance
+        // bufferIdx is fixed (0-5), bufnum can be variable, assigned by server
+        var buffer = buffers[channel];
+        ("Assigned voice" ++ voice ++ " to channel " ++ channel ++ ", which has buffer " ++ buffer).postln;
+        voiceChannels[voice] = channel;
+        setVoiceParam.(voice, \buffer, buffer);
+    };
+
+    this.addCommand("voice_channel", "ii", { |msg|
+        var voice = msg[1].asInteger;
+        var channel = msg[2].asInteger;
+        ("received voice_channel cmd for voice"+voice).postln;
+        setVoiceChannel.(voice, channel);
+    });
 
     this.addCommand("voice_enable_lpg", "ii", { |msg|
         var idx = msg[1].asInteger; // voice index
@@ -312,15 +350,18 @@ Engine_Eterna : CroneEngine {
     this.addCommand("voice_trigger", "i", { 
       arg msg;
       var voiceIndex = msg[1]; // voice index
-      var bufnum = voiceParams[voiceIndex].at(\bufnum);
-      if (bufnum.isNil) {
-        "No buffer assigned to voice".postln;
+      var channel = voiceChannels[voiceIndex];
+      if (channel.isNil) {
+        ("No channel assigned to voice" + voiceIndex).postln;
       }
       {
-        if (isBufferLoaded[bufnum]) {
+        if (isBufferLoaded[channel]) {
           if (voices[voiceIndex].isPlaying) {
             voices[voiceIndex].set(\t_trig, 1);
           } {
+            // If the voice does not exist yet, assign the current buffer to the voice.
+            // As voices are flushed before a file load, this ensures the correct buffer is assigned to the voice
+            updateBuffer.(voiceIndex);
             // Create voice if doesn't exist (on-load script, after sample change)
             voices[voiceIndex] = Synth.before(lpfSynth, "SampleVoice", voiceParams[voiceIndex].asPairs);
             voices[voiceIndex].onFree { 
@@ -424,7 +465,7 @@ Engine_Eterna : CroneEngine {
   
   free {
     "Freeing up Eterna".postln;
-    Buffer.freeAll;
+    buffers.do(_.free);
     buffers.free;
 
     // Audio buses
