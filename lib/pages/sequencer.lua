@@ -112,7 +112,7 @@ function clock.transport.start()
         page.seq.transport_on = true
         main_seq_clock_id = clock.run(function() page:run_sequencer() end)
         page.graphic:set("is_playing", true)
-        page:enable_env_polls()
+        if page.active then page:enable_env_polls() end
     end
 end
 
@@ -123,7 +123,13 @@ function clock.transport.stop()
             clock.cancel(main_seq_clock_id)
             page.seq:reset()
             page.graphic:set("is_playing", false)
-            page:disable_env_polls()
+            -- todo: with midi it's possible to start/stop while on any page;
+            -- in such case the env polls of the correct page should be disabled.
+            -- possible solution is to move clock.transport definitions to eterna.lua,
+            -- and implement controlling behaviour from there.
+            -- for now, the page.active check below works, but if clock.transport.start is called while 
+            -- on the slices or playback rate page, env continues to be polled
+            if page.active then page:disable_env_polls() end
         end
     end
 end
@@ -229,10 +235,12 @@ end
 function page:enter()
     self:enable_env_polls()
     window.title = "SEQUENCER"
+    self.active = true
 end
 
 function page:exit()
     self:disable_env_polls()
+    self.active = false
 end
 
 return page
