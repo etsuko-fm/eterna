@@ -249,7 +249,6 @@ Eterna.available_polls  = {
     ["voice_amp"] = { "voice1amp", "voice2amp", "voice3amp", "voice4amp", "voice5amp", "voice6amp" },
     ["voice_env"] = { "voice1env", "voice2env", "voice3env", "voice4env", "voice5env", "voice6env" },
 }
-
 Eterna.get_polls        = function(name, as_tuple)
     -- Returns poll instances corresponding to the mapping in Eterna.available_polls
     -- Usage:

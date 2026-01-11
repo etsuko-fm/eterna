@@ -324,7 +324,7 @@ Engine_Eterna : CroneEngine {
         // Helper method to convert a channel index to a buffer index, and assign it to a SampleVoice instance
         // bufferIdx is fixed (0-5), bufnum can be variable, assigned by server
         var buffer = buffers[channel];
-        ("Assigned voice" ++ voice ++ " to channel " ++ channel ++ ", which has buffer " ++ buffer).postln;
+        ("Assigned voice" + voice + "to channel" + channel ++ ", which has buffer" + buffer).postln;
         voiceChannels[voice] = channel;
         setVoiceParam.(voice, \buffer, buffer);
     };
@@ -332,7 +332,6 @@ Engine_Eterna : CroneEngine {
     this.addCommand("voice_channel", "ii", { |msg|
         var voice = msg[1].asInteger;
         var channel = msg[2].asInteger;
-        ("received voice_channel cmd for voice"+voice).postln;
         setVoiceChannel.(voice, channel);
     });
 
