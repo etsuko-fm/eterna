@@ -110,7 +110,7 @@ function page:load_sample(file)
     retries = {}
 
     if self.active then
-        window:set("title", "LOADING...")
+        header:set("title", "LOADING...")
     end
     self.sample_duration_txt = nil
     for _, _page in ipairs({ page, page_slice }) do
@@ -195,11 +195,11 @@ local function select_sample()
             params:set(ID_SAMPLER_AUDIO_FILE, file_path)
         end
         page_disabled = false -- proceed with rendering page instead of file menu
-        window:set("page_indicator_disabled", false)
+        header:set("page_indicator_disabled", false)
     end
     fileselect.enter(_path.audio, callback, "audio")
     page_disabled = true                        -- don't render current page
-    window:set("page_indicator_disabled", true) -- hide page indicator
+    header:set("page_indicator_disabled", true) -- hide page indicator
 end
 local function s_to_minsec(s)
     local minutes = math.floor(s / 60)
@@ -248,7 +248,7 @@ function page:set_sample_duration(v)
     print('Sample duration: ' .. v)
     self.sample_duration = v
     self.sample_duration_txt = s_to_minsec(v)
-    window:set("title", self:get_sample_title())
+    header:set("title", self:get_sample_title())
     self.graphic:set('sample_duration', self.sample_duration)
     page_slice.sample_duration = v
     page_slice:update_loop_ranges()
@@ -282,9 +282,9 @@ end
 
 function page:enter()
     if not is_sample_selected() then
-        window:set("title", "SAMPLING")
+        header:set("title", "SAMPLING")
     else
-        window:set("title", self:get_sample_title())
+        header:set("title", self:get_sample_title())
     end
     self.active = true
 end

@@ -151,7 +151,7 @@ function page:initialize()
 end
 
 function page:enter()
-    window.title = page_name
+    header.title = page_name
     for i = 1, 6 do
         env_polls[i].callback = function(v) self.graphic:set_table("voice_env", i, amp_to_log(v)) end
     end

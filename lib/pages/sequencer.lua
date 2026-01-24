@@ -234,7 +234,7 @@ end
 
 function page:enter()
     self:enable_env_polls()
-    window.title = "SEQUENCER"
+    header.title = "SEQUENCER"
     self.active = true
 end
 
