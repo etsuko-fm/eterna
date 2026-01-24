@@ -43,11 +43,11 @@ local page_rates = include(from_root("lib/pages/rates"))
 local page_levels = include(from_root("lib/pages/levels"))
 draw_frame = false -- indicates if the next frame should be drawn
 local page_indicator_counter = 0
-window = Window:new({ title = "ETERNA" })
+header = Window:new({ title = "ETERNA" })
 
 UPDATE_SLICES = false
 
-window:set("page_indicator_disabled", false)
+header:set("page_indicator_disabled", false)
 
 DEFAULT_FONT = 68
 TITLE_FONT = 68
@@ -57,7 +57,7 @@ local pages = {
   -- sample
   page_sample,
   page_slice,
-  -- voice settings
+  -- voice settings 
   page_envelopes,
   page_rates,
   page_levels,
@@ -75,15 +75,14 @@ local pages = {
   page_master,
 }
 
-
 amp_historyL = {}
 amp_historyR = {}
 
 local current_page_index = 1
 local current_page = pages[current_page_index]
 
-window:set("num_pages", #pages)
-window:set("current_page", current_page_index)
+header:set("num_pages", #pages)
+header:set("current_page", current_page_index)
 
 local function switch_page(new_index)
   if new_index ~= current_page_index and pages[new_index] then
@@ -91,7 +90,7 @@ local function switch_page(new_index)
     current_page_index = new_index
     current_page = pages[current_page_index]
     current_page:enter()
-    window.current_page = current_page_index
+    header.current_page = current_page_index
   end
 end
 
@@ -223,15 +222,15 @@ function enc(n, d)
   if n == 1 then
     counter = 0 -- reset
     if (current_page_index < #pages and d > 0) or current_page_index > 1 and d < 0 then
-      window:set("enc1n", window.enc1n + d)
+      header:set("enc1n", header.enc1n + d)
     end
 
-    if window.enc1n > 3 then
+    if header.enc1n > 3 then
       page_forward()
-      window:set("enc1n", 0)
-    elseif window.enc1n < -3 then
+      header:set("enc1n", 0)
+    elseif header.enc1n < -3 then
       page_backward()
-      window:set("enc1n", 0)
+      header:set("enc1n", 0)
     end
   end
 
@@ -269,16 +268,16 @@ function refresh(force)
 
     -- for frame indicator animation (90fps until reset)
     -- TODO this should really be time-based
-    if window.enc1n ~= 0 and page_indicator_counter > 90 then
-      window:set("enc1n", 0)
+    if header.enc1n ~= 0 and page_indicator_counter > 90 then
+      header:set("enc1n", 0)
       page_indicator_counter = 0
     end
   end
 end
 
 function render_frame(force)
-  if window.enc1n ~= 0 and counter > 90 then
-    window:set("enc1n", 0)
+  if header.enc1n ~= 0 and counter > 90 then
+    header:set("enc1n", 0)
     counter = 0
   end
   current_page:render(force)

@@ -111,7 +111,7 @@ end
 function page:initialize()
     add_params()
 
-    window.title = "LEVELS"
+    header.title = "LEVELS"
 
     -- graphics
     self.graphic = LevelsGraphic:new({
@@ -158,7 +158,7 @@ function page:initialize()
 end
 
 function page:enter()
-    window.title = page_name
+    header.title = page_name
     for i = 1, 6 do
         amp_polls[i].callback = function(v) self.graphic:set_table("voice_amp", i, amp_to_log(v)) end
     end

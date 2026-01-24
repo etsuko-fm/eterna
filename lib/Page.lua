@@ -42,14 +42,14 @@ end
 function Page:needs_rerender()
   return (self.graphic and self.graphic.changed)
       or (self.footer and self.footer.changed or not self.footer.animation_finished)
-      or (window and window.changed)
+      or (header and header.changed)
 end
 -- local a = 0
 function Page:render(force)
   -- hook to insert before rendering; if returns true, skips render
   if self:pre_render() then return end
 
-  -- hook to make window/footer/graphic updates, which will toggle their `changed` flag
+  -- hook to make header/footer/graphic updates, which will toggle their `changed` flag
   self:update_graphics_state()
 
   -- determine if rendering is necessary
@@ -62,8 +62,8 @@ function Page:render(force)
   -- a = (a + 1) % 2
   -- print('rerender:' .. a)
 
-  window:render()
-  window.changed = false
+  header:render()
+  header.changed = false
 
   self.graphic:render()
   self.graphic.changed = false
