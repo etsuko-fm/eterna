@@ -109,7 +109,7 @@ function page:initialize()
     })
 end
 function page:enter()
-    window.title = page_name
+    header.title = page_name
 end
 
 return page

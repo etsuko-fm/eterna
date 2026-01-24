@@ -217,7 +217,7 @@ end
 
 function page:enter()
     self:enable_env_polls()
-    window:set("title", "SLICES")
+    header:set("title", "SLICES")
 end
 
 function page:exit()
