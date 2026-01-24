@@ -97,7 +97,7 @@ function page:initialize()
     master_left_poll.callback = function(v) self.graphic:set_table("out_levels",  1, amp_to_log(v)) end
     master_right_poll.callback = function(v) self.graphic:set_table("out_levels", 2, amp_to_log(v)) end
 
-    window.title = page_name
+    header.title = page_name
 
     -- graphics
     self.footer = Footer:new({
@@ -112,7 +112,7 @@ function page:initialize()
 end
 
 function page:enter()
-    window:set("title", page_name)
+    header:set("title", page_name)
     params:set(engine_lib.get_id("metering_rate"), 500)
 end
 

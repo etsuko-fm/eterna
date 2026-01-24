@@ -46,7 +46,7 @@ The encoder/knob mapping is the same for every page:
 Eterna consists of 12 separate pages, which may be browsed using E1.
 
 ### Sample
-Load a sample from disk with K2; the file path becomes the title of the window and shows the duration of the sample. Drive (E2) is available to boost the amplitude of all channels in parallel.
+Load a sample from disk with K2; the file path becomes the title of the header and shows the duration of the sample. Drive (E2) is available to boost the amplitude of all channels in parallel.
 
 ###### Supported formats
 - WAV/AIFF at 48kHz - other sample rates will be played back at incorrect pitch

@@ -157,7 +157,7 @@ local function create_filter_lfo_page(cfg)
     end
 
     function page:enter()
-        window.title = page_name
+        header.title = page_name
     end
 
     function page:exit()
