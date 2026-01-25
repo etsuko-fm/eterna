@@ -97,7 +97,7 @@ local function create_filter_lfo_page(cfg)
         local drywet    = params:get(ID_WET)
         local low, high = get_lfo_range()
         local lfo_enabled = params:get(ID_LFO_ENABLED)
-        local shape = string.upper(lfo_shapes[params:get(ID_LFO_SHAPE)])
+        local shape = string.upper(params:string(ID_LFO_SHAPE))
         local period = lfo:get('period')
         local range = params:get(ID_LFO_RANGE)
 

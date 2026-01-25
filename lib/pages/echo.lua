@@ -48,10 +48,10 @@ local function add_params()
 end
 
 function page:update_graphics_state()
-    local time = ECHO_TIME_NAMES[params:get(ID_ECHO_TIME)]
+    local time = params:string(ID_ECHO_TIME)
     local wet = params:get(ID_ECHO_WET)
     local feedback = params:get(ID_ECHO_FEEDBACK)
-    local style = engine_lib.echo_styles[params:get(ID_ECHO_STYLE)]
+    local style = params:string(ID_ECHO_STYLE)
 
     self.graphic:set("time", params:get(ID_ECHO_TIME))
     self.graphic:set("feedback", params:get(ID_ECHO_FEEDBACK))

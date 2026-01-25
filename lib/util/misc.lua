@@ -67,27 +67,49 @@ local function linexp(slo, shi, dlo, dhi, f, exp)
     )
 end
 
-local function cycle_param(param_id, tbl, delta, wrap)
+local function cycle_param(param_id, tbl, delta, wrap, skip)
     -- for a table-based param, set the param to the next index (+1) or 
-    -- a specified delta
+    -- a specified delta, skipping indexes in the skip table
     if delta == nil then delta = 1 end
     if wrap == nil then wrap = true end
-    local v = params:get(param_id)
-    local new
 
-    if wrap then
-        new = util.wrap(v + delta, 1, #tbl)
-    else
-        new = util.clamp(v + delta, 1, #tbl)
+    local v = params:get(param_id)
+    local new = v
+    local attempts = 0
+    local max_attempts = #tbl -- prevent infinite loops
+
+    -- helper function to check if index should be skipped
+    local function should_skip(idx)
+        if skip == nil then return false end
+        for i = 1, #skip do
+            if skip[i] == idx then return true end
+        end
+        return false
     end
 
+    while attempts < max_attempts do
+        if wrap then
+            new = util.wrap(new + delta, 1, #tbl)
+        else
+            new = util.clamp(new + delta, 1, #tbl)
+            -- if we hit a boundary in non-wrap mode and can't proceed, break
+            if new == v then break end
+        end
+        attempts = attempts + 1
+
+        if not should_skip(new) then
+            break
+        end
+    end
     params:set(param_id, new)
 end
 
 local function toggle_param(param_id)
+    -- switches binary param and returns new state
     local v = params:get(param_id)
     local new = 1 - v
     params:set(param_id, new)
+    return new
 end
 
 
