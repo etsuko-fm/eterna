@@ -27,6 +27,9 @@ end
 local VERSION_STRING = "0.14.0"
 local ID_VERSION = get_id(META, "version")
 
+-- PAGE SYSTEM
+ID_CURRENT_PAGE = get_id(META, "page")
+
 ---
 --- SAMPLE
 ---
@@ -122,17 +125,44 @@ controlspec_num_steps = controlspec.def {
     wrap = false
 }
 
+controlspec_vel_center = controlspec.def {
+    min = 0,
+    max = 1,
+    warp = 'lin',
+    step = 0.01,
+    default = 0.5,
+    quantum = 0.01,
+    wrap = false
+}
+
+controlspec_vel_spread = controlspec.def {
+    min = 0,
+    max = 1,
+    warp = 'lin',
+    step = 0.01,
+    default = 0.25,
+    quantum = 0.01,
+    wrap = false
+}
+
 ID_SEQ_SPEED = get_id(SEQUENCER, "step_size")
+ID_SEQ_PERLIN_MODIFIED = get_id(SEQUENCER, "perlin_modified")
 ID_SEQ_PERLIN_X = get_id(SEQUENCER, "perlin_x")
 ID_SEQ_PERLIN_Y = get_id(SEQUENCER, "perlin_x")
 ID_SEQ_PERLIN_Z = get_id(SEQUENCER, "perlin_z")
+ID_SEQ_VEL_CENTER = get_id(SEQUENCER, "velocity_center")
+ID_SEQ_VEL_SPREAD = get_id(SEQUENCER, "velocity_spread")
 ID_SEQ_DENSITY = get_id(SEQUENCER, "density")
 ID_SEQ_STYLE = get_id(SEQUENCER, "style")
 ID_SEQ_BPM = get_id(SEQUENCER, "bpm")
 ID_SEQ_NUM_STEPS = get_id(SEQUENCER, "num_steps")
-ID_SEQ_STEP = {}
-SEQ_TRACKS = 6
-SEQ_STEPS = 16
+STEPS = {}
+ID_SEQ_MODE = get_id(SEQUENCER, "mode")
+MODE_PERLIN = "PERLIN"
+MODE_VELOCITY = "VELO"
+SEQUENCER_MODES = {MODE_PERLIN, MODE_VELOCITY}
+NUM_TRACKS = 6
+NUM_STEPS = 16 -- TODO: actually MAX_STEPS
 
 ---
 --- ENVELOPES params
@@ -390,6 +420,10 @@ params:add_separator("ETERNA", "ETERNA")
 params:add_text(ID_VERSION, "version", VERSION_STRING)
 params:hide(ID_VERSION)
 
+params:add_text(ID_CURRENT_PAGE, "current_page", "EMPTY") -- would nil work?
+params:hide(ID_CURRENT_PAGE)
+params:set_save(ID_CURRENT_PAGE, false) -- TODO: check if not actually saved
+
 params:add_file(ID_SAMPLER_AUDIO_FILE, 'sample', nil)
 params:add_control(ID_SAMPLER_DRIVE, "drive", controlspec_sample_drive)
 
@@ -447,20 +481,28 @@ params:add_option(ID_SEQ_SPEED, "step size", sequence_util.sequence_speeds, 2)
 params:add_control(ID_SEQ_PERLIN_X, "seed", controlspec_perlin)
 params:add_number(get_id(SEQUENCER, "perlin_y"), "perlin y", 0, 25, 10, nil, true)
 params:add_number(get_id(SEQUENCER, "perlin_z"), "perlin z", 0, 100, nil, true)
+params:add_control(ID_SEQ_VEL_CENTER, "vel center", controlspec_vel_center)
+params:add_control(ID_SEQ_VEL_SPREAD, "vel spread", controlspec_vel_spread)
 params:add_control(ID_SEQ_DENSITY, "density", controlspec_perlin_density)
 params:add_number(ID_SEQ_BPM, "bpm", 1, 300)
+params:add_option(ID_SEQ_MODE, "source", SEQUENCER_MODES, 1)
+params:add_binary(ID_SEQ_PERLIN_MODIFIED, "perlin modified", "toggle", 0)
+
+-- managed by script
+params:hide(ID_SEQ_PERLIN_MODIFIED)
 params:hide(get_id(SEQUENCER, "perlin_y"))
 params:hide(get_id(SEQUENCER, "perlin_z"))
 params:hide(ID_SEQ_BPM)
+params:hide(ID_SEQ_MODE)
 
--- add 6x16 params for sequence step status
-for track = 1, SEQ_TRACKS do
-    ID_SEQ_STEP[track] = {}
-    for step = 1, SEQ_STEPS do
-        ID_SEQ_STEP[track][step] = get_id(SEQUENCER, "step_" .. track .. "_" .. step)
-        params:add_number(ID_SEQ_STEP[track][step], ID_SEQ_STEP[track][step], -1, 1, 0)
-        -- User can change values through UI instead
-        params:hide(ID_SEQ_STEP[track][step])
+-- add 6x16 params for sequence step status (for perlin noise only)
+for track = 1, NUM_TRACKS do
+    STEPS[track] = {}
+    for step = 1, NUM_STEPS do
+        STEPS[track][step] = get_id(SEQUENCER, "step_" .. track .. "_" .. step)
+        params:add_number(STEPS[track][step], STEPS[track][step], 0, 1, 0)
+        -- Hide from params menu, user can change values with UI/encoders instead
+        params:hide(STEPS[track][step])
     end
 end
 

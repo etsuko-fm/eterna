@@ -37,7 +37,7 @@ function get_decay(time, shape)
 end
 
 local function recalculate_time(time, shape)
-    if ENVELOPE_MOD_OPTIONS[params:get(ID_ENVELOPES_MOD)] == "OFF" then
+    if params:string(ID_ENVELOPES_MOD) == "OFF" then
         -- only modify envelopes if env modulation is off; otherwise delegated to sequencer
         local attack = get_attack(time, shape)
         local decay = get_decay(time, shape)
@@ -79,7 +79,7 @@ end
 function page:update_graphics_state()
     local time = params:get(ID_ENVELOPES_TIME)
     local shape = params:get(ID_ENVELOPES_SHAPE)
-    local curve = ENVELOPE_NAMES[params:get(ID_ENVELOPES_CURVE)]
+    local curve = params:string(ID_ENVELOPES_CURVE)
     local mod = params:get(ID_ENVELOPES_MOD)
 
     -- map linear time value to exponential in the graphic

@@ -12,7 +12,7 @@ ControlGraphic = {
     bright = 15,
     default_level = 3,
     is_playing = true,
-    current_step = 0, -- 0-based
+    current_step = 1, -- 1-based
     cue = nil, -- has value when a step div change is cued
     num_steps = 16,
 }
@@ -52,8 +52,8 @@ function ControlGraphic:render()
     local dim = 0
 
     -- sequence steps
-    for step = 0, 15 do
-        if step >= self.num_steps then
+    for step = 1, 16 do
+        if step > self.num_steps then
             -- dim brightness if step not enabled
             dim = -5
         end
@@ -63,14 +63,14 @@ function ControlGraphic:render()
             graphic_util.screen_level(faint_level, dim, 1)
         end
         local step_y = seq_y
-        if step % 4 == 0 then
+        if (step - 1) % 4 == 0 then
             h = seq_h + 1
             step_y = seq_y - 1
         else
             h = seq_h
             step_y = seq_y
         end
-        screen.rect(x + step * 4, step_y, 3, h)
+        screen.rect(x + (step - 1) * 4, step_y, 3, h)
         screen.fill()
     end
 
