@@ -135,6 +135,8 @@ ID_SEQ_BPM = get_id(SEQUENCER, "bpm")
 ID_SEQ_NUM_STEPS = get_id(SEQUENCER, "num_steps")
 ID_SEQ_STEP = {}
 ID_SEQ_STEP_GRID = {}
+ID_SEQ_SOURCE = get_id(SEQUENCER, "current_input")
+SEQUENCER_SOURCES = {"PERLIN", "GRID"}
 SEQ_TRACKS = 6
 SEQ_STEPS = 16
 
@@ -457,9 +459,11 @@ params:add_number(get_id(SEQUENCER, "perlin_y"), "perlin y", 0, 25, 10, nil, tru
 params:add_number(get_id(SEQUENCER, "perlin_z"), "perlin z", 0, 100, nil, true)
 params:add_control(ID_SEQ_DENSITY, "density", controlspec_perlin_density)
 params:add_number(ID_SEQ_BPM, "bpm", 1, 300)
+params:add_option(ID_SEQ_SOURCE, "source", SEQUENCER_SOURCES)
 params:hide(get_id(SEQUENCER, "perlin_y"))
 params:hide(get_id(SEQUENCER, "perlin_z"))
 params:hide(ID_SEQ_BPM)
+params:hide(ID_SEQ_SOURCE)
 
 -- add 6x16 params for sequence step status (for perlin noise only)
 for track = 1, SEQ_TRACKS do

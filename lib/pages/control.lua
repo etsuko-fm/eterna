@@ -17,6 +17,10 @@ local function toggle_transport(v)
     page_sequencer:toggle_transport()
 end
 
+local function toggle_source(v)
+    misc_util.cycle_param(ID_SEQ_SOURCE, SEQUENCER_SOURCES, 1, true)
+end
+
 local function adjust_num_steps(d)
     misc_util.adjust_param(d, ID_SEQ_NUM_STEPS, controlspec_num_steps.quantum)
 end
@@ -26,7 +30,7 @@ local page = Page:create({
     e2 = adjust_bpm,
     e3 = adjust_num_steps,
     k2_off = toggle_transport,
-    k3_on = function() page_sequencer:toggle_hold_step() end,
+    k3_off = toggle_source,
     current_step = 0,
 })
 
@@ -45,9 +49,11 @@ end
 function page:update_graphics_state()
     local tempo_trimmed = util.round(params:get("clock_tempo"))
     local is_playing = page_sequencer.seq.transport_on
+    local source = params:get(ID_SEQ_SOURCE)
     self.footer:set_value("e2", tempo_trimmed)
     self.footer:set_value("e3", page_sequencer.seq.steps)
     self.footer:set_value("k2", is_playing and "ON" or "OFF")
+    self.footer:set_value("k3", SEQUENCER_SOURCES[source])
     self.graphic:set("num_steps", page_sequencer.seq.steps)
     self.graphic:set("bpm", tempo_trimmed)
     self.graphic:set("is_playing", is_playing)
@@ -62,7 +68,7 @@ function page:initialize()
     page.footer = Footer:new({
         button_text = {
             k2 = { name = "PLAY", value = "" },
-            k3 = { name = "", value = "" },
+            k3 = { name = "SRC", value = "" },
             e2 = { name = "BPM", value = "" },
             e3 = { name = "STEPS", value = "" },
         },

@@ -32,19 +32,11 @@ local function add_params()
     -- )
 end
 
-function grid_conn:toggle_step(param_id)
-    -- todo: didn't you make a util for this?
-    local current = params:get(param_id) -- should be 1 or 0
-    local new = 1 - current
-    params:set(param_id, new)
-    return new
-end
-
 function grid_conn:key_press(x, y)
     if y == page_row then
         self:select_page(x)
     elseif y < 7 then
-        local state = self:toggle_step(ID_SEQ_STEP_GRID[y][x]) -- 0 or 1
+        local state = misc_util.toggle_param(ID_SEQ_STEP_GRID[y][x]) -- 0 or 1
         self.device:led(x, y, state * midplus) -- should be velocity
         self.device:refresh()
     end

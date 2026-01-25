@@ -85,9 +85,11 @@ local function cycle_param(param_id, tbl, delta, wrap)
 end
 
 local function toggle_param(param_id)
+    -- switches binary param and returns new state
     local v = params:get(param_id)
     local new = 1 - v
     params:set(param_id, new)
+    return new
 end
 
 
