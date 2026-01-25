@@ -26,14 +26,27 @@ local page_map = {
 }
 
 local function add_params()
-    params:set_action(ID_CURRENT_PAGE,
-        function(v) switch_page(page_map[v]) end
-    )
+    -- could still do this, but not sure if current page should really be a state param
+    -- params:set_action(ID_CURRENT_PAGE,
+    --     function(v) switch_page(page_map[v]) end
+    -- )
+end
+
+function grid_conn:toggle_step(param_id)
+    -- todo: didn't you make a util for this?
+    local current = params:get(param_id) -- should be 1 or 0
+    local new = 1 - current
+    params:set(param_id, new)
+    return new
 end
 
 function grid_conn:key_press(x, y)
     if y == page_row then
         self:select_page(x)
+    elseif y < 7 then
+        local state = self:toggle_step(ID_SEQ_STEP_GRID[y][x]) -- 0 or 1
+        self.device:led(x, y, state * midplus) -- should be velocity
+        self.device:refresh()
     end
 end
 
@@ -57,6 +70,7 @@ function grid_conn:reset_page_leds()
 end
 
 function grid_conn:init(device, current_page_id)
+    add_params()
     self.device = device
     self:reset_page_leds()
     self.device:led(current_page_id, page_row, midplus)
