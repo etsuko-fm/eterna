@@ -27,6 +27,9 @@ end
 local VERSION_STRING = "0.14.0"
 local ID_VERSION = get_id(META, "version")
 
+-- PAGE SYSTEM
+ID_CURRENT_PAGE = get_id(META, "page")
+
 ---
 --- SAMPLE
 ---
@@ -131,6 +134,7 @@ ID_SEQ_STYLE = get_id(SEQUENCER, "style")
 ID_SEQ_BPM = get_id(SEQUENCER, "bpm")
 ID_SEQ_NUM_STEPS = get_id(SEQUENCER, "num_steps")
 ID_SEQ_STEP = {}
+ID_SEQ_STEP_GRID = {}
 SEQ_TRACKS = 6
 SEQ_STEPS = 16
 
@@ -390,6 +394,10 @@ params:add_separator("ETERNA", "ETERNA")
 params:add_text(ID_VERSION, "version", VERSION_STRING)
 params:hide(ID_VERSION)
 
+params:add_text(ID_CURRENT_PAGE, "current_page", "EMPTY") -- would nil work?
+params:hide(ID_CURRENT_PAGE)
+params:set_save(ID_CURRENT_PAGE, false) -- TODO: check if not actually saved
+
 params:add_file(ID_SAMPLER_AUDIO_FILE, 'sample', nil)
 params:add_control(ID_SAMPLER_DRIVE, "drive", controlspec_sample_drive)
 
@@ -453,14 +461,25 @@ params:hide(get_id(SEQUENCER, "perlin_y"))
 params:hide(get_id(SEQUENCER, "perlin_z"))
 params:hide(ID_SEQ_BPM)
 
--- add 6x16 params for sequence step status
+-- add 6x16 params for sequence step status (for perlin noise only)
 for track = 1, SEQ_TRACKS do
     ID_SEQ_STEP[track] = {}
     for step = 1, SEQ_STEPS do
         ID_SEQ_STEP[track][step] = get_id(SEQUENCER, "step_" .. track .. "_" .. step)
-        params:add_number(ID_SEQ_STEP[track][step], ID_SEQ_STEP[track][step], -1, 1, 0)
-        -- User can change values through UI instead
+        params:add_number(ID_SEQ_STEP[track][step], ID_SEQ_STEP[track][step], 0, 1, 0)
+        -- Hide from params menu, user can change values with UI/encoders instead
         params:hide(ID_SEQ_STEP[track][step])
+    end
+end
+
+-- add 6x16 params for sequence step status (for grid only)
+for track = 1, SEQ_TRACKS do
+    ID_SEQ_STEP_GRID[track] = {}
+    for step = 1, SEQ_STEPS do
+        ID_SEQ_STEP_GRID[track][step] = get_id(SEQUENCER, "step_" .. track .. "_" .. step .. "_grid")
+        params:add_number(ID_SEQ_STEP_GRID[track][step], ID_SEQ_STEP_GRID[track][step], 0, 1, 0)
+        -- Hide from params menu, user can change values with Grid instead
+        params:hide(ID_SEQ_STEP_GRID[track][step])
     end
 end
 

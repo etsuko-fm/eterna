@@ -25,6 +25,7 @@ graphic_util = include(from_root("lib/util/graphic"))
 engine_lib = include(from_root("lib/eterna_engine"))
 
 include(from_root("lib/parameters"))
+grid_conn = include(from_root("lib/grid"))
 
 
 local page_sample = include(from_root("lib/pages/sample"))
@@ -44,6 +45,7 @@ local page_levels = include(from_root("lib/pages/levels"))
 draw_frame = false -- indicates if the next frame should be drawn
 local page_indicator_counter = 0
 header = Window:new({ title = "ETERNA" })
+grid_device = nil
 
 UPDATE_SLICES = false
 
@@ -84,12 +86,14 @@ local current_page = pages[current_page_index]
 header:set("num_pages", #pages)
 header:set("current_page", current_page_index)
 
-local function switch_page(new_index)
+function switch_page(new_index)
   if new_index ~= current_page_index and pages[new_index] then
     current_page:exit()
     current_page_index = new_index
     current_page = pages[current_page_index]
     current_page:enter()
+    current_page.graphic.changed = true
+    params:set(ID_CURRENT_PAGE, current_page.name)
     header.current_page = current_page_index
   end
 end
@@ -136,6 +140,11 @@ end
 function init()
   -- Encoder sensitivity
   norns.enc.sens(1, 2)
+  grid_device = grid.connect()
+  if grid_device then
+    print("connected to grid")
+    grid_conn:init(grid_device, current_page_index)
+  end
 
   for i = 2, 3 do
     norns.enc.sens(i, 1)
