@@ -21,10 +21,12 @@ lfo_util = include(from_root("lib/util/lfo"))
 misc_util = include(from_root("lib/util/misc"))
 sequence_util = include(from_root("lib/util/sequence"))
 graphic_util = include(from_root("lib/util/graphic"))
+envelope_util = include(from_root("lib/util/envelope"))
 
 engine_lib = include(from_root("lib/eterna_engine"))
 
 include(from_root("lib/parameters"))
+grid_conn = include(from_root("lib/grid"))
 
 
 local page_sample = include(from_root("lib/pages/sample"))
@@ -43,7 +45,9 @@ local page_rates = include(from_root("lib/pages/rates"))
 local page_levels = include(from_root("lib/pages/levels"))
 draw_frame = false -- indicates if the next frame should be drawn
 local page_indicator_counter = 0
+
 header = Window:new({ title = "ETERNA" })
+grid_port = nil
 
 UPDATE_SLICES = false
 
@@ -75,6 +79,8 @@ local pages = {
   page_master,
 }
 
+NUM_PAGES = #pages
+
 amp_historyL = {}
 amp_historyR = {}
 
@@ -84,13 +90,18 @@ local current_page = pages[current_page_index]
 header:set("num_pages", #pages)
 header:set("current_page", current_page_index)
 
-local function switch_page(new_index)
+function switch_page(new_index)
   if new_index ~= current_page_index and pages[new_index] then
     current_page:exit()
     current_page_index = new_index
     current_page = pages[current_page_index]
     current_page:enter()
+    current_page.graphic.changed = true
+    params:set(ID_CURRENT_PAGE, current_page.name)
     header.current_page = current_page_index
+    if grid_conn.active then
+      grid_conn:set_current_page(new_index)
+    end
   end
 end
 
@@ -133,9 +144,53 @@ function amp_to_log(amp)
   return (db - floor) / -floor -- normalize to 0..1
 end
 
+function activate_grid(port)
+  print("ACTIVATING...")
+  if port and port.device then
+    print("connected to grid")
+    print("ACTIVATED")
+    grid_conn:init(port, current_page_index)
+  end
+end
+
+function grid.add(device)
+  print('new grid found')
+  grid_device = grid.connect()
+  activate_grid(grid_device)
+end
+
+function grid.remove(device)
+  print('grid disconnected')
+  grid_conn:close(device)
+end
+
+
+osc.event = function(path, args, from)
+  if path == "/page" then
+    local index = tonumber(args[1])
+    switch_page(index)
+    print('OSC /page: switched to page '..index.." ("..pages[index].name..")")
+  elseif path == "/transport" then
+    local state = tonumber(args[1])
+    print('OSC /transport: ' .. state)
+    if state == 1 then
+      clock.transport.start()
+    else
+      clock.transport.stop()
+    end
+  end
+end
+
+
 function init()
   -- Encoder sensitivity
   norns.enc.sens(1, 2)
+  grid_port = grid.connect()
+
+  -- check if physical device is present
+  if grid_port.device then
+    activate_grid(grid_port)
+  end
 
   for i = 2, 3 do
     norns.enc.sens(i, 1)
@@ -250,6 +305,7 @@ function redraw()
   -- called when returning from a sys menu
   draw_frame = true
   -- force refresh
+  print('redraw()')
   refresh(true)
 end
 
@@ -259,12 +315,15 @@ function refresh(force)
   -- FPS-based timer for the page indicator animation
   page_indicator_counter = page_indicator_counter + 1
 
-  if draw_frame then
+  if draw_frame or force then
     -- prevent new screen events being queued until this frame is done
     draw_frame = false
 
     -- actual render
     render_frame(force)
+
+    -- update grid, if connected
+    grid_conn:refresh()
 
     -- for frame indicator animation (90fps until reset)
     -- TODO this should really be time-based
@@ -281,10 +340,11 @@ function render_frame(force)
     counter = 0
   end
   current_page:render(force)
+  -- once render has finished, ready to render again
   draw_frame = true
 end
 
--- convenience methods for matron
+-- convenience methods for repl
 function rerun()
   norns.script.load(norns.state.script)
 end

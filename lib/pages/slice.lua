@@ -120,7 +120,7 @@ end
 
 function page:update_graphics_state()
     local lfo_enabled = params:get(ID_SLICE_LFO_ENABLED)
-    local lfo_shape = SLICE_START_LFO_SHAPES[params:get(ID_SLICE_LFO_SHAPE)]
+    local lfo_shape = params:string(ID_SLICE_LFO_SHAPE)
     for i = 1, 6 do
         env_polls[i]:update()
     end
