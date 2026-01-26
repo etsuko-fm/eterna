@@ -17,7 +17,14 @@ local page = Page:create({
     name = page_name,
     --
     seq = seq,
+    source = SOURCE_PERLIN
 })
+
+-- maps selected sequence source to table with params for respective steps
+local source_map = {
+    [SOURCE_PERLIN] = STEPS_PERLIN,
+    [SOURCE_GRID] = STEPS_GRID,
+}
 
 local function generate_perlin_seq()
     local density = params:get(ID_SEQ_DENSITY)
@@ -25,10 +32,10 @@ local function generate_perlin_seq()
     local y_seed = params:get(ID_SEQ_PERLIN_Y)
     local z_seed = params:get(ID_SEQ_PERLIN_Z)
 
-    local sequence = sequence_util.generate_perlin_seq(SEQ_TRACKS, SEQ_STEPS, x_seed, y_seed, z_seed, density,
+    local sequence = sequence_util.generate_perlin_seq(NUM_TRACKS, NUM_STEPS, x_seed, y_seed, z_seed, density,
         PERLIN_ZOOM)
     for i, v in ipairs(sequence) do
-        params:set(ID_SEQ_STEP[v.voice][v.step], v.value)
+        params:set(STEPS_PERLIN[v.voice][v.step], v.value)
     end
 end
 
@@ -51,7 +58,8 @@ function page:evaluate_step(x, y)
     -- 0 <= x <= 15
     -- 1 <= y <= 6
     local enable_mod = ENVELOPE_MOD_OPTIONS[params:get(ID_ENVELOPES_MOD)]
-    local velocity = params:get(ID_SEQ_STEP[y][x + 1]) -- using x+1 for 1-based table indexing
+    local step_params = source_map[self.source]
+    local velocity = params:get(step_params[y][x + 1]) -- using x+1 for 1-based table indexing
     local on = velocity > 0
     local attack, decay = get_step_envelope(enable_mod, velocity)
     if on then
@@ -79,7 +87,7 @@ function page:on_step(step)
     self.graphic:set("current_step", step)
     page_control.current_step = step
     -- evaluate current step, send commands to supercollider accordingly
-    for y = 1, SEQ_TRACKS do
+    for y = 1, NUM_TRACKS do
         self:evaluate_step(step, y)
     end
 end
@@ -139,6 +147,7 @@ function page:is_running()
 end
 
 function page:update_graphics_state()
+    local source = params:get(ID_SEQ_SOURCE)
     self.graphic:set("num_steps", self.seq.steps)
     self.footer:set_value('k2', self.seq.transport_on and "ON" or "OFF")
     self.footer:set_value('k3', sequence_util.sequence_speeds[params:get(ID_SEQ_SPEED)])
@@ -155,11 +164,14 @@ function page:update_graphics_state()
     end
 end
 
-function page:update_grid_step(step, voice, v)
+function page:update_cell(step, voice, v)
     self.graphic:set_cell(voice, step, v)
+    if grid_conn.active then
+        grid_conn:set_cell(step, voice, v*15)
+    end
 end
 
-local function toggle_redraw()
+function page:toggle_redraw()
     redraw_sequence = true
 end
 
@@ -171,16 +183,17 @@ function page:action_sequence_speed(v)
 end
 
 function page:add_params()
-    params:set_action(ID_SEQ_PERLIN_X, toggle_redraw)
-    params:set_action(ID_SEQ_PERLIN_Y, toggle_redraw)
-    params:set_action(ID_SEQ_PERLIN_Z, toggle_redraw)
+    params:set_action(ID_SEQ_PERLIN_X, function(v) self:toggle_redraw() end)
+    params:set_action(ID_SEQ_PERLIN_Y, function(v) self:toggle_redraw() end)
+    params:set_action(ID_SEQ_PERLIN_Z, function(v) self:toggle_redraw() end)
 
     -- TODO: if just density changes, shouldn't recalculate perlin noise
-    params:set_action(ID_SEQ_DENSITY, toggle_redraw)
+    params:set_action(ID_SEQ_DENSITY, function(v) self:toggle_redraw() end)
     params:set_action(ID_SEQ_SPEED, function(v) self:action_sequence_speed(v) end)
-    for y = 1, SEQ_TRACKS do
-        for x = 1, SEQ_STEPS do
-            params:set_action(ID_SEQ_STEP[y][x], function(v) self:update_grid_step(x, y, v) end)
+    for y = 1, NUM_TRACKS do
+        for x = 1, NUM_STEPS do
+            params:set_action(STEPS_PERLIN[y][x], function(v) self:update_cell(x, y, v) end)
+            params:set_action(STEPS_GRID[y][x], function(v) self:update_cell(x, y, v) end)
         end
     end
 end

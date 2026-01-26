@@ -24,6 +24,15 @@ function SequencerGraphic:set_cell(voice, step, val)
     self.changed = true
 end
 
+function SequencerGraphic:clear()
+    for y = 1, 6 do
+        for x = 1,16 do
+            self.sequences[y][x] = 0
+        end
+    end
+    self.changed = true
+end
+
 
 local rows = 6
 local columns = 16

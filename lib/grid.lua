@@ -1,5 +1,5 @@
--- sequencer values can be retrieved/set via ID_SEQ_STEP_GRID[track][step]
-local grid_conn = {}
+-- sequencer values can be retrieved/set via STEPS_GRID[track][step]
+local grid_conn = { active = false, changed = false }
 local low = 2
 local mid = 4
 local midplus = 10
@@ -36,7 +36,7 @@ function grid_conn:key_press(x, y)
     if y == page_row then
         self:select_page(x)
     elseif y < 7 then
-        local state = misc_util.toggle_param(ID_SEQ_STEP_GRID[y][x]) -- 0 or 1
+        local state = misc_util.toggle_param(STEPS_GRID[y][x]) -- 0 or 1
         self.device:led(x, y, state * midplus) -- should be velocity
         self.device:refresh()
     end
@@ -61,7 +61,31 @@ function grid_conn:reset_page_leds()
     end
 end
 
+function grid_conn:reset_sequence_leds()
+    for y = 1, 6 do
+        for x = 1, 16 do
+            self.device:led(x, y, 0)
+        end
+    end
+    self.device:refresh()
+end
+
+function grid_conn:set_cell(x, y, level)
+    self.device:led(x, y, util.round(level))
+    self.changed = true
+    -- refresh call responsibility of the caller
+end
+
+function grid_conn:refresh()
+    if not self.active then return end
+    if self.changed then
+        self.device:refresh()
+        self.changed = false
+    end
+end
+
 function grid_conn:init(device, current_page_id)
+    self.active = true
     add_params()
     self.device = device
     self:reset_page_leds()
@@ -69,11 +93,4 @@ function grid_conn:init(device, current_page_id)
     device:refresh()
 end
 
--- bottom 2 grid rows
--- x x x x x x x x x x x x x x x x
--- x x x x x x x x x x x x x x x x
--- s - - - - - - s - l - h - - - -
--- s - e p l p - s - l - h - e m >
-
--- s s e p l p - s s l l h h - e m
 return grid_conn

@@ -137,14 +137,19 @@ function amp_to_log(amp)
   return (db - floor) / -floor -- normalize to 0..1
 end
 
+function activate_grid(device)
+    if device then
+      print("connected to grid")
+      grid_conn:init(grid_device, current_page_index)
+    end
+end
+
 function init()
   -- Encoder sensitivity
   norns.enc.sens(1, 2)
   grid_device = grid.connect()
-  if grid_device then
-    print("connected to grid")
-    grid_conn:init(grid_device, current_page_index)
-  end
+
+  activate_grid(grid_device)
 
   for i = 2, 3 do
     norns.enc.sens(i, 1)
@@ -274,6 +279,9 @@ function refresh(force)
 
     -- actual render
     render_frame(force)
+
+    -- update grid, if connected
+    grid_conn:refresh()
 
     -- for frame indicator animation (90fps until reset)
     -- TODO this should really be time-based

@@ -18,7 +18,7 @@ local function toggle_transport(v)
 end
 
 local function toggle_source(v)
-    misc_util.cycle_param(ID_SEQ_SOURCE, SEQUENCER_SOURCES, 1, true)
+    misc_util.cycle_param(ID_SEQ_SOURCE, SEQUENCER_SOURCES, 1)
 end
 
 local function adjust_num_steps(d)
@@ -41,9 +41,26 @@ end
 local function action_set_bpm(bpm)
     params:set("clock_tempo", bpm)
 end
+
+local function action_source(v)
+    -- clear sequence graphic from Grid and graphic when switching source
+    page_sequencer.graphic:clear()
+    grid_conn:reset_sequence_leds()
+    local new_source = SEQUENCER_SOURCES[v]
+    page_sequencer.source = new_source
+    if new_source == SOURCE_PERLIN then
+        -- re-render perlin sequence
+        page_sequencer:toggle_redraw()
+    else
+        -- switch back to last saved user sequence
+    end
+end
+
 local function add_params()
     params:set_action(ID_SEQ_NUM_STEPS, action_num_steps)
     params:set_action(ID_SEQ_BPM, action_set_bpm)
+    -- todo
+    params:set_action(ID_SEQ_SOURCE, action_source)
 end
 
 function page:update_graphics_state()
