@@ -42,18 +42,13 @@ local function action_set_bpm(bpm)
     params:set("clock_tempo", bpm)
 end
 
-local function action_source(v)
+local function action_source(src)
     -- clear sequence graphic from Grid and graphic when switching source
     page_sequencer.graphic:clear()
     grid_conn:reset_sequence_leds()
-    local new_source = SEQUENCER_SOURCES[v]
-    page_sequencer.source = new_source
-    if new_source == SOURCE_PERLIN then
-        -- redraw perlin sequence on next render
-        page_sequencer:toggle_redraw()
-    else
-        -- switch back to last saved user sequence
-    end
+
+    -- visualize sequence
+    page_sequencer:display_active_sequence()
 end
 
 local function add_params()

@@ -26,6 +26,7 @@ local source_map = {
 }
 
 local function generate_perlin_seq()
+    -- updates sequence step params based on current perlin noise config
     local density = params:get(ID_SEQ_DENSITY)
     local x_seed = params:get(ID_SEQ_PERLIN_X)
     local y_seed = params:get(ID_SEQ_PERLIN_Y)
@@ -35,6 +36,21 @@ local function generate_perlin_seq()
         PERLIN_ZOOM)
     for i, v in ipairs(sequence) do
         params:set(STEPS_PERLIN[v.voice][v.step], v.value)
+    end
+end
+
+function page:display_active_sequence()
+    -- get current sequence source (perlin noise or manual)
+    local source = params:string(ID_SEQ_SOURCE)
+
+    -- get param ids of each step
+    local step_ids = source_map[source]
+
+    -- triggering their action updates grid and sequence graphic
+    for track = 1, NUM_TRACKS do
+        for step = 1, NUM_STEPS do
+            params:lookup_param(step_ids[track][step]):bang()
+        end
     end
 end
 
@@ -58,7 +74,7 @@ function page:evaluate_step(x, y)
     -- 1 <= y <= 6
     local enable_mod = params:string(ID_ENVELOPES_MOD)
     local source = params:string(ID_SEQ_SOURCE)
-    local step_params = source_map[self.source]
+    local step_params = source_map[source]
     local velocity = params:get(step_params[y][x + 1]) -- using x+1 for 1-based table indexing
     local on = velocity > 0
     local attack, decay = get_step_envelope(enable_mod, velocity)
@@ -135,7 +151,7 @@ function clock.transport.stop()
             -- in such case the env polls of the correct page should be disabled.
             -- possible solution is to move clock.transport definitions to eterna.lua,
             -- and implement controlling behaviour from there.
-            -- for now, the page.active check below works, but if clock.transport.start is called while 
+            -- for now, the page.active check below works, but if clock.transport.start is called while
             -- on the slices or playback rate page, env continues to be polled
             if page.active then page:disable_env_polls() end
         end
@@ -167,7 +183,7 @@ end
 function page:update_cell(step, voice, v)
     self.graphic:set_cell(voice, step, v)
     if grid_conn.active then
-        grid_conn:set_cell(step, voice, v*15)
+        grid_conn:set_cell(step, voice, v * 15)
     end
 end
 
