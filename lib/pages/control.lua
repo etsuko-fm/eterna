@@ -49,7 +49,7 @@ local function action_source(v)
     local new_source = SEQUENCER_SOURCES[v]
     page_sequencer.source = new_source
     if new_source == SOURCE_PERLIN then
-        -- re-render perlin sequence
+        -- redraw perlin sequence on next render
         page_sequencer:toggle_redraw()
     else
         -- switch back to last saved user sequence

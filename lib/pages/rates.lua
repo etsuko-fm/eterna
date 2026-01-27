@@ -25,7 +25,7 @@ local function calculate_rates()
         -- these correspond to the octaves;
         -- 1 = normal, 1/2 = -12, -1/4 = -24, -1/8 = -36
         local rate
-        if RANGE_TABLE[params:get(ID_RATES_RANGE)] == THREE_OCTAVES then
+        if params:string(ID_RATES_RANGE) == THREE_OCTAVES then
             rate = util.clamp(2 ^ pitch, .5, 2)
         else
             rate = util.clamp(2 ^ pitch, .25, 4)
@@ -128,8 +128,8 @@ function page:update_graphics_state()
     local rates_center = misc_util.trim(tostring(params:get(ID_RATES_CENTER)), 5)
     local rates_spread = misc_util.trim(tostring(params:get(ID_RATES_SPREAD)), 5)
 
-    self.footer:set_value('k2', PLAYBACK_TABLE[params:get(ID_RATES_DIRECTION)])
-    self.footer:set_value('k3', RANGE_TABLE[params:get(ID_RATES_RANGE)])
+    self.footer:set_value('k2', params:string(ID_RATES_DIRECTION))
+    self.footer:set_value('k3', params:string(ID_RATES_RANGE))
     self.footer:set_value('e2', rates_center)
     self.footer:set_value('e3', rates_spread)
 end

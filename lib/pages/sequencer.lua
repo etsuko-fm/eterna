@@ -17,7 +17,6 @@ local page = Page:create({
     name = page_name,
     --
     seq = seq,
-    source = SOURCE_PERLIN
 })
 
 -- maps selected sequence source to table with params for respective steps
@@ -57,7 +56,8 @@ end
 function page:evaluate_step(x, y)
     -- 0 <= x <= 15
     -- 1 <= y <= 6
-    local enable_mod = ENVELOPE_MOD_OPTIONS[params:get(ID_ENVELOPES_MOD)]
+    local enable_mod = params:string(ID_ENVELOPES_MOD)
+    local source = params:string(ID_SEQ_SOURCE)
     local step_params = source_map[self.source]
     local velocity = params:get(step_params[y][x + 1]) -- using x+1 for 1-based table indexing
     local on = velocity > 0
@@ -150,7 +150,7 @@ function page:update_graphics_state()
     local source = params:get(ID_SEQ_SOURCE)
     self.graphic:set("num_steps", self.seq.steps)
     self.footer:set_value('k2', self.seq.transport_on and "ON" or "OFF")
-    self.footer:set_value('k3', sequence_util.sequence_speeds[params:get(ID_SEQ_SPEED)])
+    self.footer:set_value('k3', params:string(ID_SEQ_SPEED))
     self.footer:set_value('e2', params:get(ID_SEQ_PERLIN_X))
     self.footer:set_value('e3', params:get(ID_SEQ_DENSITY))
     if redraw_sequence then
