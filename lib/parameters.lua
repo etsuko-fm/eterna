@@ -125,10 +125,32 @@ controlspec_num_steps = controlspec.def {
     wrap = false
 }
 
+controlspec_vel_center = controlspec.def {
+    min = 0,
+    max = 1,
+    warp = 'lin',
+    step = 0.01,
+    default = 0.5,
+    quantum = 0.01,
+    wrap = false
+}
+
+controlspec_vel_spread = controlspec.def {
+    min = 0,
+    max = 1,
+    warp = 'lin',
+    step = 0.01,
+    default = 0.25,
+    quantum = 0.01,
+    wrap = false
+}
+
 ID_SEQ_SPEED = get_id(SEQUENCER, "step_size")
 ID_SEQ_PERLIN_X = get_id(SEQUENCER, "perlin_x")
 ID_SEQ_PERLIN_Y = get_id(SEQUENCER, "perlin_x")
 ID_SEQ_PERLIN_Z = get_id(SEQUENCER, "perlin_z")
+ID_SEQ_VEL_CENTER = get_id(SEQUENCER, "velocity_center")
+ID_SEQ_VEL_SPREAD = get_id(SEQUENCER, "velocity_spread")
 ID_SEQ_DENSITY = get_id(SEQUENCER, "density")
 ID_SEQ_STYLE = get_id(SEQUENCER, "style")
 ID_SEQ_BPM = get_id(SEQUENCER, "bpm")
@@ -459,9 +481,11 @@ params:add_option(ID_SEQ_SPEED, "step size", sequence_util.sequence_speeds, 2)
 params:add_control(ID_SEQ_PERLIN_X, "seed", controlspec_perlin)
 params:add_number(get_id(SEQUENCER, "perlin_y"), "perlin y", 0, 25, 10, nil, true)
 params:add_number(get_id(SEQUENCER, "perlin_z"), "perlin z", 0, 100, nil, true)
+params:add_control(ID_SEQ_VEL_CENTER, "vel center", controlspec_vel_center)
+params:add_control(ID_SEQ_VEL_SPREAD, "vel spread", controlspec_vel_spread)
 params:add_control(ID_SEQ_DENSITY, "density", controlspec_perlin_density)
 params:add_number(ID_SEQ_BPM, "bpm", 1, 300)
-params:add_option(ID_SEQ_SOURCE, "source", SEQUENCER_SOURCES)
+params:add_option(ID_SEQ_SOURCE, "source", SEQUENCER_SOURCES, 1)
 params:hide(get_id(SEQUENCER, "perlin_y"))
 params:hide(get_id(SEQUENCER, "perlin_z"))
 params:hide(ID_SEQ_BPM)

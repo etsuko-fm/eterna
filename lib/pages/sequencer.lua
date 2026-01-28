@@ -55,11 +55,21 @@ function page:display_active_sequence()
 end
 
 local function e2(d)
-    misc_util.adjust_param(d, ID_SEQ_PERLIN_X, controlspec_perlin.quantum)
+    local source = params:string(ID_SEQ_SOURCE)
+    if source == SOURCE_PERLIN then
+        misc_util.adjust_param(d, ID_SEQ_PERLIN_X, controlspec_perlin.quantum)
+    elseif source == SOURCE_GRID then
+        misc_util.adjust_param(d, ID_SEQ_VEL_CENTER, controlspec_vel_center.quantum)
+    end
 end
 
 local function e3(d)
-    misc_util.adjust_param(d, ID_SEQ_DENSITY, controlspec_perlin_density.quantum)
+    local source = params:string(ID_SEQ_SOURCE)
+    if source == SOURCE_PERLIN then
+        misc_util.adjust_param(d, ID_SEQ_DENSITY, controlspec_perlin_density.quantum)
+    elseif source == SOURCE_GRID then
+        misc_util.adjust_param(d, ID_SEQ_VEL_SPREAD, controlspec_vel_spread.quantum)
+    end
 end
 
 local function get_step_envelope(enable_mod, velocity)
@@ -163,12 +173,19 @@ function page:is_running()
 end
 
 function page:update_graphics_state()
-    local source = params:get(ID_SEQ_SOURCE)
     self.graphic:set("num_steps", self.seq.steps)
+    local source = params:string(ID_SEQ_SOURCE)
     self.footer:set_value('k2', self.seq.transport_on and "ON" or "OFF")
     self.footer:set_value('k3', params:string(ID_SEQ_SPEED))
-    self.footer:set_value('e2', params:get(ID_SEQ_PERLIN_X))
-    self.footer:set_value('e3', params:get(ID_SEQ_DENSITY))
+    if source == SOURCE_PERLIN then
+        self.footer:set_value('e2', params:get(ID_SEQ_PERLIN_X))
+        self.footer:set_value('e3', params:get(ID_SEQ_DENSITY))
+    elseif source == SOURCE_GRID then
+        self.footer:set_name('e2', "V CNTR")
+        self.footer:set_name('e3', "V SPRD")
+        self.footer:set_value('e2', params:get(ID_SEQ_VEL_CENTER))
+        self.footer:set_value('e3', params:get(ID_SEQ_VEL_SPREAD))
+    end
     if redraw_sequence then
         -- condition prevents updating perlin values more often than the screen refreshes.
         redraw_sequence = false
@@ -198,6 +215,24 @@ function page:action_sequence_speed(v)
     self.seq:set_ticks_per_step(step_div)
 end
 
+local function action_perlin(self, x, y)
+    -- retruns a closure so the x/y params can be injected
+    return function(v)
+        if params:string(ID_SEQ_SOURCE) == SOURCE_PERLIN then
+            self:update_cell(x, y, v)
+        end
+    end
+end
+
+local function action_grid(self, x, y)
+    -- retruns a closure so the x/y params can be injected
+    return function(v)
+        if params:string(ID_SEQ_SOURCE) == SOURCE_GRID then
+            self:update_cell(x, y, v)
+        end
+    end
+end
+
 function page:add_params()
     params:set_action(ID_SEQ_PERLIN_X, function(v) self:toggle_redraw() end)
     params:set_action(ID_SEQ_PERLIN_Y, function(v) self:toggle_redraw() end)
@@ -208,8 +243,8 @@ function page:add_params()
     params:set_action(ID_SEQ_SPEED, function(v) self:action_sequence_speed(v) end)
     for y = 1, NUM_TRACKS do
         for x = 1, NUM_STEPS do
-            params:set_action(STEPS_PERLIN[y][x], function(v) self:update_cell(x, y, v) end)
-            params:set_action(STEPS_GRID[y][x], function(v) self:update_cell(x, y, v) end)
+            params:set_action(STEPS_PERLIN[y][x], action_perlin(self, x, y))
+            params:set_action(STEPS_GRID[y][x], action_grid(self, x, y))
         end
     end
 end
