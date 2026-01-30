@@ -32,12 +32,21 @@ local function add_params()
     -- )
 end
 
+local function toggle_step(x, y)
+    if params:get(STEPS_GRID[y][x]) > 0 then
+        params:set(STEPS_GRID[y][x], 0)
+    else
+        -- I ned to know the velocity mask. will it forever be the same for each sequence?
+        params:set(STEPS_GRID[y][x], 0)
+    end
+end
+
 function grid_conn:key_press(x, y)
     if y == page_row then
         self:select_page(x)
     elseif y < 7 then
-        local state = misc_util.toggle_param(STEPS_GRID[y][x]) -- 0 or 1
-        self.device:led(x, y, state * midplus) -- should be velocity
+        local velocity = misc_util.toggle_param(STEPS_GRID[y][x]) -- 0 or 1
+        self.device:led(x, y, state * 15) -- should be velocity
         self.device:refresh()
     end
 end
@@ -71,7 +80,7 @@ function grid_conn:reset_sequence_leds()
 end
 
 function grid_conn:set_cell(x, y, level)
-    self.device:led(x, y, util.round(level))
+    self.device:led(x, y, math.ceil(level))
     self.changed = true
     -- refresh call responsibility of the caller
 end

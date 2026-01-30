@@ -9,7 +9,7 @@ local convert_sequence_speed = {
     8,
 }
 
-local function generate_perlin_seq(rows, cols, x, y, z, density, zoom)
+local function generate_perlin(rows, cols, x, y, z, density, zoom)
     local velocities = {}
     for row = 1, rows do
         local perlin_y = row * zoom + y
@@ -51,6 +51,6 @@ end
 return {
     sequence_speeds = sequence_speeds,
     convert_sequence_speed = convert_sequence_speed,
-    generate_perlin_seq = generate_perlin_seq,
+    generate_perlin = generate_perlin,
     get_step_envelope = get_step_envelope,
 }

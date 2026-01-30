@@ -7,8 +7,8 @@ local redraw_sequence = false
 local TICKS_PER_BEAT = 8 -- quarter note divided by 8, so 1/32nd [call ticks_per_beat?]
 
 local seq = Sequencer.new {
-    steps = 16,
-    rows = 6,
+    steps = NUM_STEPS,
+    rows = NUM_TRACKS,
     ticks_per_beat = TICKS_PER_BEAT,
     ticks_per_step = 2,
 }
@@ -19,20 +19,22 @@ local page = Page:create({
     seq = seq,
 })
 
+local RANDOM_SEED = 383762
+
 -- maps selected sequence source to table with params for respective steps
 local source_map = {
     [SOURCE_PERLIN] = STEPS_PERLIN,
     [SOURCE_GRID] = STEPS_GRID,
 }
 
-local function generate_perlin_seq()
+local function generate_perlin()
     -- updates sequence step params based on current perlin noise config
     local density = params:get(ID_SEQ_DENSITY)
     local x_seed = params:get(ID_SEQ_PERLIN_X)
     local y_seed = params:get(ID_SEQ_PERLIN_Y)
     local z_seed = params:get(ID_SEQ_PERLIN_Z)
 
-    local sequence = sequence_util.generate_perlin_seq(NUM_TRACKS, NUM_STEPS, x_seed, y_seed, z_seed, density,
+    local sequence = sequence_util.generate_perlin(NUM_TRACKS, NUM_STEPS, x_seed, y_seed, z_seed, density,
         PERLIN_ZOOM)
     for i, v in ipairs(sequence) do
         params:set(STEPS_PERLIN[v.voice][v.step], v.value)
@@ -189,7 +191,7 @@ function page:update_graphics_state()
     if redraw_sequence then
         -- condition prevents updating perlin values more often than the screen refreshes.
         redraw_sequence = false
-        generate_perlin_seq()
+        generate_perlin()
     end
 
     for i = 1, 6 do
@@ -233,10 +235,44 @@ local function action_grid(self, x, y)
     end
 end
 
+local function generate_random_velocities(center, spread)
+    math.randomseed(RANDOM_SEED)
+    for y = 1, NUM_TRACKS do
+        for x = 1, NUM_STEPS do
+            -- Calculate the range based on center and spread
+            local half_range = spread / 2
+            local min_val = center - half_range
+            local max_val = center + half_range
+
+            -- Generate random value in range around center
+            local velocity = min_val + math.random() * (max_val - min_val)
+
+            -- Clamp to [0.01, 1] range; so that all active steps will remain active
+            velocity = util.clamp(velocity, 0.01, 1)
+
+            -- only update steps that are already active
+            if params:get(STEPS_GRID[y][x]) ~= 0 then
+                -- set the value; this will trigger an action that updates grid/norns display
+                params:set(STEPS_GRID[y][x], velocity)
+            end
+        end
+    end
+end
+
+local function action_vel_center(v)
+    generate_random_velocities(v, params:get(ID_SEQ_VEL_SPREAD))
+end
+
+local function action_vel_spread(v)
+    generate_random_velocities(params:get(ID_SEQ_VEL_CENTER), v)
+end
+
 function page:add_params()
     params:set_action(ID_SEQ_PERLIN_X, function(v) self:toggle_redraw() end)
     params:set_action(ID_SEQ_PERLIN_Y, function(v) self:toggle_redraw() end)
     params:set_action(ID_SEQ_PERLIN_Z, function(v) self:toggle_redraw() end)
+    params:set_action(ID_SEQ_VEL_CENTER, action_vel_center)
+    params:set_action(ID_SEQ_VEL_SPREAD, action_vel_spread)
 
     -- TODO: if just density changes, shouldn't recalculate perlin noise
     params:set_action(ID_SEQ_DENSITY, function(v) self:toggle_redraw() end)
@@ -278,7 +314,7 @@ function page:initialize()
     clock.transport.stop()
 
     -- provide starting grid (may be empty depending on default density param value)
-    generate_perlin_seq()
+    generate_perlin()
 end
 
 function page:enable_env_polls()
