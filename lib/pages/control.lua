@@ -43,16 +43,27 @@ local function action_set_bpm(bpm)
 end
 
 local function action_source(src)
-    -- clear sequence graphic from Grid and graphic when switching source
-    -- page_sequencer.graphic:clear()
-    -- grid_conn:reset_sequence_leds()
+    -- check if all grid steps are 0
+    local grid_sequence_exists = false
 
-    -- copy 
-    page_sequencer:copy_perlin_to_grid()
+    for track = 1, NUM_TRACKS do
+        for step = 1, NUM_STEPS do
+            if params:get(STEPS_GRID[track][step]) > 0 then
+                grid_sequence_exists = true
+            end
+        end
+    end
+
+    -- copy perlin noise sequence to grid sequence if no grid sequence is present yet
+    if not grid_sequence_exists then
+        print("no grid sequence exists yet, copying perlin sequence")
+        page_sequencer:copy_perlin_to_grid()
+    else
+        print('grid sequence exists already, continuing from there')
+    end
 
     -- visualize sequence
     page_sequencer:display_active_sequence()
-
 end
 
 local function add_params()

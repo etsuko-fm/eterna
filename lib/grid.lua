@@ -43,13 +43,13 @@ end
 
 function grid_conn:key_press(x, y)
     redraw()
-    
     if y == page_row then
         self:select_page(x)
     elseif y <= NUM_TRACKS then
         if params:string(ID_SEQ_SOURCE) ~= SOURCE_GRID then
             -- #2 = SOURCE_GRID... there's not really a built-in neat way to do it
             params:set(ID_SEQ_SOURCE, 2)
+            print('Perlin noise sequence was active, but grid button pressed; switching source')
         end
         local center = params:get(ID_SEQ_VEL_CENTER)
         local spread = params:get(ID_SEQ_VEL_SPREAD)
@@ -57,9 +57,10 @@ function grid_conn:key_press(x, y)
         local velocity = 0
         if not on then
             -- if cell was off, turn it on by assigning a velocity
-            velocity = page_sequencer.generate_random_velocity(x, y, center, spread)
+            velocity = page_sequencer:generate_random_velocity(x, y, center, spread)
         end
-        self.device:led(x, y, velocity * 15)
+        params:set(STEPS_GRID[y][x], velocity)
+        self:set_cell(x, y, velocity * 15)
         self.device:refresh()
     end
 end

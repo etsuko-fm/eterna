@@ -94,17 +94,18 @@ function page:generate_random_velocity(x, y, center, spread)
     -- Clamp to [0.01, 1] range; so that all active steps will remain active
     velocity = util.clamp(velocity, 0.01, 1)
     -- only update steps that are already active
-    if params:get(STEPS_GRID[y][x]) ~= 0 then
-        -- set the value; this will trigger an action that updates grid/norns display
-        params:set(STEPS_GRID[y][x], velocity)
-    end
+    return velocity
 end
 
 local function generate_random_velocities(center, spread)
     -- math.randomseed(RANDOM_SEED)
     for y = 1, NUM_TRACKS do
         for x = 1, NUM_STEPS do
-            page:generate_random_velocity(x, y, center, spread)
+            local velocity = page:generate_random_velocity(x, y, center, spread)
+            if params:get(STEPS_GRID[y][x]) ~= 0 then
+                -- set the value; this will trigger an action that updates grid/norns display
+                params:set(STEPS_GRID[y][x], velocity)
+            end
         end
     end
 end
@@ -137,10 +138,13 @@ function page:evaluate_step(x, y)
         end
         engine_lib.voice_trigger(y)
 
-        -- generate new velocity for step after evaluating 
+        -- generate new velocity for step after evaluating
         if source == SOURCE_GRID then
             -- TODO step should really be either 0 or 1 based everywhere
-            generate_random_velocity(x + 1, y, params:get(ID_SEQ_VEL_CENTER), params:get(ID_SEQ_VEL_SPREAD))
+            local center = params:get(ID_SEQ_VEL_CENTER)
+            local spread = params:get(ID_SEQ_VEL_SPREAD)
+            local velocity = self:generate_random_velocity(x + 1, y, center, spread)
+            params:set(STEPS_GRID[y][x + 1], velocity)
         end
     end
 end
@@ -214,6 +218,8 @@ function page:update_graphics_state()
     self.footer:set_value('k2', self.seq.transport_on and "ON" or "OFF")
     self.footer:set_value('k3', params:string(ID_SEQ_SPEED))
     if source == SOURCE_PERLIN then
+        self.footer:set_name('e2', "SEED")
+        self.footer:set_name('e3', "DENS")
         self.footer:set_value('e2', params:get(ID_SEQ_PERLIN_X))
         self.footer:set_value('e3', params:get(ID_SEQ_DENSITY))
     elseif source == SOURCE_GRID then
@@ -222,12 +228,13 @@ function page:update_graphics_state()
         self.footer:set_value('e2', params:get(ID_SEQ_VEL_CENTER))
         self.footer:set_value('e3', params:get(ID_SEQ_VEL_SPREAD))
     end
-    if redraw_perlin then
-        -- condition prevents updating perlin values more often than the screen refreshes.
+
+    -- prevent updating velocities more often than the screen refreshes, as it costs quite some cpu
+    -- when done on every encoder-change.
+    if redraw_perlin and source == SOURCE_PERLIN then
         redraw_perlin = false
         generate_perlin()
-    end
-    if redraw_grid_velocity then
+    elseif redraw_grid_velocity and source == SOURCE_GRID then
         redraw_grid_velocity = false
         generate_random_velocities(params:get(ID_SEQ_VEL_CENTER), params:get(ID_SEQ_VEL_SPREAD))
     end
@@ -251,7 +258,6 @@ end
 function toggle_redraw_grid_velocity()
     redraw_grid_velocity = true
 end
-
 
 function page:action_sequence_speed(v)
     -- convert table index of human-readable options to value for clock.sync
@@ -278,15 +284,6 @@ local function action_grid(self, x, y)
     end
 end
 
-
-local function action_vel_center(v)
-    generate_random_velocities(v, params:get(ID_SEQ_VEL_SPREAD))
-end
-
-local function action_vel_spread(v)
-    generate_random_velocities(params:get(ID_SEQ_VEL_CENTER), v)
-end
-
 function page:copy_perlin_to_grid()
     for y = 1, NUM_TRACKS do
         for x = 1, NUM_STEPS do
@@ -295,7 +292,6 @@ function page:copy_perlin_to_grid()
         end
     end
 end
-
 
 function page:add_params()
     params:set_action(ID_SEQ_PERLIN_X, function(v) self:toggle_redraw_perlin() end)
