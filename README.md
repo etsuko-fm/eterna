@@ -267,3 +267,45 @@ Hard:
 - ratio: 1:8
 - threshold: -18dB
 
+## Grid Integration
+
+Eterna supports monome grid for hands-on sequence editing and page navigation.
+
+### Grid Layout
+
+- **Rows 1-6:** Sequence steps for tracks 1-6 (16 steps each)
+- **Row 7:** Playback position indicator (shows currently active step)
+- **Row 8:** Page navigation (buttons 1-14 switch between pages)
+
+### Sequence Editing
+
+Press any button in rows 1-6 to toggle a step on or off. Steps light up with 16 brightness levels (0 = off, 1-15 = velocity). 
+
+### Velocity System
+
+Velocity values are determined by two parameters: **velocity center** and **velocity spread**.
+
+**Center** sets the middle point of your velocity range (0 to 1), while **spread** controls how wide the range is around that center point. The range extends equally in both directions from the center.
+
+For example:
+- `center = 0.5, spread = 0` → range is 0.5 to 0.5 (all steps get exactly 0.5)
+- `center = 0.5, spread = 1` → range is 0 to 1 (full range, centered at 0.5)
+- `center = 0.75, spread = 0.5` → range is 0.5 to 1 (spread of 0.5 extends ±0.25 from center)
+
+Each time a step triggers during playback, it picks a new random velocity within your configured range. This creates evolving dynamics while keeping velocities within your desired bounds.
+
+### Perlin ↔ Grid Switching
+
+Eterna offers two sequence sources:
+
+**Perlin mode:** Generative sequences created using seed and density encoders (available when grid is not connected, or as a starting point when grid is connected)
+
+**Grid mode:** Manual step programming via grid
+
+Switch between sources on the sequence control page. When switching from perlin to grid, the perlin-generated pattern is preserved as your starting point (unless you've already programmed steps on the grid). When grid is connected and perlin mode is active, pressing any grid button automatically switches to grid mode.
+
+### Connection Behavior
+
+- Grid displays current sequence state immediately upon connection
+- Unplugging grid preserves your grid sequence
+- Eterna works fully without grid connected (using perlin sequences)

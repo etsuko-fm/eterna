@@ -77,6 +77,8 @@ local pages = {
   page_master,
 }
 
+NUM_PAGES = #pages
+
 amp_historyL = {}
 amp_historyR = {}
 
@@ -144,11 +146,22 @@ function activate_grid(device)
     end
 end
 
+function grid.add(device)
+  print('new grid found')
+  grid_device = grid.connect()
+  activate_grid(grid_device)
+end
+
+function grid.remove(device)
+  print('grid disconnected')
+  grid_conn:close(device)
+end
+
+
 function init()
   -- Encoder sensitivity
   norns.enc.sens(1, 2)
   grid_device = grid.connect()
-
   activate_grid(grid_device)
 
   for i = 2, 3 do
@@ -273,7 +286,7 @@ function refresh(force)
   -- FPS-based timer for the page indicator animation
   page_indicator_counter = page_indicator_counter + 1
 
-  if draw_frame then
+  if draw_frame or force then
     -- prevent new screen events being queued until this frame is done
     draw_frame = false
 
@@ -298,10 +311,11 @@ function render_frame(force)
     counter = 0
   end
   current_page:render(force)
+  -- once render has finished, ready to render again
   draw_frame = true
 end
 
--- convenience methods for matron
+-- convenience methods for repl
 function rerun()
   norns.script.load(norns.state.script)
 end

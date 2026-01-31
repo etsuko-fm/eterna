@@ -47,8 +47,12 @@ local function action_source(src)
     -- page_sequencer.graphic:clear()
     -- grid_conn:reset_sequence_leds()
 
+    -- copy 
+    page_sequencer:copy_perlin_to_grid()
+
     -- visualize sequence
     page_sequencer:display_active_sequence()
+
 end
 
 local function add_params()

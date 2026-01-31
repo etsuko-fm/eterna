@@ -3,7 +3,8 @@ local Sequencer = include(from_root("lib/Sequencer"))
 local page_name = "SEQUENCER"
 local PERLIN_ZOOM = 3.3 -- empirically tuned; really low values (<1) make it more tetrisy
 local main_seq_clock_id
-local redraw_sequence = false
+local redraw_perlin = false
+local redraw_grid_velocity = false
 local TICKS_PER_BEAT = 8 -- quarter note divided by 8, so 1/32nd [call ticks_per_beat?]
 
 local seq = Sequencer.new {
@@ -81,6 +82,33 @@ local function get_step_envelope(enable_mod, velocity)
     return sequence_util.get_step_envelope(max_time, max_shape, enable_mod, velocity)
 end
 
+function page:generate_random_velocity(x, y, center, spread)
+    -- Calculate the range based on center and spread
+    local half_range = spread / 2
+    local min_val = center - half_range
+    local max_val = center + half_range
+
+    -- Generate random value in range around center
+    local velocity = min_val + math.random() * (max_val - min_val)
+
+    -- Clamp to [0.01, 1] range; so that all active steps will remain active
+    velocity = util.clamp(velocity, 0.01, 1)
+    -- only update steps that are already active
+    if params:get(STEPS_GRID[y][x]) ~= 0 then
+        -- set the value; this will trigger an action that updates grid/norns display
+        params:set(STEPS_GRID[y][x], velocity)
+    end
+end
+
+local function generate_random_velocities(center, spread)
+    -- math.randomseed(RANDOM_SEED)
+    for y = 1, NUM_TRACKS do
+        for x = 1, NUM_STEPS do
+            page:generate_random_velocity(x, y, center, spread)
+        end
+    end
+end
+
 function page:evaluate_step(x, y)
     -- 0 <= x <= 15
     -- 1 <= y <= 6
@@ -108,6 +136,12 @@ function page:evaluate_step(x, y)
             params:set(voice_decay, decay)
         end
         engine_lib.voice_trigger(y)
+
+        -- generate new velocity for step after evaluating 
+        if source == SOURCE_GRID then
+            -- TODO step should really be either 0 or 1 based everywhere
+            generate_random_velocity(x + 1, y, params:get(ID_SEQ_VEL_CENTER), params:get(ID_SEQ_VEL_SPREAD))
+        end
     end
 end
 
@@ -115,8 +149,8 @@ function page:on_step(step)
     self.graphic:set("current_step", step)
     page_control.current_step = step
     -- evaluate current step, send commands to supercollider accordingly
-    for y = 1, NUM_TRACKS do
-        self:evaluate_step(step, y)
+    for track = 1, NUM_TRACKS do
+        self:evaluate_step(step, track)
     end
 end
 
@@ -188,10 +222,14 @@ function page:update_graphics_state()
         self.footer:set_value('e2', params:get(ID_SEQ_VEL_CENTER))
         self.footer:set_value('e3', params:get(ID_SEQ_VEL_SPREAD))
     end
-    if redraw_sequence then
+    if redraw_perlin then
         -- condition prevents updating perlin values more often than the screen refreshes.
-        redraw_sequence = false
+        redraw_perlin = false
         generate_perlin()
+    end
+    if redraw_grid_velocity then
+        redraw_grid_velocity = false
+        generate_random_velocities(params:get(ID_SEQ_VEL_CENTER), params:get(ID_SEQ_VEL_SPREAD))
     end
 
     for i = 1, 6 do
@@ -206,9 +244,14 @@ function page:update_cell(step, voice, v)
     end
 end
 
-function page:toggle_redraw()
-    redraw_sequence = true
+function page:toggle_redraw_perlin()
+    redraw_perlin = true
 end
+
+function toggle_redraw_grid_velocity()
+    redraw_grid_velocity = true
+end
+
 
 function page:action_sequence_speed(v)
     -- convert table index of human-readable options to value for clock.sync
@@ -235,29 +278,6 @@ local function action_grid(self, x, y)
     end
 end
 
-local function generate_random_velocities(center, spread)
-    math.randomseed(RANDOM_SEED)
-    for y = 1, NUM_TRACKS do
-        for x = 1, NUM_STEPS do
-            -- Calculate the range based on center and spread
-            local half_range = spread / 2
-            local min_val = center - half_range
-            local max_val = center + half_range
-
-            -- Generate random value in range around center
-            local velocity = min_val + math.random() * (max_val - min_val)
-
-            -- Clamp to [0.01, 1] range; so that all active steps will remain active
-            velocity = util.clamp(velocity, 0.01, 1)
-
-            -- only update steps that are already active
-            if params:get(STEPS_GRID[y][x]) ~= 0 then
-                -- set the value; this will trigger an action that updates grid/norns display
-                params:set(STEPS_GRID[y][x], velocity)
-            end
-        end
-    end
-end
 
 local function action_vel_center(v)
     generate_random_velocities(v, params:get(ID_SEQ_VEL_SPREAD))
@@ -267,15 +287,25 @@ local function action_vel_spread(v)
     generate_random_velocities(params:get(ID_SEQ_VEL_CENTER), v)
 end
 
+function page:copy_perlin_to_grid()
+    for y = 1, NUM_TRACKS do
+        for x = 1, NUM_STEPS do
+            local val = params:get(STEPS_PERLIN[y][x])
+            params:set(STEPS_GRID[y][x], val)
+        end
+    end
+end
+
+
 function page:add_params()
-    params:set_action(ID_SEQ_PERLIN_X, function(v) self:toggle_redraw() end)
-    params:set_action(ID_SEQ_PERLIN_Y, function(v) self:toggle_redraw() end)
-    params:set_action(ID_SEQ_PERLIN_Z, function(v) self:toggle_redraw() end)
-    params:set_action(ID_SEQ_VEL_CENTER, action_vel_center)
-    params:set_action(ID_SEQ_VEL_SPREAD, action_vel_spread)
+    params:set_action(ID_SEQ_PERLIN_X, function(v) self:toggle_redraw_perlin() end)
+    params:set_action(ID_SEQ_PERLIN_Y, function(v) self:toggle_redraw_perlin() end)
+    params:set_action(ID_SEQ_PERLIN_Z, function(v) self:toggle_redraw_perlin() end)
+    params:set_action(ID_SEQ_VEL_CENTER, toggle_redraw_grid_velocity)
+    params:set_action(ID_SEQ_VEL_SPREAD, toggle_redraw_grid_velocity)
 
     -- TODO: if just density changes, shouldn't recalculate perlin noise
-    params:set_action(ID_SEQ_DENSITY, function(v) self:toggle_redraw() end)
+    params:set_action(ID_SEQ_DENSITY, function(v) self:toggle_redraw_perlin() end)
     params:set_action(ID_SEQ_SPEED, function(v) self:action_sequence_speed(v) end)
     for y = 1, NUM_TRACKS do
         for x = 1, NUM_STEPS do

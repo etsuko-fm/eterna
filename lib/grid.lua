@@ -42,17 +42,31 @@ local function toggle_step(x, y)
 end
 
 function grid_conn:key_press(x, y)
+    redraw()
+    
     if y == page_row then
         self:select_page(x)
-    elseif y < 7 then
-        local velocity = misc_util.toggle_param(STEPS_GRID[y][x]) -- 0 or 1
-        self.device:led(x, y, state * 15) -- should be velocity
+    elseif y <= NUM_TRACKS then
+        if params:string(ID_SEQ_SOURCE) ~= SOURCE_GRID then
+            -- #2 = SOURCE_GRID... there's not really a built-in neat way to do it
+            params:set(ID_SEQ_SOURCE, 2)
+        end
+        local center = params:get(ID_SEQ_VEL_CENTER)
+        local spread = params:get(ID_SEQ_VEL_SPREAD)
+        local on = params:get(STEPS_GRID[y][x]) > 0
+        local velocity = 0
+        if not on then
+            -- if cell was off, turn it on by assigning a velocity
+            velocity = page_sequencer.generate_random_velocity(x, y, center, spread)
+        end
+        self.device:led(x, y, velocity * 15)
         self.device:refresh()
     end
 end
 
 function grid_conn:select_page(x)
-    if x <= 14 then
+    -- x: index of page, 1-based
+    if x <= NUM_PAGES then
         self:reset_page_leds()
         switch_page(x)
         self.device:led(x, page_row, midplus)
@@ -94,12 +108,19 @@ function grid_conn:refresh()
 end
 
 function grid_conn:init(device, current_page_id)
+    print('grid connection init')
     self.active = true
     add_params()
     self.device = device
     self:reset_page_leds()
     self.device:led(current_page_id, page_row, midplus)
     device:refresh()
+    page_sequencer:display_active_sequence()
+    print('grid connection init done')
+end
+
+function grid_conn:close(device)
+    print('grid connection closed')
 end
 
 return grid_conn
