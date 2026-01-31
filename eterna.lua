@@ -97,6 +97,9 @@ function switch_page(new_index)
     current_page.graphic.changed = true
     params:set(ID_CURRENT_PAGE, current_page.name)
     header.current_page = current_page_index
+    if grid_conn.active then
+      grid_conn:set_current_page(new_index)
+    end
   end
 end
 
@@ -277,6 +280,7 @@ function redraw()
   -- called when returning from a sys menu
   draw_frame = true
   -- force refresh
+  print('redraw()')
   refresh(true)
 end
 

@@ -43,6 +43,7 @@ end
 
 function grid_conn:key_press(x, y)
     redraw()
+    print('should wake up norns')
     if y == page_row then
         self:select_page(x)
     elseif y <= NUM_TRACKS then
@@ -74,6 +75,21 @@ function grid_conn:select_page(x)
         self.device:refresh()
     end
 end
+
+function grid_conn:set_current_step(step)
+    for x = 1, 16 do
+        self.device:led(x, 7, low)
+    end
+    self.device:led(step, 7, midplus)
+    self.device:refresh()
+end
+
+function grid_conn:set_current_page(page)
+    self:reset_page_leds()
+    self.device:led(page, 8, midplus)
+    self.device:refresh()
+end
+
 
 grid.key = function(x, y, z)
     if z == 1 then grid_conn:key_press(x, y) end
@@ -117,11 +133,13 @@ function grid_conn:init(device, current_page_id)
     self.device:led(current_page_id, page_row, midplus)
     device:refresh()
     page_sequencer:display_active_sequence()
+    self:set_current_step(1)
     print('grid connection init done')
 end
 
 function grid_conn:close(device)
     print('grid connection closed')
+    self.active = false
 end
 
 return grid_conn

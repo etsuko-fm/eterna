@@ -97,10 +97,17 @@ function page:generate_random_velocity(x, y, center, spread)
     return velocity
 end
 
+local seeds = {}
+
+for i = 1, NUM_STEPS do
+    -- TODO: make param
+    seeds[i] = RANDOM_SEED + i
+end
+
 local function generate_random_velocities(center, spread)
-    -- math.randomseed(RANDOM_SEED)
-    for y = 1, NUM_TRACKS do
-        for x = 1, NUM_STEPS do
+    for x = 1, NUM_STEPS do
+        math.randomseed(seeds[x])
+        for y = 1, NUM_TRACKS do
             local velocity = page:generate_random_velocity(x, y, center, spread)
             if params:get(STEPS_GRID[y][x]) ~= 0 then
                 -- set the value; this will trigger an action that updates grid/norns display
@@ -151,6 +158,7 @@ end
 
 function page:on_step(step)
     self.graphic:set("current_step", step)
+    grid_conn:set_current_step(step)
     page_control.current_step = step
     -- evaluate current step, send commands to supercollider accordingly
     for track = 1, NUM_TRACKS do
