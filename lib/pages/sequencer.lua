@@ -166,11 +166,25 @@ function page:on_step(step)
     end
 end
 
-local function adjust_step_size()
-    local p = ID_SEQ_SPEED
-    local v = params:get(p)
-    local new = util.wrap(v + 1, 1, #sequence_util.sequence_speeds)
-    params:set(p, new)
+local function grid_sequence_exists()
+    local result = false
+
+    -- check if all grid steps are 0
+    for track = 1, NUM_TRACKS do
+        for step = 1, NUM_STEPS do
+            if params:get(STEPS_GRID[track][step]) > 0 then
+                result = true
+            end
+        end
+    end
+    return result
+end
+
+local function cycle_source(v)
+    print(grid_sequence_exists())
+    if grid_conn.active or grid_sequence_exists() then
+        misc_util.cycle_param(ID_SEQ_SOURCE, SEQUENCER_SOURCES, 1)
+    end
 end
 
 function page:run_sequencer()
@@ -224,7 +238,7 @@ function page:update_graphics_state()
     self.graphic:set("num_steps", self.seq.steps)
     local source = params:string(ID_SEQ_SOURCE)
     self.footer:set_value('k2', self.seq.transport_on and "ON" or "OFF")
-    self.footer:set_value('k3', params:string(ID_SEQ_SPEED))
+    self.footer:set_value("k3", source)
     if source == SOURCE_PERLIN then
         self.footer:set_name('e2', "SEED")
         self.footer:set_name('e3', "DENS")
@@ -293,6 +307,8 @@ local function action_grid(self, x, y)
 end
 
 function page:copy_perlin_to_grid()
+    -- copies perlin noise sequence to grid sequence
+    print('copying perlin sequence to grid')
     for y = 1, NUM_TRACKS do
         for x = 1, NUM_STEPS do
             local val = params:get(STEPS_PERLIN[y][x])
@@ -301,16 +317,32 @@ function page:copy_perlin_to_grid()
     end
 end
 
+local function action_source(src)
+    -- copy perlin noise sequence to grid sequence if no grid sequence is present yet
+    if params:string(ID_SEQ_SOURCE) == SOURCE_GRID then
+        if not grid_sequence_exists() then
+            print("no grid sequence exists yet, copying perlin sequence")
+            page_sequencer:copy_perlin_to_grid()
+        else
+            print('grid sequence exists already, continuing from there')
+        end
+    end
+
+
+    -- visualize sequence
+    page_sequencer:display_active_sequence()
+end
+
 function page:add_params()
     params:set_action(ID_SEQ_PERLIN_X, function(v) self:toggle_redraw_perlin() end)
     params:set_action(ID_SEQ_PERLIN_Y, function(v) self:toggle_redraw_perlin() end)
     params:set_action(ID_SEQ_PERLIN_Z, function(v) self:toggle_redraw_perlin() end)
     params:set_action(ID_SEQ_VEL_CENTER, toggle_redraw_grid_velocity)
     params:set_action(ID_SEQ_VEL_SPREAD, toggle_redraw_grid_velocity)
-
-    -- TODO: if just density changes, shouldn't recalculate perlin noise
     params:set_action(ID_SEQ_DENSITY, function(v) self:toggle_redraw_perlin() end)
     params:set_action(ID_SEQ_SPEED, function(v) self:action_sequence_speed(v) end)
+    params:set_action(ID_SEQ_SOURCE, action_source)
+
     for y = 1, NUM_TRACKS do
         for x = 1, NUM_STEPS do
             params:set_action(STEPS_PERLIN[y][x], action_perlin(self, x, y))
@@ -321,7 +353,7 @@ end
 
 function page:initialize()
     page.k2_off = function() self:toggle_transport() end
-    page.k3_off = adjust_step_size
+    page.k3_off = cycle_source
     page.e2 = e2
     page.e3 = e3
     seq.on_step = function(step) page:on_step(step) end
@@ -338,7 +370,7 @@ function page:initialize()
     page.footer = Footer:new({
         button_text = {
             k2 = { name = "PLAY", value = "" },
-            k3 = { name = "DIV", value = "" },
+            k3 = { name = "SRC", value = "" },
             e2 = { name = "SEED", value = "" },
             e3 = { name = "DENS", value = "" },
         },

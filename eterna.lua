@@ -45,7 +45,7 @@ local page_levels = include(from_root("lib/pages/levels"))
 draw_frame = false -- indicates if the next frame should be drawn
 local page_indicator_counter = 0
 header = Window:new({ title = "ETERNA" })
-grid_device = nil
+grid_port = nil
 
 UPDATE_SLICES = false
 
@@ -142,11 +142,11 @@ function amp_to_log(amp)
   return (db - floor) / -floor -- normalize to 0..1
 end
 
-function activate_grid(device)
-    if device then
-      print("connected to grid")
-      grid_conn:init(grid_device, current_page_index)
-    end
+function activate_grid(port)
+  if port and port.device then
+    print("connected to grid")
+    grid_conn:init(port, current_page_index)
+  end
 end
 
 function grid.add(device)
@@ -160,12 +160,15 @@ function grid.remove(device)
   grid_conn:close(device)
 end
 
-
 function init()
   -- Encoder sensitivity
   norns.enc.sens(1, 2)
-  grid_device = grid.connect()
-  activate_grid(grid_device)
+  grid_port = grid.connect()
+
+  -- check if physical device is present
+  if grid_port.device then
+    activate_grid(grid_port)
+  end
 
   for i = 2, 3 do
     norns.enc.sens(i, 1)

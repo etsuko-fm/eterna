@@ -7,43 +7,8 @@ local high = 15
 local leds = { mid, low, mid, low, low, low, mid, low, mid, low, mid, low, mid, mid }
 local page_row = 8
 
--- maps page name to page number
-local page_map = {
-    SAMPLE = 1,
-    SLICE = 2,
-    ENVELOPES = 3,
-    PLAYBACK_RATES = 4,
-    LEVELS = 5,
-    PANNING = 6,
-    SEQUENCER = 7,
-    ["SEQUENCE CONTROL"] = 8,
-    LOWPASS = 9,
-    ["LOWPASS LFO"] = 10,
-    HIGHPASS = 11,
-    ["HIGHPASS_LFO"] = 12,
-    ECHO = 13,
-    MASTER = 14,
-}
-
-local function add_params()
-    -- could still do this, but not sure if current page should really be a state param
-    -- params:set_action(ID_CURRENT_PAGE,
-    --     function(v) switch_page(page_map[v]) end
-    -- )
-end
-
-local function toggle_step(x, y)
-    if params:get(STEPS_GRID[y][x]) > 0 then
-        params:set(STEPS_GRID[y][x], 0)
-    else
-        -- I ned to know the velocity mask. will it forever be the same for each sequence?
-        params:set(STEPS_GRID[y][x], 0)
-    end
-end
-
 function grid_conn:key_press(x, y)
     redraw()
-    print('should wake up norns')
     if y == page_row then
         self:select_page(x)
     elseif y <= NUM_TRACKS then
@@ -127,7 +92,6 @@ end
 function grid_conn:init(device, current_page_id)
     print('grid connection init')
     self.active = true
-    add_params()
     self.device = device
     self:reset_page_leds()
     self.device:led(current_page_id, page_row, midplus)

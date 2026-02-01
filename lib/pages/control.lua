@@ -17,12 +17,16 @@ local function toggle_transport(v)
     page_sequencer:toggle_transport()
 end
 
-local function toggle_source(v)
-    misc_util.cycle_param(ID_SEQ_SOURCE, SEQUENCER_SOURCES, 1)
-end
 
 local function adjust_num_steps(d)
     misc_util.adjust_param(d, ID_SEQ_NUM_STEPS, controlspec_num_steps.quantum)
+end
+
+local function adjust_step_size()
+    local p = ID_SEQ_SPEED
+    local v = params:get(p)
+    local new = util.wrap(v + 1, 1, #sequence_util.sequence_speeds)
+    params:set(p, new)
 end
 
 local page = Page:create({
@@ -30,7 +34,7 @@ local page = Page:create({
     e2 = adjust_bpm,
     e3 = adjust_num_steps,
     k2_off = toggle_transport,
-    k3_off = toggle_source,
+    k3_off = adjust_step_size,
     current_step = 0,
 })
 
@@ -42,35 +46,10 @@ local function action_set_bpm(bpm)
     params:set("clock_tempo", bpm)
 end
 
-local function action_source(src)
-    -- check if all grid steps are 0
-    local grid_sequence_exists = false
-
-    for track = 1, NUM_TRACKS do
-        for step = 1, NUM_STEPS do
-            if params:get(STEPS_GRID[track][step]) > 0 then
-                grid_sequence_exists = true
-            end
-        end
-    end
-
-    -- copy perlin noise sequence to grid sequence if no grid sequence is present yet
-    if not grid_sequence_exists then
-        print("no grid sequence exists yet, copying perlin sequence")
-        page_sequencer:copy_perlin_to_grid()
-    else
-        print('grid sequence exists already, continuing from there')
-    end
-
-    -- visualize sequence
-    page_sequencer:display_active_sequence()
-end
 
 local function add_params()
     params:set_action(ID_SEQ_NUM_STEPS, action_num_steps)
     params:set_action(ID_SEQ_BPM, action_set_bpm)
-    -- todo
-    params:set_action(ID_SEQ_SOURCE, action_source)
 end
 
 function page:update_graphics_state()
@@ -80,7 +59,7 @@ function page:update_graphics_state()
     self.footer:set_value("e2", tempo_trimmed)
     self.footer:set_value("e3", page_sequencer.seq.steps)
     self.footer:set_value("k2", is_playing and "ON" or "OFF")
-    self.footer:set_value("k3", SEQUENCER_SOURCES[source])
+    self.footer:set_value('k3', params:string(ID_SEQ_SPEED))
     self.graphic:set("num_steps", page_sequencer.seq.steps)
     self.graphic:set("bpm", tempo_trimmed)
     self.graphic:set("is_playing", is_playing)
@@ -95,7 +74,7 @@ function page:initialize()
     page.footer = Footer:new({
         button_text = {
             k2 = { name = "PLAY", value = "" },
-            k3 = { name = "SRC", value = "" },
+            k3 = { name = "DIV", value = "" },
             e2 = { name = "BPM", value = "" },
             e3 = { name = "STEPS", value = "" },
         },
