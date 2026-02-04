@@ -208,6 +208,7 @@ function clock.transport.start()
         page.seq.transport_on = true
         main_seq_clock_id = clock.run(function() page:run_sequencer() end)
         page.graphic:set("is_playing", true)
+        grid_conn:set_transport(true)
         if page.active then page:enable_env_polls() end
     end
 end
@@ -219,6 +220,7 @@ function clock.transport.stop()
             clock.cancel(main_seq_clock_id)
             page.seq:reset()
             page.graphic:set("is_playing", false)
+            grid_conn:set_transport(false)
             -- todo: with midi it's possible to start/stop while on any page;
             -- in such case the env polls of the correct page should be disabled.
             -- possible solution is to move clock.transport definitions to eterna.lua,

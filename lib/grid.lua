@@ -41,11 +41,36 @@ function grid_conn:select_page(x)
     end
 end
 
-function grid_conn:set_current_step(step)
+local source_map = {
+    [SOURCE_PERLIN] = STEPS_PERLIN,
+    [SOURCE_GRID] = STEPS_GRID,
+}
+
+function grid_conn:set_current_step(current_step)
+    self.current_step = current_step
+
+    -- reset leds on row 7 (sequence stepper)
     for x = 1, 16 do
         self.device:led(x, 7, low)
     end
-    self.device:led(step, 7, midplus)
+    -- light up active step
+    self.device:led(current_step, 7, midplus)
+
+    -- get correct sequence source 
+    local source = params:string(ID_SEQ_SOURCE)
+    local steps = source_map[source]
+    for y = 1, 6 do
+        -- reset all to actual velocity level
+        for x = 1, 16 do
+            local param_id = steps[y][x]
+            local velocity = params:get(param_id)
+            self:set_cell(x, y, velocity * 15)
+            if current_step == x and velocity > 0 then
+                -- flash
+                self.device:led(x, y, high)
+            end
+        end
+    end
     self.device:refresh()
 end
 
@@ -81,6 +106,10 @@ function grid_conn:set_cell(x, y, level)
     -- refresh call responsibility of the caller
 end
 
+function grid_conn:display_sequence()
+
+end
+
 function grid_conn:refresh()
     if not self.active then return end
     if self.changed then
@@ -89,8 +118,13 @@ function grid_conn:refresh()
     end
 end
 
+function grid_conn:set_transport(state)
+    self.is_playing = state
+end
+
 function grid_conn:init(device, current_page_id)
     print('grid connection init')
+    self.is_playing = false
     self.active = true
     self.device = device
     self:reset_page_leds()
