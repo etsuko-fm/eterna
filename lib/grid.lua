@@ -1,4 +1,4 @@
--- sequencer values can be retrieved/set via STEPS_GRID[track][step]
+-- sequencer values can be retrieved/set via STEPS[track][step]
 local grid_conn = { active = false, changed = false }
 local low = 2
 local mid = 4
@@ -15,17 +15,17 @@ function grid_conn:key_press(x, y)
         if params:string(ID_SEQ_SOURCE) ~= SOURCE_GRID then
             -- #2 = SOURCE_GRID... there's not really a built-in neat way to do it
             params:set(ID_SEQ_SOURCE, 2)
-            print('Perlin noise sequence was active, but grid button pressed; switching source')
+            print('Perlin noise sequence was active, but grid button pressed; switching mode')
         end
         local center = params:get(ID_SEQ_VEL_CENTER)
         local spread = params:get(ID_SEQ_VEL_SPREAD)
-        local on = params:get(STEPS_GRID[y][x]) > 0
+        local on = params:get(STEPS[y][x]) > 0
         local velocity = 0
         if not on then
             -- if cell was off, turn it on by assigning a velocity
             velocity = page_sequencer:generate_random_velocity(x, y, center, spread)
         end
-        params:set(STEPS_GRID[y][x], velocity)
+        params:set(STEPS[y][x], velocity)
         self:set_cell(x, y, velocity * 15)
         self.device:refresh()
     end
@@ -41,11 +41,6 @@ function grid_conn:select_page(x)
     end
 end
 
-local source_map = {
-    [SOURCE_PERLIN] = STEPS_PERLIN,
-    [SOURCE_GRID] = STEPS_GRID,
-}
-
 function grid_conn:set_current_step(current_step)
     self.current_step = current_step
 
@@ -56,13 +51,10 @@ function grid_conn:set_current_step(current_step)
     -- light up active step
     self.device:led(current_step, 7, midplus)
 
-    -- get correct sequence source 
-    local source = params:string(ID_SEQ_SOURCE)
-    local steps = source_map[source]
     for y = 1, 6 do
         -- reset all to actual velocity level
         for x = 1, 16 do
-            local param_id = steps[y][x]
+            local param_id = STEPS[y][x]
             local velocity = params:get(param_id)
             self:set_cell(x, y, velocity * 15)
             if current_step == x and velocity > 0 then

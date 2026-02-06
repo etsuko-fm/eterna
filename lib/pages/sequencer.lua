@@ -21,12 +21,7 @@ local page = Page:create({
 })
 
 local RANDOM_SEED = 383762
-
--- maps selected sequence source to table with params for respective steps
-local source_map = {
-    [SOURCE_PERLIN] = STEPS_PERLIN,
-    [SOURCE_GRID] = STEPS_GRID,
-}
+local pending_sequence = false
 
 local function generate_perlin()
     -- updates sequence step params based on current perlin noise config
@@ -38,21 +33,15 @@ local function generate_perlin()
     local sequence = sequence_util.generate_perlin(NUM_TRACKS, NUM_STEPS, x_seed, y_seed, z_seed, density,
         PERLIN_ZOOM)
     for i, v in ipairs(sequence) do
-        params:set(STEPS_PERLIN[v.voice][v.step], v.value)
+        params:set(STEPS[v.voice][v.step], v.value)
     end
 end
 
 function page:display_active_sequence()
-    -- get current sequence source (perlin noise or manual)
-    local source = params:string(ID_SEQ_SOURCE)
-
-    -- get param ids of each step
-    local step_ids = source_map[source]
-
     -- triggering their action updates grid and sequence graphic
     for track = 1, NUM_TRACKS do
         for step = 1, NUM_STEPS do
-            params:lookup_param(step_ids[track][step]):bang()
+            params:lookup_param(STEPS[track][step]):bang()
         end
     end
 end
@@ -61,6 +50,7 @@ local function e2(d)
     local source = params:string(ID_SEQ_SOURCE)
     if source == SOURCE_PERLIN then
         misc_util.adjust_param(d, ID_SEQ_PERLIN_X, controlspec_perlin.quantum)
+        pending_sequence = false
     elseif source == SOURCE_GRID then
         misc_util.adjust_param(d, ID_SEQ_VEL_CENTER, controlspec_vel_center.quantum)
     end
@@ -70,6 +60,7 @@ local function e3(d)
     local source = params:string(ID_SEQ_SOURCE)
     if source == SOURCE_PERLIN then
         misc_util.adjust_param(d, ID_SEQ_DENSITY, controlspec_perlin_density.quantum)
+        pending_sequence = false
     elseif source == SOURCE_GRID then
         misc_util.adjust_param(d, ID_SEQ_VEL_SPREAD, controlspec_vel_spread.quantum)
     end
@@ -109,9 +100,9 @@ local function generate_random_velocities(center, spread)
         math.randomseed(seeds[x])
         for y = 1, NUM_TRACKS do
             local velocity = page:generate_random_velocity(x, y, center, spread)
-            if params:get(STEPS_GRID[y][x]) ~= 0 then
+            if params:get(STEPS[y][x]) ~= 0 then
                 -- set the value; this will trigger an action that updates grid/norns display
-                params:set(STEPS_GRID[y][x], velocity)
+                params:set(STEPS[y][x], velocity)
             end
         end
     end
@@ -122,8 +113,7 @@ function page:evaluate_step(x, y)
     -- 1 <= y <= 6
     local enable_mod = params:string(ID_ENVELOPES_MOD)
     local source = params:string(ID_SEQ_SOURCE)
-    local step_params = source_map[source]
-    local velocity = params:get(step_params[y][x + 1]) -- using x+1 for 1-based table indexing
+    local velocity = params:get(STEPS[y][x + 1]) -- using x+1 for 1-based table indexing
     local on = velocity > 0
     local attack, decay = get_step_envelope(enable_mod, velocity)
     if on then
@@ -151,7 +141,7 @@ function page:evaluate_step(x, y)
             local center = params:get(ID_SEQ_VEL_CENTER)
             local spread = params:get(ID_SEQ_VEL_SPREAD)
             local velocity = self:generate_random_velocity(x + 1, y, center, spread)
-            params:set(STEPS_GRID[y][x + 1], velocity)
+            params:set(STEPS[y][x + 1], velocity)
         end
     end
 end
@@ -172,7 +162,7 @@ local function grid_sequence_exists()
     -- check if all grid steps are 0
     for track = 1, NUM_TRACKS do
         for step = 1, NUM_STEPS do
-            if params:get(STEPS_GRID[track][step]) > 0 then
+            if params:get(STEPS[track][step]) > 0 then
                 result = true
             end
         end
@@ -244,8 +234,14 @@ function page:update_graphics_state()
     if source == SOURCE_PERLIN then
         self.footer:set_name('e2', "SEED")
         self.footer:set_name('e3', "DENS")
-        self.footer:set_value('e2', params:get(ID_SEQ_PERLIN_X))
-        self.footer:set_value('e3', params:get(ID_SEQ_DENSITY))
+        local perlin_txt = params:get(ID_SEQ_PERLIN_X)
+        local density_txt = params:get(ID_SEQ_DENSITY)
+        if pending_sequence then
+            perlin_txt = "*"
+            density_txt = "*"
+        end
+        self.footer:set_value('e2', perlin_txt)
+        self.footer:set_value('e3', density_txt)
     elseif source == SOURCE_GRID then
         self.footer:set_name('e2', "V CNTR")
         self.footer:set_name('e3', "V SPRD")
@@ -290,49 +286,20 @@ function page:action_sequence_speed(v)
     self.seq:set_ticks_per_step(step_div)
 end
 
-local function action_perlin(self, x, y)
+local function action_step_edit(self, x, y)
     -- retruns a closure so the x/y params can be injected
     return function(v)
-        if params:string(ID_SEQ_SOURCE) == SOURCE_PERLIN then
-            self:update_cell(x, y, v)
-        end
-    end
-end
-
-local function action_grid(self, x, y)
-    -- retruns a closure so the x/y params can be injected
-    return function(v)
-        if params:string(ID_SEQ_SOURCE) == SOURCE_GRID then
-            self:update_cell(x, y, v)
-        end
-    end
-end
-
-function page:copy_perlin_to_grid()
-    -- copies perlin noise sequence to grid sequence
-    print('copying perlin sequence to grid')
-    for y = 1, NUM_TRACKS do
-        for x = 1, NUM_STEPS do
-            local val = params:get(STEPS_PERLIN[y][x])
-            params:set(STEPS_GRID[y][x], val)
-        end
+        self:update_cell(x, y, v)
     end
 end
 
 local function action_source(src)
-    -- copy perlin noise sequence to grid sequence if no grid sequence is present yet
-    if params:string(ID_SEQ_SOURCE) == SOURCE_GRID then
-        if not grid_sequence_exists() then
-            print("no grid sequence exists yet, copying perlin sequence")
-            page_sequencer:copy_perlin_to_grid()
-        else
-            print('grid sequence exists already, continuing from there')
-        end
+    -- copy perlin noise sequence to grid sequence
+    if params:string(ID_SEQ_SOURCE) == SOURCE_PERLIN then
+        -- don't switch to perlin yet, use this var to show asterisk *
+        -- TOOD: should not trigger on startup
+        pending_sequence = true
     end
-
-
-    -- visualize sequence
-    page_sequencer:display_active_sequence()
 end
 
 function page:add_params()
@@ -347,8 +314,7 @@ function page:add_params()
 
     for y = 1, NUM_TRACKS do
         for x = 1, NUM_STEPS do
-            params:set_action(STEPS_PERLIN[y][x], action_perlin(self, x, y))
-            params:set_action(STEPS_GRID[y][x], action_grid(self, x, y))
+            params:set_action(STEPS[y][x], action_step_edit(self, x, y))
         end
     end
 end
@@ -367,12 +333,13 @@ function page:initialize()
     end
 
     self.graphic = SequencerGraphic:new()
+    self:display_active_sequence()
 
 
     page.footer = Footer:new({
         button_text = {
             k2 = { name = "PLAY", value = "" },
-            k3 = { name = "SRC", value = "" },
+            k3 = { name = "MODE", value = "" },
             e2 = { name = "SEED", value = "" },
             e3 = { name = "DENS", value = "" },
         },

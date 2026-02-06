@@ -155,8 +155,7 @@ ID_SEQ_DENSITY = get_id(SEQUENCER, "density")
 ID_SEQ_STYLE = get_id(SEQUENCER, "style")
 ID_SEQ_BPM = get_id(SEQUENCER, "bpm")
 ID_SEQ_NUM_STEPS = get_id(SEQUENCER, "num_steps")
-STEPS_PERLIN = {}
-STEPS_GRID = {}
+STEPS = {}
 ID_SEQ_SOURCE = get_id(SEQUENCER, "current_input")
 SOURCE_PERLIN = "PERLIN"
 SOURCE_GRID = "GRID"
@@ -493,23 +492,12 @@ params:hide(ID_SEQ_SOURCE)
 
 -- add 6x16 params for sequence step status (for perlin noise only)
 for track = 1, NUM_TRACKS do
-    STEPS_PERLIN[track] = {}
+    STEPS[track] = {}
     for step = 1, NUM_STEPS do
-        STEPS_PERLIN[track][step] = get_id(SEQUENCER, "step_" .. track .. "_" .. step)
-        params:add_number(STEPS_PERLIN[track][step], STEPS_PERLIN[track][step], 0, 1, 0)
+        STEPS[track][step] = get_id(SEQUENCER, "step_" .. track .. "_" .. step)
+        params:add_number(STEPS[track][step], STEPS[track][step], 0, 1, 0)
         -- Hide from params menu, user can change values with UI/encoders instead
-        params:hide(STEPS_PERLIN[track][step])
-    end
-end
-
--- add 6x16 params for sequence step status (for grid only)
-for track = 1, NUM_TRACKS do
-    STEPS_GRID[track] = {}
-    for step = 1, NUM_STEPS do
-        STEPS_GRID[track][step] = get_id(SEQUENCER, "step_" .. track .. "_" .. step .. "_grid")
-        params:add_number(STEPS_GRID[track][step], STEPS_GRID[track][step], 0, 1, 0)
-        -- Hide from params menu, user can change values with Grid instead
-        params:hide(STEPS_GRID[track][step])
+        params:hide(STEPS[track][step])
     end
 end
 

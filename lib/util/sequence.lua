@@ -22,6 +22,8 @@ local function generate_perlin(rows, cols, x, y, z, density, zoom)
     end
 
     table.sort(velocities, function(a, b) return a.value > b.value end)
+    -- Steps are kept by preserving the top 'keep_count' velocities (sorted by value)
+    -- and zeroing out the rest, maintaining only the strongest hits based on density
     local keep_count = math.floor(density * #velocities)
     for i, v in ipairs(velocities) do
         local keep = i <= keep_count

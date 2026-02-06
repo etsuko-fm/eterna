@@ -8,7 +8,7 @@ SequencerGraphic = {
     fill = 1,
     active_fill = 6,
     flash_fill = 3,
-    current_step = 0, -- 0-based
+    current_step = 0,                       -- 0-based
     sequences = { {}, {}, {}, {}, {}, {} }, -- pattern per voice
     voice_env = { 0, 0, 0, 0, 0, 0, },      -- realtime envelope level of each voice
     num_steps = 16,
@@ -20,19 +20,21 @@ setmetatable(SequencerGraphic, { __index = GraphicBase })
 
 function SequencerGraphic:set_cell(voice, step, val)
     -- keeping this one simple because it's called a lot
+    if val == nil then
+        error("val for voice " .. voice ", step " .. step .. "can't be nil")
+    end
     self.sequences[voice][step] = val
     self.changed = true
 end
 
 function SequencerGraphic:clear()
     for y = 1, 6 do
-        for x = 1,16 do
+        for x = 1, 16 do
             self.sequences[y][x] = 0
         end
     end
     self.changed = true
 end
-
 
 local rows = 6
 local columns = 16
@@ -109,6 +111,9 @@ function SequencerGraphic:queue_grid_cell(voice, row, column, dim, rects)
         else
             -- step not triggered, but it is an active step in the sequence
             local v = self.sequences[voice][column_idx]
+            if v == nil then
+                error("Value for "..voice..":"..column_idx.." can't be nil")
+            end
             local base_level = math.floor(2 + math.abs(v) * 13)
             level = self:compute_level(base_level, dim, 2)
         end
@@ -154,7 +159,6 @@ function SequencerGraphic:render()
             self:queue_grid_cell(voice, row, column, dim, rects)
         end
     end
-
     -- draw the actual rects
     self:flush_rects(rects)
 end
