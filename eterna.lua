@@ -160,6 +160,24 @@ function grid.remove(device)
   grid_conn:close(device)
 end
 
+
+osc.event = function(path, args, from)
+  if path == "/page" then
+    local index = tonumber(args[1])
+    switch_page(index)
+    print('OSC /page: switched to page '..index.." ("..pages[index].name..")")
+  elseif path == "/transport" then
+    local state = tonumber(args[1])
+    print('OSC /transport: ' .. state)
+    if state == 1 then
+      clock.transport.start()
+    else
+      clock.transport.stop()
+    end
+  end
+end
+
+
 function init()
   -- Encoder sensitivity
   norns.enc.sens(1, 2)
