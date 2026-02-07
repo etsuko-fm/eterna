@@ -205,6 +205,7 @@ function clock.transport.stop()
             page.seq:reset()
             page.graphic:set("is_playing", false)
             grid_conn:set_transport(false)
+            grid_conn:set_current_step(1)
             -- todo: with midi it's possible to start/stop while on any page;
             -- in such case the env polls of the correct page should be disabled.
             -- possible solution is to move clock.transport definitions to eterna.lua,
