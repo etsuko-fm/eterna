@@ -35,7 +35,7 @@ local page = Page:create({
     e3 = adjust_num_steps,
     k2_off = toggle_transport,
     k3_off = adjust_step_size,
-    current_step = 0,
+    current_step = 1,
 })
 
 local function action_num_steps(v)
@@ -55,7 +55,6 @@ end
 function page:update_graphics_state()
     local tempo_trimmed = util.round(params:get("clock_tempo"))
     local is_playing = page_sequencer.seq.transport_on
-    local source = params:get(ID_SEQ_SOURCE)
     self.footer:set_value("e2", tempo_trimmed)
     self.footer:set_value("e3", page_sequencer.seq.steps)
     self.footer:set_value("k2", is_playing and "ON" or "OFF")

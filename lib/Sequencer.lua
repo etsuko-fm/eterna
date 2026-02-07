@@ -24,7 +24,7 @@ function Sequencer.new(o)
     s.transport_on = o.transport_on or false
 
     s.current_tick = 0
-    s.current_step = 0
+    s.current_step = 1
     s.current_beat = 0
 
     -- callbacks
@@ -37,7 +37,7 @@ end
 
 function Sequencer:reset()
     self.current_tick = 0
-    self.current_step = 0
+    self.current_step = 1
     self.current_beat = 0
     self.on_reset(self)
 end
@@ -77,7 +77,7 @@ function Sequencer:advance()
     -- change number of steps in sequence, in sync with beat
     if self.cued_num_steps and self.current_tick == 0 then
         self.steps = self.cued_num_steps
-        if self.current_step >= self.steps then
+        if self.current_step > self.steps then
             self:reset()
         end
     end
@@ -90,8 +90,8 @@ function Sequencer:advance()
         -- external logic handles engine calls, graphics, etc.
         self.on_step(self.current_step)
 
-        -- advance step
-        self.current_step = (self.current_step + 1) % self.steps
+        -- advance step, take 1-based index into account
+        self.current_step = (self.current_step % self.steps) + 1
     end
 
     -- advance tick + beat tracking

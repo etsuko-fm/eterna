@@ -8,7 +8,7 @@ SequencerGraphic = {
     fill = 1,
     active_fill = 6,
     flash_fill = 3,
-    current_step = 0,                       -- 0-based
+    current_step = 1,                       -- 1-based
     sequences = { {}, {}, {}, {}, {}, {} }, -- pattern per voice
     voice_env = { 0, 0, 0, 0, 0, 0, },      -- realtime envelope level of each voice
     num_steps = 16,
@@ -52,7 +52,7 @@ local indicator_h = 3
 local indicator_vmargin = indicator_h + margin_h
 local faint_fill = 1
 
-function SequencerGraphic:queue_env_meter(voice, rects)
+function SequencerGraphic:prepare_env_meter(voice, rects)
     if self.voice_env[voice] == nil then return end
     local zero_idx = voice - 1
 
@@ -78,8 +78,9 @@ function SequencerGraphic:compute_level(base, mod, min, max)
     return util.clamp(base + (util.round(mod) or 0), min or 1, max or 15)
 end
 
-function SequencerGraphic:queue_step_indicator(column, dim, rects)
-    if column >= self.num_steps then return end
+function SequencerGraphic:prepare_step_indicator(column, dim, rects)
+    -- column: 1 to 16
+    if column > self.num_steps then return end
 
     -- compute brightness
     local base_level =
@@ -89,17 +90,17 @@ function SequencerGraphic:queue_step_indicator(column, dim, rects)
     local level = self:compute_level(base_level, dim)
 
     -- compute coordinates
-    local x = basex + (column * (block_w + margin_w))
+    local x = basex + ((column-1) * (block_w + margin_w))
     table.insert(rects[level], { x, indicator_y, 3, 1 })
 end
 
-function SequencerGraphic:queue_grid_cell(voice, row, column, dim, rects)
-    local column_idx = column + 1
-    local x = basex + (block_w + margin_w) * column
+function SequencerGraphic:prepare_grid_cell(voice, row, column, dim, rects)
+    -- column: 1 to 16
+    local x = basex + (block_w + margin_w) * (column-1)
     local y = basey + (block_h + margin_h) * row
 
-    local step_value = self.sequences[voice][column_idx]
-    local step_active = step_value ~= 0.0
+    local step_velocity = self.sequences[voice][column]
+    local step_active = step_velocity ~= 0.0
     local is_current = (self.current_step == column and self.is_playing)
 
     local level
@@ -110,9 +111,9 @@ function SequencerGraphic:queue_grid_cell(voice, row, column, dim, rects)
             level = self:compute_level(self.flash_fill, dim)
         else
             -- step not triggered, but it is an active step in the sequence
-            local v = self.sequences[voice][column_idx]
+            local v = self.sequences[voice][column]
             if v == nil then
-                error("Value for "..voice..":"..column_idx.." can't be nil")
+                error("Value for "..voice..":"..column.." can't be nil")
             end
             local base_level = math.floor(2 + math.abs(v) * 13)
             level = self:compute_level(base_level, dim, 2)
@@ -135,7 +136,7 @@ function SequencerGraphic:flush_rects(rects)
                 screen.fill()
             end
         end
-    end
+    end 
 end
 
 function SequencerGraphic:render()
@@ -151,12 +152,12 @@ function SequencerGraphic:render()
 
     for row = 0, rows - 1 do
         local voice = row + 1
-        self:queue_env_meter(voice, rects)
+        self:prepare_env_meter(voice, rects)
 
-        for column = 0, columns - 1 do
-            local dim = (column >= self.num_steps) and -10 or 0
-            self:queue_step_indicator(column, dim, rects)
-            self:queue_grid_cell(voice, row, column, dim, rects)
+        for column = 1, columns do
+            local dim = (column > self.num_steps) and -10 or 0
+            self:prepare_step_indicator(column, dim, rects)
+            self:prepare_grid_cell(voice, row, column, dim, rects)
         end
     end
     -- draw the actual rects

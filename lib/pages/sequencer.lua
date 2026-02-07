@@ -97,6 +97,7 @@ end
 
 local function generate_random_velocities(center, spread)
     for x = 1, NUM_STEPS do
+        -- each step has their own seed
         math.randomseed(seeds[x])
         for y = 1, NUM_TRACKS do
             local velocity = page:generate_random_velocity(x, y, center, spread)
@@ -109,11 +110,11 @@ local function generate_random_velocities(center, spread)
 end
 
 function page:evaluate_step(x, y)
-    -- 0 <= x <= 15
+    -- 1 <= x <= 16
     -- 1 <= y <= 6
     local enable_mod = params:string(ID_ENVELOPES_MOD)
     local source = params:string(ID_SEQ_SOURCE)
-    local velocity = params:get(STEPS[y][x + 1]) -- using x+1 for 1-based table indexing
+    local velocity = params:get(STEPS[y][x])
     local on = velocity > 0
     local attack, decay = get_step_envelope(enable_mod, velocity)
     if on then
@@ -140,13 +141,16 @@ function page:evaluate_step(x, y)
             -- TODO step should really be either 0 or 1 based everywhere
             local center = params:get(ID_SEQ_VEL_CENTER)
             local spread = params:get(ID_SEQ_VEL_SPREAD)
-            local velocity = self:generate_random_velocity(x + 1, y, center, spread)
-            params:set(STEPS[y][x + 1], velocity)
+            -- create new seed for step, so its velocity changes
+            seeds[x] = math.random(1000)
+            local velocity = self:generate_random_velocity(x, y, center, spread)
+            params:set(STEPS[y][x], velocity)
         end
     end
 end
 
 function page:on_step(step)
+    -- step: 1 to 16
     self.graphic:set("current_step", step)
     grid_conn:set_current_step(step)
     page_control.current_step = step
@@ -157,9 +161,14 @@ function page:on_step(step)
 end
 
 local function cycle_source(v)
-    if grid_conn.active then
-        misc_util.cycle_param(ID_SEQ_SOURCE, SEQUENCER_SOURCES, 1)
+    local delta = 1
+    local wrap = true
+    local skip = {}
+    if not grid_conn.active then
+        -- disable grid as control option
+        skip = {2}
     end
+    misc_util.cycle_param(ID_SEQ_SOURCE, SEQUENCER_SOURCES, delta, wrap, skip)
 end
 
 function page:run_sequencer()
@@ -215,7 +224,13 @@ function page:update_graphics_state()
     self.graphic:set("num_steps", self.seq.steps)
     local source = params:string(ID_SEQ_SOURCE)
     self.footer:set_value('k2', self.seq.transport_on and "ON" or "OFF")
-    self.footer:set_value("k3", source)
+    if grid_conn.active then
+        self.footer:set_name("k3", "MODE")
+        self.footer:set_value("k3", source)
+    else
+        self.footer:set_name("k3", "")
+        self.footer:set_value("k3", "")
+    end
     if source == SOURCE_PERLIN then
         self.footer:set_name('e2', "SEED")
         self.footer:set_name('e3', "DENS")
