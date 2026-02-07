@@ -44,6 +44,7 @@ local page_rates = include(from_root("lib/pages/rates"))
 local page_levels = include(from_root("lib/pages/levels"))
 draw_frame = false -- indicates if the next frame should be drawn
 local page_indicator_counter = 0
+
 header = Window:new({ title = "ETERNA" })
 grid_port = nil
 

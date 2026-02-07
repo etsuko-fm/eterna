@@ -130,6 +130,8 @@ end
 function grid_conn:close(device)
     print('grid connection closed')
     self.active = false
+    -- Set source back to perlin
+    params:set(ID_SEQ_SOURCE, 1)
 end
 
 return grid_conn

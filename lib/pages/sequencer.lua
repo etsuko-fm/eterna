@@ -156,23 +156,8 @@ function page:on_step(step)
     end
 end
 
-local function grid_sequence_exists()
-    local result = false
-
-    -- check if all grid steps are 0
-    for track = 1, NUM_TRACKS do
-        for step = 1, NUM_STEPS do
-            if params:get(STEPS[track][step]) > 0 then
-                result = true
-            end
-        end
-    end
-    return result
-end
-
 local function cycle_source(v)
-    print(grid_sequence_exists())
-    if grid_conn.active or grid_sequence_exists() then
+    if grid_conn.active then
         misc_util.cycle_param(ID_SEQ_SOURCE, SEQUENCER_SOURCES, 1)
     end
 end
