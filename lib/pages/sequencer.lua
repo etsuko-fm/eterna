@@ -21,7 +21,6 @@ local page = Page:create({
 })
 
 local RANDOM_SEED = 383762
-local pending_sequence = false
 
 local function generate_perlin()
     -- updates sequence step params based on current perlin noise config
@@ -30,10 +29,11 @@ local function generate_perlin()
     local y_seed = params:get(ID_SEQ_PERLIN_Y)
     local z_seed = params:get(ID_SEQ_PERLIN_Z)
 
-    local sequence = sequence_util.generate_perlin(NUM_TRACKS, NUM_STEPS, x_seed, y_seed, z_seed, density,
-        PERLIN_ZOOM)
-    for i, v in ipairs(sequence) do
-        params:set(STEPS[v.voice][v.step], v.value)
+    local sequence = sequence_util.generate_perlin(NUM_TRACKS, NUM_STEPS, x_seed, y_seed, z_seed, PERLIN_ZOOM)
+    local filtered = sequence_util.density_filter(sequence, density)
+    for _, v in ipairs(filtered) do
+        -- set binary steps
+        params:set(STEPS[v.voice][v.step], v.value > 0 and 1 or 0)
     end
 end
 
@@ -47,21 +47,21 @@ function page:display_active_sequence()
 end
 
 local function e2(d)
-    local source = params:string(ID_SEQ_SOURCE)
-    if source == SOURCE_PERLIN then
+    local mode = params:string(ID_SEQ_MODE)
+    if mode == MODE_PERLIN then
         misc_util.adjust_param(d, ID_SEQ_PERLIN_X, controlspec_perlin.quantum)
-        pending_sequence = false
-    elseif source == SOURCE_GRID then
+        params:set(ID_SEQ_PERLIN_MODIFIED, 0)
+    elseif mode == MODE_VELOCITY then
         misc_util.adjust_param(d, ID_SEQ_VEL_CENTER, controlspec_vel_center.quantum)
     end
 end
 
 local function e3(d)
-    local source = params:string(ID_SEQ_SOURCE)
-    if source == SOURCE_PERLIN then
+    local mode = params:string(ID_SEQ_MODE)
+    if mode == MODE_PERLIN then
         misc_util.adjust_param(d, ID_SEQ_DENSITY, controlspec_perlin_density.quantum)
-        pending_sequence = false
-    elseif source == SOURCE_GRID then
+        params:set(ID_SEQ_PERLIN_MODIFIED, 0)
+    elseif mode == MODE_VELOCITY then
         misc_util.adjust_param(d, ID_SEQ_VEL_SPREAD, controlspec_vel_spread.quantum)
     end
 end
@@ -113,7 +113,7 @@ function page:evaluate_step(x, y)
     -- 1 <= x <= 16
     -- 1 <= y <= 6
     local enable_mod = params:string(ID_ENVELOPES_MOD)
-    local source = params:string(ID_SEQ_SOURCE)
+    local mode = params:string(ID_SEQ_MODE)
     local velocity = params:get(STEPS[y][x])
     local on = velocity > 0
     local attack, decay = get_step_envelope(enable_mod, velocity)
@@ -137,7 +137,7 @@ function page:evaluate_step(x, y)
         engine_lib.voice_trigger(y)
 
         -- generate new velocity for step after evaluating
-        if source == SOURCE_GRID then
+        if mode == MODE_VELOCITY then
             -- TODO step should really be either 0 or 1 based everywhere
             local center = params:get(ID_SEQ_VEL_CENTER)
             local spread = params:get(ID_SEQ_VEL_SPREAD)
@@ -160,7 +160,7 @@ function page:on_step(step)
     end
 end
 
-local function cycle_source(v)
+local function cycle_mode(v)
     local delta = 1
     local wrap = true
     local skip = {}
@@ -168,7 +168,7 @@ local function cycle_source(v)
         -- disable grid as control option
         skip = {2}
     end
-    misc_util.cycle_param(ID_SEQ_SOURCE, SEQUENCER_SOURCES, delta, wrap, skip)
+    misc_util.cycle_param(ID_SEQ_MODE, SEQUENCER_MODES, delta, wrap, skip)
 end
 
 function page:run_sequencer()
@@ -223,27 +223,27 @@ end
 
 function page:update_graphics_state()
     self.graphic:set("num_steps", self.seq.steps)
-    local source = params:string(ID_SEQ_SOURCE)
+    local mode = params:string(ID_SEQ_MODE)
     self.footer:set_value('k2', self.seq.transport_on and "ON" or "OFF")
     if grid_conn.active then
         self.footer:set_name("k3", "MODE")
-        self.footer:set_value("k3", source)
+        self.footer:set_value("k3", mode)
     else
         self.footer:set_name("k3", "")
         self.footer:set_value("k3", "")
     end
-    if source == SOURCE_PERLIN then
+    if mode == MODE_PERLIN then
         self.footer:set_name('e2', "SEED")
         self.footer:set_name('e3', "DENS")
         local perlin_txt = params:get(ID_SEQ_PERLIN_X)
         local density_txt = params:get(ID_SEQ_DENSITY)
-        if pending_sequence then
+        if params:get(ID_SEQ_PERLIN_MODIFIED) == 1 then
             perlin_txt = "*"
             density_txt = "*"
         end
         self.footer:set_value('e2', perlin_txt)
         self.footer:set_value('e3', density_txt)
-    elseif source == SOURCE_GRID then
+    elseif mode == MODE_VELOCITY then
         self.footer:set_name('e2', "V CNTR")
         self.footer:set_name('e3', "V SPRD")
         self.footer:set_value('e2', params:get(ID_SEQ_VEL_CENTER))
@@ -252,10 +252,10 @@ function page:update_graphics_state()
 
     -- prevent updating velocities more often than the screen refreshes, as it costs quite some cpu
     -- when done on every encoder-change.
-    if redraw_perlin and source == SOURCE_PERLIN then
+    if redraw_perlin and mode == MODE_PERLIN then
         redraw_perlin = false
         generate_perlin()
-    elseif redraw_grid_velocity and source == SOURCE_GRID then
+    elseif redraw_grid_velocity and mode == MODE_VELOCITY then
         redraw_grid_velocity = false
         generate_random_velocities(params:get(ID_SEQ_VEL_CENTER), params:get(ID_SEQ_VEL_SPREAD))
     end
@@ -294,15 +294,6 @@ local function action_step_edit(self, x, y)
     end
 end
 
-local function action_source(src)
-    -- copy perlin noise sequence to grid sequence
-    if params:string(ID_SEQ_SOURCE) == SOURCE_PERLIN then
-        -- don't switch to perlin yet, use this var to show asterisk *
-        -- TOOD: should not trigger on startup
-        pending_sequence = true
-    end
-end
-
 function page:add_params()
     params:set_action(ID_SEQ_PERLIN_X, function(v) self:toggle_redraw_perlin() end)
     params:set_action(ID_SEQ_PERLIN_Y, function(v) self:toggle_redraw_perlin() end)
@@ -311,7 +302,6 @@ function page:add_params()
     params:set_action(ID_SEQ_VEL_SPREAD, toggle_redraw_grid_velocity)
     params:set_action(ID_SEQ_DENSITY, function(v) self:toggle_redraw_perlin() end)
     params:set_action(ID_SEQ_SPEED, function(v) self:action_sequence_speed(v) end)
-    params:set_action(ID_SEQ_SOURCE, action_source)
 
     for y = 1, NUM_TRACKS do
         for x = 1, NUM_STEPS do
@@ -322,7 +312,7 @@ end
 
 function page:initialize()
     page.k2_off = function() self:toggle_transport() end
-    page.k3_off = cycle_source
+    page.k3_off = cycle_mode
     page.e2 = e2
     page.e3 = e3
     seq.on_step = function(step) page:on_step(step) end

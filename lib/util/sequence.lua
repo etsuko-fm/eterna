@@ -9,28 +9,33 @@ local convert_sequence_speed = {
     8,
 }
 
-local function generate_perlin(rows, cols, x, y, z, density, zoom)
-    local velocities = {}
+local function density_filter(values, density)
+    table.sort(values, function(a, b) return a.value > b.value end)
+    -- Steps are kept by preserving the top number of velocities (sorted by value)
+    -- and zeroing out the rest, maintaining only the strongest hits based on density
+    local keep_count = math.floor(density * #values)
+    for i, v in ipairs(values) do
+        local keep = i <= keep_count
+        v['value'] = keep and v.value or 0
+    end
+    return values
+end
+
+local function generate_perlin(rows, cols, x, y, z, zoom)
+    local values = {}
     for row = 1, rows do
         local perlin_y = row * zoom + y
         for step = 1, cols do
             local perlin_x = step * zoom + x
             local pnoise = perlin:noise(perlin_x, perlin_y, z)
-            local velocity = util.linlin(-1, 1, 0, 1, pnoise)
-            table.insert(velocities, { value = velocity, voice = row, step = step })
+            -- perlin:noise generates values in range (-1, 1); scale to (0, 1)
+            local value = util.linlin(-1, 1, 0, 1, pnoise)
+            table.insert(values, { value = value, voice = row, step = step })
         end
     end
-
-    table.sort(velocities, function(a, b) return a.value > b.value end)
-    -- Steps are kept by preserving the top 'keep_count' velocities (sorted by value)
-    -- and zeroing out the rest, maintaining only the strongest hits based on density
-    local keep_count = math.floor(density * #velocities)
-    for i, v in ipairs(velocities) do
-        local keep = i <= keep_count
-        v['value'] = keep and v.value or 0
-    end
-    return velocities
+    return values
 end
+
 
 local function get_step_envelope(max_time, max_shape, enable_mod, velocity)
     local mod_amt
@@ -54,5 +59,6 @@ return {
     sequence_speeds = sequence_speeds,
     convert_sequence_speed = convert_sequence_speed,
     generate_perlin = generate_perlin,
+    density_filter = density_filter,
     get_step_envelope = get_step_envelope,
 }

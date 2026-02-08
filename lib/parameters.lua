@@ -146,6 +146,7 @@ controlspec_vel_spread = controlspec.def {
 }
 
 ID_SEQ_SPEED = get_id(SEQUENCER, "step_size")
+ID_SEQ_PERLIN_MODIFIED = get_id(SEQUENCER, "perlin_modified")
 ID_SEQ_PERLIN_X = get_id(SEQUENCER, "perlin_x")
 ID_SEQ_PERLIN_Y = get_id(SEQUENCER, "perlin_x")
 ID_SEQ_PERLIN_Z = get_id(SEQUENCER, "perlin_z")
@@ -156,10 +157,10 @@ ID_SEQ_STYLE = get_id(SEQUENCER, "style")
 ID_SEQ_BPM = get_id(SEQUENCER, "bpm")
 ID_SEQ_NUM_STEPS = get_id(SEQUENCER, "num_steps")
 STEPS = {}
-ID_SEQ_SOURCE = get_id(SEQUENCER, "current_input")
-SOURCE_PERLIN = "PERLIN"
-SOURCE_GRID = "GRID"
-SEQUENCER_SOURCES = {SOURCE_PERLIN, SOURCE_GRID}
+ID_SEQ_MODE = get_id(SEQUENCER, "mode")
+MODE_PERLIN = "PERLIN"
+MODE_VELOCITY = "VELO"
+SEQUENCER_MODES = {MODE_PERLIN, MODE_VELOCITY}
 NUM_TRACKS = 6
 NUM_STEPS = 16 -- TODO: actually MAX_STEPS
 
@@ -484,11 +485,15 @@ params:add_control(ID_SEQ_VEL_CENTER, "vel center", controlspec_vel_center)
 params:add_control(ID_SEQ_VEL_SPREAD, "vel spread", controlspec_vel_spread)
 params:add_control(ID_SEQ_DENSITY, "density", controlspec_perlin_density)
 params:add_number(ID_SEQ_BPM, "bpm", 1, 300)
-params:add_option(ID_SEQ_SOURCE, "source", SEQUENCER_SOURCES, 1)
+params:add_option(ID_SEQ_MODE, "source", SEQUENCER_MODES, 1)
+params:add_binary(ID_SEQ_PERLIN_MODIFIED, "perlin modified", "toggle", 0)
+
+-- managed by script
+params:hide(ID_SEQ_PERLIN_MODIFIED)
 params:hide(get_id(SEQUENCER, "perlin_y"))
 params:hide(get_id(SEQUENCER, "perlin_z"))
 params:hide(ID_SEQ_BPM)
-params:hide(ID_SEQ_SOURCE)
+params:hide(ID_SEQ_MODE)
 
 -- add 6x16 params for sequence step status (for perlin noise only)
 for track = 1, NUM_TRACKS do

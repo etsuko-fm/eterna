@@ -12,7 +12,7 @@ SequencerGraphic = {
     sequences = { {}, {}, {}, {}, {}, {} }, -- pattern per voice
     voice_env = { 0, 0, 0, 0, 0, 0, },      -- realtime envelope level of each voice
     num_steps = 16,
-    is_playing = true,
+    is_playing = false,
     hide = false,
 }
 

@@ -296,12 +296,14 @@ Each time a step triggers during playback, it picks a new random velocity within
 
 ### Perlin ↔ Grid Switching
 
-Eterna contains a single sequence, which can be controlled using different modes:
+Eterna contains a single sequence, which can be controlled using different modes (K3 on the sequencer page):
 
 **Perlin mode:** Generative sequences created using seed and density encoders
 
 **Grid mode:** Manual step programming via grid 
 
-Different modes edit the same sequence, so switching modes does not alter the sequence until an action is taken - e.g. pressing a grid button or dialing an encoder.
+Different modes edit the same sequence.
+
+Switching modes does not alter the sequence until an action is taken - e.g. pressing a grid button or dialing an encoder.
 
 Switch between sources on the sequence control page. When grid is connected and perlin mode is active, pressing any grid button automatically switches to grid mode.

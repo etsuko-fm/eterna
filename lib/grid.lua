@@ -12,20 +12,16 @@ function grid_conn:key_press(x, y)
     if y == page_row then
         self:select_page(x)
     elseif y <= NUM_TRACKS then
-        if params:string(ID_SEQ_SOURCE) ~= SOURCE_GRID then
-            -- #2 = SOURCE_GRID... there's not really a built-in neat way to do it
-            params:set(ID_SEQ_SOURCE, 2)
-            print('Perlin noise sequence was active, but grid button pressed; switching mode')
-        end
-        local center = params:get(ID_SEQ_VEL_CENTER)
-        local spread = params:get(ID_SEQ_VEL_SPREAD)
         local on = params:get(STEPS[y][x]) > 0
         local velocity = 0
         if not on then
             -- if cell was off, turn it on by assigning a velocity
+            local center = params:get(ID_SEQ_VEL_CENTER)
+            local spread = params:get(ID_SEQ_VEL_SPREAD)
             velocity = page_sequencer:generate_random_velocity(x, y, center, spread)
         end
         params:set(STEPS[y][x], velocity)
+        params:set(ID_SEQ_PERLIN_MODIFIED, 1)
         self:set_cell(x, y, velocity * 15)
         self.device:refresh()
     end
@@ -131,7 +127,7 @@ function grid_conn:close(device)
     print('grid connection closed')
     self.active = false
     -- Set source back to perlin
-    params:set(ID_SEQ_SOURCE, 1)
+    params:set(ID_SEQ_MODE, 1)
 end
 
 return grid_conn
