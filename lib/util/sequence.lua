@@ -11,8 +11,8 @@ local convert_sequence_speed = {
 
 local function density_filter(values, density)
     table.sort(values, function(a, b) return a.value > b.value end)
-    -- Steps are kept by preserving the top number of velocities (sorted by value)
-    -- and zeroing out the rest, maintaining only the strongest hits based on density
+    -- Sequence is filtered by preserving the top number of velocities
+    -- and zeroing the rest; only the strongest % of hits are kept
     local keep_count = math.floor(density * #values)
     for i, v in ipairs(values) do
         local keep = i <= keep_count
@@ -36,6 +36,35 @@ local function generate_perlin(rows, cols, x, y, z, zoom)
     return values
 end
 
+local function copy_sequence(seq)
+    local result = {}
+    for i, v in ipairs(seq) do
+        result[i] = {
+            value = v.value,
+            voice = v.voice,
+            step  = v.step
+        }
+    end
+    return result
+end
+
+local perlin_cache = {}
+
+local function mem_generate_perlin(rows, cols, x, y, z, zoom)
+    -- memoized version of generate_perlin
+    local key = table.concat({rows, cols, x, y, z, zoom}, ":")
+
+    local cached = perlin_cache[key]
+    if cached then
+        return copy_sequence(cached)
+    end
+
+    -- fallback to original function
+    local values = generate_perlin(rows, cols, x, y, z, zoom)
+
+    perlin_cache[key] = copy_sequence(values)
+    return values
+end
 
 local function get_step_envelope(max_time, max_shape, enable_mod, velocity)
     local mod_amt
@@ -58,7 +87,7 @@ end
 return {
     sequence_speeds = sequence_speeds,
     convert_sequence_speed = convert_sequence_speed,
-    generate_perlin = generate_perlin,
+    generate_perlin = mem_generate_perlin,
     density_filter = density_filter,
     get_step_envelope = get_step_envelope,
 }
