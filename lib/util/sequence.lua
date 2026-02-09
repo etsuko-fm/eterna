@@ -10,9 +10,8 @@ local convert_sequence_speed = {
 }
 
 local function density_filter(values, density)
-    table.sort(values, function(a, b) return a.value > b.value end)
-    -- Sequence is filtered by preserving the top number of velocities
-    -- and zeroing the rest; only the strongest % of hits are kept
+    -- Keep a specified percentage of values of a sorted list.
+    -- Assusming sorted descendingly, it keeps the top % of values.
     local keep_count = math.floor(density * #values)
     for i, v in ipairs(values) do
         local keep = i <= keep_count
@@ -33,6 +32,9 @@ local function generate_perlin(rows, cols, x, y, z, zoom)
             table.insert(values, { value = value, voice = row, step = step })
         end
     end
+    -- sort descending by perlin noise values
+    table.sort(values, function(a, b) return a.value > b.value end)
+    -- by now values itself are actually irrelevant, just the sorted list is 
     return values
 end
 
@@ -48,10 +50,11 @@ local function copy_sequence(seq)
     return result
 end
 
+-- for memoization
 local perlin_cache = {}
 
 local function mem_generate_perlin(rows, cols, x, y, z, zoom)
-    -- memoized version of generate_perlin
+    -- memoized version of generate_perlin, as it takes some milliseconds to generate
     local key = table.concat({rows, cols, x, y, z, zoom}, ":")
 
     local cached = perlin_cache[key]
@@ -66,28 +69,10 @@ local function mem_generate_perlin(rows, cols, x, y, z, zoom)
     return values
 end
 
-local function get_step_envelope(max_time, max_shape, enable_mod, velocity)
-    local mod_amt
-    if enable_mod ~= "OFF" then
-        -- use half of sequencer val for modulation
-        mod_amt = 0.5 + velocity / 2
-    else
-        mod_amt = 1
-    end
-
-    -- modulate time and shape
-    local time = max_time * mod_amt
-    local shape = max_shape * mod_amt
-    local attack = get_attack(time, shape)
-    local decay = get_decay(time, shape)
-
-    return attack, decay
-end
 
 return {
     sequence_speeds = sequence_speeds,
     convert_sequence_speed = convert_sequence_speed,
     generate_perlin = mem_generate_perlin,
     density_filter = density_filter,
-    get_step_envelope = get_step_envelope,
 }

@@ -35,6 +35,7 @@ local function generate_perlin()
         -- set binary steps
         params:set(STEPS[v.voice][v.step], v.value > 0 and 1 or 0)
     end
+    -- TODO: set velocity
 end
 
 function page:display_active_sequence()
@@ -70,7 +71,7 @@ local function get_step_envelope(enable_mod, velocity)
     local max_time = params:get(ID_ENVELOPES_TIME)
     local max_shape = params:get(ID_ENVELOPES_SHAPE)
     -- return attack, decay
-    return sequence_util.get_step_envelope(max_time, max_shape, enable_mod, velocity)
+    return envelope_util.get_step_envelope(max_time, max_shape, enable_mod, velocity)
 end
 
 function page:generate_random_velocity(x, y, center, spread)

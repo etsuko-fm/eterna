@@ -21,6 +21,7 @@ lfo_util = include(from_root("lib/util/lfo"))
 misc_util = include(from_root("lib/util/misc"))
 sequence_util = include(from_root("lib/util/sequence"))
 graphic_util = include(from_root("lib/util/graphic"))
+envelope_util = include(from_root("lib/util/envelope"))
 
 engine_lib = include(from_root("lib/eterna_engine"))
 
