@@ -20,7 +20,29 @@ local page = Page:create({
     seq = seq,
 })
 
+local seeds = {}
+
 local RANDOM_SEED = 383762
+
+for i = 1, NUM_STEPS do
+    -- TODO: make param
+    seeds[i] = RANDOM_SEED + i
+end
+
+local function generate_random_velocities(center, spread)
+    -- compute velocities for all steps that have already a value > 0
+    for x = 1, NUM_STEPS do
+        -- each step has their own seed
+        math.randomseed(seeds[x])
+        for y = 1, NUM_TRACKS do
+            local velocity = page:generate_random_velocity(center, spread)
+            if params:get(STEPS[y][x]) ~= 0 then
+                -- set the value; this will trigger an action that updates grid/norns display
+                params:set(STEPS[y][x], velocity)
+            end
+        end
+    end
+end
 
 local function generate_perlin()
     -- updates sequence step params based on current perlin noise config
@@ -32,10 +54,13 @@ local function generate_perlin()
     local sequence = sequence_util.generate_perlin(NUM_TRACKS, NUM_STEPS, x_seed, y_seed, z_seed, PERLIN_ZOOM)
     local filtered = sequence_util.density_filter(sequence, density)
     for _, v in ipairs(filtered) do
-        -- set binary steps
-        params:set(STEPS[v.voice][v.step], v.value > 0 and 1 or 0)
+        -- set binary steps; decides which steps will get a velocity
+        local val = v.value > 0 and 1 or 0
+        -- silent set, velocities are set in second step
+        params:set(STEPS[v.voice][v.step], val)
     end
-    -- TODO: set velocity
+    -- now compute velocities, according to params
+    generate_random_velocities(params:get(ID_SEQ_VEL_CENTER), params:get(ID_SEQ_VEL_SPREAD))
 end
 
 function page:display_active_sequence()
@@ -74,7 +99,7 @@ local function get_step_envelope(enable_mod, velocity)
     return envelope_util.get_step_envelope(max_time, max_shape, enable_mod, velocity)
 end
 
-function page:generate_random_velocity(x, y, center, spread)
+function page:generate_random_velocity(center, spread)
     -- Calculate the range based on center and spread
     local half_range = spread / 2
     local min_val = center - half_range
@@ -89,26 +114,7 @@ function page:generate_random_velocity(x, y, center, spread)
     return velocity
 end
 
-local seeds = {}
 
-for i = 1, NUM_STEPS do
-    -- TODO: make param
-    seeds[i] = RANDOM_SEED + i
-end
-
-local function generate_random_velocities(center, spread)
-    for x = 1, NUM_STEPS do
-        -- each step has their own seed
-        math.randomseed(seeds[x])
-        for y = 1, NUM_TRACKS do
-            local velocity = page:generate_random_velocity(x, y, center, spread)
-            if params:get(STEPS[y][x]) ~= 0 then
-                -- set the value; this will trigger an action that updates grid/norns display
-                params:set(STEPS[y][x], velocity)
-            end
-        end
-    end
-end
 
 function page:evaluate_step(x, y)
     -- 1 <= x <= 16
@@ -144,7 +150,7 @@ function page:evaluate_step(x, y)
             local spread = params:get(ID_SEQ_VEL_SPREAD)
             -- create new seed for step, so its velocity changes
             seeds[x] = math.random(1000)
-            local velocity = self:generate_random_velocity(x, y, center, spread)
+            local velocity = self:generate_random_velocity(center, spread)
             params:set(STEPS[y][x], velocity)
         end
     end
@@ -253,10 +259,10 @@ function page:update_graphics_state()
 
     -- prevent updating velocities more often than the screen refreshes, as it costs quite some cpu
     -- when done on every encoder-change.
-    if redraw_perlin and mode == MODE_PERLIN then
+    if redraw_perlin then
         redraw_perlin = false
         generate_perlin()
-    elseif redraw_grid_velocity and mode == MODE_VELOCITY then
+    elseif redraw_grid_velocity then
         redraw_grid_velocity = false
         generate_random_velocities(params:get(ID_SEQ_VEL_CENTER), params:get(ID_SEQ_VEL_SPREAD))
     end

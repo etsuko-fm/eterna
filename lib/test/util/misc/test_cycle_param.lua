@@ -84,8 +84,10 @@ function TestCycleParam:test_all_but_current_skipped()
     luaunit.assertEquals(params:get("test"), 1)
 end
 
-local runner = luaunit.LuaUnit.new()
-runner:setOutputType('text')
-runner:runSuite('TestCycleParam')
+-- local runner = luaunit.LuaUnit.new()
+-- runner:setOutputType('text')
+-- runner:runSuite('TestCycleParam')
 
--- dofile('/home/we/dust/code/eterna/lib/test/test_cycle_param.lua')
+-- dofile('/home/we/dust/code/eterna/lib/test/util/misc/test_cycle_param.lua')
+
+return TestCycleParam

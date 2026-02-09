@@ -31,3 +31,5 @@ function TestToggleParam:test_toggle_twice_returns_to_original()
     misc_util.toggle_param("test_toggle")
     luaunit.assertEquals(params:get("test_toggle"), 0)
 end
+
+return TestToggleParam

@@ -44,3 +44,5 @@ end
 function TestExplin:test_error_on_mixed_signs()
     luaunit.assertErrorMsgContains("same sign", misc_util.explin, -100, 100, 0, 127, 50)
 end
+
+return TestExplin
