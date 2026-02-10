@@ -15,7 +15,7 @@ local function density_filter(values, density)
     local keep_count = math.floor(density * #values)
     for i, v in ipairs(values) do
         local keep = i <= keep_count
-        v['value'] = keep and v.value or 0
+        v['value'] = keep and 1 or 0
     end
     return values
 end
@@ -34,7 +34,12 @@ local function generate_perlin(rows, cols, x, y, z, zoom)
     end
     -- sort descending by perlin noise values
     table.sort(values, function(a, b) return a.value > b.value end)
-    -- by now values itself are actually irrelevant, just the sorted list is 
+
+    -- by now values itself are actually irrelevant, just the sorted list is
+    -- removing the values saves some memory during memoization (384kb for 1000 sequences)
+    for _, v in ipairs(values) do
+        v.value = nil
+    end
     return values
 end
 
