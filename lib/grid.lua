@@ -23,7 +23,7 @@ function grid_conn:key_press(x, y)
         params:set(STEPS[y][x], velocity)
         params:set(ID_SEQ_PERLIN_MODIFIED, 1)
         self:led(x, y, velocity * 15)
-        self.device:refresh()
+        self:refresh()
     end
 end
 
@@ -32,8 +32,8 @@ function grid_conn:select_page(x)
     if x <= NUM_PAGES then
         self:reset_page_leds()
         switch_page(x)
-        self.device:led(x, page_row, midplus)
-        self.device:refresh()
+        self:led(x, page_row, midplus)
+        self:refresh()
     end
 end
 
@@ -42,10 +42,10 @@ function grid_conn:set_current_step(current_step)
 
     -- reset leds on row 7 (sequence stepper)
     for x = 1, 16 do
-        self.device:led(x, 7, low)
+        self:led(x, 7, low)
     end
     -- light up active step
-    self.device:led(current_step, 7, midplus)
+    self:led(current_step, 7, midplus)
 
     for y = 1, 6 do
         -- reset all to actual velocity level
@@ -55,17 +55,17 @@ function grid_conn:set_current_step(current_step)
             self:led(x, y, velocity * 15)
             if current_step == x and velocity > 0 then
                 -- flash
-                self.device:led(x, y, high)
+                self:led(x, y, high)
             end
         end
     end
-    self.device:refresh()
+    self:refresh()
 end
 
 function grid_conn:set_current_page(page)
     self:reset_page_leds()
-    self.device:led(page, 8, midplus)
-    self.device:refresh()
+    self:led(page, 8, midplus)
+    self:refresh()
 end
 
 grid.key = function(x, y, z)
@@ -74,7 +74,7 @@ end
 
 function grid_conn:reset_page_leds()
     for x = 1, 14 do
-        self.device:led(x, 8, page_leds[x])
+        self:led(x, 8, page_leds[x])
     end
 end
 
@@ -141,8 +141,6 @@ end
 function grid_conn:close(device)
     print('grid connection closed')
     self.active = false
-    -- Set source back to perlin
-    params:set(ID_SEQ_MODE, 1)
 end
 
 return grid_conn
