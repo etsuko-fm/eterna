@@ -120,7 +120,6 @@ function page:evaluate_step(x, y)
     -- 1 <= x <= 16
     -- 1 <= y <= 6
     local enable_mod = params:string(ID_ENVELOPES_MOD)
-    local mode = params:string(ID_SEQ_MODE)
     local velocity = params:get(STEPS[y][x])
     local on = velocity > 0
     local attack, decay = get_step_envelope(enable_mod, velocity)
@@ -144,15 +143,13 @@ function page:evaluate_step(x, y)
         engine_lib.voice_trigger(y)
 
         -- generate new velocity for step after evaluating
-        if mode == MODE_VELOCITY then
-            -- TODO step should really be either 0 or 1 based everywhere
-            local center = params:get(ID_SEQ_VEL_CENTER)
-            local spread = params:get(ID_SEQ_VEL_SPREAD)
-            -- create new seed for step, so its velocity changes
-            seeds[x] = math.random(1000)
-            local velocity = self:generate_random_velocity(center, spread)
-            params:set(STEPS[y][x], velocity)
-        end
+        local center = params:get(ID_SEQ_VEL_CENTER)
+        local spread = params:get(ID_SEQ_VEL_SPREAD)
+        -- create new seed for step, so its velocity changes
+        seeds[x] = math.random(1000)
+        local new_velocity = self:generate_random_velocity(center, spread)
+        params:set(STEPS[y][x], new_velocity)
+
     end
 end
 
@@ -275,7 +272,7 @@ end
 function page:update_cell(step, voice, v)
     self.graphic:set_cell(voice, step, v)
     if grid_conn.active then
-        grid_conn:set_cell(step, voice, v * 15)
+        grid_conn:led(step, voice, v * 15)
     end
 end
 

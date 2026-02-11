@@ -4,7 +4,7 @@ local low = 2
 local mid = 4
 local midplus = 10
 local high = 15
-local leds = { mid, low, mid, low, low, low, mid, low, mid, low, mid, low, mid, mid }
+local page_leds = { mid, low, mid, low, low, low, mid, low, mid, low, mid, low, mid, mid }
 local page_row = 8
 
 function grid_conn:key_press(x, y)
@@ -22,7 +22,7 @@ function grid_conn:key_press(x, y)
         end
         params:set(STEPS[y][x], velocity)
         params:set(ID_SEQ_PERLIN_MODIFIED, 1)
-        self:set_cell(x, y, velocity * 15)
+        self:led(x, y, velocity * 15)
         self.device:refresh()
     end
 end
@@ -52,7 +52,7 @@ function grid_conn:set_current_step(current_step)
         for x = 1, 16 do
             local param_id = STEPS[y][x]
             local velocity = params:get(param_id)
-            self:set_cell(x, y, velocity * 15)
+            self:led(x, y, velocity * 15)
             if current_step == x and velocity > 0 then
                 -- flash
                 self.device:led(x, y, high)
@@ -68,34 +68,48 @@ function grid_conn:set_current_page(page)
     self.device:refresh()
 end
 
-
 grid.key = function(x, y, z)
     if z == 1 then grid_conn:key_press(x, y) end
 end
 
 function grid_conn:reset_page_leds()
     for x = 1, 14 do
-        self.device:led(x, 8, leds[x])
+        self.device:led(x, 8, page_leds[x])
     end
+end
+
+grid_conn.grid_state = {}
+
+local function populate_grid_state()
+    for x = 1, 16 do
+        grid_conn.grid_state[x] = {}
+        for y = 1, 8 do
+            grid_conn.grid_state[x][y] = 0
+        end
+    end
+end
+
+function grid_conn:led(x, y, val)
+    -- level should be an integer value
+    local level = math.ceil(val)
+
+    -- update shadow state for testability
+    self.grid_state[x][y] = level
+
+    -- set actual led on grid
+    self.device:led(x, y, level)
+
+    -- mark for device refresh; refresh call responsibility of the caller
+    self.changed = true
 end
 
 function grid_conn:reset_sequence_leds()
     for y = 1, 6 do
         for x = 1, 16 do
-            self.device:led(x, y, 0)
+            self:led(x, y, 0)
         end
     end
-    self.device:refresh()
-end
-
-function grid_conn:set_cell(x, y, level)
-    self.device:led(x, y, math.ceil(level))
-    self.changed = true
-    -- refresh call responsibility of the caller
-end
-
-function grid_conn:display_sequence()
-
+    self:refresh()
 end
 
 function grid_conn:refresh()
@@ -112,6 +126,7 @@ end
 
 function grid_conn:init(device, current_page_id)
     print('grid connection init')
+    populate_grid_state()
     self.is_playing = false
     self.active = true
     self.device = device
