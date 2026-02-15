@@ -25,7 +25,6 @@ function Sequencer.new(o)
 
     s.current_tick = 0
     s.current_step = 1
-    s.current_beat = 0
 
     -- callbacks
     s.on_step = o.on_step or function(_) end       -- called when a new step is evaluated
@@ -36,16 +35,15 @@ function Sequencer.new(o)
 end
 
 function Sequencer:reset()
-    self.current_tick = 0
+    self.current_tick = 1
     self.current_step = 1
-    self.current_beat = 0
     self.on_reset(self)
 end
 
 function Sequencer:set_num_steps(steps)
     -- Sets the number of steps in the sequence
     if self.transport_on then
-        -- cue the change so it can be applied exactly on the next beat
+        -- cue the change so it can be applied exactly on the next step
         self.cued_num_steps = steps
     else
         -- if transport is stopped, change can be applied instantly
@@ -64,39 +62,32 @@ function Sequencer:set_ticks_per_step(ticks)
 end
 
 function Sequencer:advance()
-    -- this method advances a single tick
-    local ticks_per_beat = self.ticks_per_beat
-
-    -- resets sequencer, in sync with beat, when step divider changes (e.g. from 1/16th to 1/8)
-    if self.cued_ticks_per_step and self.current_tick == 0 then
+    -- resets sequencer, in sync with beat, when step divider (=ticks per step) changes (e.g. from 1/16th to 1/8)
+    if self.cued_ticks_per_step and self.current_tick == 1 then
         self.ticks_per_step = self.cued_ticks_per_step
         self.cued_ticks_per_step = nil
         self:reset()
     end
 
-    -- change number of steps in sequence, in sync with beat
-    if self.cued_num_steps and self.current_tick == 0 then
+    -- change number of steps in sequence, in sync
+    if self.cued_num_steps and self.current_tick == 1 then
         self.steps = self.cued_num_steps
         if self.current_step > self.steps then
             self:reset()
         end
     end
 
-    -- optional callback every tick
-    self.on_tick(self.current_tick, self.current_beat)
-
-    -- when the susbteps accumulate to one step according to the current step divider
-    if self.current_tick % self.ticks_per_step == 0 then
-        -- external logic handles engine calls, graphics, etc.
+    -- when the ticks accumulate to one step according to the current ticks_per_step
+    if (self.current_tick - 1) % self.ticks_per_step == 0 then
+        -- allow client to handle engine calls, graphics, etc.
         self.on_step(self.current_step)
 
         -- advance step, take 1-based index into account
         self.current_step = (self.current_step % self.steps) + 1
     end
 
-    -- advance tick + beat tracking
-    self.current_tick = (self.current_tick + 1) % ticks_per_beat
-    self.current_beat = math.floor(self.current_tick / ticks_per_beat)
+    -- advance tick
+    self.current_tick = util.wrap(self.current_tick + 1, 1, self.ticks_per_step)
 end
 
 return Sequencer

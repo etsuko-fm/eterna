@@ -18,9 +18,13 @@ function grid_conn:key_press(x, y)
             -- if cell was off, turn it on by assigning a velocity
             local center = params:get(ID_SEQ_VEL_CENTER)
             local spread = params:get(ID_SEQ_VEL_SPREAD)
-            velocity = page_sequencer:generate_random_velocity(x, y, center, spread)
+            velocity = page_sequencer:generate_velocity(x, y, center, spread)
         end
         params:set(STEPS[y][x], velocity)
+        -- if perlin noise was queued to be renegerated, cancel it, because
+        -- it's overwritten now by manual grid sequence editing
+        page_sequencer:toggle_regenerate_perlin(false)
+        -- indicate that the perlin noise params are not reflected exactly in the sequence anymore
         params:set(ID_SEQ_PERLIN_MODIFIED, 1)
         self:led(x, y, velocity * 15)
         self:refresh()
@@ -38,23 +42,25 @@ function grid_conn:select_page(x)
 end
 
 function grid_conn:set_current_step(current_step)
-    self.current_step = current_step
+    if not self.active then return end
+    self.current_step = current_step --int: 1 to 16
 
     -- reset leds on row 7 (sequence stepper)
     for x = 1, 16 do
         self:led(x, 7, low)
     end
-    -- light up active step
+
+    -- light up active step on step indicator row
     self:led(current_step, 7, midplus)
 
     for y = 1, 6 do
-        -- reset all to actual velocity level
+        -- set all to actual velocity level (incl previous column which may have flashed)
         for x = 1, 16 do
             local param_id = STEPS[y][x]
             local velocity = params:get(param_id)
             self:led(x, y, velocity * 15)
             if current_step == x and velocity > 0 then
-                -- flash
+                -- flash active step
                 self:led(x, y, high)
             end
         end
@@ -90,6 +96,8 @@ local function populate_grid_state()
 end
 
 function grid_conn:led(x, y, val)
+    if not self.active then return end
+
     -- level should be an integer value
     local level = math.ceil(val)
 
@@ -113,6 +121,7 @@ function grid_conn:reset_sequence_leds()
 end
 
 function grid_conn:refresh()
+    -- updated the physical lights
     if not self.active then return end
     if self.changed then
         self.device:refresh()
@@ -125,7 +134,6 @@ function grid_conn:set_transport(state)
 end
 
 function grid_conn:init(device, current_page_id)
-    print('grid connection init')
     populate_grid_state()
     self.is_playing = false
     self.active = true

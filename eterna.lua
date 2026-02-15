@@ -145,8 +145,10 @@ function amp_to_log(amp)
 end
 
 function activate_grid(port)
+  print("ACTIVATING...")
   if port and port.device then
     print("connected to grid")
+    print("ACTIVATED")
     grid_conn:init(port, current_page_index)
   end
 end

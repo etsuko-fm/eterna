@@ -3,14 +3,13 @@ local Sequencer = include(from_root("lib/Sequencer"))
 local page_name = "SEQUENCER"
 local PERLIN_ZOOM = 3.3 -- empirically tuned; really low values (<1) make it more tetrisy
 local main_seq_clock_id
-local redraw_perlin = false
-local redraw_grid_velocity = false
 local TICKS_PER_BEAT = 8 -- quarter note divided by 8, so 1/32nd [call ticks_per_beat?]
+local regenerate_perlin = false
+local regenerate_velocity = false
 
 local seq = Sequencer.new {
     steps = NUM_STEPS,
     rows = NUM_TRACKS,
-    ticks_per_beat = TICKS_PER_BEAT,
     ticks_per_step = 2,
 }
 
@@ -29,13 +28,13 @@ for i = 1, NUM_STEPS do
     seeds[i] = RANDOM_SEED + i
 end
 
-local function generate_random_velocities(center, spread)
+local function generate_velocities(center, spread)
     -- compute velocities for all steps that have already a value > 0
     for x = 1, NUM_STEPS do
         -- each step has their own seed
         math.randomseed(seeds[x])
         for y = 1, NUM_TRACKS do
-            local velocity = page:generate_random_velocity(center, spread)
+            local velocity = page:generate_velocity(center, spread)
             if params:get(STEPS[y][x]) ~= 0 then
                 -- set the value; this will trigger an action that updates grid/norns display
                 params:set(STEPS[y][x], velocity)
@@ -60,7 +59,7 @@ local function generate_perlin()
         params:set(STEPS[v.voice][v.step], val)
     end
     -- now compute velocities, according to params
-    generate_random_velocities(params:get(ID_SEQ_VEL_CENTER), params:get(ID_SEQ_VEL_SPREAD))
+    generate_velocities(params:get(ID_SEQ_VEL_CENTER), params:get(ID_SEQ_VEL_SPREAD))
 end
 
 function page:display_active_sequence()
@@ -99,7 +98,7 @@ local function get_step_envelope(enable_mod, velocity)
     return envelope_util.get_step_envelope(max_time, max_shape, enable_mod, velocity)
 end
 
-function page:generate_random_velocity(center, spread)
+function page:generate_velocity(center, spread)
     -- Calculate the range based on center and spread
     local half_range = spread / 2
     local min_val = center - half_range
@@ -115,7 +114,6 @@ function page:generate_random_velocity(center, spread)
 end
 
 
-
 function page:evaluate_step(x, y)
     -- 1 <= x <= 16
     -- 1 <= y <= 6
@@ -129,9 +127,12 @@ function page:evaluate_step(x, y)
         local voice_lpg_freq = engine_lib.get_id("voice_lpg_freq", y)
         local voice_attack = engine_lib.get_id("voice_attack", y)
         local voice_decay = engine_lib.get_id("voice_decay", y)
+
+        -- set amplitude of voice based on step velocity
         params:set(voice_env_level, velocity)
+
         if enable_mod == "LPG" then
-            -- applies envelope to a lowpass filter
+            -- apply envelope to a lowpass filter
             params:set(voice_lpg_freq, misc_util.linexp(0, 1, 80, 20000, velocity, 1))
         end
         if enable_mod ~= "OFF" then
@@ -140,6 +141,8 @@ function page:evaluate_step(x, y)
             params:set(voice_attack, attack)
             params:set(voice_decay, decay)
         end
+
+        -- trigger the voice in supercollider
         engine_lib.voice_trigger(y)
 
         -- generate new velocity for step after evaluating
@@ -147,31 +150,27 @@ function page:evaluate_step(x, y)
         local spread = params:get(ID_SEQ_VEL_SPREAD)
         -- create new seed for step, so its velocity changes
         seeds[x] = math.random(1000)
-        local new_velocity = self:generate_random_velocity(center, spread)
+        local new_velocity = self:generate_velocity(center, spread)
         params:set(STEPS[y][x], new_velocity)
-
     end
 end
 
 function page:on_step(step)
     -- step: 1 to 16
+    -- TODO: if so many components need to know current step, make it a param?
     self.graphic:set("current_step", step)
-    grid_conn:set_current_step(step)
     page_control.current_step = step
     -- evaluate current step, send commands to supercollider accordingly
     for track = 1, NUM_TRACKS do
         self:evaluate_step(step, track)
     end
+    grid_conn:set_current_step(step)
 end
 
 local function cycle_mode(v)
     local delta = 1
     local wrap = true
     local skip = {}
-    if not grid_conn.active then
-        -- disable grid as control option
-        skip = {2}
-    end
     misc_util.cycle_param(ID_SEQ_MODE, SEQUENCER_MODES, delta, wrap, skip)
 end
 
@@ -229,13 +228,9 @@ function page:update_graphics_state()
     self.graphic:set("num_steps", self.seq.steps)
     local mode = params:string(ID_SEQ_MODE)
     self.footer:set_value('k2', self.seq.transport_on and "ON" or "OFF")
-    if grid_conn.active then
-        self.footer:set_name("k3", "MODE")
-        self.footer:set_value("k3", mode)
-    else
-        self.footer:set_name("k3", "")
-        self.footer:set_value("k3", "")
-    end
+    self.footer:set_name("k3", "MODE")
+    self.footer:set_value("k3", mode)
+
     if mode == MODE_PERLIN then
         self.footer:set_name('e2', "SEED")
         self.footer:set_name('e3', "DENS")
@@ -248,20 +243,21 @@ function page:update_graphics_state()
         self.footer:set_value('e2', perlin_txt)
         self.footer:set_value('e3', density_txt)
     elseif mode == MODE_VELOCITY then
-        self.footer:set_name('e2', "V CNTR")
-        self.footer:set_name('e3', "V SPRD")
+        self.footer:set_name('e2', "CNTR")
+        self.footer:set_name('e3', "SPRD")
         self.footer:set_value('e2', params:get(ID_SEQ_VEL_CENTER))
         self.footer:set_value('e3', params:get(ID_SEQ_VEL_SPREAD))
     end
 
-    -- prevent updating velocities more often than the screen refreshes, as it costs quite some cpu
+    -- prevent updating more often than the screen refreshes, as it costs quite some cpu
     -- when done on every encoder-change.
-    if redraw_perlin then
-        redraw_perlin = false
+    if regenerate_perlin then
+        regenerate_perlin = false
         generate_perlin()
-    elseif redraw_grid_velocity then
-        redraw_grid_velocity = false
-        generate_random_velocities(params:get(ID_SEQ_VEL_CENTER), params:get(ID_SEQ_VEL_SPREAD))
+    end
+    if regenerate_velocity then
+        regenerate_velocity = false
+        generate_velocities(params:get(ID_SEQ_VEL_CENTER), params:get(ID_SEQ_VEL_SPREAD))
     end
 
     for i = 1, 6 do
@@ -271,23 +267,23 @@ end
 
 function page:update_cell(step, voice, v)
     self.graphic:set_cell(voice, step, v)
-    if grid_conn.active then
-        grid_conn:led(step, voice, v * 15)
-    end
+    grid_conn:led(step, voice, v * 15)
 end
 
-function page:toggle_redraw_perlin()
-    redraw_perlin = true
+function page:toggle_regenerate_perlin(val)
+    -- expects a bool
+    regenerate_perlin = val
 end
 
-function toggle_redraw_grid_velocity()
-    redraw_grid_velocity = true
+function toggle_regenerate_velocity()
+    regenerate_velocity = true
 end
 
 function page:action_sequence_speed(v)
     -- convert table index of human-readable options to value for clock.sync
     -- calls global function defined on sequencer page
     local step_div = sequence_util.convert_sequence_speed[v]
+    print('new step div: '..step_div)
     self.seq:set_ticks_per_step(step_div)
 end
 
@@ -299,12 +295,12 @@ local function action_step_edit(self, x, y)
 end
 
 function page:add_params()
-    params:set_action(ID_SEQ_PERLIN_X, function(v) self:toggle_redraw_perlin() end)
-    params:set_action(ID_SEQ_PERLIN_Y, function(v) self:toggle_redraw_perlin() end)
-    params:set_action(ID_SEQ_PERLIN_Z, function(v) self:toggle_redraw_perlin() end)
-    params:set_action(ID_SEQ_VEL_CENTER, toggle_redraw_grid_velocity)
-    params:set_action(ID_SEQ_VEL_SPREAD, toggle_redraw_grid_velocity)
-    params:set_action(ID_SEQ_DENSITY, function(v) self:toggle_redraw_perlin() end)
+    params:set_action(ID_SEQ_PERLIN_X, function(v) self:toggle_regenerate_perlin(true) end)
+    params:set_action(ID_SEQ_PERLIN_Y, function(v) self:toggle_regenerate_perlin(true) end)
+    params:set_action(ID_SEQ_PERLIN_Z, function(v) self:toggle_regenerate_perlin(true) end)
+    params:set_action(ID_SEQ_VEL_CENTER, toggle_regenerate_velocity)
+    params:set_action(ID_SEQ_VEL_SPREAD, toggle_regenerate_velocity)
+    params:set_action(ID_SEQ_DENSITY, function(v) self:toggle_regenerate_perlin(true) end)
     params:set_action(ID_SEQ_SPEED, function(v) self:action_sequence_speed(v) end)
 
     for y = 1, NUM_TRACKS do
