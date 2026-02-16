@@ -305,7 +305,6 @@ function redraw()
   -- called when returning from a sys menu
   draw_frame = true
   -- force refresh
-  print('redraw()')
   refresh(true)
 end
 

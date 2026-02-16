@@ -8,7 +8,7 @@ local page_leds = { mid, low, mid, low, low, low, mid, low, mid, low, mid, low, 
 local page_row = 8
 
 function grid_conn:key_press(x, y)
-    redraw()
+    screen.ping()
     if y == page_row then
         self:select_page(x)
     elseif y <= NUM_TRACKS then
