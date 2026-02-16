@@ -59,7 +59,7 @@ function grid_conn:set_current_step(current_step)
             local param_id = STEPS[y][x]
             local velocity = params:get(param_id)
             self:led(x, y, velocity * 15)
-            if current_step == x and velocity > 0 then
+            if current_step == x and velocity > 0 and self.is_playing then
                 -- flash active step
                 self:led(x, y, high)
             end
@@ -130,6 +130,7 @@ function grid_conn:refresh()
 end
 
 function grid_conn:set_transport(state)
+    -- state: bool
     self.is_playing = state
 end
 
