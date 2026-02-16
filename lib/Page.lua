@@ -44,7 +44,7 @@ function Page:needs_rerender()
       or (self.footer and self.footer.changed or not self.footer.animation_finished)
       or (header and header.changed)
 end
--- local a = 0
+
 function Page:render(force)
   -- hook to insert before rendering; if returns true, skips render
   if self:pre_render() then return end
