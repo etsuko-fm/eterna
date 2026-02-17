@@ -1,17 +1,27 @@
 -- sequencer values can be retrieved/set via STEPS[track][step]
 local grid_conn = { active = false, changed = false }
-local low = 2
-local mid = 4
-local midplus = 10
-local high = 15
-local page_leds = { mid, low, mid, low, low, low, mid, low, mid, low, mid, low, mid, mid }
-local page_row = 8
+local LOW = 2
+local MID = 4
+local MIDPLUS = 10
+local HIGH = 15
+local page_leds = { MID, LOW, MID, LOW, LOW, LOW, MID, LOW, MID, LOW, MID, LOW, MID, MID }
+local TRANSPORT_ROW = 7
+local PAGE_ROW = 8
+
+-- NB: Main module refreshes grid leds at the same rate of the screen (60FPS),
+-- given there are changes (read via grid_conn.changed)
 
 function grid_conn:key_press(x, y)
+    -- wake screen if any grid button is touched
     screen.ping()
-    if y == page_row then
+    if y == PAGE_ROW then
+        -- switch pages using bottom row
         self:select_page(x)
+    elseif y == TRANSPORT_ROW then
+        -- toggle transport with X1Y7
+        page_sequencer:toggle_transport()
     elseif y <= NUM_TRACKS then
+        -- use Y1-6 to modify sequence
         local on = params:get(STEPS[y][x]) > 0
         local velocity = 0
         if not on then
@@ -36,7 +46,7 @@ function grid_conn:select_page(x)
     if x <= NUM_PAGES then
         self:reset_page_leds()
         switch_page(x)
-        self:led(x, page_row, midplus)
+        self:led(x, PAGE_ROW, MIDPLUS)
         self:refresh()
     end
 end
@@ -46,12 +56,11 @@ function grid_conn:set_current_step(current_step)
     self.current_step = current_step --int: 1 to 16
 
     -- reset leds on row 7 (sequence stepper)
-    for x = 1, 16 do
-        self:led(x, 7, low)
-    end
+    self:reset_transport_leds()
 
     -- light up active step on step indicator row
-    self:led(current_step, 7, midplus)
+
+    self:led(current_step, TRANSPORT_ROW, MIDPLUS)
 
     for y = 1, 6 do
         -- set all to actual velocity level (incl previous column which may have flashed)
@@ -61,16 +70,17 @@ function grid_conn:set_current_step(current_step)
             self:led(x, y, velocity * 15)
             if current_step == x and velocity > 0 and self.is_playing then
                 -- flash active step
-                self:led(x, y, high)
+                self:led(x, y, HIGH)
             end
         end
     end
+
     self:refresh()
 end
 
 function grid_conn:set_current_page(page)
     self:reset_page_leds()
-    self:led(page, 8, midplus)
+    self:led(page, 8, MIDPLUS)
     self:refresh()
 end
 
@@ -98,6 +108,14 @@ end
 function grid_conn:led(x, y, val)
     if not self.active then return end
 
+    if x == nil then
+        error("x is nil")
+    elseif y == nil then
+        error("y is nil")
+    elseif val == nil then
+        error("val is nil")
+    end
+
     -- level should be an integer value
     local level = math.ceil(val)
 
@@ -120,6 +138,12 @@ function grid_conn:reset_sequence_leds()
     self:refresh()
 end
 
+function grid_conn:reset_transport_leds()
+    for x = 1, 16 do
+        self:led(x, TRANSPORT_ROW, LOW)
+    end
+end
+
 function grid_conn:refresh()
     -- updated the physical lights
     if not self.active then return end
@@ -130,17 +154,39 @@ function grid_conn:refresh()
 end
 
 function grid_conn:set_transport(state)
-    -- state: bool
+    if state ~= true and state ~= false then error("state should be a bool") end
     self.is_playing = state
+    if self.is_playing == false then
+        -- clear current step indicator
+        self:reset_transport_leds()
+    end
+
+    -- toggle lfo that flashes with BPM on X1Y7
+    if self.is_playing then
+        self.transport_lfo:stop()
+    elseif self.transport_lfo:get("enabled") == 0 then
+        self.transport_lfo:start()
+    end
 end
 
 function grid_conn:init(device, current_page_id)
+    self.transport_lfo = _lfos:add{
+        shape = 'up', -- shape
+        min = 2, -- min
+        max = 4, -- max
+        depth = 1, -- depth (0 to 1)
+        mode = 'clocked', -- mode
+        period = 1, -- period (in 'clocked' mode, represents beats)
+        -- pass our 'scaled' value (bounded by min/max and depth) to the engine:
+        action = function(scaled, raw) self:led(1, TRANSPORT_ROW, scaled) end -- action, always passes scaled and raw values
+    }
+    self.transport_lfo:start()
     populate_grid_state()
     self.is_playing = false
     self.active = true
     self.device = device
     self:reset_page_leds()
-    self.device:led(current_page_id, page_row, midplus)
+    self.device:led(current_page_id, PAGE_ROW, MIDPLUS)
     device:refresh()
     page_sequencer:display_active_sequence()
     self:set_current_step(1)
@@ -150,6 +196,7 @@ end
 function grid_conn:close(device)
     print('grid connection closed')
     self.active = false
+    self.transport_lfo:stop()
 end
 
 return grid_conn
