@@ -178,6 +178,17 @@ osc.event = function(path, args, from)
     else
       clock.transport.stop()
     end
+  else
+    local param_id = path:match("^/get/(.+)$")
+    if param_id then
+      local request_id = args[1]
+      local value = params:get(param_id)
+      osc.send(from, "/response/" .. param_id, {request_id, value})
+      print("from:"..from[1]..":"..from[2])
+      print("OSC /get/" .. param_id ..
+            " id=" .. tostring(request_id) ..
+            " value=" .. tostring(value))
+    end
   end
 end
 
