@@ -162,10 +162,12 @@ function grid_conn:set_transport(state)
     end
 
     -- toggle lfo that flashes with BPM on X1Y7
-    if self.is_playing then
-        self.transport_lfo:stop()
-    elseif self.transport_lfo:get("enabled") == 0 then
-        self.transport_lfo:start()
+    if self.transport_lfo then
+        if self.is_playing then
+            self.transport_lfo:stop()
+        elseif self.transport_lfo:get("enabled") == 0 then
+            self.transport_lfo:start()
+        end
     end
 end
 

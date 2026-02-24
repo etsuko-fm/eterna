@@ -14,7 +14,8 @@ ControlGraphic = {
     is_playing = true,
     current_step = 1, -- 1-based
     cue = nil, -- has value when a step div change is cued
-    num_steps = 16,
+    loop_start = 1,
+    loop_end = 16,
 }
 
 setmetatable(ControlGraphic, { __index = GraphicBase })
@@ -51,11 +52,13 @@ function ControlGraphic:render()
     if self.hide then return end
     local dim = 0
 
-    -- sequence steps
+    -- draw sequence steps
     for step = 1, 16 do
-        if step > self.num_steps then
+        if step < self.loop_start or step > self.loop_end then
             -- dim brightness if step not enabled
-            dim = -5
+            dim = -10
+        else
+            dim = 0
         end
         if step == self.current_step then
             graphic_util.screen_level(bright_level, dim, 2)
@@ -80,7 +83,6 @@ function ControlGraphic:render()
     screen.font_size(self.bpm_font_size)
     screen.font_face(self.bpm_font_face) -- 7 is ok; 40 is nice @ size 12
     screen.text_right(self.bpm)
-
 
     -- cue
     if self.cue then
