@@ -115,6 +115,16 @@ controlspec_perlin_density = controlspec.def {
     wrap = false
 }
 
+controlspec_step_start = controlspec.def {
+    min = 1,
+    max = 16,
+    warp = 'lin',
+    step = 1,
+    default = 1,
+    quantum = 1 / 16,
+    wrap = false
+}
+
 controlspec_num_steps = controlspec.def {
     min = 1,
     max = 16,
@@ -156,11 +166,13 @@ ID_SEQ_DENSITY = get_id(SEQUENCER, "density")
 ID_SEQ_STYLE = get_id(SEQUENCER, "style")
 ID_SEQ_BPM = get_id(SEQUENCER, "bpm")
 ID_SEQ_NUM_STEPS = get_id(SEQUENCER, "num_steps")
+ID_SEQ_STEP_START = get_id(SEQUENCER, "step_start")
 STEPS = {}
 ID_SEQ_MODE = get_id(SEQUENCER, "mode")
 MODE_PERLIN = "PERLIN"
 MODE_VELOCITY = "VELO"
-SEQUENCER_MODES = {MODE_PERLIN, MODE_VELOCITY}
+MODE_LOOP = "LOOP"
+SEQUENCER_MODES = {MODE_PERLIN, MODE_VELOCITY, MODE_LOOP}
 NUM_TRACKS = 6
 NUM_STEPS = 16 -- TODO: actually MAX_STEPS
 
@@ -477,6 +489,7 @@ params:add_control(ID_PANNING_SPREAD, "spread", controlspec_pan_spread)
 
 params:add_separator("SEQUENCER", "SEQUENCER")
 params:add_control(ID_SEQ_NUM_STEPS, "steps", controlspec_num_steps)
+params:add_control(ID_SEQ_STEP_START, "step_start", controlspec_step_start)
 params:add_option(ID_SEQ_SPEED, "step size", sequence_util.sequence_speeds, 2)
 params:add_control(ID_SEQ_PERLIN_X, "seed", controlspec_perlin)
 params:add_number(get_id(SEQUENCER, "perlin_y"), "perlin y", 0, 25, 10, nil, true)
