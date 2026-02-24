@@ -195,7 +195,7 @@ end
 
 function init()
   -- Encoder sensitivity
-  norns.enc.sens(1, 2)
+  norns.enc.sens(1, 1)
   grid_port = grid.connect()
 
   -- check if physical device is present
