@@ -11,7 +11,8 @@ SequencerGraphic = {
     current_step = 1,                       -- 1-based
     sequences = { {}, {}, {}, {}, {}, {} }, -- pattern per voice
     voice_env = { 0, 0, 0, 0, 0, 0, },      -- realtime envelope level of each voice
-    num_steps = 16,
+    loop_start = 1,
+    loop_end = 16,
     is_playing = false,
     hide = false,
 }
@@ -80,7 +81,7 @@ end
 
 function SequencerGraphic:prepare_step_indicator(column, dim, rects)
     -- column: 1 to 16
-    if column > self.num_steps then return end
+    if column < self.loop_start or column > self.loop_end then return end
 
     -- compute brightness
     local base_level =
@@ -155,7 +156,7 @@ function SequencerGraphic:render()
         self:prepare_env_meter(voice, rects)
 
         for column = 1, columns do
-            local dim = (column > self.num_steps) and -10 or 0
+            local dim = (column < self.loop_start or column > self.loop_end) and -10 or 0
             self:prepare_step_indicator(column, dim, rects)
             self:prepare_grid_cell(voice, row, column, dim, rects)
         end

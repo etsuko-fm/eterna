@@ -72,22 +72,26 @@ function page:display_active_sequence()
 end
 
 local function e2(d)
-    local mode = params:string(ID_SEQ_MODE)
-    if mode == MODE_PERLIN then
+    local control_mode = params:string(ID_SEQ_MODE)
+    if control_mode == MODE_PERLIN then
         misc_util.adjust_param(d, ID_SEQ_PERLIN_X, controlspec_perlin.quantum)
         params:set(ID_SEQ_PERLIN_MODIFIED, 0)
-    elseif mode == MODE_VELOCITY then
+    elseif control_mode == MODE_VELOCITY then
         misc_util.adjust_param(d, ID_SEQ_VEL_CENTER, controlspec_vel_center.quantum)
+    elseif control_mode == MODE_LOOP then
+        misc_util.adjust_param(d, ID_SEQ_STEP_START, controlspec_step_start.quantum)
     end
 end
 
 local function e3(d)
-    local mode = params:string(ID_SEQ_MODE)
-    if mode == MODE_PERLIN then
+    local control_mode = params:string(ID_SEQ_MODE)
+    if control_mode == MODE_PERLIN then
         misc_util.adjust_param(d, ID_SEQ_DENSITY, controlspec_perlin_density.quantum)
         params:set(ID_SEQ_PERLIN_MODIFIED, 0)
-    elseif mode == MODE_VELOCITY then
+    elseif control_mode == MODE_VELOCITY then
         misc_util.adjust_param(d, ID_SEQ_VEL_SPREAD, controlspec_vel_spread.quantum)
+    elseif control_mode == MODE_LOOP then
+        misc_util.adjust_param(d, ID_SEQ_NUM_STEPS, controlspec_num_steps.quantum)
     end
 end
 
@@ -204,9 +208,12 @@ function clock.transport.stop()
     if page.seq.transport_on then
         page.seq.transport_on = false
         if main_seq_clock_id ~= nil then
+            local current_stsep = params:get(ID_SEQ_STEP_START)
             clock.cancel(main_seq_clock_id)
             page.seq:reset()
             page.graphic:set("is_playing", false)
+            page.graphic:set("current_step", current_stsep)
+            grid_conn:set_current_step(current_stsep)
             grid_conn:set_transport(false)
             -- todo: with midi it's possible to start/stop while on any page;
             -- in such case the env polls of the correct page should be disabled.
@@ -223,14 +230,30 @@ function page:is_running()
     return self.seq.transport_on
 end
 
-function page:update_graphics_state()
-    self.graphic:set("num_steps", self.seq.steps)
-    local mode = params:string(ID_SEQ_MODE)
-    self.footer:set_value('k2', self.seq.transport_on and "ON" or "OFF")
-    self.footer:set_name("k3", "MODE")
-    self.footer:set_value("k3", mode)
+function page:get_loop_end()
+    -- only `loop_start and `num_steps` are part of params state;
+    -- loop_end is a function of those two variables
+    local loop_start = params:get(ID_SEQ_STEP_START)
+    local num_steps = params:get(ID_SEQ_NUM_STEPS)
+    local loop_end = math.min(loop_start + (num_steps - 1), 16)
+    return loop_end
+end
 
-    if mode == MODE_PERLIN then
+function page:update_graphics_state()
+    local loop_start = params:get(ID_SEQ_STEP_START)
+    local num_steps = params:get(ID_SEQ_NUM_STEPS)
+    local loop_end = self:get_loop_end()
+
+    self.graphic:set("num_steps", num_steps)
+    self.graphic:set("loop_start", loop_start)
+    self.graphic:set("loop_end", loop_end)
+
+    local control_mode = params:string(ID_SEQ_MODE)
+    self.footer:set_value('k2', self.seq.transport_on and "ON" or "OFF")
+    self.footer:set_name("k3", "CTRL")
+    self.footer:set_value("k3", control_mode)
+
+    if control_mode == MODE_PERLIN then
         self.footer:set_name('e2', "SEED")
         self.footer:set_name('e3', "DENS")
         local perlin_txt = params:get(ID_SEQ_PERLIN_X)
@@ -241,11 +264,16 @@ function page:update_graphics_state()
         end
         self.footer:set_value('e2', perlin_txt)
         self.footer:set_value('e3', density_txt)
-    elseif mode == MODE_VELOCITY then
+    elseif control_mode == MODE_VELOCITY then
         self.footer:set_name('e2', "CNTR")
         self.footer:set_name('e3', "SPRD")
         self.footer:set_value('e2', params:get(ID_SEQ_VEL_CENTER))
         self.footer:set_value('e3', params:get(ID_SEQ_VEL_SPREAD))
+    elseif control_mode == MODE_LOOP then
+        self.footer:set_name('e2', "START")
+        self.footer:set_name('e3', "LEN")
+        self.footer:set_value('e2', loop_start)
+        self.footer:set_value('e3', num_steps)
     end
 
     -- prevent updating more often than the screen refreshes, as it costs quite some cpu
@@ -293,6 +321,19 @@ local function action_step_edit(self, x, y)
     end
 end
 
+local function action_num_steps(v)
+    -- limit range
+    page.seq.steps = v
+    local loop_start = params:get(ID_SEQ_STEP_START)
+    controlspec_step_start.maxval = 17 - v
+    controlspec_step_start.quantum = 1 / (17 - v)
+    params:set(ID_SEQ_STEP_START, loop_start)
+end
+
+local function action_step_start(v)
+    page.seq:set_loop_start(v)
+end
+
 function page:add_params()
     params:set_action(ID_SEQ_PERLIN_X, function(v) self:toggle_regenerate_perlin(true) end)
     params:set_action(ID_SEQ_PERLIN_Y, function(v) self:toggle_regenerate_perlin(true) end)
@@ -301,6 +342,8 @@ function page:add_params()
     params:set_action(ID_SEQ_VEL_SPREAD, toggle_regenerate_velocity)
     params:set_action(ID_SEQ_DENSITY, function(v) self:toggle_regenerate_perlin(true) end)
     params:set_action(ID_SEQ_SPEED, function(v) self:action_sequence_speed(v) end)
+    params:set_action(ID_SEQ_NUM_STEPS, action_num_steps)
+    params:set_action(ID_SEQ_STEP_START, action_step_start)
 
     for y = 1, NUM_TRACKS do
         for x = 1, NUM_STEPS do
@@ -329,7 +372,7 @@ function page:initialize()
     page.footer = Footer:new({
         button_text = {
             k2 = { name = "PLAY", value = "" },
-            k3 = { name = "MODE", value = "" },
+            k3 = { name = "CTRL", value = "" },
             e2 = { name = "SEED", value = "" },
             e3 = { name = "DENS", value = "" },
         },
