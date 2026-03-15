@@ -322,16 +322,29 @@ local function action_step_edit(self, x, y)
 end
 
 local function action_num_steps(v)
-    -- limit range
     page.seq.steps = v
     local loop_start = params:get(ID_SEQ_STEP_START)
-    controlspec_step_start.maxval = 17 - v
-    controlspec_step_start.quantum = 1 / (17 - v)
-    params:set(ID_SEQ_STEP_START, loop_start)
+    local loop_end = page:get_loop_end()
+    -- limit the range of the step start parameter; change quantum accordingly
+    -- say num steps is updated to 5; loop start = 3; step_start = {minval: 3, maxval: 7, quantum: 1/(maxval-minval)}
+    -- loop start min value is always 1; at any time you should be able to scroll your loop range back to 1
+    -- only loop end is variable; if num steps = 5, the max step start = 16
+    -- controlspec_step_start.maxval = loop_end
+    -- controlspec_step_start.quantum = 1 / 16
+    -- due to changed quantum, have to re-apply the value
+    -- params:set(ID_SEQ_STEP_START, loop_start)
+    grid_conn:set_loop_range(loop_start, loop_end)
 end
 
 local function action_step_start(v)
     page.seq:set_loop_start(v)
+    grid_conn:set_loop_range(v, page:get_loop_end())
+
+    -- for norns-native UI, limit the max num steps
+    local num_steps = params:get(ID_SEQ_NUM_STEPS)
+    controlspec_num_steps.maxval = 17 - v
+    -- re-apply
+    params:set(ID_SEQ_NUM_STEPS, num_steps)
 end
 
 function page:add_params()
