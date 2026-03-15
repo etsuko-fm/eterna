@@ -1,5 +1,9 @@
 -- sequencer values can be retrieved/set via STEPS[track][step]
-local grid_conn = { active = false, changed = false }
+local DoubleTapState = include(from_root("lib/util/double_tap"))
+local ComboDetector = include(from_root("lib/util/key_combo"))
+
+local grid_conn = { active = false, changed = false, loop_start = 1, loop_end = 16 }
+local OFF = 0
 local LOW = 2
 local MID = 4
 local MIDPLUS = 10
@@ -7,37 +11,91 @@ local HIGH = 15
 local page_leds = { MID, LOW, MID, LOW, LOW, LOW, MID, LOW, MID, LOW, MID, LOW, MID, MID }
 local TRANSPORT_ROW = 7
 local PAGE_ROW = 8
+local transport_led = { x = 16, y = 8 }
 
 -- NB: Main module refreshes grid leds at the same rate of the screen (60FPS),
 -- given there are changes (read via grid_conn.changed)
+-- if changes are required without that 0-16ms delay, self:refresh() can be used
+-- TODO: would be fine to write the grid refresh logic with a clock in this module instead;
+-- activate it when self.active == true
+
+grid.key = function(x, y, z)
+    if z == 1 then
+        grid_conn:key_press(x, y)
+    else
+        grid_conn:key_release(x, y)
+    end
+end
+
+function grid_conn:modify_sequence(x, y)
+    -- use Y1-6 to modify sequence
+    local on = params:get(STEPS[y][x]) > 0
+    local velocity = 0
+    if not on then
+        -- if cell was off, turn it on by assigning a velocity
+        local center = params:get(ID_SEQ_VEL_CENTER)
+        local spread = params:get(ID_SEQ_VEL_SPREAD)
+        velocity = page_sequencer:generate_velocity(x, y, center, spread)
+    end
+    params:set(STEPS[y][x], velocity)
+    -- if perlin noise was queued to be renegerated, cancel it, because
+    -- it's overwritten now by manual grid sequence editing
+    page_sequencer:toggle_regenerate_perlin(false)
+    -- indicate that the perlin noise params are not reflected exactly in the sequence anymore
+    params:set(ID_SEQ_PERLIN_MODIFIED, 1)
+    self:led(x, y, velocity * 15)
+    -- self:refresh()
+end
+
+-- describe a bug
+-- FIXED: hold 2, press 16; it lights up from 1 to 15
+-- Double tap 1; it lights up 1; then double tap 2; it lights up still 1
+
+local function update_loop_range_params(loop_start, loop_end)
+    print('setting loop range to: '..loop_start .. ":" .. loop_end)
+    local num_steps = 1 + loop_end - loop_start
+    print("num steps: " .. num_steps)
+    print("existing step start: "..params:get(ID_SEQ_STEP_START))
+    print("new step start: " .. loop_start)
+    params:set(ID_SEQ_STEP_START, loop_start)
+    params:set(ID_SEQ_NUM_STEPS, num_steps)
+end
 
 function grid_conn:key_press(x, y)
     -- wake screen if any grid button is touched
     screen.ping()
-    if y == PAGE_ROW then
-        -- switch pages using bottom row
+    if x <= NUM_PAGES and y == PAGE_ROW then
+        -- browse page on norns screen
         self:select_page(x)
     elseif y == TRANSPORT_ROW then
-        -- toggle transport with X1Y7
+        -- true if 2 different buttons on the transport row are held
+        local result = self.key_combo:press(x)
+        if result then
+            local r1 = result[1]
+            local r2 = result[2]
+            local loop_start = math.min(r1, r2)
+            local loop_end = math.max(r1, r2)
+            update_loop_range_params(loop_start, loop_end)
+        end
+    elseif x == transport_led.x and y == transport_led.y then
+        -- start/stop playback
         page_sequencer:toggle_transport()
     elseif y <= NUM_TRACKS then
-        -- use Y1-6 to modify sequence
-        local on = params:get(STEPS[y][x]) > 0
-        local velocity = 0
-        if not on then
-            -- if cell was off, turn it on by assigning a velocity
-            local center = params:get(ID_SEQ_VEL_CENTER)
-            local spread = params:get(ID_SEQ_VEL_SPREAD)
-            velocity = page_sequencer:generate_velocity(x, y, center, spread)
+        -- modify sequencer step
+        self:modify_sequence(x, y)
+    end
+end
+
+function grid_conn:key_release(x, y)
+    if y == TRANSPORT_ROW then
+        -- update key combo
+        self.key_combo:release(x)
+        -- set double tap state to last tapped key on grid
+        if self.double_tap_state:register(x .. ":" .. y) then
+            print('double tap: x' .. x .. ":y" .. y)
+            -- double tap detected for this reference; set loop range to just this step
+            update_loop_range_params(x, x)
         end
-        params:set(STEPS[y][x], velocity)
-        -- if perlin noise was queued to be renegerated, cancel it, because
-        -- it's overwritten now by manual grid sequence editing
-        page_sequencer:toggle_regenerate_perlin(false)
-        -- indicate that the perlin noise params are not reflected exactly in the sequence anymore
-        params:set(ID_SEQ_PERLIN_MODIFIED, 1)
-        self:led(x, y, velocity * 15)
-        self:refresh()
     end
 end
 
@@ -47,7 +105,7 @@ function grid_conn:select_page(x)
         self:reset_page_leds()
         switch_page(x)
         self:led(x, PAGE_ROW, MIDPLUS)
-        self:refresh()
+        -- self:refresh()
     end
 end
 
@@ -74,8 +132,7 @@ function grid_conn:set_current_step(current_step)
             end
         end
     end
-
-    self:refresh()
+    -- self:refresh()
 end
 
 function grid_conn:set_current_page(page)
@@ -84,8 +141,10 @@ function grid_conn:set_current_page(page)
     self:refresh()
 end
 
-grid.key = function(x, y, z)
-    if z == 1 then grid_conn:key_press(x, y) end
+function grid_conn:set_loop_range(start, _end)
+    self.loop_start = start
+    self.loop_end = _end
+    self:reset_transport_leds()
 end
 
 function grid_conn:reset_page_leds()
@@ -132,14 +191,17 @@ end
 function grid_conn:reset_sequence_leds()
     for y = 1, 6 do
         for x = 1, 16 do
-            self:led(x, y, 0)
+            self:led(x, y, OFF)
         end
     end
-    self:refresh()
 end
 
 function grid_conn:reset_transport_leds()
     for x = 1, 16 do
+        self:led(x, TRANSPORT_ROW, OFF)
+    end
+
+    for x = self.loop_start, self.loop_end do
         self:led(x, TRANSPORT_ROW, LOW)
     end
 end
@@ -172,16 +234,18 @@ function grid_conn:set_transport(state)
 end
 
 function grid_conn:init(device, current_page_id)
-    self.transport_lfo = _lfos:add{
-        shape = 'up', -- shape
-        min = 2, -- min
-        max = 4, -- max
-        depth = 1, -- depth (0 to 1)
-        mode = 'clocked', -- mode
-        period = 1, -- period (in 'clocked' mode, represents beats)
+    self.transport_lfo = _lfos:add {
+        shape = 'up',                                                                         -- shape
+        min = 2,                                                                              -- min
+        max = 4,                                                                              -- max
+        depth = 1,                                                                            -- depth (0 to 1)
+        mode = 'clocked',                                                                     -- mode
+        period = 1,                                                                           -- period (in 'clocked' mode, represents beats)
         -- pass our 'scaled' value (bounded by min/max and depth) to the engine:
-        action = function(scaled, raw) self:led(1, TRANSPORT_ROW, scaled) end -- action, always passes scaled and raw values
+        action = function(scaled, raw) self:led(transport_led.x, transport_led.y, scaled) end -- action, always passes scaled and raw values
     }
+    self.double_tap_state = DoubleTapState.new(0.3)
+    self.key_combo = ComboDetector.new()
     self.transport_lfo:start()
     populate_grid_state()
     self.is_playing = false
