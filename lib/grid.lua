@@ -54,9 +54,12 @@ end
 local function update_loop_range_params(loop_start, loop_end)
     print('setting loop range to: '..loop_start .. ":" .. loop_end)
     local num_steps = 1 + loop_end - loop_start
-    print("num steps: " .. num_steps)
-    print("existing step start: "..params:get(ID_SEQ_STEP_START))
-    print("new step start: " .. loop_start)
+    -- for norns-native ux, the step start is limited when twisting E2;
+    -- this should be temporarily undone when grid is setting step start,
+    -- as grid can set the loop range to anything.
+    -- The action connected to ID_SEQ_STEP_START, will re-apply it afterwards.
+    controlspec_step_start.maxval = 16
+    controlspec_step_start.quantum = 1/16
     params:set(ID_SEQ_STEP_START, loop_start)
     params:set(ID_SEQ_NUM_STEPS, num_steps)
 end
