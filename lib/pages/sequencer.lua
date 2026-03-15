@@ -325,16 +325,14 @@ local function action_num_steps(v)
     page.seq.steps = v
     local loop_start = params:get(ID_SEQ_STEP_START)
     local loop_end = page:get_loop_end()
-    -- limit the range of the step start parameter; change quantum accordingly
-    -- say num steps is updated to 5; loop start = 3; step_start = {minval: 3, maxval: 7, quantum: 1/(maxval-minval)}
-    -- loop start min value is always 1; at any time you should be able to scroll your loop range back to 1
-    -- only loop end is variable; if num steps = 5, the max step start = 16
-    -- controlspec_step_start.maxval = loop_end
-    -- controlspec_step_start.quantum = 1 / 16
+    -- when twisting E2 for step start, it should limit the step start such that (step_start + num_steps <= 16)
+    controlspec_step_start.maxval = 17 - v
+    controlspec_step_start.quantum = 1 / (17 - v)
     -- due to changed quantum, have to re-apply the value
-    -- params:set(ID_SEQ_STEP_START, loop_start)
+    params:set(ID_SEQ_STEP_START, loop_start)
     grid_conn:set_loop_range(loop_start, loop_end)
 end
+
 
 local function action_step_start(v)
     page.seq:set_loop_start(v)
