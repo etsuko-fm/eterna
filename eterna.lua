@@ -14,7 +14,7 @@ function from_root(path)
 end
 
 Page = include(from_root("lib/Page"))
-Window = include(from_root("lib/graphics/Window"))
+Header = include(from_root("lib/graphics/Header"))
 Footer = include(from_root("lib/graphics/Footer"))
 audio_util = include(from_root("lib/util/audio_util"))
 lfo_util = include(from_root("lib/util/lfo"))
@@ -46,7 +46,7 @@ local page_levels = include(from_root("lib/pages/levels"))
 draw_frame = false -- indicates if the next frame should be drawn
 local page_indicator_counter = 0
 
-header = Window:new({ title = "ETERNA" })
+header = Header:new({ title = "ETERNA" })
 grid_port = nil
 
 UPDATE_SLICES = false

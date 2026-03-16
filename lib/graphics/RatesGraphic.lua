@@ -28,6 +28,29 @@ local FWD = "FWD"
 
 local pixels_per_octave = 6
 
+local function playback_triangle(x, y, reverse)
+    if reverse then
+            -- backwards arrow
+            screen.move(x, y + 2)
+            screen.line_rel(0, 1)
+            screen.move_rel(1, -2)
+            screen.line_rel(0, 3)
+            screen.move_rel(1, -4)
+            screen.line_rel(0, 5)
+            screen.move_rel(1, 0)
+    else
+            -- forward arrow
+            screen.move(x, y)
+            screen.line_rel(0, 5)
+            screen.move_rel(1, -4)
+            screen.line_rel(0, 3)
+            screen.move_rel(1, -2)
+            screen.line_rel(0, 1)
+    end
+    screen.stroke()
+end
+
+
 function RatesGraphic:render()
     if self.hide then return end
 
@@ -69,24 +92,11 @@ function RatesGraphic:render()
 
         -- arrrows indicating fwd/rev playback
         if self.voice_dir[n + 1] == FWD then
-            -- forward arrow
-            screen.move(arrow_x, arrow_y)
-            screen.line_rel(0, 5)
-            screen.move_rel(1, -4)
-            screen.line_rel(0, 3)
-            screen.move_rel(1, -2)
-            screen.line_rel(0, 1)
+            playback_triangle(arrow_x, arrow_y, false)
         else
-            -- backwards arrow
-            screen.move(x + 2, arrow_y + 2)
-            screen.line_rel(0, 1)
-            screen.move_rel(1, -2)
-            screen.line_rel(0, 3)
-            screen.move_rel(1, -4)
-            screen.line_rel(0, 5)
-            screen.move_rel(1, 0)
+            playback_triangle(arrow_x, arrow_y, true)
         end
-        screen.stroke()
+        
     end
     self.rerender = false
 end
