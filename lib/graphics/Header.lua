@@ -1,11 +1,12 @@
 local GraphicBase = require(from_root("lib/graphics/GraphicBase"))
+UI = require("ui")
 
-Window = {
+Header = {
   x = 0,
   y = 0,
   w = 128,
   h = 64,
-  title = "WINDOW",
+  title = "-",
   title_x = 64,
   font_face = 68,
   brightness = 15,
@@ -14,11 +15,13 @@ Window = {
   current_page = nil,
   enc1n = 0,
   page_indicator_disabled = false,
+  playback_status = 3,
+  playback_icon = UI.PlaybackIcon.new(120, 1, 5, 3),
 }
 
-setmetatable(Window, { __index = GraphicBase })
+setmetatable(Header, { __index = GraphicBase })
 
--- places where the page indicator graphic inserts a space, to indicate which pages relate 
+-- places where the page indicator graphic inserts a space, to indicate which pages relate
 -- to each other
 local page_breaks = { 2, 3, 4, 5, 6, 8, 10, 12, 13 }
 
@@ -32,14 +35,14 @@ local function spacing_for(i)
   return s
 end
 
-function Window:draw_page_indicator()
+function Header:draw_page_indicator()
   -- draw stripes on top left that indicate which page is active
   screen.level(11)
   local h = 3
   local y = 2
 
   for page_id = 1, self.num_pages do
-    local zero_idx = page_id-1
+    local zero_idx = page_id - 1
     local extra_spacing = spacing_for(page_id)
     local x = 2 + zero_idx * 1 + extra_spacing
 
@@ -63,7 +66,26 @@ function Window:draw_page_indicator()
   end
 end
 
-function Window:render()
+local function playback_triangle(x, y)
+  screen.move(x, y)
+  screen.line_rel(0, 5)
+  screen.move_rel(1, -4)
+  screen.line_rel(0, 3)
+  screen.move_rel(1, -2)
+  screen.line_rel(0, 1)
+  screen.stroke()
+end
+
+local function pause_icon(x, y)
+  screen.move(x, y)
+  screen.line_rel(0, 5)
+  screen.stroke()
+  screen.move(x+2, y)
+  screen.line_rel(0, 5)
+  screen.stroke()
+end
+
+function Header:render()
   if self.hide then return end
   screen.font_size(8)
   -- top bar
@@ -85,6 +107,16 @@ function Window:render()
   if not self.page_indicator_disabled then
     self:draw_page_indicator()
   end
+
+  -- playback icon
+  
+  self.playback_icon.status = self.playback_status
+  screen.level(4)
+  if self.playback_status == 1 then
+    playback_triangle(124, 1)
+  else
+    pause_icon(124,1)
+  end
 end
 
-return Window
+return Header

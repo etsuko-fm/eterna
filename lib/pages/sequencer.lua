@@ -204,6 +204,7 @@ function page:toggle_transport(state)
 end
 
 function start_transport()
+    header:set("playback_status", 1)
     if not page.seq.transport_on then
         page.seq.transport_on = true
         main_seq_clock_id = clock.run(function() page:run_sequencer() end)
@@ -214,6 +215,7 @@ function start_transport()
 end
 
 function stop_transport()
+    header:set("playback_status", 3)
     if page.seq.transport_on then
         page.seq.transport_on = false
         if main_seq_clock_id ~= nil then
