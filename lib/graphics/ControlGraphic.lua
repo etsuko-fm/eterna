@@ -93,9 +93,9 @@ function ControlGraphic:render()
 
     -- play/pause
     if self.is_playing then
-        draw_pause_button(x, y)
-    else
         draw_play_button(x, y)
+    else
+        draw_pause_button(x, y)
     end
     self.rerender = false
 end
