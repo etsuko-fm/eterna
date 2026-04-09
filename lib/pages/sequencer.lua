@@ -146,12 +146,6 @@ function page:update_graphics_state()
     self.footer:set_value('k3', sequence_util.sequence_speeds[params:get(ID_SEQ_SPEED)])
     self.footer:set_value('e2', params:get(ID_SEQ_PERLIN_X))
     self.footer:set_value('e3', params:get(ID_SEQ_DENSITY))
-    if redraw_sequence then
-        -- condition prevents updating perlin values more often than the screen refreshes.
-        redraw_sequence = false
-        generate_perlin_seq()
-    end
-
     for i = 1, 6 do
         env_polls[i]:update()
     end
@@ -187,6 +181,17 @@ function page:add_params()
     end
 end
 
+function page:update_perlin_noise()
+    while true do
+        if redraw_sequence then
+            -- condition caps perlin noise updates at 60Hz, as it's a cpu expensive operation
+            redraw_sequence = false
+            generate_perlin_seq()
+        end
+        clock.sleep(1/60)
+    end
+end
+
 function page:initialize()
     page.k2_off = function() self:toggle_transport() end
     page.k3_off = adjust_step_size
@@ -195,6 +200,9 @@ function page:initialize()
     seq.on_step = function(step) page:on_step(step) end
 
     self:add_params()
+
+    -- intialize timer that limits update rate of perlin noise sequence
+    page.perlin_clock_id = clock.run(function() self:update_perlin_noise() end)
 
     for i = 1, 6 do
         env_polls[i].callback = function(v) self.graphic:set_table("voice_env", i, v) end
