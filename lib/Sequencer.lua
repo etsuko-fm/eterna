@@ -5,20 +5,17 @@ Sequencer.__index = Sequencer
 Sequencer timing overview:
 
 - tick: the smallest time unit, advanced every call to `advance()`
-- beat: a group of ticks, defined by `ticks_per_beat` (e.g. 16 ticks = 1 beat); 
-        can be used in conjunction with midi clock sync, which is based on beats
-        (as in quarter notes in any time signature), or to run a metronome;
-- step: a musical subdivision controlled by `ticks_per_step`, defines the number 
+- step: a musical subdivision controlled by `ticks_per_step`, defines the number
         of ticks that goes into a step; each step triggers `on_step`
 ]]
 
 function Sequencer.new(o)
     local s = setmetatable({}, Sequencer)
+    s.time_store = nil
 
     s.steps = o.steps or 16
     s.max_step = o.max_step or 16
     s.rows = o.rows or 8
-    s.ticks_per_beat = o.ticks_per_beat or 16
     s.ticks_per_step = o.ticks_per_step or 1
     s.cued_ticks_per_step = nil
     s.cued_num_steps = nil
@@ -30,17 +27,25 @@ function Sequencer.new(o)
     s.current_step = o.loop_start or 1
 
     -- callbacks
-    s.on_step = o.on_step or function(_) end       -- called when a new step is evaluated
-    s.on_tick = o.on_tick or function(_) end -- called every tick
-    s.on_reset = o.on_reset or function(_) end     -- called on reset
+    s.on_step = o.on_step or function(_) end   -- called every step
 
     return s
+end
+
+function Sequencer:report_time_per_beat()
+    -- this exists primarily for debugging if sequencer timing is correct
+    -- call repeatedly (e.g. every step) to inspect elapsed time per step
+    local now = util.time()
+    if self.time_store then
+        -- print duration of ms every beat
+        print((now - self.time_store) * 1000 .. "ms")
+    end
+    self.time_store = now
 end
 
 function Sequencer:reset()
     self.current_tick = 1
     self.current_step = self.loop_start
-    self.on_reset(self)
 end
 
 function Sequencer:set_num_steps(steps)
@@ -67,7 +72,7 @@ function Sequencer:set_loop_start(step)
 end
 
 function Sequencer:set_ticks_per_step(ticks)
-    -- Sets the rhythmic subdivision for each step (e.g. 1/8, 1/16). 
+    -- Sets the rhythmic subdivision for each step (e.g. 1/8, 1/16).
     -- 'ticks' is a positive integer (must be > 0)
     if self.transport_on then
         self.cued_ticks_per_step = ticks
@@ -77,6 +82,9 @@ function Sequencer:set_ticks_per_step(ticks)
 end
 
 function Sequencer:advance()
+    -- advance a single tick and perform (cued)
+    -- actions that have to be executed on the clock
+
     -- resets sequencer, in sync with beat, when step divider (=ticks per step) changes (e.g. from 1/16th to 1/8)
     if self.cued_ticks_per_step and self.current_tick == 1 then
         self.ticks_per_step = self.cued_ticks_per_step
