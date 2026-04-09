@@ -109,6 +109,7 @@ end
 
 function clock.transport.start()
     if not page.seq.transport_on then
+        clock.link.start()
         page.seq.transport_on = true
         main_seq_clock_id = clock.run(function() page:run_sequencer() end)
         page.graphic:set("is_playing", true)
@@ -118,6 +119,7 @@ end
 
 function clock.transport.stop()
     if page.seq.transport_on then
+        clock.link.stop()
         page.seq.transport_on = false
         if main_seq_clock_id ~= nil then
             clock.cancel(main_seq_clock_id)
