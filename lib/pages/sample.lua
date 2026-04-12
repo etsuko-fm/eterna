@@ -241,7 +241,11 @@ function page:add_params()
 end
 
 function page:get_sample_title()
-    return filename .. " (" .. self.sample_duration_txt .. ")"
+    local duration = self.sample_duration_txt
+    if duration ~= nil then
+        return filename .. " (" .. duration .. ")"
+    end
+    return filename
 end
 
 function page:set_sample_duration(v)
