@@ -94,22 +94,30 @@ end
 function page:run_sequencer()
     while true do
         -- updates playback range of each voice prior to trigger
-        self.seq:advance()
         clock.sync(1 / self.seq.ticks_per_beat)
+        self.seq:advance()
     end
 end
 
-function page:toggle_transport()
-    if self.seq.transport_on then
-        clock.transport.stop()
+function page:toggle_transport(state)
+    -- acts as a switch if state is not provided
+    if self.seq.transport_on or state == 0 then
+        if params:string("clock_source") == "link" then
+            clock.link.stop()
+        else
+            stop_transport()
+        end
     else
-        clock.transport.start()
+        if params:string("clock_source") == "link" then
+            clock.link.start()
+        else
+            start_transport()
+        end
     end
 end
 
-function clock.transport.start()
+function start_transport()
     if not page.seq.transport_on then
-        clock.link.start()
         page.seq.transport_on = true
         main_seq_clock_id = clock.run(function() page:run_sequencer() end)
         page.graphic:set("is_playing", true)
@@ -117,9 +125,8 @@ function clock.transport.start()
     end
 end
 
-function clock.transport.stop()
+function stop_transport()
     if page.seq.transport_on then
-        clock.link.stop()
         page.seq.transport_on = false
         if main_seq_clock_id ~= nil then
             clock.cancel(main_seq_clock_id)
@@ -134,6 +141,14 @@ function clock.transport.stop()
             if page.active then page:disable_env_polls() end
         end
     end
+end
+
+function clock.transport.start()
+    start_transport()
+end
+
+function clock.transport.stop()
+    stop_transport()
 end
 
 function page:is_running()
@@ -221,7 +236,7 @@ function page:initialize()
         font_face = FOOTER_FONT,
     })
     -- resets sequencer and sets transport_on variable
-    clock.transport.stop()
+    stop_transport()
 
     -- provide starting grid (may be empty depending on default density param value)
     generate_perlin_seq()

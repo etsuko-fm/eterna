@@ -80,7 +80,7 @@ local function load_file(path, num_channels)
     engine_lib.log_restraints(metadata)
     if page_sequencer:is_running() then
         print('sequncer stopped for file load')
-        clock.transport.stop()
+        page_sequencer:toggle_transport(0)
     end
 
     for channel = 1,  num_channels do
@@ -165,7 +165,7 @@ function engine_lib.on_file_load_success(path, channel, buffer)
             print("voice " .. voice .. " set to channel " .. buffer_idx)
         end
         if continue_sequencer then
-            clock.transport.start()
+            page_sequencer:toggle_transport(1)
             print('sequencer started')
         else
             print('sequencer hold')

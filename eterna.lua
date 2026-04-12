@@ -171,7 +171,7 @@ function init()
         local msg = midi.to_msg(data)
         if msg.type == 'continue' then
           -- support midi continue messages
-          clock.transport.start()
+          page_sequencer:toggle_transport(1)
         end
       end
     end
