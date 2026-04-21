@@ -1,16 +1,13 @@
 local page_name = "ECHO"
 local EchoGraphic = include(from_root("lib/graphics/EchoGraphic"))
-
-local ID_ECHO_WET = engine_lib.get_id("echo_wet")
-local ID_ECHO_STYLE = engine_lib.get_id("echo_style")
-local ID_ECHO_FEEDBACK = engine_lib.get_id("echo_feedback")
+local ID_ENGINE_ECHO_STYLE = engine_lib.get_id("echo_style")
 
 local function adjust_wet(d)
-    engine_lib.echo_wet(d, true)
+    misc_util.adjust_param(d, ID_ECHO_WET, engine_lib.params.specs.echo_wet.quantum)
 end
 
 local function adjust_feedback(d)
-    engine_lib.echo_feedback(d, true)
+    misc_util.adjust_param(d, ID_ECHO_FEEDBACK, engine_lib.params.specs.echo_feedback.quantum)
 end
 
 local function cycle_time()
@@ -43,8 +40,23 @@ local function action_echo_time(v)
     recalculate_echo_time(clock.get_tempo(), time_fraction)
 end
 
+local function action_echo_wet(v)
+    engine_lib.echo_wet(v, false)
+end
+
+local function action_echo_feedback(v)
+    engine_lib.echo_feedback(v, false)
+end
+
+local function action_echo_style(v)
+    params:set(ID_ENGINE_ECHO_STYLE, v)
+end
+
 local function add_params()
+    params:set_action(ID_ECHO_STYLE, action_echo_style)
     params:set_action(ID_ECHO_TIME, action_echo_time)
+    params:set_action(ID_ECHO_WET, action_echo_wet)
+    params:set_action(ID_ECHO_FEEDBACK, action_echo_feedback)
 end
 
 function page:update_graphics_state()
