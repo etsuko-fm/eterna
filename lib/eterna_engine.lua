@@ -307,7 +307,7 @@ local function modify(param_id, v, is_delta)
         end
         set_param_by_delta(v, Eterna.get_id(param_id), quantum)
     else
-        params:set(param_id, v)
+        params:set(Eterna.get_id(param_id), v)
     end
 end
 

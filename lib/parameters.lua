@@ -99,9 +99,9 @@ controlspec_perlin = controlspec.def {
     min = 0,
     max = 50,
     warp = 'lin',
-    step = 1/1000,
+    step = 1 / 1000,
     default = primes[math.floor(math.random(1, #primes))],
-    quantum = 1/1000,
+    quantum = 1 / 1000,
     wrap = true
 }
 
@@ -172,7 +172,7 @@ ID_SEQ_MODE = get_id(SEQUENCER, "mode")
 MODE_PERLIN = "PERLIN"
 MODE_VELOCITY = "VELO"
 MODE_LOOP = "LOOP"
-SEQUENCER_MODES = {MODE_PERLIN, MODE_VELOCITY, MODE_LOOP}
+SEQUENCER_MODES = { MODE_PERLIN, MODE_VELOCITY, MODE_LOOP }
 NUM_TRACKS = 6
 NUM_STEPS = 16 -- TODO: actually MAX_STEPS
 
@@ -234,7 +234,7 @@ controlspec_rates_center = controlspec.def {
     warp = 'lin',
     step = 1,
     default = 0,
-    quantum = 1/4,
+    quantum = 1 / 4,
     wrap = false
 }
 
@@ -244,7 +244,7 @@ controlspec_rates_spread = controlspec.def {
     warp = 'lin',
     step = 1,
     default = 0,
-    quantum = 1/4,
+    quantum = 1 / 4,
     wrap = false
 }
 
@@ -362,7 +362,7 @@ controlspec_filter_freq             = controlspec.def {
 }
 
 -- multiplies with cutoff value
-controlspec_freq_mod            = controlspec.def {
+controlspec_freq_mod                = controlspec.def {
     min = 0,
     max = 2,
     warp = 'lin',
@@ -373,7 +373,7 @@ controlspec_freq_mod            = controlspec.def {
 }
 
 -- sets range of filter lfo
-controlspec_lfo_range           = controlspec.def {
+controlspec_lfo_range               = controlspec.def {
     min = 0,
     max = 10,
     warp = 'lin',
@@ -396,9 +396,9 @@ ID_HPF_BASE_FREQ                    = get_id(PROCESSOR, "hpf_freq")
 ID_HPF_LFO_RATE                     = get_id(PROCESSOR, "hpf_lfo_rate")
 ID_HPF_LFO_RANGE                    = get_id(PROCESSOR, "hpf_lfo_range")
 
-MIX_DRY = "DRY"
-MIX_PARALLEL = "50%"
-MIX_WET = "WET"
+MIX_DRY                             = "DRY"
+MIX_PARALLEL                        = "50%"
+MIX_WET                             = "WET"
 DRY_WET_TYPES                       = { MIX_DRY, MIX_PARALLEL, MIX_WET }
 HPF_LFO_SHAPES                      = { "sine", "up", "down", "random" }
 
@@ -406,7 +406,10 @@ HPF_LFO_SHAPES                      = { "sine", "up", "down", "random" }
 --- ECHO params
 ---
 
+ID_ECHO_STYLE                       = get_id(PROCESSOR, "echo_style")
 ID_ECHO_TIME                        = get_id(PROCESSOR, "echo_time")
+ID_ECHO_WET                         = get_id(PROCESSOR, "echo_wet")
+ID_ECHO_FEEDBACK                    = get_id(PROCESSOR, "echo_feedback")
 
 -- TODO: zip so time/name is defined together
 ECHO_TIME_AMOUNTS                   = { 0.0625, 0.125, 0.1875, 0.25, 0.3125, 0.375, 0.5, 0.625, 0.75 }
@@ -434,7 +437,7 @@ params:hide(ID_VERSION)
 
 params:add_text(ID_CURRENT_PAGE, "current_page", "EMPTY") -- would nil work?
 params:hide(ID_CURRENT_PAGE)
-params:set_save(ID_CURRENT_PAGE, false) -- TODO: check if not actually saved
+params:set_save(ID_CURRENT_PAGE, false)                   -- TODO: check if not actually saved
 
 params:add_file(ID_SAMPLER_AUDIO_FILE, 'sample', nil)
 params:add_control(ID_SAMPLER_DRIVE, "drive", controlspec_sample_drive)
@@ -481,7 +484,7 @@ params:add_control(ID_LEVELS_POS, "position", controlspec_pos)
 params:add_control(ID_LEVELS_AMP, "amp", controlspec_amp)
 
 params:add_separator("PANNING", "PANNING")
-params:add_binary(ID_PANNING_LFO_ENABLED,"LFO enabled", "toggle")
+params:add_binary(ID_PANNING_LFO_ENABLED, "LFO enabled", "toggle")
 params:add_option(ID_PANNING_LFO_SHAPE, "LFO shape", PANNING_LFO_SHAPES)
 params:add_option(ID_PANNING_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, DEFAULT_PANNING_LFO_RATE_IDX)
 params:add_control(ID_PANNING_TWIST, "twist", controlspec_pan_twist)
@@ -540,7 +543,10 @@ params:add_control(ID_HPF_LFO_RANGE, "LFO range", controlspec_lfo_range)
 params:hide(ID_HPF_FREQ_MOD) -- to be modified by lfo only
 
 params:add_separator("ECHO", "ECHO")
+params:add_option(ID_ECHO_STYLE, "style", engine_lib.echo_styles, engine_lib.params.options.echo_style.default)
 params:add_option(ID_ECHO_TIME, "time", ECHO_TIME_NAMES, 4)
+params:add_control(ID_ECHO_FEEDBACK, "feedback", engine_lib.params.specs.echo_feedback)
+params:add_control(ID_ECHO_WET, "mix", engine_lib.params.specs.echo_wet)
 
 params:add_separator("MASTER", "MASTER")
 params:add_option(ID_MASTER_MONO_FREQ, "bass mono freq", BASS_MONO_FREQS_STR, 1)
