@@ -24,7 +24,7 @@ local function get_id(component, param)
 end
 
 -- VERSIONING
-local VERSION_STRING = "0.14.0"
+local VERSION_STRING = "1.0.0"
 local ID_VERSION = get_id(META, "version")
 
 -- PAGE SYSTEM
