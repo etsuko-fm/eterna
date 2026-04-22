@@ -122,11 +122,14 @@ function SampleGraphic:render_graphic()
         if self.render_slices and self.slice_len then
             local slice = self.active_slices[i]
             local buffer_idx = self.voice_buffer_map[i]
-            local flash_x = self.x + (w * self.slice_len * (slice - 1))
-            local flash_y = self.waveform_midpoints[buffer_idx] + scale - 1
-            local flash_w = w * self.slice_len - 1
-            local flash_h = -scale * 2 + 1
-            self:render_trigger_flash(i, flash_x, flash_y, flash_w, flash_h)
+            local midpoint = self.waveform_midpoints[buffer_idx]
+            if slice and midpoint then
+                local flash_x = self.x + (w * self.slice_len * (slice - 1))
+                local flash_y = midpoint + scale - 1
+                local flash_w = w * self.slice_len - 1
+                local flash_h = -scale * 2 + 1
+                self:render_trigger_flash(i, flash_x, flash_y, flash_w, flash_h)
+            end
         end
     end
 
