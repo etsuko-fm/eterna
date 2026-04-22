@@ -295,16 +295,6 @@ function page:update_graphics_state()
         self.footer:set_value('e3', num_steps)
     end
 
-    -- prevent updating more often than the screen refreshes, as it costs quite some cpu
-    -- when done on every encoder-change.
-    if regenerate_perlin then
-        regenerate_perlin = false
-        generate_perlin()
-    end
-    if regenerate_velocity then
-        regenerate_velocity = false
-        generate_velocities(params:get(ID_SEQ_VEL_CENTER), params:get(ID_SEQ_VEL_SPREAD))
-    end
 
     for i = 1, 6 do
         env_polls[i]:update()
@@ -382,28 +372,32 @@ function page:add_params()
     end
 end
 
-function page:update_perlin_noise()
+function page:update_sequence()
     while true do
-        if redraw_sequence then
+        if regenerate_perlin then
             -- condition caps perlin noise updates at 60Hz, as it's a cpu expensive operation
-            redraw_sequence = false
-            generate_perlin_seq()
+            regenerate_perlin = false
+            generate_perlin()
+        end
+        if regenerate_velocity then
+            regenerate_velocity = false
+            generate_velocities(params:get(ID_SEQ_VEL_CENTER), params:get(ID_SEQ_VEL_SPREAD))
         end
         clock.sleep(1/60)
     end
 end
 
 function page:initialize()
-    page.k2_off = function() self:toggle_transport() end
-    page.k3_off = cycle_mode
-    page.e2 = e2
-    page.e3 = e3
-    seq.on_step = function(step) page:on_step(step) end
+    self.k2_off = function() self:toggle_transport() end
+    self.k3_off = cycle_mode
+    self.e2 = e2
+    self.e3 = e3
+    seq.on_step = function(step) self:on_step(step) end
 
     self:add_params()
 
-    -- intialize timer that limits update rate of perlin noise sequence
-    page.perlin_clock_id = clock.run(function() self:update_perlin_noise() end)
+    -- intialize timer that limits update rate of sequence
+    self.perlin_clock_id = clock.run(function() self:update_sequence() end)
 
     for i = 1, 6 do
         env_polls[i].callback = function(v) self.graphic:set_table("voice_env", i, v) end
@@ -413,7 +407,7 @@ function page:initialize()
     self:display_active_sequence()
 
 
-    page.footer = Footer:new({
+    self.footer = Footer:new({
         button_text = {
             k2 = { name = "PLAY", value = "" },
             k3 = { name = "CTRL", value = "" },
