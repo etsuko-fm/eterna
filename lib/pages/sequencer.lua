@@ -171,12 +171,12 @@ function page:on_step(step)
     grid_conn:set_current_step(step)
 end
 
-local function cycle_mode(v)
+local function cycle_mode()
     local delta = 1
     local wrap = true
-    local skip = {}
-    misc_util.cycle_param(ID_SEQ_MODE, SEQUENCER_MODES, delta, wrap, skip)
+    misc_util.cycle_param(ID_SEQ_MODE, SEQUENCER_MODES, delta, wrap)
 end
+
 
 function page:run_sequencer()
     while true do

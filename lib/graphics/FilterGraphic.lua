@@ -12,8 +12,6 @@ FilterGraphic = {
     graph_w = 50,
     graph_h = 23,
     lfo_range = {}, -- start / end freq
-    rate_fraction = nil,
-    draw_lfo_range = false, -- flag whether to differentiate between filter and filter LFO page
 }
 
 setmetatable(FilterGraphic, { __index = GraphicBase })
@@ -44,7 +42,7 @@ function FilterGraphic:freq_to_x(freq)
     local pos = util.clamp(freq_normalized / range, 0, 1)
 
     -- x position
-    return self.x + pos * (self.graph_w - 1) -- exclude edge
+    return util.round(self.x + pos * (self.graph_w - 2)) -- exclude edges
 end
 
 function FilterGraphic:set_size(w, h)
@@ -78,7 +76,6 @@ end
 
 function FilterGraphic:get_control_points_up(type, cutoff_hz)
     local flat_y = self:db_to_y(norm_db)
-    local off_y = self:db_to_y(off_db)
 
     -- calculate 2 control points for the cubic bezier curve from
     -- the flat 0dB line to the to peak cutoff/resonance poiont
@@ -224,26 +221,6 @@ function FilterGraphic:screen_level_from_mix()
     end
 end
 
-local function draw_slider(x, y, w, h, fraction)
-    -- h is expected to be uneven
-    screen.level(1)
-
-    -- index of bar to light up to indicate current fraction
-    local target = math.floor((h * (1 - fraction)) / 2) * 2
-
-    for i = 0, h - 1, 2 do
-        if i == target then
-            screen.level(15)
-        else
-            screen.level(1)
-        end
-
-        screen.rect(x, y + i, w, 1)
-        screen.fill()
-    end
-end
-
-
 function FilterGraphic:render()
     if self.hide then return end
 
@@ -254,7 +231,7 @@ function FilterGraphic:render()
         (self.type == "HP") and self.draw_highpass or
         (self.type == "LP") and self.draw_lowpass
 
-    if self.mix == 0.5 and not self.draw_lfo_range then
+    if self.mix == 0.5 then
         -- 50% mix; draw behind filter
         screen.level(3)
         self:draw_filter_off()
@@ -274,12 +251,12 @@ function FilterGraphic:render()
             draw_filter(self, self.freq, self.res)
         end
     end
+
     if self.mix == 0 then
         -- 0% mix; only draw off line
         screen.level(2)
         self:draw_filter_off()
     end
-
 
     local level = 0
 
@@ -298,20 +275,35 @@ function FilterGraphic:render()
     screen.rect(self.x, 15, self.graph_w, self.graph_h)
     screen.stroke()
 
-    if self.draw_lfo_range then
+    if self.draw_lfo_range == true then
+        local range_h = 3
         local y = self.y + self.graph_h + 1
+
         -- compensate 1px for stroke width
         local x1 = 1 + self:freq_to_x(self.lfo_range["start"])
-        screen.move(x1, y)
-        screen.level(4)
-        screen.line_rel(0, 3)
-        local x2 = math.max(x1, self:freq_to_x(self.lfo_range["end"]))
-        screen.line(x2, y + 3)
-        screen.line_rel(0, -3)
-        screen.stroke()
+        local x2 = 1 + self:freq_to_x(self.lfo_range["end"])
 
-        draw_slider(self.x - 7, self.y - 1, 4, self.graph_h + 1, self.rate_fraction)
+        -- draw range if range > 0 
+        screen.move(x1, y)
+        screen.level(5)
+
+        screen.line_rel(0, range_h - 1)
+        screen.line(x2, y + range_h - 1 )
+        screen.line_rel(0, -(range_h-1))
+
+        screen.stroke()
+        -- draw current frequency
+        screen.level(10)
+        local current_freq_x = util.clamp(1 + self:freq_to_x(self.freq), x1, x2)
+
+        local current_freq_h = range_h - 2
+        -- lighten up the entire edge of the range, looks weird if only top 2 pixels are bright
+        -- if current_freq_x == x1 or current_freq_x == x2 then current_freq_h = range_h end
+
+        screen.rect(current_freq_x, y, 0, current_freq_h)
+        screen.stroke()
     end
+
     self.rerender = false
 end
 

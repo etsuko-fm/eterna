@@ -34,9 +34,9 @@ page_slice = include(from_root("lib/pages/slice"))
 page_sequencer = include(from_root("lib/pages/sequencer"))
 local page_envelopes = include(from_root("lib/pages/envelopes"))
 page_lpf = include(from_root("lib/pages/lpf"))
-local page_lpf_lfo = include(from_root("lib/pages/lpf_lfo"))
+
 page_hpf = include(from_root("lib/pages/hpf"))
-local page_hpf_lfo = include(from_root("lib/pages/hpf_lfo"))
+
 local page_echo = include(from_root("lib/pages/echo"))
 local page_master = include(from_root("lib/pages/master"))
 page_control = include(from_root("lib/pages/control"))
@@ -71,9 +71,7 @@ local pages = {
   page_control,
   -- processing
   page_lpf,
-  page_lpf_lfo,
   page_hpf,
-  page_hpf_lfo,
   page_echo,
   -- output
   page_master,
