@@ -345,12 +345,14 @@ ID_LPF_BASE_FREQ                    = get_id(PROCESSOR, "lpf_freq")
 ID_LPF_FREQ_MOD                     = get_id(PROCESSOR, "lpf_freq_mod")
 ID_LPF_LFO_RATE                     = get_id(PROCESSOR, "lpf_lfo_rate")
 ID_LPF_LFO_RANGE                    = get_id(PROCESSOR, "lpf_lfo_range")
+ID_LPF_CTRL_MODE                    = get_id(PROCESSOR, "lpf_ctrl_mode")
 
-LPF_LFO_SHAPES                      = { "sine", "up", "down", "random" }
+
+LPF_LFO_SHAPES          = { "sine", "up", "down", "random" }
 
 -- this exists next to the engine freq, but allows a base frequency to change,
 -- while the engine freq is being modulated by the lfo
-controlspec_filter_freq             = controlspec.def {
+controlspec_filter_freq = controlspec.def {
     min = 20,
     max = 20000,
     warp = 'exp',
@@ -362,7 +364,7 @@ controlspec_filter_freq             = controlspec.def {
 }
 
 -- multiplies with cutoff value
-controlspec_freq_mod                = controlspec.def {
+controlspec_freq_mod    = controlspec.def {
     min = 0,
     max = 2,
     warp = 'lin',
@@ -373,12 +375,12 @@ controlspec_freq_mod                = controlspec.def {
 }
 
 -- sets range of filter lfo
-controlspec_lfo_range               = controlspec.def {
+controlspec_lfo_range   = controlspec.def {
     min = 0,
     max = 10,
     warp = 'lin',
     step = 0.01,
-    default = 5,
+    default = 0,
     quantum = 0.01,
     wrap = false
 }
@@ -387,46 +389,48 @@ controlspec_lfo_range               = controlspec.def {
 --- Highpass filter params
 ---
 
-ID_HPF_WET                          = get_id(PROCESSOR, "hpf_wet")
-ID_HPF_TYPE                         = get_id(PROCESSOR, "hpf_type")
-ID_HPF_LFO_ENABLED                  = get_id(PROCESSOR, "hpf_lfo")
-ID_HPF_LFO_SHAPE                    = get_id(PROCESSOR, "hpf_lfo_shape")
-ID_HPF_FREQ_MOD                     = get_id(PROCESSOR, "hpf_freq_mod")
-ID_HPF_BASE_FREQ                    = get_id(PROCESSOR, "hpf_freq")
-ID_HPF_LFO_RATE                     = get_id(PROCESSOR, "hpf_lfo_rate")
-ID_HPF_LFO_RANGE                    = get_id(PROCESSOR, "hpf_lfo_range")
-
-MIX_DRY                             = "DRY"
-MIX_PARALLEL                        = "50%"
-MIX_WET                             = "WET"
-DRY_WET_TYPES                       = { MIX_DRY, MIX_PARALLEL, MIX_WET }
-HPF_LFO_SHAPES                      = { "sine", "up", "down", "random" }
-
+ID_HPF_WET              = get_id(PROCESSOR, "hpf_wet")
+ID_HPF_TYPE             = get_id(PROCESSOR, "hpf_type")
+ID_HPF_LFO_ENABLED      = get_id(PROCESSOR, "hpf_lfo")
+ID_HPF_LFO_SHAPE        = get_id(PROCESSOR, "hpf_lfo_shape")
+ID_HPF_FREQ_MOD         = get_id(PROCESSOR, "hpf_freq_mod")
+ID_HPF_BASE_FREQ        = get_id(PROCESSOR, "hpf_freq")
+ID_HPF_LFO_RATE         = get_id(PROCESSOR, "hpf_lfo_rate")
+ID_HPF_LFO_RANGE        = get_id(PROCESSOR, "hpf_lfo_range")
+ID_HPF_CTRL_MODE        = get_id(PROCESSOR, "hpf_ctrl_mode")
+MIX_DRY                 = "DRY"
+MIX_PARALLEL            = "50%"
+MIX_WET                 = "WET"
+DRY_WET_TYPES           = { MIX_DRY, MIX_PARALLEL, MIX_WET }
+HPF_LFO_SHAPES          = { "sine", "up", "down", "random" }
+CTRL_MODE_FILTER        = "FILTER"
+CTRL_MODE_LFO           = "LFO"
+FILTER_CTRL_MODES       = { CTRL_MODE_FILTER, CTRL_MODE_LFO }
 ---
 --- ECHO params
 ---
 
-ID_ECHO_STYLE                       = get_id(PROCESSOR, "echo_style")
-ID_ECHO_TIME                        = get_id(PROCESSOR, "echo_time")
-ID_ECHO_WET                         = get_id(PROCESSOR, "echo_wet")
-ID_ECHO_FEEDBACK                    = get_id(PROCESSOR, "echo_feedback")
+ID_ECHO_STYLE           = get_id(PROCESSOR, "echo_style")
+ID_ECHO_TIME            = get_id(PROCESSOR, "echo_time")
+ID_ECHO_WET             = get_id(PROCESSOR, "echo_wet")
+ID_ECHO_FEEDBACK        = get_id(PROCESSOR, "echo_feedback")
 
 -- TODO: zip so time/name is defined together
-ECHO_TIME_AMOUNTS                   = { 0.0625, 0.125, 0.1875, 0.25, 0.3125, 0.375, 0.5, 0.625, 0.75 }
-ECHO_TIME_NAMES                     = { "1/64", "1/32", "1/32D", "1/16", "5/64", "1/16D", "1/8", "5/32", "1/8D" }
+ECHO_TIME_AMOUNTS       = { 0.0625, 0.125, 0.1875, 0.25, 0.3125, 0.375, 0.5, 0.625, 0.75 }
+ECHO_TIME_NAMES         = { "1/64", "1/32", "1/32D", "1/16", "5/64", "1/16D", "1/8", "5/32", "1/8D" }
 
 ---
 --- MASTER params
 ---
 
-ID_MASTER_MONO_FREQ                 = get_id(MASTER, "bass_mono_freq")
-ID_MASTER_COMP_AMOUNT               = get_id(MASTER, "comp_amount")
+ID_MASTER_MONO_FREQ     = get_id(MASTER, "bass_mono_freq")
+ID_MASTER_COMP_AMOUNT   = get_id(MASTER, "comp_amount")
 
-BASS_MONO_FREQS_STR                 = { "OFF", "50Hz", "100Hz", "200Hz", "FULL" }
-BASS_MONO_FREQS_INT                 = { 20, 50, 100, 200, 20000 }
+BASS_MONO_FREQS_STR     = { "OFF", "50Hz", "100Hz", "200Hz", "FULL" }
+BASS_MONO_FREQS_INT     = { 20, 50, 100, 200, 20000 }
 
 -- cycling FWD+REV here because the gain difference is large otherwise
-COMP_AMOUNTS                        = { "OFF", "SOFT", "MEDIUM", "HARD", "MEDIUM", "SOFT" }
+COMP_AMOUNTS            = { "OFF", "SOFT", "MEDIUM", "HARD", "MEDIUM", "SOFT" }
 
 
 --- MENU
@@ -525,22 +529,26 @@ end
 params:add_separator("LPF", "LPF")
 params:add_binary(ID_LPF_LFO_ENABLED, "LFO enabled", "toggle")
 params:add_option(ID_LPF_LFO_SHAPE, "LFO shape", LPF_LFO_SHAPES, 1)
-params:add_option(ID_LPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 21)
+params:add_option(ID_LPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 7)
 params:add_option(ID_LPF_WET, "dry/wet", DRY_WET_TYPES, 1)
 params:add_control(ID_LPF_BASE_FREQ, "base frequency", controlspec_filter_freq)
 params:add_control(ID_LPF_FREQ_MOD, "freq mod", controlspec_freq_mod)
 params:add_control(ID_LPF_LFO_RANGE, "LFO range", controlspec_lfo_range)
+params:add_option(ID_LPF_CTRL_MODE, "control mode", FILTER_CTRL_MODES, 1)
 params:hide(ID_LPF_FREQ_MOD) -- to be modified by lfo only
+params:hide(ID_LPF_CTRL_MODE)
 
 params:add_separator("HPF", "HPF")
 params:add_binary(ID_HPF_LFO_ENABLED, "LFO enabled", "toggle")
 params:add_option(ID_HPF_LFO_SHAPE, "LFO shape", HPF_LFO_SHAPES, 1)
-params:add_option(ID_HPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 21)
+params:add_option(ID_HPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 7)
 params:add_option(ID_HPF_WET, "dry/wet", DRY_WET_TYPES, 1)
 params:add_control(ID_HPF_BASE_FREQ, "base frequency", controlspec_filter_freq)
 params:add_control(ID_HPF_FREQ_MOD, "frequency_mod", controlspec_freq_mod)
 params:add_control(ID_HPF_LFO_RANGE, "LFO range", controlspec_lfo_range)
+params:add_option(ID_HPF_CTRL_MODE, "control mode", FILTER_CTRL_MODES, 1)
 params:hide(ID_HPF_FREQ_MOD) -- to be modified by lfo only
+params:hide(ID_HPF_CTRL_MODE)
 
 params:add_separator("ECHO", "ECHO")
 params:add_option(ID_ECHO_STYLE, "style", engine_lib.echo_styles, engine_lib.params.options.echo_style.default)
