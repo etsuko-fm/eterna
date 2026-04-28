@@ -8,7 +8,7 @@ local LOW = 2
 local MID = 4
 local MIDPLUS = 10
 local HIGH = 15
-local page_leds = { MID, LOW, MID, LOW, LOW, LOW, MID, LOW, MID, LOW, MID, LOW, MID, MID }
+local page_leds = { MID, LOW, MID, LOW, LOW, LOW, MID, LOW, MID, LOW, MID, MID }
 local TRANSPORT_ROW = 7
 local PAGE_ROW = 8
 local transport_led = { x = 16, y = 8 }
@@ -151,8 +151,8 @@ function grid_conn:set_loop_range(start, _end)
 end
 
 function grid_conn:reset_page_leds()
-    for x = 1, 14 do
-        self:led(x, 8, page_leds[x])
+    for x = 1, #page_leds do
+        self:led(x, PAGE_ROW, page_leds[x])
     end
 end
 
