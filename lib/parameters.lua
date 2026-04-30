@@ -136,7 +136,7 @@ controlspec_num_steps = controlspec.def {
 }
 
 controlspec_vel_center = controlspec.def {
-    min = 0,
+    min = 0.01,
     max = 1,
     warp = 'lin',
     step = 0.01,
