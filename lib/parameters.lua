@@ -364,7 +364,7 @@ controlspec_filter_freq = controlspec.def {
 }
 
 -- multiplies with cutoff value
-controlspec_freq_mod    = controlspec.def {
+controlspec_lpf_freq_mod    = controlspec.def {
     min = 0,
     max = 2,
     warp = 'lin',
@@ -406,6 +406,18 @@ HPF_LFO_SHAPES          = { "sine", "up", "down", "random" }
 CTRL_MODE_FILTER        = "FILTER"
 CTRL_MODE_LFO           = "LFO"
 FILTER_CTRL_MODES       = { CTRL_MODE_FILTER, CTRL_MODE_LFO }
+
+-- multiplies with cutoff value
+controlspec_hpf_freq_mod    = controlspec.def {
+    min = 0,
+    max = 2,
+    warp = 'lin',
+    step = 0.001,
+    default = 1,
+    quantum = 0.005,
+    wrap = false
+}
+
 ---
 --- ECHO params
 ---
@@ -533,7 +545,7 @@ params:add_option(ID_LPF_LFO_SHAPE, "LFO shape", LPF_LFO_SHAPES, 1)
 params:add_option(ID_LPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 7)
 params:add_option(ID_LPF_WET, "dry/wet", DRY_WET_TYPES, 1)
 params:add_control(ID_LPF_BASE_FREQ, "base frequency", controlspec_filter_freq)
-params:add_control(ID_LPF_FREQ_MOD, "freq mod", controlspec_freq_mod)
+params:add_control(ID_LPF_FREQ_MOD, "freq mod", controlspec_lpf_freq_mod)
 params:add_control(ID_LPF_LFO_RANGE, "LFO range", controlspec_lfo_range)
 params:add_option(ID_LPF_CTRL_MODE, "control mode", FILTER_CTRL_MODES, 1)
 params:hide(ID_LPF_FREQ_MOD) -- to be modified by lfo only
@@ -546,7 +558,7 @@ params:add_option(ID_HPF_LFO_SHAPE, "LFO shape", HPF_LFO_SHAPES, 1)
 params:add_option(ID_HPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 7)
 params:add_option(ID_HPF_WET, "dry/wet", DRY_WET_TYPES, 1)
 params:add_control(ID_HPF_BASE_FREQ, "base frequency", controlspec_filter_freq)
-params:add_control(ID_HPF_FREQ_MOD, "frequency_mod", controlspec_freq_mod)
+params:add_control(ID_HPF_FREQ_MOD, "frequency_mod", controlspec_hpf_freq_mod)
 params:add_control(ID_HPF_LFO_RANGE, "LFO range", controlspec_lfo_range)
 params:add_option(ID_HPF_CTRL_MODE, "control mode", FILTER_CTRL_MODES, 1)
 params:hide(ID_HPF_FREQ_MOD) -- to be modified by lfo only
