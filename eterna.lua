@@ -254,6 +254,23 @@ end
 params.action_read = function(filename, silent, number)
   -- switch to first page after loading a pset
   switch_page(1)
+
+  -- compatibility between v0 and v1
+  if get_pset_major_version() == 0 then
+    print('v0 pset was loaded, rewriting params for compatibility')
+    if params:get(ID_LPF_LFO_ENABLED) == 0 then
+      print("lpf lfo was set off, setting range to 0")
+      params:set(ID_LPF_LFO_ENABLED, 1)
+      params:set(ID_LPF_LFO_RANGE, 0)
+    end
+    if params:get(ID_HPF_LFO_ENABLED) == 0 then
+      print("hpf lfo was off, setting range to 0")
+      params:set(ID_HPF_LFO_ENABLED, 1)
+      params:set(ID_HPF_LFO_RANGE, 0)
+    else
+      print("nope it was: "..params:get(ID_HPF_LFO_ENABLED))
+    end
+  end
 end
 
 function key(n, z)
@@ -361,6 +378,12 @@ function shot()
   local name = "screenshot-" .. os.date("%Y-%m-%d-%H-%M-%S")
   screen.export_screenshot(name)
   print("screenshot saved to " .. name)
+end
+
+function get_pset_major_version()
+  local version = params:get(ID_VERSION)
+  local i = string.find(version, "%.")
+  return tonumber(string.sub(version, 1, i - 1))
 end
 
 function cleanup()

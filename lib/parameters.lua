@@ -25,7 +25,7 @@ end
 
 -- VERSIONING
 local VERSION_STRING = "1.0.0"
-local ID_VERSION = get_id(META, "version")
+ID_VERSION = get_id(META, "version")
 
 -- PAGE SYSTEM
 ID_CURRENT_PAGE = get_id(META, "page")
