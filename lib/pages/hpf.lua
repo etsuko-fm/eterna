@@ -17,7 +17,7 @@ return create_filter_page({
 
     freq_param_name     = "hpf_freq",
     res_param_name      = "hpf_res",
-    spec_freq_mod       = controlspec_freq_mod,
+    spec_freq_mod       = controlspec_hpf_freq_mod,
     spec_lfo_range      = controlspec_lfo_range,
 
     lfo_shapes          = HPF_LFO_SHAPES,
