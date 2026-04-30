@@ -123,12 +123,13 @@ local function create_filter_page(config)
         -- this is e.g. 0 - 16, which is used as a power of 2 to produce
         -- equal travel time per octave -> see fn get_modulated_freq(base, range)
         spec_freq_mod.maxval = math.min(v, calc_max_range_val())
-        if v ~= 0 and params:get(ID_LFO_ENABLED) == 0 then
+        local lfo_enabled = lfo:get("enabled") == 1
+        if v ~= 0 and not lfo_enabled then
             -- enable LFO if it was disabled and the range is non-zero
-            params:set(ID_LFO_ENABLED, 1)
-        elseif v == 0 and params:get(ID_LFO_ENABLED) == 1 then
+            lfo:start()
+        elseif v == 0 and lfo_enabled then
             -- disable LFO if it was enabled and the range is zero
-            params:set(ID_LFO_ENABLED, 0)
+            lfo:stop()
         end
     end
 
