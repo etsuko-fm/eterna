@@ -3,8 +3,6 @@ local GraphicBase = require(from_root("lib/graphics/GraphicBase"))
 SequencerGraphic = {
     x = 32,
     y = 16,
-    rows = 10,
-    columns = 21,
     fill = 1,
     active_fill = 6,
     flash_fill = 3,
@@ -14,7 +12,10 @@ SequencerGraphic = {
     loop_start = 1,
     loop_end = 16,
     is_playing = false,
+    velocity_center = 0.5,
+    velocity_spread = 0.5,
     hide = false,
+    mode = "GRID", -- GRID | VELOCITY
 }
 
 setmetatable(SequencerGraphic, { __index = GraphicBase })
@@ -47,13 +48,15 @@ local basex = 32
 local basey = 16
 local indicator_x = 32 + (block_w + margin_w) * columns + 1
 local indicator_y = basey + (block_h + margin_h) * rows + 1
+local velocity_base_y = basey + (block_h + margin_h) * rows
+local velocity_range_h = (block_h + margin_h) * rows
 local indicator_base_y = 16
 local indicator_w = 1
 local indicator_h = 3
 local indicator_vmargin = indicator_h + margin_h
 local faint_fill = 1
 
-function SequencerGraphic:prepare_env_meter(voice, rects)
+function SequencerGraphic:compute_env_meter(voice, rects)
     if self.voice_env[voice] == nil then return end
     local zero_idx = voice - 1
 
@@ -79,7 +82,7 @@ function SequencerGraphic:compute_level(base, mod, min, max)
     return util.clamp(base + (util.round(mod) or 0), min or 1, max or 15)
 end
 
-function SequencerGraphic:prepare_step_indicator(column, dim, rects)
+function SequencerGraphic:compute_step_indicator(column, dim, rects)
     -- column: 1 to 16
     if column < self.loop_start or column > self.loop_end then return end
 
@@ -91,13 +94,23 @@ function SequencerGraphic:prepare_step_indicator(column, dim, rects)
     local level = self:compute_level(base_level, dim)
 
     -- compute coordinates
-    local x = basex + ((column-1) * (block_w + margin_w))
+    local x = basex + ((column - 1) * (block_w + margin_w))
     table.insert(rects[level], { x, indicator_y, 3, 1 })
 end
 
-function SequencerGraphic:prepare_grid_cell(voice, row, column, dim, rects)
-    -- column: 1 to 16
-    local x = basex + (block_w + margin_w) * (column-1)
+function SequencerGraphic:get_grid_cell_x(column)
+    --- column: 1-16
+    return basex + (block_w + margin_w) * (column - 1)
+end
+
+function SequencerGraphic:compute_grid_cell(voice, row, column, dim, rects)
+    -- computes and stores the coordinates, brightness and size of a grid cell
+    --- voice: 1-6
+    --- row: 1-6
+    --- column: 1-16
+    --- dim: 0-15
+    --- rects: a table to store the results
+    local x = self:get_grid_cell_x(column)
     local y = basey + (block_h + margin_h) * row
 
     local step_velocity = self.sequences[voice][column]
@@ -114,7 +127,7 @@ function SequencerGraphic:prepare_grid_cell(voice, row, column, dim, rects)
             -- step not triggered, but it is an active step in the sequence
             local v = self.sequences[voice][column]
             if v == nil then
-                error("Value for "..voice..":"..column.." can't be nil")
+                error("Value for " .. voice .. ":" .. column .. " can't be nil")
             end
             local base_level = math.floor(2 + math.abs(v) * 13)
             level = self:compute_level(base_level, dim, 2)
@@ -127,6 +140,7 @@ function SequencerGraphic:prepare_grid_cell(voice, row, column, dim, rects)
 end
 
 function SequencerGraphic:flush_rects(rects)
+    -- draws rects grouped by brightness level, to minimize screen.level() calls
     for level = 0, 15 do
         local batch = rects[level]
         if #batch > 0 then
@@ -137,31 +151,62 @@ function SequencerGraphic:flush_rects(rects)
                 screen.fill()
             end
         end
-    end 
+    end
 end
 
+function SequencerGraphic:compute_velocity_indicator(voice, row, column, rects)
+    local x = self:get_grid_cell_x(column)
+    local step_velocity = self.sequences[voice][column]
+    local step_active = step_velocity ~= 0.0
+    local level = 10 -- static, velocities are indicated by height, not brightness
+
+    if step_active then
+        table.insert(rects[level], { x, self:get_velocity_y(step_velocity), 3, 1 })
+    end
+end
+function SequencerGraphic:get_velocity_y(velocity)
+    return math.floor(velocity_base_y - velocity_range_h * velocity)
+end
 function SequencerGraphic:render()
     if self.hide then return end
+    local draw_velocity = self.mode == "VELOCITY"
 
     -- rects to draw, organized by their brightness level. each entry: { x, y, w, h }
     -- As screen.level calls are expensive, this method allows the script to just
     -- do a single such call per distinct brightness
     local rects = {}
-    for i = 0, 15 do
-        rects[i] = {}
+    for level = 0, 15 do
+        rects[level] = {}
+    end
+
+    if draw_velocity then
+        local bg_level = 1
+        -- local velo_min = util.clamp(self.velocity_center - self.velocity_spread/2, 0, 1)
+        -- local velo_max = util.clamp(self.velocity_center + self.velocity_spread/2, 0, 1)
+        -- local velo_min_y = self:get_velocity_y(velo_min)
+        -- local velo_max_y = self:get_velocity_y(velo_max)
+        for column = 1, columns do
+            table.insert(rects[bg_level], { self:get_grid_cell_x(column), basey, 3, velocity_range_h })
+        end
     end
 
     for row = 0, rows - 1 do
         local voice = row + 1
-        self:prepare_env_meter(voice, rects)
+        if not draw_velocity then
+            self:compute_env_meter(voice, rects)
+        end
 
         for column = 1, columns do
             local dim = (column < self.loop_start or column > self.loop_end) and -10 or 0
-            self:prepare_step_indicator(column, dim, rects)
-            self:prepare_grid_cell(voice, row, column, dim, rects)
+            self:compute_step_indicator(column, dim, rects)
+            if draw_velocity then
+                self:compute_velocity_indicator(voice, row, column, rects)
+            else
+                self:compute_grid_cell(voice, row, column, dim, rects)
+            end
         end
     end
-    -- draw the actual rects
+    -- perform draws
     self:flush_rects(rects)
 end
 

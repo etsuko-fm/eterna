@@ -262,12 +262,17 @@ function page:update_graphics_state()
     local loop_start = params:get(ID_SEQ_STEP_START)
     local num_steps = params:get(ID_SEQ_NUM_STEPS)
     local loop_end = self:get_loop_end()
+    local velocity_center = params:get(ID_SEQ_VEL_CENTER)
+    local velocity_spread = params:get(ID_SEQ_VEL_SPREAD)
 
     self.graphic:set("num_steps", num_steps)
     self.graphic:set("loop_start", loop_start)
     self.graphic:set("loop_end", loop_end)
+    self.graphic:set("velocity_center", velocity_center)
+    self.graphic:set("velocity_spread", velocity_spread)
 
     local control_mode = params:string(ID_SEQ_MODE)
+    self.graphic:set("mode", control_mode == MODE_VELOCITY and "VELOCITY" or "GRID")
     self.footer:set_value('k2', self.seq.transport_on and "ON" or "OFF")
     self.footer:set_name("k3", "CTRL")
     self.footer:set_value("k3", control_mode)
@@ -294,7 +299,6 @@ function page:update_graphics_state()
         self.footer:set_value('e2', loop_start)
         self.footer:set_value('e3', num_steps)
     end
-
 
     for i = 1, 6 do
         env_polls[i]:update()
