@@ -1,7 +1,7 @@
 local SequencerGraphic = include(from_root("lib/graphics/SequencerGraphic"))
 local Sequencer = include(from_root("lib/Sequencer"))
 local page_name = "SEQUENCER"
-local PERLIN_ZOOM = 3.3 -- empirically tuned; really low values (<1) make it more tetrisy
+local PERLIN_ZOOM = 3.3  -- empirically tuned; really low values (<1) make it more tetrisy
 local main_seq_clock_id
 local TICKS_PER_BEAT = 8 -- quarter note divided by 8, so 1/32nd [call ticks_per_beat?]
 local regenerate_perlin = false
@@ -19,20 +19,23 @@ local page = Page:create({
     seq = seq,
 })
 
-local seeds = {}
+function velocity_to_amplitude(velocity, db_range)
+    -- Maps a velocity value (0.01–1) to a linear amplitude (0–1)
+    --   velocity 0.01 -> floor_db (e.g. -12 dB -> 0.251)
+    --   velocity 1    -> 0 dB (1.0)
+    local floor_db = -db_range
+    if velocity <= 0 then return 0 end
 
-local RANDOM_SEED = 383762
+    local t = (velocity - 0.01) / (1 - 0.01)
+    local dB = floor_db * (1 - t)
 
-for i = 1, NUM_STEPS do
-    -- TODO: make param
-    seeds[i] = RANDOM_SEED + i
+    return 10 ^ (dB / 20)
 end
 
 local function generate_velocities(center, spread)
     -- compute velocities for all steps that have already a value > 0
     for x = 1, NUM_STEPS do
         -- each step has their own seed
-        math.randomseed(seeds[x])
         for y = 1, NUM_TRACKS do
             local velocity = page:generate_velocity(center, spread)
             if params:get(STEPS[y][x]) ~= 0 then
@@ -117,7 +120,6 @@ function page:generate_velocity(center, spread)
     return velocity
 end
 
-
 function page:evaluate_step(x, y)
     -- 1 <= x <= 16
     -- 1 <= y <= 6
@@ -132,16 +134,17 @@ function page:evaluate_step(x, y)
         local voice_attack = engine_lib.get_id("voice_attack", y)
         local voice_decay = engine_lib.get_id("voice_decay", y)
 
-        -- set amplitude of voice based on step velocity
-        params:set(voice_env_level, velocity)
+        -- default: velocity controls 18dB range of amplitude modulation
+        params:set(voice_env_level, velocity_to_amplitude(velocity, 18))
 
         if enable_mod == "LPG" then
             -- apply envelope to a lowpass filter
-            params:set(voice_lpg_freq, misc_util.linexp(0, 1, 80, 20000, velocity, 1))
+            params:set(voice_lpg_freq, misc_util.linexp(0, 1, 100, 20000, velocity, 1))
+            -- reduce to 6dB amp modulation, for the rest rely on LPG frequency modulation for dynamics
+            params:set(voice_env_level, velocity_to_amplitude(velocity, 6))
         end
         if enable_mod ~= "OFF" then
             -- if modulation enabled, update voice attack and decay according to step velocity
-            params:set(voice_env_level, velocity)
             params:set(voice_attack, attack)
             params:set(voice_decay, decay)
         end
@@ -152,8 +155,6 @@ function page:evaluate_step(x, y)
         -- generate new velocity for step after evaluating
         local center = params:get(ID_SEQ_VEL_CENTER)
         local spread = params:get(ID_SEQ_VEL_SPREAD)
-        -- create new seed for step, so its velocity changes
-        seeds[x] = math.random(1000)
         local new_velocity = self:generate_velocity(center, spread)
         params:set(STEPS[y][x], new_velocity)
     end
@@ -323,7 +324,7 @@ function page:action_sequence_speed(v)
     -- convert table index of human-readable options to value for clock.sync
     -- calls global function defined on sequencer page
     local step_div = sequence_util.convert_sequence_speed[v]
-    print('new step div: '..step_div)
+    print('new step div: ' .. step_div)
     self.seq:set_ticks_per_step(step_div)
 end
 
@@ -387,7 +388,7 @@ function page:update_sequence()
             regenerate_velocity = false
             generate_velocities(params:get(ID_SEQ_VEL_CENTER), params:get(ID_SEQ_VEL_SPREAD))
         end
-        clock.sleep(1/60)
+        clock.sleep(1 / 60)
     end
 end
 
