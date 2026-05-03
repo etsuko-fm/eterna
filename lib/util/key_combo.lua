@@ -1,24 +1,20 @@
 -- Detects when any two keys are held down simultaneously.
 -- Usage:
+--[=====[ 
+local combo = ComboDetector.new()
+local result = combo:press("left")      -- nil
+result = combo:press("space")           -- {"left", "space"}
+if result then
+    print("Combo: " .. result[1] .. " + " .. result[2])
+end
 
--- local ComboDetector = include(from_root("lib/util/key_combo"))
+combo:release("space")
 
--- local combo = ComboDetector.new()
-
--- -- In any input handler:
--- local result = combo:press("left")      -- nil
-
--- result = combo:press("space")           -- {"left", "space"}
--- if result then
---     print("Combo: " .. result[1] .. " + " .. result[2])
--- end
-
--- combo:release("space")
-
--- result = combo:press("right")           -- {"left", "right"}
--- if result then
---     print("Combo: " .. result[1] .. " + " .. result[2])
--- end
+result = combo:press("right")           -- {"left", "right"}
+if result then
+    print("Combo: " .. result[1] .. " + " .. result[2])
+end
+--]=====]
 
 local ComboDetector = {}
 ComboDetector.__index = ComboDetector
@@ -56,6 +52,11 @@ function ComboDetector:release(key)
         self.count = self.count - 1
     end
 end
+
+function ComboDetector:keys_held()
+    return self.count
+end
+
 
 function ComboDetector:reset()
     self.held = {}

@@ -9,7 +9,7 @@ local MID = 4
 local MIDPLUS = 10
 local HIGH = 15
 local page_leds = { MID, LOW, MID, LOW, LOW, LOW, MID, LOW, MID, LOW, MID, MID }
-local TRANSPORT_ROW = 7
+local LOOP_ROW = 7
 local PAGE_ROW = 8
 local transport_led = { x = 16, y = 8 }
 
@@ -47,10 +47,6 @@ function grid_conn:modify_sequence(x, y)
     -- self:refresh()
 end
 
--- describe a bug
--- FIXED: hold 2, press 16; it lights up from 1 to 15
--- Double tap 1; it lights up 1; then double tap 2; it lights up still 1
-
 local function update_loop_range_params(loop_start, loop_end)
     print('setting loop range to: '..loop_start .. ":" .. loop_end)
     local num_steps = 1 + loop_end - loop_start
@@ -70,9 +66,9 @@ function grid_conn:key_press(x, y)
     if x <= NUM_PAGES and y == PAGE_ROW then
         -- browse page on norns screen
         self:select_page(x)
-    elseif y == TRANSPORT_ROW then
-        -- true if 2 different buttons on the transport row are held
-        local result = self.key_combo:press(x)
+    elseif y == LOOP_ROW then
+        -- `result` is a table of two values if 2 different buttons on the loop row are held
+        local result = self.loop_key_combo:press(x)
         if result then
             local r1 = result[1]
             local r2 = result[2]
@@ -85,19 +81,38 @@ function grid_conn:key_press(x, y)
         page_sequencer:toggle_transport()
     elseif y <= NUM_TRACKS then
         -- modify sequencer step
-        self:modify_sequence(x, y)
+        local result = self.sequence_key_combo:press(x..":"..y)
+        if result then
+            local r1 = result[1]
+            local r2 = result[2]
+            if r1 == "1:1" and r2 == "16:6" then
+                -- future update: clear sequence
+                page_sequencer:clear_sequence_rect(1, 6, 1, 16)
+                self.is_clearing_sequence = true
+            end
+        end
     end
 end
 
 function grid_conn:key_release(x, y)
-    if y == TRANSPORT_ROW then
+    if y == LOOP_ROW then
         -- update key combo
-        self.key_combo:release(x)
+        self.loop_key_combo:release(x)
         -- set double tap state to last tapped key on grid
         if self.double_tap_state:register(x .. ":" .. y) then
             print('double tap: x' .. x .. ":y" .. y)
             -- double tap detected for this reference; set loop range to just this step
             update_loop_range_params(x, x)
+        end
+    elseif y <= NUM_TRACKS then
+        -- modify sequencer step
+        if not self.is_clearing_sequence then
+            self:modify_sequence(x, y)
+        end
+        self.sequence_key_combo:release(x..":"..y)
+        -- clear the flag once all keys are released
+        if self.sequence_key_combo:keys_held() == 0 then
+            self.is_clearing_sequence = false
         end
     end
 end
@@ -117,11 +132,11 @@ function grid_conn:set_current_step(current_step)
     self.current_step = current_step --int: 1 to 16
 
     -- reset leds on row 7 (sequence stepper)
-    self:reset_transport_leds()
+    self:reset_loop_leds()
 
     -- light up active step on step indicator row
 
-    self:led(current_step, TRANSPORT_ROW, MIDPLUS)
+    self:led(current_step, LOOP_ROW, MIDPLUS)
 
     for y = 1, 6 do
         -- set all to actual velocity level (incl previous column which may have flashed)
@@ -147,7 +162,7 @@ end
 function grid_conn:set_loop_range(start, _end)
     self.loop_start = start
     self.loop_end = _end
-    self:reset_transport_leds()
+    self:reset_loop_leds()
 end
 
 function grid_conn:reset_page_leds()
@@ -199,13 +214,13 @@ function grid_conn:reset_sequence_leds()
     end
 end
 
-function grid_conn:reset_transport_leds()
+function grid_conn:reset_loop_leds()
     for x = 1, 16 do
-        self:led(x, TRANSPORT_ROW, OFF)
+        self:led(x, LOOP_ROW, OFF)
     end
 
     for x = self.loop_start, self.loop_end do
-        self:led(x, TRANSPORT_ROW, LOW)
+        self:led(x, LOOP_ROW, LOW)
     end
 end
 
@@ -223,7 +238,7 @@ function grid_conn:set_transport(state)
     self.is_playing = state
     if self.is_playing == false then
         -- clear current step indicator
-        self:reset_transport_leds()
+        self:reset_loop_leds()
     end
 
     -- toggle lfo that flashes with BPM on X1Y7
@@ -248,7 +263,8 @@ function grid_conn:init(device, current_page_id)
         action = function(scaled, raw) self:led(transport_led.x, transport_led.y, scaled) end -- action, always passes scaled and raw values
     }
     self.double_tap_state = DoubleTapState.new(0.3)
-    self.key_combo = ComboDetector.new()
+    self.loop_key_combo = ComboDetector.new()
+    self.sequence_key_combo = ComboDetector.new()
     self.transport_lfo:start()
     populate_grid_state()
     self.is_playing = false

@@ -167,6 +167,7 @@ ID_SEQ_STYLE = get_id(SEQUENCER, "style")
 ID_SEQ_BPM = get_id(SEQUENCER, "bpm")
 ID_SEQ_NUM_STEPS = get_id(SEQUENCER, "num_steps")
 ID_SEQ_STEP_START = get_id(SEQUENCER, "step_start")
+-- 2D table that contains param IDs for all sequencer steps
 STEPS = {}
 ID_SEQ_MODE = get_id(SEQUENCER, "mode")
 MODE_PERLIN = "PERLIN"
@@ -532,6 +533,7 @@ for track = 1, NUM_TRACKS do
     STEPS[track] = {}
     for step = 1, NUM_STEPS do
         STEPS[track][step] = get_id(SEQUENCER, "step_" .. track .. "_" .. step)
+        -- number reflects velocity (0 to 1, 0 means step is off)
         params:add_number(STEPS[track][step], STEPS[track][step], 0, 1, 0)
         -- Hide from params menu, user can change values with UI/encoders instead
         params:hide(STEPS[track][step])

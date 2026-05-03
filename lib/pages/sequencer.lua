@@ -105,6 +105,15 @@ local function get_step_envelope(enable_mod, velocity)
     return envelope_util.get_step_envelope(max_time, max_shape, enable_mod, velocity)
 end
 
+function page:clear_sequence_rect(from_track, to_track, from_step, to_step)
+    -- clear out a rect
+    for track = from_track, to_track do
+        for step = from_step, to_step do
+            params:set(STEPS[track][step], 0)
+        end
+    end
+end
+
 function page:generate_velocity(center, spread)
     -- Calculate the range based on center and spread
     local half_range = spread / 2
@@ -370,9 +379,9 @@ function page:add_params()
     params:set_action(ID_SEQ_NUM_STEPS, action_num_steps)
     params:set_action(ID_SEQ_STEP_START, action_step_start)
 
-    for y = 1, NUM_TRACKS do
-        for x = 1, NUM_STEPS do
-            params:set_action(STEPS[y][x], action_step_edit(self, x, y))
+    for track = 1, NUM_TRACKS do
+        for step = 1, NUM_STEPS do
+            params:set_action(STEPS[track][step], action_step_edit(self, step, track))
         end
     end
 end
