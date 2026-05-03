@@ -139,7 +139,7 @@ function SequencerGraphic:compute_grid_cell(voice, row, column, dim, rects)
     table.insert(rects[level], { x, y, block_w, block_h })
 end
 
-function SequencerGraphic:flush_rects(rects)
+function SequencerGraphic:perform_draws(rects)
     -- draws rects grouped by brightness level, to minimize screen.level() calls
     for level = 0, 15 do
         local batch = rects[level]
@@ -154,19 +154,21 @@ function SequencerGraphic:flush_rects(rects)
     end
 end
 
-function SequencerGraphic:compute_velocity_indicator(voice, row, column, rects)
+function SequencerGraphic:compute_velocity_indicator(voice, column, rects)
     local x = self:get_grid_cell_x(column)
     local step_velocity = self.sequences[voice][column]
     local step_active = step_velocity ~= 0.0
-    local level = 10 -- static, velocities are indicated by height, not brightness
-
+    local level = 6 -- static, velocities are indicated by height, not brightness
+    local y = math.floor(self:get_velocity_y(step_velocity))
     if step_active then
-        table.insert(rects[level], { x, self:get_velocity_y(step_velocity), 3, 1 })
+        table.insert(rects[level], { x, y, 3, 1 })
     end
 end
+
 function SequencerGraphic:get_velocity_y(velocity)
-    return math.floor(velocity_base_y - velocity_range_h * velocity)
+    return velocity_base_y - velocity_range_h * velocity
 end
+
 function SequencerGraphic:render()
     if self.hide then return end
     local draw_velocity = self.mode == "VELOCITY"
@@ -181,12 +183,18 @@ function SequencerGraphic:render()
 
     if draw_velocity then
         local bg_level = 1
-        -- local velo_min = util.clamp(self.velocity_center - self.velocity_spread/2, 0, 1)
-        -- local velo_max = util.clamp(self.velocity_center + self.velocity_spread/2, 0, 1)
-        -- local velo_min_y = self:get_velocity_y(velo_min)
-        -- local velo_max_y = self:get_velocity_y(velo_max)
+        local velo_min = util.clamp(self.velocity_center - self.velocity_spread/2, 0.01, 1)
+        local velo_max = util.clamp(self.velocity_center + self.velocity_spread/2, 0.01, 1)
+        local velo_bottom_y = math.ceil(self:get_velocity_y(velo_min)) -- y for min velocity (bottom of screen)
+        local velo_top_y = math.floor(self:get_velocity_y(velo_max)) -- y for max velocity (top of screen)
+        local height = math.max(velo_bottom_y - velo_top_y, 1)
+        screen.rect(29, velo_top_y, 2, height)
+        screen.fill()
         for column = 1, columns do
-            table.insert(rects[bg_level], { self:get_grid_cell_x(column), basey, 3, velocity_range_h })
+            local x =  self:get_grid_cell_x(column)
+            table.insert(rects[bg_level], { x, basey, 3, velo_top_y - basey })
+            table.insert(rects[bg_level + 2], { x, velo_top_y, 3, height })
+            table.insert(rects[bg_level], { x, velo_top_y + height, 3, velocity_range_h - height - (velo_top_y - basey) })
         end
     end
 
@@ -200,14 +208,13 @@ function SequencerGraphic:render()
             local dim = (column < self.loop_start or column > self.loop_end) and -10 or 0
             self:compute_step_indicator(column, dim, rects)
             if draw_velocity then
-                self:compute_velocity_indicator(voice, row, column, rects)
+                self:compute_velocity_indicator(voice, column, rects)
             else
                 self:compute_grid_cell(voice, row, column, dim, rects)
             end
         end
     end
-    -- perform draws
-    self:flush_rects(rects)
+    self:perform_draws(rects)
 end
 
 return SequencerGraphic
