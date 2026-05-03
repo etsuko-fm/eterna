@@ -35,7 +35,7 @@ function grid_conn:modify_sequence(x, y)
         -- if cell was off, turn it on by assigning a velocity
         local center = params:get(ID_SEQ_VEL_CENTER)
         local spread = params:get(ID_SEQ_VEL_SPREAD)
-        velocity = page_sequencer:generate_velocity(x, y, center, spread)
+        velocity = page_sequencer:generate_velocity(center, spread)
     end
     params:set(STEPS[y][x], velocity)
     -- if perlin noise was queued to be renegerated, cancel it, because

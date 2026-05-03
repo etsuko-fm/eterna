@@ -125,12 +125,12 @@ DB_FLOOR = -60
 env_polls = {}
 amp_polls = {}
 
-function to_dBFS(x)
+function to_dBFS(linear_amp)
   -- TODO: move to util
-  -- x: 0 to 1
+  -- linear_amp: 0 to 1
   local floor = DB_FLOOR
-  if x <= 0 then return floor end
-  local db = 20 * math.log(x, 10)
+  if linear_amp <= 0 then return floor end
+  local db = 20 * math.log(linear_amp, 10)
   if db < floor then return floor else return db end
 end
 
