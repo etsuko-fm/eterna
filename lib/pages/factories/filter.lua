@@ -54,7 +54,12 @@ local function create_filter_page(config)
     local function cycle_mode()
         local delta = 1
         local wrap = true
-        misc_util.cycle_param(ID_CTRL_MODE, FILTER_CTRL_MODES, delta, wrap)
+        local available_modes = FILTER_CTRL_MODES
+        if params:get(ID_WET) == 1 then
+            -- can't control LFO if filter is off
+            available_modes = {CTRL_MODE_FILTER}
+        end
+        misc_util.cycle_param(ID_CTRL_MODE, available_modes, delta, wrap)
     end
 
     local function cycle_mix()
@@ -175,15 +180,6 @@ local function create_filter_page(config)
         return base_freq, get_modulated_freq(base_freq, params:get(ID_LFO_RANGE))
     end
 
-    local function action_ctrl_mode(v)
-        -- disable k3 on LFO page if filter is off (it wouldn't do anything)
-        if params:string(ID_CTRL_MODE) == CTRL_MODE_LFO and params:get(ID_WET) == 1 then
-            page.k3_off = nil
-        else
-            page.k3_off = k3
-        end
-    end
-
     local function add_params()
         params:set_action(ID_WET, action_mix)
         params:set_action(ID_BASE_FREQ, action_base_freq)
@@ -192,7 +188,6 @@ local function create_filter_page(config)
         params:set_action(ID_LFO_ENABLED, action_lfo_toggle)
         params:set_action(ID_LFO_SHAPE, action_lfo_shape)
         params:set_action(ID_LFO_RATE, action_lfo_rate)
-        params:set_action(ID_CTRL_MODE, action_ctrl_mode)
     end
 
     function page:update_graphics_state()
@@ -205,8 +200,6 @@ local function create_filter_page(config)
         local low, high    = get_lfo_range()
         local period       = lfo:get('period')
         local range        = params:get(ID_LFO_RANGE)
-
-        self.footer:set_value("k2", control_mode)
 
         -- render non-modulated frequency
         self.graphic:set("freq", base_freq)
@@ -227,6 +220,7 @@ local function create_filter_page(config)
         end
 
         if control_mode == CTRL_MODE_FILTER then
+            self.footer:set_value("k2", control_mode)
             self.footer:set_name("k3", "MIX")
             self.footer:set_value("k3", route_txt)
             if mix > 1 then
@@ -240,24 +234,16 @@ local function create_filter_page(config)
                 self.footer:set_name("e3", "")
                 self.footer:set_value("e3", "")
             end
-        else
-            if mix > 1 then
-                self.footer:set_name("k3", "WAVE")
-                self.footer:set_value("k3", string.upper(LFO_SHAPES[lfo_shape]))
+        elseif control_mode == CTRL_MODE_LFO and mix > 1 then
+            self.footer:set_value("k2", control_mode)
+            self.footer:set_name("k3", "WAVE")
+            self.footer:set_value("k3", string.upper(LFO_SHAPES[lfo_shape]))
 
-                self.footer:set_name("e2", "RATE")
-                self.footer:set_value("e2", lfo_util.lfo_period_value_labels[period])
+            self.footer:set_name("e2", "RATE")
+            self.footer:set_value("e2", lfo_util.lfo_period_value_labels[period])
 
-                self.footer:set_name("e3", "RANGE")
-                self.footer:set_value("e3", range)
-            else
-                self.footer:set_name("k3", "")
-                self.footer:set_value("k3", "")
-                self.footer:set_name("e2", "")
-                self.footer:set_value("e2", "")
-                self.footer:set_name("e3", "")
-                self.footer:set_value("e3", "")
-            end
+            self.footer:set_name("e3", "RANGE")
+            self.footer:set_value("e3", range)
         end
 
         -- render non-modulated frequency
