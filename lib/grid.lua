@@ -85,8 +85,7 @@ function grid_conn:key_press(x, y)
         if result then
             local r1 = result[1]
             local r2 = result[2]
-            if r1 == "1:1" and r2 == "16:6" then
-                -- future update: clear sequence
+            if (r1 == "1:1" and r2 == "16:6") or (r1 == "16:6" and r2 == "1:1") then
                 page_sequencer:clear_sequence_rect(1, 6, 1, 16)
                 self.is_clearing_sequence = true
             end
