@@ -122,7 +122,6 @@ function grid_conn:select_page(x)
         self:reset_page_leds()
         switch_page(x)
         self:led(x, PAGE_ROW, MIDPLUS)
-        -- self:refresh()
     end
 end
 
@@ -275,6 +274,14 @@ function grid_conn:init(device, current_page_id)
     device:refresh()
     page_sequencer:display_active_sequence()
     self:set_current_step(1)
+    self.refresh_clock = clock.run(
+        function ()
+            while true do
+                grid_conn:refresh()
+                clock.sleep(1/60)
+            end
+        end
+    )
     print('grid connection init done')
 end
 
@@ -282,6 +289,8 @@ function grid_conn:close(device)
     print('grid connection closed')
     self.active = false
     self.transport_lfo:stop()
+    self.refresh_metro:stop()
+    clock.cancel(self.refresh_clock)
 end
 
 return grid_conn
