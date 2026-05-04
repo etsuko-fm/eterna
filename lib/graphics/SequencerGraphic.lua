@@ -188,8 +188,6 @@ function SequencerGraphic:render()
         local velo_bottom_y = math.ceil(self:get_velocity_y(velo_min)) -- y for min velocity (bottom of screen)
         local velo_top_y = math.floor(self:get_velocity_y(velo_max)) -- y for max velocity (top of screen)
         local height = math.max(velo_bottom_y - velo_top_y, 1)
-        screen.rect(29, velo_top_y, 2, height)
-        screen.fill()
         for column = 1, columns do
             local x =  self:get_grid_cell_x(column)
             table.insert(rects[bg_level], { x, basey, 3, velo_top_y - basey })
