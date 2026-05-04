@@ -1,4 +1,4 @@
--- sequencer values can be retrieved/set via STEPS[track][step]
+-- sequencer values can be retrieved/set via STEPS[voice][step]
 local DoubleTapState = include(from_root("lib/util/double_tap"))
 local ComboDetector = include(from_root("lib/util/key_combo"))
 
@@ -27,35 +27,35 @@ grid.key = function(x, y, z)
     end
 end
 
-function grid_conn:modify_sequence(x, y)
+function grid_conn:modify_sequence(step, voice)
     -- use Y1-6 to modify sequence
-    local on = params:get(STEPS[y][x]) > 0
+    local on = params:get(STEPS[voice][step]) > 0
     local velocity = 0
     if not on then
         -- if cell was off, turn it on by assigning a velocity
         local center = params:get(ID_SEQ_VEL_CENTER)
         local spread = params:get(ID_SEQ_VEL_SPREAD)
-        velocity = page_sequencer:generate_velocity(center, spread)
+        velocity = sequence_util.generate_velocity(center, spread, step)
     end
-    params:set(STEPS[y][x], velocity)
+    params:set(STEPS[voice][step], velocity)
     -- if perlin noise was queued to be renegerated, cancel it, because
     -- it's overwritten now by manual grid sequence editing
     page_sequencer:toggle_regenerate_perlin(false)
     -- indicate that the perlin noise params are not reflected exactly in the sequence anymore
     params:set(ID_SEQ_PERLIN_MODIFIED, 1)
-    self:led(x, y, velocity * 15)
+    self:led(step, voice, velocity * 15)
     -- self:refresh()
 end
 
 local function update_loop_range_params(loop_start, loop_end)
-    print('setting loop range to: '..loop_start .. ":" .. loop_end)
+    print('setting loop range to: ' .. loop_start .. ":" .. loop_end)
     local num_steps = 1 + loop_end - loop_start
     -- for norns-native ux, the step start is limited when twisting E2;
     -- this should be temporarily undone when grid is setting step start,
     -- as grid can set the loop range to anything.
     -- The action connected to ID_SEQ_STEP_START, will re-apply it afterwards.
     controlspec_step_start.maxval = 16
-    controlspec_step_start.quantum = 1/16
+    controlspec_step_start.quantum = 1 / 16
     params:set(ID_SEQ_STEP_START, loop_start)
     params:set(ID_SEQ_NUM_STEPS, num_steps)
 end
@@ -79,9 +79,9 @@ function grid_conn:key_press(x, y)
     elseif x == transport_led.x and y == transport_led.y then
         -- start/stop playback
         page_sequencer:toggle_transport()
-    elseif y <= NUM_TRACKS then
+    elseif y <= NUM_VOICES then
         -- modify sequencer step
-        local result = self.sequence_key_combo:press(x..":"..y)
+        local result = self.sequence_key_combo:press(x .. ":" .. y)
         if result then
             local r1 = result[1]
             local r2 = result[2]
@@ -104,12 +104,12 @@ function grid_conn:key_release(x, y)
             -- double tap detected for this reference; set loop range to just this step
             update_loop_range_params(x, x)
         end
-    elseif y <= NUM_TRACKS then
+    elseif y <= NUM_VOICES then
         -- modify sequencer step
         if not self.is_clearing_sequence then
             self:modify_sequence(x, y)
         end
-        self.sequence_key_combo:release(x..":"..y)
+        self.sequence_key_combo:release(x .. ":" .. y)
         -- clear the flag once all keys are released
         if self.sequence_key_combo:keys_held() == 0 then
             self.is_clearing_sequence = false
@@ -150,7 +150,6 @@ function grid_conn:set_current_step(current_step)
             end
         end
     end
-    -- self:refresh()
 end
 
 function grid_conn:set_current_page(page)
@@ -253,14 +252,16 @@ end
 
 function grid_conn:init(device, current_page_id)
     self.transport_lfo = _lfos:add {
-        shape = 'up',                                                                         -- shape
-        min = 2,                                                                              -- min
-        max = 4,                                                                              -- max
-        depth = 1,                                                                            -- depth (0 to 1)
-        mode = 'clocked',                                                                     -- mode
-        period = 1,                                                                           -- period (in 'clocked' mode, represents beats)
+        shape = 'up',     -- shape
+        min = 2,          -- min
+        max = 4,          -- max
+        depth = 1,        -- depth (0 to 1)
+        mode = 'clocked', -- mode
+        period = 1,       -- period (in 'clocked' mode, represents beats)
         -- pass our 'scaled' value (bounded by min/max and depth) to the engine:
-        action = function(scaled, raw) self:led(transport_led.x, transport_led.y, scaled) end -- action, always passes scaled and raw values
+        action = function(scaled, raw)
+            self:led(transport_led.x, transport_led.y, scaled)
+        end       -- action, always passes scaled and raw values
     }
     self.double_tap_state = DoubleTapState.new(0.3)
     self.loop_key_combo = ComboDetector.new()

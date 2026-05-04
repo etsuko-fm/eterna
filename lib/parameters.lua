@@ -174,7 +174,7 @@ MODE_PERLIN = "PERLIN"
 MODE_VELOCITY = "VELO"
 MODE_LOOP = "LOOP"
 SEQUENCER_MODES = { MODE_PERLIN, MODE_VELOCITY, MODE_LOOP }
-NUM_TRACKS = 6
+NUM_VOICES = 6
 NUM_STEPS = 16 -- TODO: actually MAX_STEPS
 
 ---
@@ -529,7 +529,7 @@ params:hide(ID_SEQ_BPM)
 params:hide(ID_SEQ_MODE)
 
 -- add 6x16 params for sequence step status (for perlin noise only)
-for track = 1, NUM_TRACKS do
+for track = 1, NUM_VOICES do
     STEPS[track] = {}
     for step = 1, NUM_STEPS do
         STEPS[track][step] = get_id(SEQUENCER, "step_" .. track .. "_" .. step)
