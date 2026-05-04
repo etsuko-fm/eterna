@@ -347,9 +347,6 @@ function refresh(force)
     -- actual render
     render_frame(force)
 
-    -- update grid, if connected
-    grid_conn:refresh()
-
     -- for frame indicator animation (90fps until reset)
     -- TODO this should really be time-based
     if header.enc1n ~= 0 and page_indicator_counter > 90 then
