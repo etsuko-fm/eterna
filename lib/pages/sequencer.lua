@@ -1,5 +1,6 @@
 local SequencerGraphic = include(from_root("lib/graphics/SequencerGraphic"))
 local Sequencer = include(from_root("lib/Sequencer"))
+local perlin = include(from_root("lib/ext/perlin"))
 local page_name = "SEQUENCER"
 local PERLIN_ZOOM = 3.3  -- empirically tuned; really low values (<1) make it more tetrisy
 local main_seq_clock_id
@@ -9,7 +10,7 @@ local regenerate_velocity = false
 
 local seq = Sequencer.new {
     steps = NUM_STEPS,
-    rows = NUM_TRACKS,
+    rows = NUM_VOICES,
     ticks_per_step = 2,
 }
 
@@ -34,13 +35,13 @@ end
 
 local function generate_velocities(center, spread)
     -- compute velocities for all steps that have already a value > 0
-    for x = 1, NUM_STEPS do
+    for step = 1, NUM_STEPS do
         -- each step has their own seed
-        for y = 1, NUM_TRACKS do
-            local velocity = page:generate_velocity(center, spread)
-            if params:get(STEPS[y][x]) ~= 0 then
+        for voice = 1, NUM_VOICES do
+            local velocity = sequence_util.generate_velocity(center, spread, step)
+            if params:get(STEPS[voice][step]) ~= 0 then
                 -- set the value; this will trigger an action that updates grid/norns display
-                params:set(STEPS[y][x], velocity)
+                params:set(STEPS[voice][step], velocity)
             end
         end
     end
@@ -53,7 +54,7 @@ local function generate_perlin()
     local y_seed = params:get(ID_SEQ_PERLIN_Y)
     local z_seed = params:get(ID_SEQ_PERLIN_Z)
 
-    local sequence = sequence_util.generate_perlin(NUM_TRACKS, NUM_STEPS, x_seed, y_seed, z_seed, PERLIN_ZOOM)
+    local sequence = sequence_util.generate_perlin(NUM_VOICES, NUM_STEPS, x_seed, y_seed, z_seed, PERLIN_ZOOM)
     local filtered = sequence_util.density_filter(sequence, density)
     for _, v in ipairs(filtered) do
         -- set binary steps; decides which steps will get a velocity
@@ -67,7 +68,7 @@ end
 
 function page:display_active_sequence()
     -- triggering their action updates grid and sequence graphic
-    for track = 1, NUM_TRACKS do
+    for track = 1, NUM_VOICES do
         for step = 1, NUM_STEPS do
             params:lookup_param(STEPS[track][step]):bang()
         end
@@ -114,34 +115,20 @@ function page:clear_sequence_rect(from_track, to_track, from_step, to_step)
     end
 end
 
-function page:generate_velocity(center, spread)
-    -- Calculate the range based on center and spread
-    local half_range = spread / 2
-    local min_val = center - half_range
-    local max_val = center + half_range
 
-    -- Generate random value in range around center
-    local velocity = min_val + math.random() * (max_val - min_val)
-
-    -- Clamp to [0.01, 1] range; so that all active steps will remain active
-    velocity = util.clamp(velocity, 0.01, 1)
-    -- only update steps that are already active
-    return velocity
-end
-
-function page:evaluate_step(x, y)
-    -- 1 <= x <= 16
-    -- 1 <= y <= 6
+function page:evaluate_step(step, voice)
+    -- 1 <= step <= 16
+    -- 1 <= voice <= 6
     local enable_mod = params:string(ID_ENVELOPES_MOD)
-    local velocity = params:get(STEPS[y][x])
+    local velocity = params:get(STEPS[voice][step])
     local on = velocity > 0
     local attack, decay = get_step_envelope(enable_mod, velocity)
     if on then
         -- using modulo check to prevent triggering every 1/16 when step size is larger
-        local voice_env_level = engine_lib.get_id("voice_env_level", y)
-        local voice_lpg_freq = engine_lib.get_id("voice_lpg_freq", y)
-        local voice_attack = engine_lib.get_id("voice_attack", y)
-        local voice_decay = engine_lib.get_id("voice_decay", y)
+        local voice_env_level = engine_lib.get_id("voice_env_level", voice)
+        local voice_lpg_freq = engine_lib.get_id("voice_lpg_freq", voice)
+        local voice_attack = engine_lib.get_id("voice_attack", voice)
+        local voice_decay = engine_lib.get_id("voice_decay", voice)
 
         -- default: velocity controls 18dB range of amplitude modulation
         params:set(voice_env_level, velocity_to_amplitude(velocity, 18))
@@ -159,13 +146,13 @@ function page:evaluate_step(x, y)
         end
 
         -- trigger the voice in supercollider
-        engine_lib.voice_trigger(y)
+        engine_lib.voice_trigger(voice)
 
         -- generate new velocity for step after evaluating
         local center = params:get(ID_SEQ_VEL_CENTER)
         local spread = params:get(ID_SEQ_VEL_SPREAD)
-        local new_velocity = self:generate_velocity(center, spread)
-        params:set(STEPS[y][x], new_velocity)
+        local new_velocity = sequence_util.generate_velocity(center, spread, step)
+        params:set(STEPS[voice][step], new_velocity)
     end
 end
 
@@ -175,7 +162,7 @@ function page:on_step(step)
     self.graphic:set("current_step", step)
     page_control.current_step = step
     -- evaluate current step, send commands to supercollider accordingly
-    for track = 1, NUM_TRACKS do
+    for track = 1, NUM_VOICES do
         self:evaluate_step(step, track)
     end
     grid_conn:set_current_step(step)
@@ -379,7 +366,7 @@ function page:add_params()
     params:set_action(ID_SEQ_NUM_STEPS, action_num_steps)
     params:set_action(ID_SEQ_STEP_START, action_step_start)
 
-    for track = 1, NUM_TRACKS do
+    for track = 1, NUM_VOICES do
         for step = 1, NUM_STEPS do
             params:set_action(STEPS[track][step], action_step_edit(self, step, track))
         end

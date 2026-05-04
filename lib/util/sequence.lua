@@ -74,10 +74,41 @@ local function mem_generate_perlin(rows, cols, x, y, z, zoom)
     return values
 end
 
+local seeds = {}
+for i = 1, 16 do
+    seeds[i] = math.random(0, 1000) / 100
+end
+
+-- Memoization cache for velocity values
+local velocity_cache = {}
+
+local function noise_to_velocity(noise, center, spread)
+    local r = util.linlin(-1, 1, 0, 1, noise)
+    local half_range = spread / 2
+    local velocity = (center - half_range) + r * spread
+    return util.clamp(velocity, 0.01, 1)
+end
+
+local function generate_velocity(center, spread, step)
+    step = step or 1
+    local key = step .. ":" .. math.floor(seeds[step] * 100 + 0.5)
+
+    local cached = velocity_cache[key]
+    if cached then
+        seeds[step] = seeds[step] + 0.05
+        return noise_to_velocity(seeds[step], center, spread)
+    end
+
+    local pnoise = perlin:noise(seeds[step])
+    local normalized = util.clamp(pnoise / 0.75, -1, 1)
+    velocity_cache[key] = normalized
+    return noise_to_velocity(normalized, center, spread)
+end
 
 return {
     sequence_speeds = sequence_speeds,
     convert_sequence_speed = convert_sequence_speed,
     generate_perlin = mem_generate_perlin,
+    generate_velocity = generate_velocity,
     density_filter = density_filter,
 }
