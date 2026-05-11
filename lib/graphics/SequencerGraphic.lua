@@ -39,14 +39,14 @@ function SequencerGraphic:clear()
 end
 
 local rows = 6
-local columns = 16
+local steps = 16
 local block_w = 3
 local block_h = 3
 local margin_w = 1
 local margin_h = 1
 local basex = 32
 local basey = 16
-local indicator_x = 32 + (block_w + margin_w) * columns + 1
+local indicator_x = 32 + (block_w + margin_w) * steps + 1
 local indicator_y = basey + (block_h + margin_h) * rows + 1
 local velocity_base_y = basey + (block_h + margin_h) * rows
 local velocity_range_h = (block_h + margin_h) * rows
@@ -98,24 +98,24 @@ function SequencerGraphic:compute_step_indicator(column, dim, rects)
     table.insert(rects[level], { x, indicator_y, 3, 1 })
 end
 
-function SequencerGraphic:get_grid_cell_x(column)
-    --- column: 1-16
-    return basex + (block_w + margin_w) * (column - 1)
+function SequencerGraphic:get_grid_cell_x(step)
+    -- column: 1-16
+    -- returns x position of cell in the grid, based solely on the step
+    return basex + (block_w + margin_w) * (step - 1)
 end
 
-function SequencerGraphic:compute_grid_cell(voice, row, column, dim, rects)
+function SequencerGraphic:compute_grid_cell(voice, step, dim, rects)
     -- computes and stores the coordinates, brightness and size of a grid cell
     --- voice: 1-6
-    --- row: 1-6
-    --- column: 1-16
+    --- step: 1-16
     --- dim: 0-15
     --- rects: a table to store the results
-    local x = self:get_grid_cell_x(column)
-    local y = basey + (block_h + margin_h) * row
+    local x = self:get_grid_cell_x(step)
+    local y = basey + (block_h + margin_h) * (voice - 1)
 
-    local step_velocity = self.sequences[voice][column]
+    local step_velocity = self.sequences[voice][step]
     local step_active = step_velocity ~= 0.0
-    local is_current = (self.current_step == column and self.is_playing)
+    local is_current = (self.current_step == step and self.is_playing)
 
     local level
     if step_active then
@@ -125,9 +125,9 @@ function SequencerGraphic:compute_grid_cell(voice, row, column, dim, rects)
             level = self:compute_level(self.flash_fill, dim)
         else
             -- step not triggered, but it is an active step in the sequence
-            local v = self.sequences[voice][column]
+            local v = self.sequences[voice][step]
             if v == nil then
-                error("Value for " .. voice .. ":" .. column .. " can't be nil")
+                error("Value for " .. voice .. ":" .. step .. " can't be nil")
             end
             local base_level = math.floor(2 + math.abs(v) * 13)
             level = self:compute_level(base_level, dim, 2)
@@ -154,14 +154,16 @@ function SequencerGraphic:perform_draws(rects)
     end
 end
 
-function SequencerGraphic:compute_velocity_indicator(voice, column, rects)
-    local x = self:get_grid_cell_x(column)
-    local step_velocity = self.sequences[voice][column]
+function SequencerGraphic:compute_velocity_indicator(voice, step, rects)
+    local x = self:get_grid_cell_x(step)
+    local is_current = (self.current_step == step and self.is_playing)
+    local step_velocity = self.sequences[voice][step]
     local step_active = step_velocity ~= 0.0
-    local level = 6 -- static, velocities are indicated by height, not brightness
     local y = math.floor(self:get_velocity_y(step_velocity))
-    if step_active then
-        table.insert(rects[level], { x, y, 3, 1 })
+    if is_current and step_active then
+        table.insert(rects[12], { x, y, 3, 1 })
+    elseif step_active then
+        table.insert(rects[5], { x, y, 3, 1 })
     end
 end
 
@@ -188,10 +190,13 @@ function SequencerGraphic:render()
         local velo_bottom_y = math.ceil(self:get_velocity_y(velo_min)) -- y for min velocity (bottom of screen)
         local velo_top_y = math.floor(self:get_velocity_y(velo_max)) -- y for max velocity (top of screen)
         local height = math.max(velo_bottom_y - velo_top_y, 1)
-        for column = 1, columns do
+        for column = 1, steps do
             local x =  self:get_grid_cell_x(column)
+            -- background column, top
             table.insert(rects[bg_level], { x, basey, 3, velo_top_y - basey })
-            table.insert(rects[bg_level + 2], { x, velo_top_y, 3, height })
+            -- range
+            table.insert(rects[bg_level + 1], { x, velo_top_y, 3, height })
+            -- background column, bottom
             table.insert(rects[bg_level], { x, velo_top_y + height, 3, velocity_range_h - height - (velo_top_y - basey) })
         end
     end
@@ -202,13 +207,14 @@ function SequencerGraphic:render()
             self:compute_env_meter(voice, rects)
         end
 
-        for column = 1, columns do
-            local dim = (column < self.loop_start or column > self.loop_end) and -10 or 0
-            self:compute_step_indicator(column, dim, rects)
+        for step = 1, steps do
+            local dim = (step < self.loop_start or step > self.loop_end) and -10 or 0
+            self:compute_step_indicator(step, dim, rects)
             if draw_velocity then
-                self:compute_velocity_indicator(voice, column, rects)
+                -- horizontal line indicating velocity level of current step
+                self:compute_velocity_indicator(voice, step, rects)
             else
-                self:compute_grid_cell(voice, row, column, dim, rects)
+                self:compute_grid_cell(voice, step, dim, rects)
             end
         end
     end
