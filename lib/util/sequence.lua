@@ -74,41 +74,25 @@ local function mem_generate_perlin(rows, cols, x, y, z, zoom)
     return values
 end
 
-local seeds = {}
-for i = 1, 16 do
-    seeds[i] = math.random(0, 500) / 100
-end
-
--- Memoization cache for velocity values
-local velocity_cache = {}
-
-local function noise_to_velocity(noise, center, spread)
-    local r = util.linlin(-1, 1, 0, 1, noise)
+local function generate_velocity(center, spread)
+    -- Calculate the range based on center and spread
     local half_range = spread / 2
-    local velocity = (center - half_range) + r * spread
-    return util.clamp(velocity, 0.01, 1)
-end
+    local min_val = center - half_range
+    local max_val = center + half_range
 
-local function generate_velocity(center, spread, step)
-    step = step or 1
-    local key = math.floor(seeds[step] * 100 + 0.5)
+    -- Generate random value in range around center
+    local velocity = min_val + math.random() * (max_val - min_val)
 
-    local cached = velocity_cache[key]
-    if cached then
-        seeds[step] = util.wrap(seeds[step] + math.random(1, 10) / 10, 0, 10)
-        return noise_to_velocity(cached, center, spread)
-    end
-
-    local pnoise = perlin:noise(seeds[step], 3, 5)
-    local normalized = util.clamp(pnoise / 0.75, -1, 1)
-    velocity_cache[key] = normalized
-    return noise_to_velocity(normalized, center, spread)
+    -- Clamp to [0.01, 1] range; so that all active steps will remain active
+    velocity = util.clamp(velocity, 0.01, 1)
+    -- only update steps that are already active
+    return velocity
 end
 
 return {
     sequence_speeds = sequence_speeds,
     convert_sequence_speed = convert_sequence_speed,
     generate_perlin = mem_generate_perlin,
-    generate_velocity = generate_velocity,
     density_filter = density_filter,
+    generate_velocity = generate_velocity,
 }
