@@ -542,30 +542,38 @@ for track = 1, NUM_VOICES do
 end
 
 params:add_separator("LPF", "LPF")
+params:add_option(ID_LPF_WET, "dry/wet", DRY_WET_TYPES, 1)
+params:add_control(ID_LPF_BASE_FREQ, "frequency", controlspec_filter_freq)
+
 params:add_binary(ID_LPF_LFO_ENABLED, "LFO enabled", "toggle")
 params:hide(ID_LPF_LFO_ENABLED) -- from v1.0.0 this is controlled by ID_LPF_LFO_RANGE > 0
+
+params:add_control(ID_LPF_LFO_RANGE, "LFO range", controlspec_lfo_range)
 params:add_option(ID_LPF_LFO_SHAPE, "LFO shape", LPF_LFO_SHAPES, 1)
 params:add_option(ID_LPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 7)
-params:add_option(ID_LPF_WET, "dry/wet", DRY_WET_TYPES, 1)
-params:add_control(ID_LPF_BASE_FREQ, "base frequency", controlspec_filter_freq)
+
 params:add_control(ID_LPF_FREQ_MOD, "freq mod", controlspec_lpf_freq_mod)
-params:add_control(ID_LPF_LFO_RANGE, "LFO range", controlspec_lfo_range)
-params:add_option(ID_LPF_CTRL_MODE, "control mode", FILTER_CTRL_MODES, 1)
 params:hide(ID_LPF_FREQ_MOD) -- to be modified by lfo only
-params:hide(ID_LPF_CTRL_MODE)
+
+params:add_option(ID_LPF_CTRL_MODE, "control mode", FILTER_CTRL_MODES, 1)
+params:hide(ID_LPF_CTRL_MODE) -- UI only
 
 params:add_separator("HPF", "HPF")
+params:add_option(ID_HPF_WET, "dry/wet", DRY_WET_TYPES, 1)
+params:add_control(ID_HPF_BASE_FREQ, "frequency", controlspec_filter_freq)
+
 params:add_binary(ID_HPF_LFO_ENABLED, "LFO enabled", "toggle")
 params:hide(ID_HPF_LFO_ENABLED) -- from v1.0.0 this is controlled by ID_HPF_LFO_RANGE > 0
+
+params:add_control(ID_HPF_LFO_RANGE, "LFO range", controlspec_lfo_range)
 params:add_option(ID_HPF_LFO_SHAPE, "LFO shape", HPF_LFO_SHAPES, 1)
 params:add_option(ID_HPF_LFO_RATE, "LFO rate", lfo_util.lfo_period_labels, 7)
-params:add_option(ID_HPF_WET, "dry/wet", DRY_WET_TYPES, 1)
-params:add_control(ID_HPF_BASE_FREQ, "base frequency", controlspec_filter_freq)
+
 params:add_control(ID_HPF_FREQ_MOD, "frequency_mod", controlspec_hpf_freq_mod)
-params:add_control(ID_HPF_LFO_RANGE, "LFO range", controlspec_lfo_range)
-params:add_option(ID_HPF_CTRL_MODE, "control mode", FILTER_CTRL_MODES, 1)
 params:hide(ID_HPF_FREQ_MOD) -- to be modified by lfo only
-params:hide(ID_HPF_CTRL_MODE)
+
+params:add_option(ID_HPF_CTRL_MODE, "control mode", FILTER_CTRL_MODES, 1)
+params:hide(ID_HPF_CTRL_MODE) -- UI only
 
 params:add_separator("ECHO", "ECHO")
 params:add_option(ID_ECHO_STYLE, "style", engine_lib.echo_styles, engine_lib.params.options.echo_style.default)
