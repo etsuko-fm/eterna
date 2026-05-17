@@ -214,13 +214,12 @@ local function create_filter_page(config)
         if DRY_WET_TYPES[mix] == MIX_DRY then
             route_txt = "OFF"
         elseif DRY_WET_TYPES[mix] == MIX_WET then
-            route_txt = "ON"
+            route_txt = "100%"
         else
             route_txt = DRY_WET_TYPES[mix]
         end
 
         if control_mode == CTRL_MODE_FILTER then
-            self.footer:set_value("k2", control_mode)
             self.footer:set_name("k3", "MIX")
             self.footer:set_value("k3", route_txt)
             if mix > 1 then
@@ -235,7 +234,6 @@ local function create_filter_page(config)
                 self.footer:set_value("e3", "")
             end
         elseif control_mode == CTRL_MODE_LFO and mix > 1 then
-            self.footer:set_value("k2", control_mode)
             self.footer:set_name("k3", "WAVE")
             self.footer:set_value("k3", string.upper(LFO_SHAPES[lfo_shape]))
 
@@ -244,6 +242,14 @@ local function create_filter_page(config)
 
             self.footer:set_name("e3", "RANGE")
             self.footer:set_value("e3", range)
+        end
+
+        if params:get(ID_WET) == 1 then
+            self.footer:set_name("k2", "")
+            self.footer:set_value("k2", "")
+        else
+            self.footer:set_name("k2", "CTRL")
+            self.footer:set_value("k2", control_mode)
         end
 
         -- render non-modulated frequency
